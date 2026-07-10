@@ -10,11 +10,8 @@ import { HUD } from '../components/arena3d/HUD'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import { initAudio } from '../audio/sfx'
-import { WelcomeModal } from '../components/help/WelcomeModal'
 import { executeContainerInteraction, executePick } from '../game/commands'
 import { getTaskById } from '../data/tasks'
-
-const WELCOME_STORAGE_KEY = 'homemem_welcome_shown'
 
 export function ArenaPage() {
   const { taskId } = useParams<{ taskId: string }>()
@@ -33,15 +30,6 @@ export function ArenaPage() {
 
   const [briefingOpen, setBriefingOpen] = useState(true)
   const [narrativeText, setNarrativeText] = useState<string | null>(null)
-  const [welcomeOpen, setWelcomeOpen] = useState(false)
-
-  useEffect(() => {
-    const hasSeenWelcome = localStorage.getItem(WELCOME_STORAGE_KEY)
-    if (!hasSeenWelcome) {
-      setWelcomeOpen(true)
-      setBriefingOpen(false)
-    }
-  }, [])
 
   // 初始化任务
   useEffect(() => {
@@ -130,17 +118,6 @@ export function ArenaPage() {
       {/* HUD 覆盖层 */}
       <HUD />
 
-      {/* 欢迎弹窗 - 首次进入显示 */}
-      {welcomeOpen && (
-        <WelcomeModal
-          onStart={() => {
-            localStorage.setItem(WELCOME_STORAGE_KEY, 'true')
-            setWelcomeOpen(false)
-            setBriefingOpen(true)
-          }}
-        />
-      )}
-
       {/* 任务简报浮层 - 主人便签风格 */}
       {briefingOpen && task && (
         <div className="absolute inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-40">
@@ -184,6 +161,9 @@ export function ArenaPage() {
                     <span>保存记忆</span>
                     <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">F</kbd>
                     <span>交互</span>
+                  </li>
+                  <li className="text-yellow-700 text-[11px] mt-1">
+                    💡 有些物品藏在抽屉里，靠近后按 F 打开抽屉，再按 F 拿取物品
                   </li>
                 </ul>
               </div>

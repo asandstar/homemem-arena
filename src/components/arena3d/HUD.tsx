@@ -663,6 +663,11 @@ export function HUD() {
               保存/更新 {nearbyEntity.name} 的记忆
             </div>
           )}
+          {nearbyEntity?.configId === 'obj-key' && memorySlots.every((s) => s === null) && (
+            <div className="mt-2 max-w-[260px] px-3 py-2 rounded-lg bg-gradient-to-br from-purple-500/30 to-pink-500/30 border border-purple-400/50 text-[11px] text-purple-100 shadow-lg animate-pulse">
+              💡 第一次靠近物体！按 E 保存它的位置记忆，捣乱事件后可以回顾。保存一次 +50 分！
+            </div>
+          )}
         </div>
       )}
 

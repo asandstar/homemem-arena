@@ -165,9 +165,25 @@ export const leaveHomeTask: TaskConfig = {
       },
       type: 'move-entity',
       targetId: 'obj-key',
-      targetPosition: { room: 'living', x: 0.5, y: 0, z: -1.5 },
-      message: '🐱 啪嗒——钥匙从茶几上滚到了地毯边上。（钥匙猫：嘿嘿，手滑了喵~）',
-      description: '钥匙猫把钥匙从茶几推到了地毯边上',
+      targetPosition: { room: 'living', x: 2.0, y: 0, z: -2.5 },
+      message: '🐱 啪嗒——钥匙猫一爪子把钥匙从茶几扒拉到了客厅角落的沙发缝旁！（钥匙猫：追我呀喵~）',
+      description: '钥匙猫把钥匙从茶几推到了客厅角落沙发缝旁',
+      memoryType: 'spatial',
+      markMemoryOutdated: 'obj-key',
+      eventEffect: 'cat-prints',
+      toastType: 'cat' as const,
+    },
+    {
+      id: 'se-cat-pushes-key-2',
+      trigger: (step, entities) => {
+        const key = entities.find((e) => e.configId === 'obj-key')
+        return step > 10 && key?.currentRoom === 'living' && key?.status === 'free'
+      },
+      type: 'move-entity',
+      targetId: 'obj-key',
+      targetPosition: { room: 'bedroom', x: 2.5, y: 0, z: 0 },
+      message: '🐱 嗖——钥匙猫叼起钥匙，一溜烟钻进了卧室，把钥匙丢在了卧室门口的地毯上！（钥匙猫：来抓我呀喵~）',
+      description: '钥匙猫把钥匙从客厅叼到了卧室门口',
       memoryType: 'spatial',
       markMemoryOutdated: 'obj-key',
       eventEffect: 'cat-prints',
@@ -177,11 +193,11 @@ export const leaveHomeTask: TaskConfig = {
       id: 'se-phone-rings',
       trigger: (step, entities) => {
         const phone = entities.find((e) => e.configId === 'obj-phone')
-        return step >= 3 && phone?.status !== 'held' && phone?.status !== 'placed'
+        return step >= 2 && phone?.status !== 'held' && phone?.status !== 'placed'
       },
       type: 'message',
-      message: '📳 嗡嗡嗡——卧室方向传来手机震动声。（是主人的闹钟吧...）',
-      description: '手机响铃提示所在房间方向',
+      message: '📳 嗡嗡嗡——卧室的床头柜方向传来手机震动声。也许该打开抽屉看看？',
+      description: '手机响铃提示所在房间方向和容器',
       memoryType: 'object',
       roomHint: 'bedroom',
       eventEffect: 'phone-ring',
