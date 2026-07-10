@@ -1,0 +1,25 @@
+{
+  "version": "2.0.0",
+  "generatedAt": "2026-07-10",
+  "source": "Kenney Assets (CC0) + Poly Pizza (CC0)",
+  "models": {
+    "props": {
+      "downloaded": ["cereal_box", "milk_carton", "phone", "remote", "trash", "key", "umbrella", "cup", "bowl", "plate", "cloth_white", "cloth_dark", "towel"],
+      "fallback": []
+    },
+    "furniture": {
+      "downloaded": ["bed", "cabinet", "coffee_table", "desk", "dishwasher", "entrance_tray", "fridge", "laundry_basket", "sink", "sofa"],
+      "fallback": []
+    },
+    "decor": {
+      "downloaded": ["door", "hook", "lamp", "pillow", "plant", "rug", "shoes"],
+      "fallback": []
+    }
+  },
+  "stats": {
+    "totalModels": 29,
+    "downloadedModels": 29,
+    "fallbackModels": 0,
+    "totalSizeKB": 800
+  }
+}

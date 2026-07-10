@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>记忆宅邸：失忆管家 - 创意展示</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #581c87 50%, #0f172a 100%);
+    min-height: 100vh;
+    color: #e2e8f0;
+    overflow-x: hidden;
+  }
+
+  /* 背景装饰 */
+  .bg-decoration {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .bg-decoration::before {
+    content: '';
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, transparent 70%);
+    animation: float 8s ease-in-out infinite;
+  }
+
+  .bg-decoration::after {
+    content: '';
+    position: absolute;
+    bottom: 10%;
+    right: 10%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(236, 72, 153, 0.2) 0%, transparent 70%);
+    animation: float 10s ease-in-out infinite reverse;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-30px); }
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 60px 24px;
+  }
+
+  /* 头部 */
+  .hero {
+    text-align: center;
+    margin-bottom: 80px;
+    padding: 60px 0;
+  }
+
+  .hero-icon {
+    font-size: 80px;
+    margin-bottom: 24px;
+    display: inline-block;
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+  }
+
+  .hero h1 {
+    font-size: 48px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #a78bfa 0%, #f472b6 50%, #22d3ee 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero .subtitle {
+    font-size: 20px;
+    color: #94a3b8;
+    margin-bottom: 24px;
+  }
+
+  .hero .tag-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    background: rgba(168, 85, 247, 0.2);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 999px;
+    font-size: 14px;
+    color: #c4b5fd;
+  }
+
+  /* 卡片样式 */
+  .section {
+    margin-bottom: 60px;
+  }
+
+  .section-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-title .icon {
+    font-size: 32px;
+  }
+
+  .section-title .text {
+    background: linear-gradient(135deg, #f472b6, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .card {
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+  }
+
+  .card:hover {
+    border-color: rgba(168, 85, 247, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  .card h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #f1f5f9;
+  }
+
+  .card p {
+    color: #94a3b8;
+    line-height: 1.8;
+    font-size: 15px;
+  }
+
+  /* 特色网格 */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  .feature-card {
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+
+  .feature-card:hover {
+    border-color: rgba(236, 72, 153, 0.3);
+    transform: translateY(-4px);
+  }
+
+  .feature-card .emoji {
+    font-size: 40px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .feature-card h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #f1f5f9;
+  }
+
+  .feature-card p {
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.6;
+  }
+
+  /* 游戏机制 */
+  .mechanics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .mechanic-item {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(236, 72, 153, 0.1));
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .mechanic-item .number {
+    font-size: 32px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #a78bfa, #f472b6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .mechanic-item .label {
+    font-size: 14px;
+    color: #cbd5e1;
+    font-weight: 500;
+  }
+
+  /* 角色介绍 */
+  .characters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+  }
+
+  .character-card {
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+
+  .character-card:hover {
+    transform: scale(1.05);
+  }
+
+  .character-card .char-emoji {
+    font-size: 48px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .character-card h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #f1f5f9;
+  }
+
+  .character-card p {
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.5;
+  }
+
+  /* 价值板块 */
+  .value-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  .value-card {
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.1), rgba(168, 85, 247, 0.1));
+    border: 1px solid rgba(34, 211, 238, 0.2);
+    border-radius: 16px;
+    padding: 24px;
+  }
+
+  .value-card h4 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #67e8f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .value-card p {
+    font-size: 14px;
+    color: #94a3b8;
+    line-height: 1.7;
+  }
+
+  /* 底部 */
+  .footer {
+    text-align: center;
+    padding: 40px 0;
+    margin-top: 60px;
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+  }
+
+  .footer p {
+    color: #64748b;
+    font-size: 14px;
+  }
+
+  .footer .built-with {
+    margin-top: 12px;
+    font-size: 12px;
+    color: #475569;
+  }
+
+  /* 响应式 */
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 32px; }
+    .hero .subtitle { font-size: 16px; }
+    .section-title { font-size: 22px; }
+    .card { padding: 24px; }
+    .container { padding: 40px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-decoration"></div>
+
+<div class="container">
+
+  <!-- 头部 -->
+  <section class="hero">
+    <div class="hero-icon">🏠</div>
+    <h1>记忆宅邸：失忆管家</h1>
+    <p class="subtitle">一款让你在玩游戏时顺便练记忆的 3D 网页小游戏</p>
+    <div class="tag-line">
+      <span>🎮</span>
+      <span>生活娱乐赛道 · 记忆训练 · 休闲闯关</span>
+    </div>
+  </section>
+
+  <!-- 创意介绍 -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="icon">💡</span>
+      <span class="text">创意介绍</span>
+    </h2>
+
+    <div class="card">
+      <h3>🤖 失忆的家务机器人</h3>
+      <p>
+        你是一台记忆模块出了故障的家务机器人 MEM-07，只能同时记住 3 件物品的位置。
+        在一栋"会捣乱"的房子里，你需要限时完成各种家务任务：找钥匙、收拾餐桌、分类衣物、准备早餐...
+        而房子里的猫咪、室友、幽灵甚至时间循环，都会不断干扰你的记忆。
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>🎯 解决什么问题</h3>
+      <p>
+        市面上的记忆训练产品大多像在做练习题，枯燥严肃，很难坚持；普通找物品小游戏又太简单，
+        缺少策略性和成长感。<strong>记忆宅邸</strong>把"有限记忆槽"、"物品位置变化"、
+        "旧记忆失效"、"混乱值上升"等机制结合起来，让玩家在轻松闯关的过程中，
+        自然地锻炼空间记忆、物体状态记忆和流程记忆。
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>✨ 灵感来源</h3>
+      <p>
+        这个创意最早来自家务机器人执行长程任务时遇到的记忆问题：物品会被移动，
+        房间状态会变化，任务步骤也可能被打断。我们把这个方向转化成更轻松的游戏设定——
+        让玩家亲身体验"记忆有限"是什么感觉，在游戏中理解为什么 AI 和机器人需要记忆系统。
+      </p>
+    </div>
+  </section>
+
+  <!-- 游戏特色 -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="icon">🎮</span>
+      <span class="text">游戏特色</span>
+    </h2>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="emoji">🧠</span>
+        <h4>有限记忆槽</h4>
+        <p>只能同时记住 3 件物品，需要策略性地选择保存什么</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🐱</span>
+        <h4>捣乱事件</h4>
+        <p>猫咪、幽灵、时间循环...物品会自己"长腿跑了"</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">📈</span>
+        <h4>混乱值系统</h4>
+        <p>混乱值越高，环境越不稳定，考验临场应变</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🏆</span>
+        <h4>星级评分</h4>
+        <p>速度、连击、记忆测试，多重维度评价表现</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 核心机制 -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="icon">⚙️</span>
+      <span class="text">核心机制</span>
+    </h2>
+
+    <div class="mechanics">
+      <div class="mechanic-item">
+        <div class="number">3</div>
+        <div class="label">记忆槽上限</div>
+      </div>
+      <div class="mechanic-item">
+        <div class="number">4</div>
+        <div class="label">关卡设计</div>
+      </div>
+      <div class="mechanic-item">
+        <div class="number">5+</div>
+        <div class="label">记忆类型</div>
+      </div>
+      <div class="mechanic-item">
+        <div class="number">3D</div>
+        <div class="label">沉浸式场景</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 关卡预览 -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="icon">🗺️</span>
+      <span class="text">关卡一览</span>
+    </h2>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="emoji">🚪</span>
+        <h4>出门大作战</h4>
+        <p>主人快迟到了！找钥匙、手机、雨伞，小心猫咪把钥匙推到地上</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🍽️</span>
+        <h4>餐桌混乱</h4>
+        <p>区分脏盘子和干净盘子，室友还会偷偷把脏盘子放回来</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">👕</span>
+        <h4>洗衣幽灵</h4>
+        <p>衣物分类大作战，幽灵会交换篮子位置、藏起袜子</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">⏰</span>
+        <h4>早餐时间循环</h4>
+        <p>困在时间循环里的早餐，按正确流程准备再归位</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 目标用户 -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="icon">👥</span>
+      <span class="text">目标用户</span>
+    </h2>
+
+    <div class="card">
+      <h3>🎯 谁会喜欢这个游戏？</h3>
+      <p>
+        <strong>休闲游戏玩家</strong>：喜欢轻量解谜、找物品、闯关游戏的玩家，单局 3-5 分钟，适合碎片时间游玩。<br><br>
+        <strong>AI 与科技爱好者</strong>：对机器人、具身智能、AI 记忆感兴趣的用户，可以通过游戏直观理解"为什么机器人需要记忆"。<br><br>
+        <strong>想锻炼记忆力的人</strong>：觉得传统记忆训练太枯燥的用户，用游戏化的方式自然练习各种记忆类型。
+      </p>
+    </div>
+  </section>
+
+  <!-- 价值与意义 -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="icon">🌟</span>
+      <span class="text">价值与意义</span>
+    </h2>
+
+    <div class="value-cards">
+      <div class="value-card">
+        <h4>💰 商业价值</h4>
+        <p>
+          《记忆宅邸：失忆管家》可以作为一款轻量级网页休闲游戏，面向喜欢解谜、找物品、记忆挑战的玩家。
+          它的核心玩法具有可扩展性，后续可以增加更多关卡、角色、主题房间和挑战模式，
+          发展成适合网页小游戏平台、AI 创意 Demo 展示或轻量游戏化训练产品的内容形态。
+        </p>
+      </div>
+      <div class="value-card">
+        <h4>🌍 社会价值</h4>
+        <p>
+          这个创意把原本比较抽象的"记忆训练"和"家务机器人任务规划"变成了普通用户也能玩懂的小游戏。
+          玩家在游戏中需要观察、记住、判断和更新信息，能够以轻松的方式理解记忆、
+          注意力和任务规划的重要性，也能让更多人通过游戏接触 AI 与机器人相关概念。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 技术实现 -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="icon">🛠️</span>
+      <span class="text">技术实现</span>
+    </h2>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="emoji">⚛️</span>
+        <h4>React + TypeScript</h4>
+        <p>现代化前端技术栈，类型安全，开发效率高</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🎨</span>
+        <h4>Three.js / R3F</h4>
+        <p>3D 场景渲染，沉浸式第一人称视角</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🐻</span>
+        <h4>Zustand</h4>
+        <p>轻量级状态管理，游戏状态实时同步</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🌐</span>
+        <h4>网页即开即玩</h4>
+        <p>无需下载安装，浏览器打开就能玩</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 底部 -->
+  <footer class="footer">
+    <p>🏠 记忆宅邸：失忆管家 · Memory Butler</p>
+    <p class="built-with">用 TRAE Work 构建 · React + Three.js + TypeScript</p>
+  </footer>
+
+</div>
+
+</body>
+</html>

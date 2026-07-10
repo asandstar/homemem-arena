@@ -1,0 +1,48 @@
+{
+  "name": "homemem-arena-web-demo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "qa": "npm run qa:static && npm run qa:assets && npm run qa:rooms && npm run qa:tasks && npm run build",
+    "qa:static": "tsc --noEmit -p tsconfig.app.json",
+    "qa:assets": "npx vite-node scripts/qa-assets.ts",
+    "qa:rooms": "npx vite-node scripts/qa-rooms.ts",
+    "qa:tasks": "npx vite-node scripts/qa-tasks.ts",
+    "qa:report": "npx vite-node scripts/qa-report.ts",
+    "qa:all": "npm run qa && npm run qa:report"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "lucide-react": "^1.23.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router-dom": "^7.18.1",
+    "three": "^0.185.1",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "autoprefixer": "^10.5.2",
+    "jsdom": "^29.1.1",
+    "oxlint": "^1.71.0",
+    "postcss": "^8.5.16",
+    "tailwindcss": "^4.3.2",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1",
+    "vitest": "^4.1.10"
+  }
+}

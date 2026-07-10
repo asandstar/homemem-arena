@@ -1,0 +1,143 @@
+# Foundation Pass - Implementation Plan
+
+## [ ] Task 1: 统一相机与移动控制（playerControls.ts）
+- **Priority**: high
+- **Depends On**: None
+- **Description**:
+  - 新建 `src/game/playerControls.ts` 作为唯一的移动/视角计算来源
+  - 明确坐标系注释：Three.js 默认 forward = -Z，Y 向上
+  - 函数：`getForwardVector(yaw)`、`getRightVector(yaw)`、`computeMovementVector(input, yaw, speed, delta)`、`clampPitch(pitch)`
+  - 重构 `FirstPersonControls.tsx`：
+    - 加入 pitch 支持（鼠标上下拖动）
+    - pitch 限制在 -60° ~ +60°（弧度：-π/3 ~ π/3）
+    - 相机 rotation 使用 Euler('YXZ') 顺序
+    - 第一人称相机高度固定 1.6m
+    - 移除 robotRotation 每帧无条件同步到 store（只在有实际变化时 set）
+    - 禁止 roll
+    - 视角切换后移动方向仍然正确
+  - 在 `useGameStore` 中增加 `cameraPitch` 状态
+- **Acceptance Criteria Addressed**: AC-1, AC-2, AC-8
+- **Test Requirements**:
+  - `programmatic` TR-1.1: `npm run build` 通过，无 TS 错误
+  - `programmatic` TR-1.2: `computeMovementVector` 单元测试覆盖：W 前进、S 后退、A 左移、D 右移、对角线移动归一化
+  - `human-judgement` TR-1.3: 手动验证 W/S/A/D 方向与屏幕一致
+  - `human-judgement` TR-1.4: 手动验证鼠标上下拖动改变 pitch，且有上下限
+  - `human-judgement` TR-1.5: 连续移动 30 秒画面不抖不卡
+- **Notes**: 重点是建立单一真值来源，避免多个地方各算各的
+
+## [ ] Task 2: 修复穿墙和移动卡顿（collision.ts）
+- **Priority**: high
+- **Depends On**: Task 1
+- **Description**:
+  - 新建 `src/game/collision.ts` 统一碰撞系统
+  - 函数：
+    - `isInsideRoomBounds(position, room, radius)`
+    - `isInsideDoorway(position, room, doorway, radius)`
+    - `resolveRoomCollision(currentPos, nextPos, room, radius)` - 支持沿墙滑动
+    - `trySwitchRoom(position, currentRoom, taskRooms)` - 带冷却的房间切换
+  - 修复家具碰撞后回查房间边界，防止被推出墙外
+  - 增加房间切换冷却，避免门口反复切换
+  - 门洞触发区足够大（玩家半径 + 余量）
+  - 重构 `FirstPersonControls.tsx` 中的碰撞逻辑，改用新模块
+- **Acceptance Criteria Addressed**: AC-3, AC-4, AC-8, AC-9
+- **Test Requirements**:
+  - `programmatic` TR-2.1: `npm run build` 通过
+  - `programmatic` TR-2.2: 碰撞单元测试：房间内合法、墙边界阻挡、沿墙滑动、门洞通行、房间切换
+  - `human-judgement` TR-2.3: 第一关能在客厅/卧室/玄关之间稳定移动
+  - `human-judgement` TR-2.4: 第二关能在餐厅/厨房之间稳定移动
+  - `human-judgement` TR-2.5: 撞墙时沿墙滑动而不是卡死
+- **Notes**: 墙厚 0.1，玩家半径 0.3，碰撞边界用房间内边界
+
+## [ ] Task 3: 系统性修复物体悬空（placement.ts）
+- **Priority**: high
+- **Depends On**: Task 1
+- **Description**:
+  - 增强 `src/game/placement.ts`：
+    - 新增模型高度注册表 `MODEL_HEIGHTS`，每个 modelId 对应 approximateHeight
+    - 函数：`getModelApproxHeight(modelId)`、`getEntityHalfHeight(entity)`
+    - 函数：`getContainerSurfaceY(container)`（统一 surfaceHeight 计算）
+    - 函数：`snapToFloor(entity, room)`、`snapToContainerSurface(entity, container)`
+  - PropModel 和 FurnitureModel 统一底部对齐规则
+  - 确保 GLB 模型和 fallback 模型使用同样的高度计算
+  - 装饰物、任务物品、家具全部应用 snap 规则
+  - 清理 task 数据中的手动 y 坐标调整
+- **Acceptance Criteria Addressed**: AC-5, AC-8, AC-9
+- **Test Requirements**:
+  - `programmatic` TR-3.1: `npm run build` 通过
+  - `programmatic` TR-3.2: placement 单元测试：地面放置、桌面放置、不同模型高度
+  - `human-judgement` TR-3.3: 第二关餐桌上的杯子/盘子/遥控器/垃圾不悬空
+  - `human-judgement` TR-3.4: 第一关钥匙/手机/雨伞/玄关托盘物体不悬空
+  - `human-judgement` TR-3.5: 家具脚贴地
+- **Notes**: 建立 MODEL_HEIGHTS 注册表，以后加新模型只需在这里加一行
+
+## [ ] Task 4: HUD 布局和可收起窗口
+- **Priority**: high
+- **Depends On**: Task 1
+- **Description**:
+  - 新建 `src/store/useUiStore.ts`（或在 useGameStore 中加 uiPanels）
+  - UI 状态：`taskPanelOpen`、`eventLogOpen`、`minimapOpen`、`controlsOpen`、`memoryBarOpen`、`hudHidden`、`minimapZoom`、`minimapPan`
+  - 状态持久化到 localStorage
+  - 重构 HUD.tsx：
+    - 任务面板：Tab 切换，默认展开
+    - 事件日志：R 切换，默认收起，移到更合理的位置（避免挡小地图）
+    - 操作提示：H 键隐藏全部辅助 UI（任务+日志+操作提示+记忆槽隐藏）
+    - 记忆槽：常驻底部中央
+    - 得分面板：保持右上，内含音效开关和重新开始
+    - 小地图：右下，有收起按钮
+  - 调整布局避免重叠：
+    - 1440px 宽度测试
+    - 1280px 宽度测试
+    - compact 模式（小屏幕自动/手动切换）
+- **Acceptance Criteria Addressed**: AC-6, AC-8
+- **Test Requirements**:
+  - `programmatic` TR-4.1: `npm run build` 通过
+  - `human-judgement` TR-4.2: 1440px 下各面板不重叠
+  - `human-judgement` TR-4.3: 1280px 下仍然可用
+  - `human-judgement` TR-4.4: Tab 切换任务面板、R 切换事件日志、H 隐藏辅助 UI
+  - `human-judgement` TR-4.5: 刷新页面后 UI 状态保持
+- **Notes**: 事件日志从 bottom-right-24 移走，避免挡小地图
+
+## [ ] Task 5: 小地图拖动、缩放、收起
+- **Priority**: medium
+- **Depends On**: Task 4
+- **Description**:
+  - 增强 `Minimap.tsx`：
+    - 默认 fit-to-view 当前关卡所有房间
+    - 支持拖动 pan（已部分实现，确认可用）
+    - 支持滚轮缩放（已部分实现，确认可用）
+    - + / - 按钮缩放（已部分实现，确认可用）
+    - reset view 按钮回到 fit-to-view
+    - 收起/展开按钮
+    - 当前房间高亮、相邻房间高亮
+    - 房间名中文显示
+    - pointer events stopPropagation（已实现，确认不影响主视角）
+  - 将小地图状态接入 useUiStore
+  - 确保小地图在 HUD 层级中不被遮挡
+- **Acceptance Criteria Addressed**: AC-7, AC-8
+- **Test Requirements**:
+  - `programmatic` TR-5.1: `npm run build` 通过
+  - `human-judgement` TR-5.2: 第一关默认能看全客厅、卧室、玄关
+  - `human-judgement` TR-5.3: 第二关默认能看全餐厅、厨房
+  - `human-judgement` TR-5.4: 小地图可拖动、可缩放、reset 有效
+  - `human-judgement` TR-5.5: 小地图可以收起和展开
+- **Notes**: 大部分功能已经有了，重点是默认视图和收起功能
+
+## [ ] Task 6: 生成 FOUNDATION_QA.md 并端到端验证
+- **Priority**: high
+- **Depends On**: Task 2, 3, 4, 5
+- **Description**:
+  - 生成 `FOUNDATION_QA.md` 手动测试表
+  - 执行 `npm run build`
+  - 执行 `npm run qa`（如果有）
+  - 手动试玩第一关「出门大作战」
+  - 手动试玩第二关「餐桌混乱」
+  - 验证所有验收检查点
+  - 记录问题并修复
+- **Acceptance Criteria Addressed**: AC-1 ~ AC-9
+- **Test Requirements**:
+  - `programmatic` TR-6.1: `npm run build` 通过，0 错误
+  - `programmatic` TR-6.2: 所有单元测试通过
+  - `human-judgement` TR-6.3: 第一关完整试玩流程无阻断性 bug
+  - `human-judgement` TR-6.4: 第二关完整试玩流程无阻断性 bug
+  - `human-judgement` TR-6.5: QA 检查表全部通过
+- **Notes**: 最终验证环节，确保所有修复都生效
