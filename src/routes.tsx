@@ -1,7 +1,10 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { Layout } from './components/layout/Layout'
 
-export const router = createBrowserRouter([
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+
+export const router = createBrowserRouter(
+  [
   {
     path: '/',
     element: <Layout />,
@@ -33,4 +36,6 @@ export const router = createBrowserRouter([
       { path: '*', element: <Navigate to="/tasks" replace /> },
     ],
   },
-])
+],
+  { basename },
+)
