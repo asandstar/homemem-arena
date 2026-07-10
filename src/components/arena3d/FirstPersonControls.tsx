@@ -7,7 +7,6 @@ import { sharedRooms } from '../../data/rooms'
 import { roomDecorFurniture } from '../../data/decorFurniture'
 import type { RoomId } from '../../types/room'
 import {
-  computeMovementVector,
   clampPitch,
   PLAYER_SPEED,
   PLAYER_HEIGHT,
@@ -308,9 +307,26 @@ export function FirstPersonControls() {
         moveDz = (moveDz / len) * speed * delta
       }
     } else {
-      const move = computeMovementVector(moveState.current, smoothedCamRot.current.y, speed, delta)
-      moveDx = move.dx
-      moveDz = move.dz
+      const forward = Number(moveState.current.forward) - Number(moveState.current.backward)
+      const right = Number(moveState.current.right) - Number(moveState.current.left)
+
+      if (forward !== 0 || right !== 0) {
+        const length = Math.sqrt(forward * forward + right * right)
+        const nForward = forward / length
+        const nRight = right / length
+
+        const cameraForward = new THREE.Vector3()
+        camera.getWorldDirection(cameraForward)
+        cameraForward.y = 0
+        cameraForward.normalize()
+
+        const cameraRight = new THREE.Vector3()
+        cameraRight.crossVectors(new THREE.Vector3(0, 1, 0), cameraForward).normalize()
+
+        const distance = speed * delta
+        moveDx = (cameraForward.x * nForward + cameraRight.x * nRight) * distance
+        moveDz = (cameraForward.z * nForward + cameraRight.z * nRight) * distance
+      }
     }
 
     const roomSpec = sharedRooms[currentRoom]
