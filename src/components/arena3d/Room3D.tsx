@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { Text, Billboard } from '@react-three/drei'
 import type { RoomSpec } from '../../types/room'
-import { sharedRooms } from '../../data/rooms'
 import { MATERIAL_CONFIG } from './colors'
+import { Door3D } from './Door3D'
 import { FallbackColorizer } from './models/ModelAsset'
 import {
   ShoeCabinetModel,
@@ -606,106 +606,14 @@ export function Room3D({ spec }: Room3DProps) {
         </Text>
       </Billboard>
 
-      {spec.doorways.map((door, i) => {
-        const dx = door.offset.x
-        const dz = door.offset.z
-        const ww = door.width
-        const hh = door.height
-
-        // 发光门框
-        const doorFrameColor = '#10b981'
-        const targetRoomName = sharedRooms[door.connectsTo as keyof typeof sharedRooms]?.name || door.connectsTo
-
-        return (
-          <group key={`door-${i}`}>
-            {/* 发光边框 - 左 */}
-            <mesh
-              position={[
-                Math.abs(dx) > Math.abs(dz)
-                  ? dx > 0 ? spec.center.x + spec.size.x / 2 : spec.center.x - spec.size.x / 2
-                  : spec.center.x + dx - ww / 2,
-                hh / 2,
-                Math.abs(dz) > Math.abs(dx)
-                  ? dz > 0 ? spec.center.z + spec.size.z / 2 : spec.center.z - spec.size.z / 2
-                  : spec.center.z + dz
-              ]}
-            >
-              <boxGeometry args={[0.08, hh, 0.08]} />
-              <meshStandardMaterial color={doorFrameColor} emissive={doorFrameColor} emissiveIntensity={0.5} />
-            </mesh>
-            {/* 发光边框 - 右 */}
-            <mesh
-              position={[
-                Math.abs(dx) > Math.abs(dz)
-                  ? dx > 0 ? spec.center.x + spec.size.x / 2 : spec.center.x - spec.size.x / 2
-                  : spec.center.x + dx + ww / 2,
-                hh / 2,
-                Math.abs(dz) > Math.abs(dx)
-                  ? dz > 0 ? spec.center.z + spec.size.z / 2 : spec.center.z - spec.size.z / 2
-                  : spec.center.z + dz
-              ]}
-            >
-              <boxGeometry args={[0.08, hh, 0.08]} />
-              <meshStandardMaterial color={doorFrameColor} emissive={doorFrameColor} emissiveIntensity={0.5} />
-            </mesh>
-            {/* 发光边框 - 上 */}
-            <mesh
-              position={[
-                Math.abs(dx) > Math.abs(dz)
-                  ? dx > 0 ? spec.center.x + spec.size.x / 2 : spec.center.x - spec.size.x / 2
-                  : spec.center.x + dx,
-                hh,
-                Math.abs(dz) > Math.abs(dx)
-                  ? dz > 0 ? spec.center.z + spec.size.z / 2 : spec.center.z - spec.size.z / 2
-                  : spec.center.z + dz
-              ]}
-              rotation={[Math.abs(dx) > Math.abs(dz) ? 0 : Math.PI / 2, 0, 0]}
-            >
-              <boxGeometry args={[0.08, ww + 0.16, 0.08]} />
-              <meshStandardMaterial color={doorFrameColor} emissive={doorFrameColor} emissiveIntensity={0.5} />
-            </mesh>
-            {/* 地面通行提示箭头 */}
-            <mesh
-              position={[
-                Math.abs(dx) > Math.abs(dz)
-                  ? dx > 0 ? spec.center.x + spec.size.x / 2 - 0.5 : spec.center.x - spec.size.x / 2 + 0.5
-                  : spec.center.x + dx,
-                0.02,
-                Math.abs(dz) > Math.abs(dx)
-                  ? dz > 0 ? spec.center.z + spec.size.z / 2 - 0.5 : spec.center.z - spec.size.z / 2 + 0.5
-                  : spec.center.z + dz
-              ]}
-              rotation={[-Math.PI / 2, 0, Math.abs(dx) > Math.abs(dz) ? (dx > 0 ? Math.PI : 0) : (dz > 0 ? Math.PI / 2 : -Math.PI / 2)]}
-            >
-              <coneGeometry args={[0.2, 0.4, 4]} />
-              <meshStandardMaterial color={doorFrameColor} emissive={doorFrameColor} emissiveIntensity={0.3} />
-            </mesh>
-            {/* 门洞上方房间名标签 */}
-            <Billboard
-              position={[
-                Math.abs(dx) > Math.abs(dz)
-                  ? dx > 0 ? spec.center.x + spec.size.x / 2 + 0.3 : spec.center.x - spec.size.x / 2 - 0.3
-                  : spec.center.x + dx,
-                hh + 0.2,
-                Math.abs(dz) > Math.abs(dx)
-                  ? dz > 0 ? spec.center.z + spec.size.z / 2 + 0.3 : spec.center.z - spec.size.z / 2 - 0.3
-                  : spec.center.z + dz
-              ]}
-            >
-              <Text
-                fontSize={0.12}
-                color={doorFrameColor}
-                anchorX="center"
-                anchorY="middle"
-                outlineWidth={0.02}
-                outlineColor="#1f2937"
-              >
-                → {targetRoomName}
-              </Text>
-            </Billboard>
-          </group>
-        )
-      })}
+      {spec.doorways.map((door, i) => (
+        <Door3D
+          key={`door-${i}`}
+          roomCenter={spec.center}
+          roomSize={spec.size}
+          door={door}
+        />
+      ))}
 
       <RoomDecorations spec={spec} />
     </group>

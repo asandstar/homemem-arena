@@ -12,6 +12,9 @@ import {
   PLAYER_HEIGHT,
   TOP_DOWN_SPEED,
   MOUSE_SENSITIVITY,
+  ACCELERATION,
+  DECELERATION,
+  TURN_SMOOTHING,
 } from '../../game/playerControls'
 import {
   resolveRoomCollision,
@@ -45,6 +48,9 @@ export function FirstPersonControls() {
   const targetPitchRef = useRef(0)
   const lastSyncedYawRef = useRef(0)
   const lastSyncedPitchRef = useRef(0)
+  const currentSpeedRef = useRef(0)
+  const moveDirectionRef = useRef(new THREE.Vector3(0, 0, -1))
+  const targetMoveDirRef = useRef(new THREE.Vector3(0, 0, -1))
 
   const {
     phase,
@@ -310,11 +316,9 @@ export function FirstPersonControls() {
       const forward = Number(moveState.current.forward) - Number(moveState.current.backward)
       const right = Number(moveState.current.right) - Number(moveState.current.left)
 
-      if (forward !== 0 || right !== 0) {
-        const length = Math.sqrt(forward * forward + right * right)
-        const nForward = forward / length
-        const nRight = right / length
+      const hasInput = forward !== 0 || right !== 0
 
+      if (hasInput) {
         const cameraForward = new THREE.Vector3()
         camera.getWorldDirection(cameraForward)
         cameraForward.y = 0
@@ -323,9 +327,28 @@ export function FirstPersonControls() {
         const cameraRight = new THREE.Vector3()
         cameraRight.crossVectors(new THREE.Vector3(0, 1, 0), cameraForward).normalize()
 
-        const distance = speed * delta
-        moveDx = (cameraForward.x * nForward + cameraRight.x * nRight) * distance
-        moveDz = (cameraForward.z * nForward + cameraRight.z * nRight) * distance
+        targetMoveDirRef.current
+          .set(0, 0, 0)
+          .addScaledVector(cameraForward, forward)
+          .addScaledVector(cameraRight, right)
+          .normalize()
+      }
+
+      const targetSpeed = hasInput ? speed : 0
+
+      if (targetSpeed > currentSpeedRef.current) {
+        currentSpeedRef.current = Math.min(targetSpeed, currentSpeedRef.current + ACCELERATION * delta)
+      } else {
+        currentSpeedRef.current = Math.max(targetSpeed, currentSpeedRef.current - DECELERATION * delta)
+      }
+
+      if (currentSpeedRef.current > 0.001) {
+        const turnFactor = Math.min(1, TURN_SMOOTHING * delta)
+        moveDirectionRef.current.lerp(targetMoveDirRef.current, turnFactor).normalize()
+
+        const distance = currentSpeedRef.current * delta
+        moveDx = moveDirectionRef.current.x * distance
+        moveDz = moveDirectionRef.current.z * distance
       }
     }
 

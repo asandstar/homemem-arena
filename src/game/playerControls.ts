@@ -13,6 +13,10 @@ export const PITCH_MIN = -Math.PI / 3
 export const PITCH_MAX = Math.PI / 3
 export const MOUSE_SENSITIVITY = 0.002
 
+export const ACCELERATION = 25.0
+export const DECELERATION = 35.0
+export const TURN_SMOOTHING = 12.0
+
 export interface MoveInput {
   forward: boolean
   backward: boolean
