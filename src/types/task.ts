@@ -131,4 +131,8 @@ export interface TaskConfig {
   iconKey?: 'door' | 'dish' | 'shirt' | 'breakfast'
   /** 关卡时间限制（秒） */
   timeLimit?: number
+  /** 玩家初始位置（房间局部坐标，可选），不填则为房间中心 */
+  spawnPosition?: { x: number; z: number }
+  /** 玩家初始朝向（弧度，可选），0=朝南(-Z)，π=朝北(+Z)，π/2=朝东(+X)，-π/2=朝西(-X) */
+  spawnRotation?: number
 }

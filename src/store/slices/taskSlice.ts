@@ -122,7 +122,11 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
       })
 
       const firstRoom = task.rooms[0]
-      const startPos = roomCenter(firstRoom)
+      const firstRoomCenter = roomCenter(firstRoom)
+      const startPos = task.spawnPosition
+        ? { x: firstRoomCenter.x + task.spawnPosition.x, y: 0, z: firstRoomCenter.z + task.spawnPosition.z }
+        : firstRoomCenter
+      const startRotation = task.spawnRotation ?? 0
       const initialSnapshots = toEntitySnapshots(entities)
       const initiallyAchieved = new Set<string>()
       for (const goal of task.goals) {
@@ -143,7 +147,7 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
         phase: 'briefing',
         task,
         robotPosition: startPos,
-        robotRotation: 0,
+        robotRotation: startRotation,
         cameraPitch: 0,
         currentRoom: firstRoom,
         entities,

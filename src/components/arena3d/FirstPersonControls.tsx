@@ -295,14 +295,30 @@ export function FirstPersonControls() {
     if (state.phase !== 'playing') return
 
     const speed = viewMode === 'top-down' ? TOP_DOWN_SPEED : PLAYER_SPEED
-    const move = computeMovementVector(moveState.current, targetYawRef.current, speed, delta)
+    let moveDx = 0
+    let moveDz = 0
+    if (viewMode === 'top-down') {
+      if (moveState.current.forward) moveDz += 1
+      if (moveState.current.backward) moveDz -= 1
+      if (moveState.current.left) moveDx -= 1
+      if (moveState.current.right) moveDx += 1
+      const len = Math.hypot(moveDx, moveDz)
+      if (len > 0) {
+        moveDx = (moveDx / len) * speed * delta
+        moveDz = (moveDz / len) * speed * delta
+      }
+    } else {
+      const move = computeMovementVector(moveState.current, smoothedCamRot.current.y, speed, delta)
+      moveDx = move.dx
+      moveDz = move.dz
+    }
 
     const roomSpec = sharedRooms[currentRoom]
 
-    if (move.dx !== 0 || move.dz !== 0) {
+    if (moveDx !== 0 || moveDz !== 0) {
       const desiredPos2D: Position2D = {
-        x: robotPosition.x + move.dx,
-        z: robotPosition.z + move.dz,
+        x: robotPosition.x + moveDx,
+        z: robotPosition.z + moveDz,
       }
       const currentPos2D: Position2D = { x: robotPosition.x, z: robotPosition.z }
 

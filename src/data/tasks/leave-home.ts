@@ -32,15 +32,17 @@ export const leaveHomeTask: TaskConfig = {
   failureText: '主人还是迟到了...钥匙猫趴在沙发背上，居高临下地看着你："嘿嘿，找到钥匙了吗？明天加油哦喵~"',
   systemPrompt: '【小橡的内心独白】第一天上班就遇到调皮的钥匙猫...不行不行，我可是要成为优秀家政小精灵的！冷静，记住位置，一件一件来！',
   timeLimit: 180,
+  spawnPosition: { x: 0, z: -1.5 },
+  spawnRotation: Math.PI,
 
   objects: [
-    // 钥匙 - 在客厅茶几上
+    // 钥匙 - 在客厅茶几上（玩家左前方）
     {
       id: 'obj-key',
       name: '钥匙',
       category: 'key',
       initialRoom: 'living',
-      initialPosition: { x: -1.2, y: 0, z: -1.0 },
+      initialPosition: { x: -1.2, y: 0, z: 0.5 },
       surfaceContainerId: 'cnt-coffee-table',
       size: { x: 0.15, y: 0.05, z: 0.1 },
       color: '#fbbf24',
@@ -70,12 +72,12 @@ export const leaveHomeTask: TaskConfig = {
   ],
 
   containers: [
-    // 客厅 - 茶几
+    // 客厅 - 茶几（玩家左前方）
     {
       id: 'cnt-coffee-table',
       name: '茶几',
       room: 'living',
-      position: { x: -1.2, y: 0.2, z: -1.0 },
+      position: { x: -1.2, y: 0.2, z: 0.5 },
       size: { x: 1.0, y: 0.4, z: 0.6 },
       surfaceHeight: 0.4,
       color: '#8b5a2b',

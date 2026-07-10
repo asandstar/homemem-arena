@@ -10,17 +10,17 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
   living: [
     {
       id: 'decor-sofa',
-      position: { x: 0, y: 0, z: -0.8 },
+      position: { x: -2.0, y: 0, z: 2.0 },
       size: { x: 2.2, y: 0.9, z: 0.9 },
     },
     {
       id: 'decor-coffee-table',
-      position: { x: 0, y: 0, z: 0.6 },
+      position: { x: -2.0, y: 0, z: 1.0 },
       size: { x: 1.2, y: 0.4, z: 0.6 },
     },
     {
       id: 'decor-tv-stand',
-      position: { x: 0, y: 0, z: 2.4 },
+      position: { x: 2.0, y: 0, z: -2.4 },
       size: { x: 2.0, y: 0.5, z: 0.4 },
     },
   ],
