@@ -1,10 +1,42 @@
-# HomeMem Arena / 回声屋
+# HomeMem Arena / 回声屋 · 记忆宅邸
 
-一个同时追求可玩性、游戏性与研究价值的浏览器端 3D 长程记忆游戏。
+[![在线试玩](https://img.shields.io/badge/🎮_在线试玩-GitHub_Pages-purple?style=for-the-badge)](https://asandstar.github.io/homemem-arena/)
+&nbsp;
+[![React](https://img.shields.io/badge/React-19-61dafb?style=flat&logo=react)](https://react.dev/)
+[![Three.js](https://img.shields.io/badge/Three.js-R3F-000000?style=flat&logo=three.js)](https://threejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?style=flat&logo=typescript)](https://www.typescriptlang.org/)
+[![Tests](https://img.shields.io/badge/tests-287-green?style=flat)]()
 
-玩家扮演实习家政小精灵“小橡”，在回声屋完成一整天的家务，并应对会移动物品、混淆状态和打乱流程的记忆小妖。在研究层，小橡对应具有限制工作记忆的机器人代理 `MEM-07`；游戏记录其观察、操作、记忆更新、环境扰动、任务结果与记忆 Probe，用于研究家务机器人长期记忆策略。
+> 🎮 **一款让你顺便练记忆的 3D 网页小游戏** — 你是记忆有限的家政小精灵"小橡"，在会捣乱的房子里完成家务，应对调皮的记忆小妖。
+>
+> 🔬 **研究平台** — 在研究层，小橡对应有限工作记忆的机器人代理 `MEM-07`；游戏记录完整的观察、操作、记忆更新与环境扰动数据，用于研究家务机器人长期记忆策略。
+
+**👉 [立即在线试玩](https://asandstar.github.io/homemem-arena/)**
+
+---
+
+## ✨ 游戏特色
+
+- 🧠 **有限记忆槽** — 只能同时记住 3 件物品，策略性选择保存什么
+- 🐱 **捣乱事件** — 钥匙猫、餐盘精、袜子幽灵、时间循环...物品会自己"长腿跑了"
+- 📈 **混乱值系统** — 混乱越高环境越不稳定，考验临场应变与记忆策略
+- 🏆 **多维度评分** — 速度、连击、记忆测试正确率，多种策略路径拿高分
+- 🌅 **一天时间线** — 清晨→上午→下午→深夜，四个关卡串联完整叙事
+
+## 🎯 四个关卡
+
+| 时间 | 关卡 | 主要记忆能力 | 核心挑战 |
+|---|---|---|---|
+| 🌅 清晨 | 出门大作战 | 空间、物体 | 跨房间找钥匙手机，应对钥匙猫的恶作剧 |
+| ☀️ 上午 | 餐桌混乱 | 物体、程序、空间 | 区分脏净盘子，室友还会偷偷放回来 |
+| 🌆 下午 | 洗衣幽灵 | 计数、物体、空间、时序 | 分类多件衣物，幽灵交换篮子位置 |
+| 🌙 深夜 | 早餐时间循环 | 程序、时序、空间、物体 | 按正确流程准备早餐，困在时间循环里 |
+
+游戏包含 6 个共享房间、3 个可管理记忆槽、脚本化环境事件、混乱值、Combo、评分、四类记忆 Probe 和结构化 Session 导出。HUD 会突出一个当前专注目标；连续 20 秒无目标进展时给出轻提示，45 秒时升级为记忆策略提示，取得进展后立即清除。
 
 当前产品与研究基线见 [产品、游戏与研究设计基线](docs/product-research-game-design.md)。
+
+---
 
 ## 设计目标
 
@@ -129,12 +161,13 @@ src/
 
 截至 2026-07-10：
 
-- `npm test`：258 个测试通过；
+- `npm test`：287 个测试通过（11 个测试文件）；
 - `npm run lint`：0 error / 0 warning；
 - `npm run build`：通过；
-- 页面已经按路由拆包，非游戏入口主包约 293 KB；3D Arena chunk 仍需继续优化；
+- 页面已经按路由拆包，非游戏入口主包约 300 KB；3D Arena chunk 约 1.2 MB（含 Three.js）；
 - 已加入显式生命周期、简报暂停、真实倒计时、统一交互命令、阶段目标和游戏→Probe→结果流程；
 - 已加入当前专注目标、两级停滞救援，以及 `flow_intervention`、最长目标间隔、操作成功率等可审计过程数据；
+- 已实现场景图查询、统一事件总线、Zustand Slice 架构、程序记忆系统等基础设施；
 - 自定义 QA 对未声明的 `vite-node` 有运行时依赖；
 - Session schema/version/seed、完整状态 delta、本地持久化和研究数据审计仍属于 P1 工作。
 
@@ -161,8 +194,18 @@ src/
 
 ## 构建与部署
 
+### 本地构建
+
 ```bash
 npm run build
 ```
 
 产物位于 `dist/`。部署到静态托管平台时必须配置 SPA fallback，使 `/play/*`、`/probe/*`、`/result/*` 和 `/data/*` 回退到 `index.html`。
+
+### GitHub Pages 自动部署
+
+项目已配置 GitHub Actions 工作流（`.github/workflows/deploy.yml`），每次 push 到 `main` 分支后自动构建并部署到 GitHub Pages。
+
+- **在线试玩地址**：[https://asandstar.github.io/homemem-arena/](https://asandstar.github.io/homemem-arena/)
+- **部署分支**：`gh-pages`（由 Actions 自动管理）
+- **Base Path**：`/homemem-arena/`（已在 `vite.config.ts` 中配置）
