@@ -3,7 +3,8 @@ import { useGameStore } from '../../store/useGameStore'
 import { useUiStore } from '../../store/useUiStore'
 import { Target, Clock, CheckCircle2, AlertTriangle, Zap, Package, Keyboard, Brain, Lock, Unlock, Trash2, ChevronDown, ChevronUp, Skull, AlertCircle, X, Cat, Smartphone, RotateCcw, Volume2, VolumeX, HelpCircle, Eye, EyeOff, MapPin, Box, History, Play } from 'lucide-react'
 import { Minimap } from './Minimap'
-import { initAudio } from '../../audio/sfx'
+import { initAudio, updateRoomAmbient } from '../../audio/sfx'
+import { playBgm, stopBgm, setBgmVolume, getBgmVolume } from '../../audio/bgm'
 import type { GoalSpec } from '../../types/task'
 import { HelpPanel } from '../help/HelpPanel'
 import { useSessionStore } from '../../store/useSessionStore'
@@ -96,10 +97,12 @@ export function HUD() {
   const [memoryTooltipOpen, setMemoryTooltipOpen] = useState(false)
   const [chaosTooltipOpen, setChaosTooltipOpen] = useState(false)
   const [isCompact, setIsCompact] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     const checkCompact = () => {
       setIsCompact(window.innerWidth < 1280)
+      setIsMobile(window.innerWidth < 768)
     }
     checkCompact()
     window.addEventListener('resize', checkCompact)
@@ -205,6 +208,20 @@ export function HUD() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
+  useEffect(() => {
+    if (phase === 'playing' && task) {
+      playBgm(task.id)
+    } else {
+      stopBgm()
+    }
+  }, [phase, task])
+
+  useEffect(() => {
+    if (phase === 'playing') {
+      updateRoomAmbient(currentRoom)
+    }
+  }, [currentRoom, phase])
+
   if (hudHidden) {
     return (
       <div className="absolute inset-0 pointer-events-none">
@@ -245,11 +262,11 @@ export function HUD() {
         </div>
       )}
 
-      <div className={`absolute top-4 left-4 pointer-events-auto transition-all duration-300 ${isCompact ? 'max-w-[200px]' : 'max-w-[280px]'} w-full z-20`}>
+      <div className={`absolute top-4 left-4 pointer-events-auto transition-all duration-300 ${isMobile ? 'max-w-[140px]' : isCompact ? 'max-w-[200px]' : 'max-w-[280px]'} w-full z-20`}>
         <div className="bg-slate-900/95 backdrop-blur-md rounded-xl p-3 shadow-xl border border-purple-500/30">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <Target size={16} className="text-purple-400" />
+            <h2 className={`font-bold text-white flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+              <Target size={isMobile ? 12 : 16} className="text-purple-400" />
               {task?.name ?? '任务'}
             </h2>
             <div className="flex items-center gap-2">
@@ -258,12 +275,12 @@ export function HUD() {
                 className="p-1 rounded hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors"
                 title="按 Tab 切换"
               >
-                <X size={14} />
+                <X size={isMobile ? 10 : 14} />
               </button>
             </div>
           </div>
           {taskPanelOpen && task?.goals && (
-            <div className="space-y-1 overflow-y-auto pr-1" style={{ maxHeight: isCompact ? '15vh' : '25vh' }}>
+            <div className="space-y-1 overflow-y-auto pr-1" style={{ maxHeight: isMobile ? '10vh' : isCompact ? '15vh' : '25vh' }}>
               {activeGoal && (
                 <div className="mb-2 rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-2.5 py-2">
                   <div className="text-[10px] font-semibold uppercase tracking-wider text-cyan-300">
@@ -316,34 +333,38 @@ export function HUD() {
         </div>
       </div>
 
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-auto z-10">
-        <div className="bg-slate-900/90 backdrop-blur-md rounded-xl p-4 shadow-xl border border-slate-700/50 w-[400px]">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
+      <div className={`absolute ${isMobile ? 'top-16' : 'top-4'} left-1/2 -translate-x-1/2 pointer-events-auto z-10`}>
+        <div className={`bg-slate-900/90 backdrop-blur-md rounded-xl shadow-xl border border-slate-700/50 w-full ${isMobile ? 'max-w-[280px] p-2' : 'max-w-[400px] p-4'}`}>
+          <div className={`flex items-center justify-between mb-2 ${isMobile ? 'gap-1' : 'mb-3 gap-3'}`}>
+            <div className="flex items-center gap-2">
               <div className="text-center">
-                <div className="text-[10px] text-slate-400">得分</div>
-                <div className="text-2xl font-bold text-white">{score}</div>
+                <div className={`${isMobile ? 'text-[8px]' : 'text-[10px]'} text-slate-400`}>得分</div>
+                <div className={`font-bold text-white ${isMobile ? 'text-lg' : 'text-2xl'}`}>{score}</div>
               </div>
-              <div className="w-px h-8 bg-slate-700" />
+              <div className={`w-px bg-slate-700 ${isMobile ? 'h-6' : 'h-8'}`} />
               <div className="text-center">
-                <div className="text-[10px] text-slate-400">评级</div>
-                <div className={`text-2xl font-bold ${getRating(score) === 'S' ? 'text-yellow-400' : getRating(score) === 'A' ? 'text-green-400' : getRating(score) === 'B' ? 'text-blue-400' : getRating(score) === 'C' ? 'text-purple-400' : 'text-slate-400'}`}>
+                <div className={`${isMobile ? 'text-[8px]' : 'text-[10px]'} text-slate-400`}>评级</div>
+                <div className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'} ${getRating(score) === 'S' ? 'text-yellow-400' : getRating(score) === 'A' ? 'text-green-400' : getRating(score) === 'B' ? 'text-blue-400' : getRating(score) === 'C' ? 'text-purple-400' : 'text-slate-400'}`}>
                   {getRating(score)}
                 </div>
               </div>
-              <div className="w-px h-8 bg-slate-700" />
+              <div className={`w-px bg-slate-700 ${isMobile ? 'h-6' : 'h-8'}`} />
               <div className="text-center">
-                <div className="text-[10px] text-slate-400">时间</div>
-                <div className="text-lg font-bold text-slate-200 flex items-center gap-1">
-                  <Clock size={12} className="text-cyan-400" />
+                <div className={`${isMobile ? 'text-[8px]' : 'text-[10px]'} text-slate-400`}>时间</div>
+                <div className={`font-bold text-slate-200 flex items-center gap-1 ${isMobile ? 'text-sm' : 'text-lg'}`}>
+                  <Clock size={isMobile ? 10 : 12} className="text-cyan-400" />
                   {formatDuration(displayTimeMs)}
                 </div>
               </div>
-              <div className="w-px h-8 bg-slate-700" />
-              <div className="text-center">
-                <div className="text-[10px] text-slate-400">位置</div>
-                <div className="text-sm font-semibold text-purple-300">{currentRoom}</div>
-              </div>
+              {!isMobile && (
+                <>
+                  <div className="w-px h-8 bg-slate-700" />
+                  <div className="text-center">
+                    <div className="text-[10px] text-slate-400">位置</div>
+                    <div className="text-sm font-semibold text-purple-300">{currentRoom}</div>
+                  </div>
+                </>
+              )}
             </div>
             {combo > 0 && (
               <div className="flex items-center gap-1 bg-yellow-500/20 px-3 py-1.5 rounded-full">
@@ -398,8 +419,8 @@ export function HUD() {
         </div>
       </div>
 
-      <div className="absolute top-4 right-4 pointer-events-auto z-20" style={{ width: isCompact ? '140px' : '180px' }}>
-        <div className="bg-slate-900/90 backdrop-blur-md rounded-xl p-3 shadow-xl border border-slate-700/50">
+      <div className="absolute top-4 right-4 pointer-events-auto z-20" style={{ width: isMobile ? '100px' : isCompact ? '140px' : '180px' }}>
+        <div className={`bg-slate-900/90 backdrop-blur-md rounded-xl shadow-xl border border-slate-700/50 ${isMobile ? 'p-2' : 'p-3'}`}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-slate-400">小地图</span>
             <button
@@ -449,6 +470,20 @@ export function HUD() {
             {audioEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />}
             {audioEnabled ? '音效开启' : '音效关闭'}
           </button>
+          <div className="mt-2 pt-2 border-t border-slate-700">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] text-slate-500">背景音乐</span>
+              <span className="text-[10px] text-slate-400">{Math.round(getBgmVolume() * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={Math.round(getBgmVolume() * 100)}
+              onChange={(e) => setBgmVolume(Number(e.target.value) / 100)}
+              className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
+            />
+          </div>
         </div>
       </div>
 
@@ -481,7 +516,7 @@ export function HUD() {
         </div>
       )}
 
-      {controlsOpen && !isCompact && !eventLogOpen && (
+      {controlsOpen && !isMobile && !eventLogOpen && (
         <div className="absolute bottom-4 left-4 pointer-events-auto z-10">
           <div className="bg-slate-900/70 backdrop-blur-sm rounded-lg px-3 py-2 text-xs shadow-lg border border-slate-700/50">
             <div className="flex items-center justify-between mb-2">
@@ -712,7 +747,7 @@ export function HUD() {
         </div>
       )}
 
-      <div className="absolute top-24 left-1/2 -translate-x-1/2 pointer-events-none space-y-2 z-20">
+      <div className="absolute top-36 left-1/2 -translate-x-1/2 pointer-events-none space-y-2 z-20">
         {eventToasts.map((toast) => (
           <div
             key={toast.id}

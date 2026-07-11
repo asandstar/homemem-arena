@@ -197,6 +197,10 @@ export function FirstPersonControls() {
   }, [phase, findNearbyEntity, findNearbyContainer, setFlashingSlotIndex, addToast, heldEntityId, containerStates])
 
   const isDraggingRef = useRef(false)
+  const touchStartRef = useRef({ x: 0, y: 0 })
+  const touchRotRef = useRef({ yaw: 0, pitch: 0 })
+  const lastTouchTimeRef = useRef(0)
+  const isTouchInteractionRef = useRef(false)
 
   useEffect(() => {
     const canvas = gl.domElement
@@ -223,17 +227,87 @@ export function FirstPersonControls() {
       canvas.style.cursor = 'grab'
     }
 
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return
+      const touch = e.touches[0]
+      touchStartRef.current = { x: touch.clientX, y: touch.clientY }
+      touchRotRef.current = { yaw: targetYawRef.current, pitch: targetPitchRef.current }
+      isDraggingRef.current = true
+      isTouchInteractionRef.current = false
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1 || !isDraggingRef.current) return
+      const touch = e.touches[0]
+      const dx = touch.clientX - touchStartRef.current.x
+      const dy = touch.clientY - touchStartRef.current.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+
+      if (distance > 10) {
+        isTouchInteractionRef.current = true
+        const sensitivity = MOUSE_SENSITIVITY * 1.5
+        targetYawRef.current = touchRotRef.current.yaw - dx * sensitivity
+        targetPitchRef.current = clampPitch(touchRotRef.current.pitch - dy * sensitivity)
+      }
+    }
+
+    const handleTouchEnd = () => {
+      if (!isTouchInteractionRef.current && Date.now() - lastTouchTimeRef.current > 300) {
+        handleTap()
+      }
+      isDraggingRef.current = false
+      lastTouchTimeRef.current = Date.now()
+    }
+
+    const handleTap = () => {
+      if (phase !== 'playing') return
+      const nearbyEntity = findNearbyEntity()
+      const nearbyContainer = findNearbyContainer()
+
+      if (heldEntityId) {
+        if (nearbyContainer) {
+          const result = executeContainerInteraction(nearbyContainer.id)
+          if (result.success) {
+            addToast('success', `已放置到 ${nearbyContainer.name}`)
+          } else if (result.reason) {
+            addToast('error', result.reason)
+          }
+        }
+      } else {
+        if (nearbyEntity) {
+          const result = executePick(nearbyEntity.id)
+          if (result.success) {
+            addToast('success', `已拾取 ${nearbyEntity.name}`)
+          } else if (result.reason) {
+            addToast('error', result.reason)
+          }
+        } else if (nearbyContainer) {
+          const isOpen = containerStates[nearbyContainer.id]?.open ?? nearbyContainer.initialOpen
+          const result = executeContainerInteraction(nearbyContainer.id)
+          if (result.success) {
+            addToast('info', isOpen ? `已关闭 ${nearbyContainer.name}` : `已打开 ${nearbyContainer.name}`)
+          }
+        }
+      }
+    }
+
     canvas.style.cursor = 'grab'
     canvas.addEventListener('mousedown', handleMouseDown)
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('mouseup', handleMouseUp)
     canvas.addEventListener('mouseleave', handleMouseLeave)
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false })
+    window.addEventListener('touchmove', handleTouchMove, { passive: false })
+    window.addEventListener('touchend', handleTouchEnd)
 
     return () => {
       canvas.removeEventListener('mousedown', handleMouseDown)
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
       canvas.removeEventListener('mouseleave', handleMouseLeave)
+      canvas.removeEventListener('touchstart', handleTouchStart)
+      window.removeEventListener('touchmove', handleTouchMove)
+      window.removeEventListener('touchend', handleTouchEnd)
     }
   }, [gl])
 
@@ -325,7 +399,7 @@ export function FirstPersonControls() {
         cameraForward.normalize()
 
         const cameraRight = new THREE.Vector3()
-        cameraRight.crossVectors(new THREE.Vector3(0, 1, 0), cameraForward).normalize()
+        cameraRight.crossVectors(cameraForward, new THREE.Vector3(0, 1, 0)).normalize()
 
         targetMoveDirRef.current
           .set(0, 0, 0)

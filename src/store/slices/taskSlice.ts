@@ -3,6 +3,7 @@ import type { EntityState } from '../../types/object'
 import type { RoomId, Vec3 } from '../../types/room'
 import type { ContainerSpec, ObjectSpec } from '../../types/object'
 import type { RoomSpec } from '../../types/room'
+import { useSessionStore } from '../useSessionStore'
 import { getTaskById } from '../../data/tasks'
 import { sharedRooms } from '../../data/rooms'
 import { generateId } from '../../utils/format'
@@ -193,6 +194,8 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
       const { task } = get()
       if (task) {
         get().initializeTask(task.id)
+        // 同步重置 session 数据，避免残留事件
+        useSessionStore.getState().startSession(task.id, task.name, task.briefing)
       }
     },
 

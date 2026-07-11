@@ -1,4 +1,4 @@
-export type SfxId = 'pick' | 'place_success' | 'place_error' | 'memory_save' | 'memory_outdated' | 'cat_event' | 'phone_ring' | 'level_complete' | 'chaos_warning'
+export type SfxId = 'pick' | 'place_success' | 'place_error' | 'memory_save' | 'memory_outdated' | 'cat_event' | 'phone_ring' | 'level_complete' | 'chaos_warning' | 'footstep' | 'door_open' | 'door_close' | 'drawer_open' | 'drawer_close'
 
 export interface SfxConfig {
   frequency: number
@@ -77,6 +77,46 @@ export const SFX_CONFIG: Record<SfxId, SfxConfig> = {
     type: 'sawtooth',
     volume: 0.15,
     envelope: { attack: 0.02, decay: 0.08, sustain: 0.3, release: 0.1 },
+  },
+  footstep: {
+    frequency: 800,
+    duration: 0.1,
+    type: 'triangle',
+    volume: 0.12,
+    slide: { start: 600, end: 200 },
+    envelope: { attack: 0.005, decay: 0.05, sustain: 0.1, release: 0.045 },
+  },
+  door_open: {
+    frequency: 150,
+    duration: 0.4,
+    type: 'sawtooth',
+    volume: 0.18,
+    slide: { start: 180, end: 100 },
+    envelope: { attack: 0.02, decay: 0.15, sustain: 0.2, release: 0.23 },
+  },
+  door_close: {
+    frequency: 120,
+    duration: 0.3,
+    type: 'sawtooth',
+    volume: 0.2,
+    slide: { start: 150, end: 80 },
+    envelope: { attack: 0.01, decay: 0.1, sustain: 0.3, release: 0.19 },
+  },
+  drawer_open: {
+    frequency: 300,
+    duration: 0.25,
+    type: 'square',
+    volume: 0.15,
+    slide: { start: 350, end: 200 },
+    envelope: { attack: 0.02, decay: 0.08, sustain: 0.2, release: 0.15 },
+  },
+  drawer_close: {
+    frequency: 250,
+    duration: 0.2,
+    type: 'square',
+    volume: 0.18,
+    slide: { start: 300, end: 150 },
+    envelope: { attack: 0.01, decay: 0.06, sustain: 0.3, release: 0.13 },
   },
 }
 
@@ -234,4 +274,96 @@ export function stopChaosAmbient(): void {
 
 export function resetChaosAudio(): void {
   stopChaosAmbient()
+}
+
+let lastFootstepTime = 0
+const FOOTSTEP_INTERVAL = 350
+
+export function playFootstep(speed: number): void {
+  if (!isEnabled || !audioContext) return
+  const now = Date.now()
+  const adjustedInterval = FOOTSTEP_INTERVAL / (speed / 3)
+  if (now - lastFootstepTime < adjustedInterval) return
+  lastFootstepTime = now
+  playSfx('footstep')
+}
+
+let roomAmbientOscillator: OscillatorNode | null = null
+let roomAmbientGain: GainNode | null = null
+let currentRoomType: string | null = null
+
+const ROOM_AMBIENT_CONFIG: Record<string, { freq: number; volume: number; type: OscillatorType }> = {
+  living: { freq: 440, volume: 0.03, type: 'sine' },
+  bedroom: { freq: 330, volume: 0.02, type: 'sine' },
+  kitchen: { freq: 523, volume: 0.04, type: 'triangle' },
+  dining: { freq: 392, volume: 0.03, type: 'sine' },
+  entrance: { freq: 440, volume: 0.025, type: 'sine' },
+  laundry: { freq: 494, volume: 0.035, type: 'triangle' },
+}
+
+export function updateRoomAmbient(roomId: string): void {
+  if (!isEnabled || !audioContext) return
+  if (currentRoomType === roomId) return
+
+  const config = ROOM_AMBIENT_CONFIG[roomId] || ROOM_AMBIENT_CONFIG.living
+
+  if (roomAmbientOscillator) {
+    const now = audioContext.currentTime
+    if (roomAmbientGain) {
+      roomAmbientGain.gain.linearRampToValueAtTime(0, now + 0.5)
+    }
+    setTimeout(() => {
+      if (roomAmbientOscillator) {
+        roomAmbientOscillator.stop()
+        roomAmbientOscillator.disconnect()
+        roomAmbientOscillator = null
+      }
+      if (roomAmbientGain) {
+        roomAmbientGain.disconnect()
+        roomAmbientGain = null
+      }
+      startRoomAmbient(config)
+    }, 600)
+  } else {
+    startRoomAmbient(config)
+  }
+
+  currentRoomType = roomId
+}
+
+function startRoomAmbient(config: { freq: number; volume: number; type: OscillatorType }): void {
+  if (!audioContext) return
+  roomAmbientOscillator = audioContext.createOscillator()
+  roomAmbientGain = audioContext.createGain()
+
+  roomAmbientOscillator.type = config.type
+  roomAmbientOscillator.frequency.value = config.freq
+
+  roomAmbientGain.gain.value = 0
+  roomAmbientGain.gain.linearRampToValueAtTime(config.volume, audioContext.currentTime + 1)
+
+  roomAmbientOscillator.connect(roomAmbientGain)
+  roomAmbientGain.connect(audioContext.destination)
+
+  roomAmbientOscillator.start()
+}
+
+export function stopRoomAmbient(): void {
+  if (!roomAmbientOscillator || !audioContext) return
+  const now = audioContext.currentTime
+  if (roomAmbientGain) {
+    roomAmbientGain.gain.linearRampToValueAtTime(0, now + 0.5)
+  }
+  setTimeout(() => {
+    if (roomAmbientOscillator) {
+      roomAmbientOscillator.stop()
+      roomAmbientOscillator.disconnect()
+      roomAmbientOscillator = null
+    }
+    if (roomAmbientGain) {
+      roomAmbientGain.disconnect()
+      roomAmbientGain = null
+    }
+    currentRoomType = null
+  }, 600)
 }

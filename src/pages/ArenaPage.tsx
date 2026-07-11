@@ -12,6 +12,8 @@ import { Badge } from '../components/ui/Badge'
 import { initAudio } from '../audio/sfx'
 import { executeContainerInteraction, executePick } from '../game/commands'
 import { getTaskById } from '../data/tasks'
+import { DialogBox } from '../components/dialog/DialogBox'
+import { useDialog } from '../dialog/useDialog'
 
 export function ArenaPage() {
   const { taskId } = useParams<{ taskId: string }>()
@@ -19,6 +21,8 @@ export function ArenaPage() {
 
   const {
     task,
+    phase,
+    currentRoom,
     initializeTask,
     startPlaying,
     levelCompleted,
@@ -30,6 +34,27 @@ export function ArenaPage() {
 
   const [briefingOpen, setBriefingOpen] = useState(true)
   const [narrativeText, setNarrativeText] = useState<string | null>(null)
+
+  const {
+    dialogState,
+    currentNode,
+    closeDialog,
+    triggerDialog,
+    handleChoice,
+    handleNext,
+  } = useDialog()
+
+  useEffect(() => {
+    if (phase === 'playing' && task) {
+      triggerDialog('start', task.id)
+    }
+  }, [phase, task, triggerDialog])
+
+  useEffect(() => {
+    if (phase === 'playing') {
+      triggerDialog('roomEnter', currentRoom)
+    }
+  }, [currentRoom, phase, triggerDialog])
 
   // 初始化任务
   useEffect(() => {
@@ -214,6 +239,15 @@ export function ArenaPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {dialogState.isOpen && currentNode && (
+        <DialogBox
+          node={currentNode}
+          onClose={closeDialog}
+          onChoice={handleChoice}
+          onNext={handleNext}
+        />
       )}
 
     </div>
