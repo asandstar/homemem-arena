@@ -234,9 +234,9 @@ describe('useGameStore - 核心状态流转测试', () => {
       expect(useGameStore.getState().chaosValue).toBe(0)
 
       store.startPlaying()
-      store.tickElapsed(180_001)
+      store.tickElapsed(300_001)
       const state = useGameStore.getState()
-      expect(state.elapsedMs).toBe(180_000)
+      expect(state.elapsedMs).toBe(300_000)
       expect(state.levelFailed).toBe(true)
       expect(state.failureReason).toBe('任务超时')
       expect(state.phase).toBe('probing')

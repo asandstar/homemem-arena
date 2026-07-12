@@ -278,9 +278,9 @@ export function Minimap({
     ctx.arc(robotX, robotY, 5, 0, Math.PI * 2)
     ctx.stroke()
 
-    const arrowLen = 10
+    const arrowLen = 6
     ctx.strokeStyle = '#ef4444'
-    ctx.lineWidth = 2.5
+    ctx.lineWidth = 1.5
     ctx.lineCap = 'round'
     ctx.beginPath()
     ctx.moveTo(robotX, robotY)

@@ -394,8 +394,9 @@ export function FirstPersonControls() {
     let moveDx = 0
     let moveDz = 0
     if (viewMode === 'top-down') {
-      if (moveState.current.forward) moveDz += 1
-      if (moveState.current.backward) moveDz -= 1
+      // top-down 相机俯视：屏幕上方对应 -Z，W 应让角色向 -Z（屏幕上方）移动
+      if (moveState.current.forward) moveDz -= 1
+      if (moveState.current.backward) moveDz += 1
       if (moveState.current.left) moveDx -= 1
       if (moveState.current.right) moveDx += 1
       const len = Math.hypot(moveDx, moveDz)

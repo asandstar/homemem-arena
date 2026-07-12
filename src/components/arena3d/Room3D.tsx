@@ -441,64 +441,146 @@ export function Room3D({ spec }: Room3DProps) {
     type WallMesh = { position: [number, number, number]; size: [number, number, number]; color: string }
     const wallList: WallMesh[] = []
 
-    wallList.push({ position: [center.x - w / 2, h / 2, center.z], size: [t, h, d], color: wallColor })
-    wallList.push({ position: [center.x + w / 2, h / 2, center.z], size: [t, h, d], color: wallColor })
-    wallList.push({ position: [center.x, h / 2, center.z - d / 2], size: [w, h, t], color: wallColor })
-    wallList.push({ position: [center.x, h / 2, center.z + d / 2], size: [w, h, t], color: wallColor })
+    // 按墙分组门洞：X 墙（左/右）和 Z 墙（前/后）
+    // X 墙的门洞：offset.x 绝对值大（门在左或右墙）
+    // Z 墙的门洞：offset.z 绝对值大（门在前或后墙）
+    const doorsOnXWalls = doorways.filter((door) => Math.abs(door.offset.x) > Math.abs(door.offset.z))
+    const doorsOnZWalls = doorways.filter((door) => Math.abs(door.offset.z) >= Math.abs(door.offset.x))
 
-    for (const door of doorways) {
-      const dx = door.offset.x
-      const dz = door.offset.z
-      const ww = door.width
-      const hh = door.height
+    // 分离到具体的某一面墙
+    const leftWallDoors = doorsOnXWalls.filter((door) => door.offset.x < 0) // x = -w/2
+    const rightWallDoors = doorsOnXWalls.filter((door) => door.offset.x > 0) // x = +w/2
+    const frontWallDoors = doorsOnZWalls.filter((door) => door.offset.z < 0) // z = -d/2
+    const backWallDoors = doorsOnZWalls.filter((door) => door.offset.z > 0) // z = +d/2
 
-      if (Math.abs(dx) > Math.abs(dz)) {
-        const isEast = dx > 0
-        const x = isEast ? center.x + w / 2 : center.x - w / 2
+    /**
+     * 为一面墙生成墙段（门洞处留空）
+     * doors = 该墙上的门洞
+     * half = 墙的半长
+     * getOffset = 从门洞提取沿墙方向的偏移
+     */
+    function buildWallSegments(
+      doors: typeof doorways,
+      half: number,
+      getOffset: (door: typeof doorways[number]) => number,
+    ): Array<{ start: number; end: number }> {
+      const holes = doors.map((door) => ({
+        start: getOffset(door) - door.width / 2,
+        end: getOffset(door) + door.width / 2,
+      }))
+      holes.sort((a, b) => a.start - b.start)
 
+      const segments: Array<{ start: number; end: number }> = []
+      let cursor = -half
+      for (const hole of holes) {
+        const hs = Math.max(hole.start, -half)
+        const he = Math.min(hole.end, half)
+        if (hs > cursor) {
+          segments.push({ start: cursor, end: hs })
+        }
+        cursor = Math.max(cursor, he)
+      }
+      if (cursor < half) {
+        segments.push({ start: cursor, end: half })
+      }
+      return segments
+    }
+
+    // --- 左墙 (x = -w/2)，沿 z 方向 ---
+    {
+      const x = center.x - w / 2
+      const segments = buildWallSegments(leftWallDoors, d / 2, (door) => door.offset.z)
+      for (const seg of segments) {
+        const segLen = seg.end - seg.start
+        const segCenterZ = center.z + (seg.start + seg.end) / 2
         wallList.push({
-          position: [x, h - (h - hh) / 2, center.z + dz],
-          size: [t, h - hh, d - Math.abs(dz) * 2],
+          position: [x, h / 2, segCenterZ],
+          size: [t, h, segLen],
           color: wallColor,
         })
-
-        if (dz - ww / 2 > -d / 2) {
+      }
+      // 门洞上方过梁
+      for (const door of leftWallDoors) {
+        const lintelH = h - door.height
+        if (lintelH > 0.01) {
           wallList.push({
-            position: [x, h / 2, center.z - d / 2 + (dz - ww / 2 + d / 2) / 2],
-            size: [t, hh, dz - ww / 2 + d / 2],
+            position: [x, door.height + lintelH / 2, center.z + door.offset.z],
+            size: [t, lintelH, door.width],
             color: wallColor,
           })
         }
+      }
+    }
 
-        if (dz + ww / 2 < d / 2) {
-          wallList.push({
-            position: [x, h / 2, center.z + d / 2 - (d / 2 - dz - ww / 2) / 2],
-            size: [t, hh, d / 2 - dz - ww / 2],
-            color: wallColor,
-          })
-        }
-      } else {
-        const isNorth = dz > 0
-        const z = isNorth ? center.z + d / 2 : center.z - d / 2
-
+    // --- 右墙 (x = +w/2)，沿 z 方向 ---
+    {
+      const x = center.x + w / 2
+      const segments = buildWallSegments(rightWallDoors, d / 2, (door) => door.offset.z)
+      for (const seg of segments) {
+        const segLen = seg.end - seg.start
+        const segCenterZ = center.z + (seg.start + seg.end) / 2
         wallList.push({
-          position: [center.x + dx, h - (h - hh) / 2, z],
-          size: [w - Math.abs(dx) * 2, h - hh, t],
+          position: [x, h / 2, segCenterZ],
+          size: [t, h, segLen],
           color: wallColor,
         })
-
-        if (dx - ww / 2 > -w / 2) {
+      }
+      for (const door of rightWallDoors) {
+        const lintelH = h - door.height
+        if (lintelH > 0.01) {
           wallList.push({
-            position: [center.x - w / 2 + (dx - ww / 2 + w / 2) / 2, h / 2, z],
-            size: [dx - ww / 2 + w / 2, hh, t],
+            position: [x, door.height + lintelH / 2, center.z + door.offset.z],
+            size: [t, lintelH, door.width],
             color: wallColor,
           })
         }
+      }
+    }
 
-        if (dx + ww / 2 < w / 2) {
+    // --- 前墙 (z = -d/2)，沿 x 方向 ---
+    {
+      const z = center.z - d / 2
+      const segments = buildWallSegments(frontWallDoors, w / 2, (door) => door.offset.x)
+      for (const seg of segments) {
+        const segLen = seg.end - seg.start
+        const segCenterX = center.x + (seg.start + seg.end) / 2
+        wallList.push({
+          position: [segCenterX, h / 2, z],
+          size: [segLen, h, t],
+          color: wallColor,
+        })
+      }
+      for (const door of frontWallDoors) {
+        const lintelH = h - door.height
+        if (lintelH > 0.01) {
           wallList.push({
-            position: [center.x + w / 2 - (w / 2 - dx - ww / 2) / 2, h / 2, z],
-            size: [w / 2 - dx - ww / 2, hh, t],
+            position: [center.x + door.offset.x, door.height + lintelH / 2, z],
+            size: [door.width, lintelH, t],
+            color: wallColor,
+          })
+        }
+      }
+    }
+
+    // --- 后墙 (z = +d/2)，沿 x 方向 ---
+    {
+      const z = center.z + d / 2
+      const segments = buildWallSegments(backWallDoors, w / 2, (door) => door.offset.x)
+      for (const seg of segments) {
+        const segLen = seg.end - seg.start
+        const segCenterX = center.x + (seg.start + seg.end) / 2
+        wallList.push({
+          position: [segCenterX, h / 2, z],
+          size: [segLen, h, t],
+          color: wallColor,
+        })
+      }
+      for (const door of backWallDoors) {
+        const lintelH = h - door.height
+        if (lintelH > 0.01) {
+          wallList.push({
+            position: [center.x + door.offset.x, door.height + lintelH / 2, z],
+            size: [door.width, lintelH, t],
             color: wallColor,
           })
         }

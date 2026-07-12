@@ -15,14 +15,14 @@ export const leaveHomeTask: TaskConfig = {
   rooms: ['living', 'bedroom', 'kitchen', 'entrance'],
   iconKey: 'door',
   tags: ['空间记忆', '限时挑战', '钥匙猫'],
-  briefing: `🌅 早上 8:00 · 主人还有 3 分钟出门
+  briefing: `🌅 早上 8:00 · 主人还有 5 分钟出门
 
 玄关贴着便签：「小橡！钥匙手机雨伞！拜托了！——再不走就赶不上公交了」
 钥匙应该在茶几上，手机在卧室，猫蹲在沙发背上舔爪子，眼神不太 innocent。`,
   completionText: '主人冲出门前看了一眼托盘：「全齐了！小橡你太靠谱了！」\n猫跳上窗台，甩了甩尾巴。明天，它大概还会来。',
   failureText: '主人翻遍口袋，叹了口气：「算了...今天蹭同事车吧。」\n似乎听见沙发缝里传来金属碰撞声。猫的耳朵动了一下。',
   systemPrompt: '【MEM-07 日志】任务：协助主人出门。当前状态：物品位置待确认，疑似猫科干预。策略：冷静搜索，记录位置，效率优先。',
-  timeLimit: 180,
+  timeLimit: 300,
   spawnPosition: { x: 0, z: -1.5 },
   spawnRotation: Math.PI,
 
