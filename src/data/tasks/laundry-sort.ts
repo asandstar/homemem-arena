@@ -137,7 +137,7 @@ export const laundrySortTask: TaskConfig = {
       id: 'cnt-towel-basket',
       name: '毛巾篮',
       room: 'laundry',
-      position: { x: 3.0, y: 0.25, z: -2.0 },
+      position: { x: 2.5, y: 0.25, z: -2.0 },
       size: { x: 0.8, y: 0.5, z: 0.6 },
       color: '#fcd34d',
       initialOpen: true,

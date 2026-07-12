@@ -38,6 +38,8 @@ import {
 } from '../../game/interactionTargets'
 
 const ROTATION_SYNC_THRESHOLD = 0.001
+const FOV_MIN = 45
+const FOV_MAX = 95
 
 export function FirstPersonControls() {
   const { camera, gl } = useThree()
@@ -51,6 +53,7 @@ export function FirstPersonControls() {
   const currentSpeedRef = useRef(0)
   const moveDirectionRef = useRef(new THREE.Vector3(0, 0, -1))
   const targetMoveDirRef = useRef(new THREE.Vector3(0, 0, -1))
+  const cameraFovRef = useRef(75)
 
   const {
     phase,
@@ -197,6 +200,7 @@ export function FirstPersonControls() {
   }, [phase, findNearbyEntity, findNearbyContainer, setFlashingSlotIndex, addToast, heldEntityId, containerStates])
 
   const isDraggingRef = useRef(false)
+  const isPointerOverCanvasRef = useRef(false)
   const touchStartRef = useRef({ x: 0, y: 0 })
   const touchRotRef = useRef({ yaw: 0, pitch: 0 })
   const lastTouchTimeRef = useRef(0)
@@ -261,9 +265,11 @@ export function FirstPersonControls() {
     }
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDraggingRef.current) return
-      targetYawRef.current -= e.movementX * MOUSE_SENSITIVITY
-      targetPitchRef.current = clampPitch(targetPitchRef.current - e.movementY * MOUSE_SENSITIVITY)
+      if (!isDraggingRef.current && !isPointerOverCanvasRef.current) return
+      if (isDraggingRef.current || (isPointerOverCanvasRef.current && phase === 'playing')) {
+        targetYawRef.current -= e.movementX * MOUSE_SENSITIVITY
+        targetPitchRef.current = clampPitch(targetPitchRef.current - e.movementY * MOUSE_SENSITIVITY)
+      }
     }
 
     const handleMouseUp = () => {
@@ -273,7 +279,21 @@ export function FirstPersonControls() {
 
     const handleMouseLeave = () => {
       isDraggingRef.current = false
+      isPointerOverCanvasRef.current = false
       canvas.style.cursor = 'grab'
+    }
+
+    const handleMouseEnter = () => {
+      isPointerOverCanvasRef.current = true
+      canvas.style.cursor = 'grab'
+    }
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (!isPointerOverCanvasRef.current) return
+      const delta = e.deltaY * 0.05
+      cameraFovRef.current = Math.max(FOV_MIN, Math.min(FOV_MAX, cameraFovRef.current + delta))
     }
 
     const handleTouchStart = (e: TouchEvent) => {
@@ -310,23 +330,27 @@ export function FirstPersonControls() {
 
     canvas.style.cursor = 'grab'
     canvas.addEventListener('mousedown', handleMouseDown)
+    canvas.addEventListener('mouseenter', handleMouseEnter)
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('mouseup', handleMouseUp)
     canvas.addEventListener('mouseleave', handleMouseLeave)
+    canvas.addEventListener('wheel', handleWheel, { passive: false })
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false })
     window.addEventListener('touchmove', handleTouchMove, { passive: false })
     window.addEventListener('touchend', handleTouchEnd)
 
     return () => {
       canvas.removeEventListener('mousedown', handleMouseDown)
+      canvas.removeEventListener('mouseenter', handleMouseEnter)
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
       canvas.removeEventListener('mouseleave', handleMouseLeave)
+      canvas.removeEventListener('wheel', handleWheel)
       canvas.removeEventListener('touchstart', handleTouchStart)
       window.removeEventListener('touchmove', handleTouchMove)
       window.removeEventListener('touchend', handleTouchEnd)
     }
-  }, [gl])
+  }, [gl, phase])
 
   useFrame((_, delta) => {
     const state = useGameStore.getState()
@@ -359,7 +383,7 @@ export function FirstPersonControls() {
 
       camera.position.copy(smoothedCamPos.current)
       camera.rotation.copy(smoothedCamRot.current)
-      if ('fov' in camera) camera.fov = 75
+      if ('fov' in camera) camera.fov = cameraFovRef.current
     } else {
       const targetY = 8
       const topDownPosLerp = Math.min(1, delta * 8)

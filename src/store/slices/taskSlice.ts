@@ -4,6 +4,7 @@ import type { RoomId, Vec3 } from '../../types/room'
 import type { ContainerSpec, ObjectSpec } from '../../types/object'
 import type { RoomSpec } from '../../types/room'
 import { useSessionStore } from '../useSessionStore'
+import { useUiStore } from '../useUiStore'
 import { getTaskById } from '../../data/tasks'
 import { sharedRooms } from '../../data/rooms'
 import { generateId } from '../../utils/format'
@@ -90,6 +91,7 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
     proceduralProgress: {},
 
     initializeTask: (taskId: string) => {
+      useUiStore.getState().resetUi()
       const task = getTaskById(taskId)
       if (!task) return
 
@@ -159,7 +161,9 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
         startTime: null,
         visitedRooms: new Set([firstRoom]),
         lastObservedIds: new Set(),
+        viewMode: 'first-person' as const,
         memorySlots: new Array(DEFAULT_LEVEL_BALANCE.memorySlotCount).fill(null),
+        flashingSlotIndex: null,
         chaosValue: 0,
         chaosPeak: 0,
         score: 0,
@@ -176,6 +180,9 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
         outdatedMemoryCount: 0,
         memoryUpdateCount: 0,
         feedback: null,
+        shakingEntityId: null,
+        savingMemorySlotIndex: null,
+        chaosEffectActive: false,
         floatingTexts: [],
         eventToasts: [],
         activeEventEffects: [],
