@@ -17,8 +17,6 @@ import {
   DeskModel,
   WashingMachineGeometry,
   LaundryBasketModel,
-  TableGeometry,
-  ChairGeometry,
 } from './ObjectGeometries'
 import {
   LampFallback,
@@ -103,17 +101,17 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
       </FallbackColorizer>
 
       <FallbackColorizer modelId="pillow" color="#ff6b6b">
-        <group position={[-0.8, 0.45, center.z - 0.9]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
+        <group position={[center.x - 0.8, 0.45, center.z - 0.9]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.3 }} />
         </group>
       </FallbackColorizer>
       <FallbackColorizer modelId="pillow" color="#4ecdc4">
-        <group position={[0, 0.45, center.z - 0.95]} rotation={[0, -Math.PI / 8, 0]} receiveShadow>
+        <group position={[center.x, 0.45, center.z - 0.95]} rotation={[0, -Math.PI / 8, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.3 }} />
         </group>
       </FallbackColorizer>
       <FallbackColorizer modelId="pillow" color="#ffe66d">
-        <group position={[0.8, 0.45, center.z - 0.9]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
+        <group position={[center.x + 0.8, 0.45, center.z - 0.9]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.3 }} />
         </group>
       </FallbackColorizer>
@@ -373,35 +371,7 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </FallbackColorizer>
 
-      <FallbackColorizer modelId="dining_table" color="#8b7355">
-        <group position={[center.x, 0.45, center.z]} castShadow receiveShadow>
-          <TableGeometry size={{ x: 1.8, y: 0.9, z: 0.9 }} />
-        </group>
-      </FallbackColorizer>
-
-      <FallbackColorizer modelId="chair" color="#8b5a2b">
-        <group position={[center.x - 1.0, 0.35, center.z - 0.5]} castShadow receiveShadow>
-          <ChairGeometry size={{ x: 0.45, y: 0.7, z: 0.45 }} />
-        </group>
-      </FallbackColorizer>
-
-      <FallbackColorizer modelId="chair" color="#8b5a2b">
-        <group position={[center.x + 1.0, 0.35, center.z - 0.5]} castShadow receiveShadow>
-          <ChairGeometry size={{ x: 0.45, y: 0.7, z: 0.45 }} />
-        </group>
-      </FallbackColorizer>
-
-      <FallbackColorizer modelId="chair" color="#8b5a2b">
-        <group position={[center.x - 1.0, 0.35, center.z + 0.5]} castShadow receiveShadow>
-          <ChairGeometry size={{ x: 0.45, y: 0.7, z: 0.45 }} />
-        </group>
-      </FallbackColorizer>
-
-      <FallbackColorizer modelId="chair" color="#8b5a2b">
-        <group position={[center.x + 1.0, 0.35, center.z + 0.5]} castShadow receiveShadow>
-          <ChairGeometry size={{ x: 0.45, y: 0.7, z: 0.45 }} />
-        </group>
-      </FallbackColorizer>
+      {/* 餐桌和椅子由 Container3D 渲染，避免双重渲染 */}
 
       <mesh position={[center.x - 0.5, 0.92, center.z - 0.25]} castShadow receiveShadow>
         <cylinderGeometry args={[0.06, 0.05, 0.1, 12]} />
@@ -468,13 +438,13 @@ export function Room3D({ spec }: Room3DProps) {
     const h = size.y
     const t = 0.1
 
-    type WallMesh = { position: [number, number, number]; size: [number, number, number]; color: string; isDoor: boolean }
+    type WallMesh = { position: [number, number, number]; size: [number, number, number]; color: string }
     const wallList: WallMesh[] = []
 
-    wallList.push({ position: [center.x - w / 2, h / 2, center.z], size: [t, h, d], color: wallColor, isDoor: false })
-    wallList.push({ position: [center.x + w / 2, h / 2, center.z], size: [t, h, d], color: wallColor, isDoor: false })
-    wallList.push({ position: [center.x, h / 2, center.z - d / 2], size: [w, h, t], color: wallColor, isDoor: false })
-    wallList.push({ position: [center.x, h / 2, center.z + d / 2], size: [w, h, t], color: wallColor, isDoor: false })
+    wallList.push({ position: [center.x - w / 2, h / 2, center.z], size: [t, h, d], color: wallColor })
+    wallList.push({ position: [center.x + w / 2, h / 2, center.z], size: [t, h, d], color: wallColor })
+    wallList.push({ position: [center.x, h / 2, center.z - d / 2], size: [w, h, t], color: wallColor })
+    wallList.push({ position: [center.x, h / 2, center.z + d / 2], size: [w, h, t], color: wallColor })
 
     for (const door of doorways) {
       const dx = door.offset.x
@@ -485,13 +455,11 @@ export function Room3D({ spec }: Room3DProps) {
       if (Math.abs(dx) > Math.abs(dz)) {
         const isEast = dx > 0
         const x = isEast ? center.x + w / 2 : center.x - w / 2
-        const sign = isEast ? -1 : 1
 
         wallList.push({
           position: [x, h - (h - hh) / 2, center.z + dz],
           size: [t, h - hh, d - Math.abs(dz) * 2],
           color: wallColor,
-          isDoor: false,
         })
 
         if (dz - ww / 2 > -d / 2) {
@@ -499,7 +467,6 @@ export function Room3D({ spec }: Room3DProps) {
             position: [x, h / 2, center.z - d / 2 + (dz - ww / 2 + d / 2) / 2],
             size: [t, hh, dz - ww / 2 + d / 2],
             color: wallColor,
-            isDoor: false,
           })
         }
 
@@ -508,26 +475,16 @@ export function Room3D({ spec }: Room3DProps) {
             position: [x, h / 2, center.z + d / 2 - (d / 2 - dz - ww / 2) / 2],
             size: [t, hh, d / 2 - dz - ww / 2],
             color: wallColor,
-            isDoor: false,
           })
         }
-
-        wallList.push({
-          position: [x + sign * t, hh / 2, center.z + dz],
-          size: [0.05, hh + 0.05, ww],
-          color: '#8b5a2b',
-          isDoor: true,
-        })
       } else {
         const isNorth = dz > 0
         const z = isNorth ? center.z + d / 2 : center.z - d / 2
-        const sign = isNorth ? -1 : 1
 
         wallList.push({
           position: [center.x + dx, h - (h - hh) / 2, z],
           size: [w - Math.abs(dx) * 2, h - hh, t],
           color: wallColor,
-          isDoor: false,
         })
 
         if (dx - ww / 2 > -w / 2) {
@@ -535,7 +492,6 @@ export function Room3D({ spec }: Room3DProps) {
             position: [center.x - w / 2 + (dx - ww / 2 + w / 2) / 2, h / 2, z],
             size: [dx - ww / 2 + w / 2, hh, t],
             color: wallColor,
-            isDoor: false,
           })
         }
 
@@ -544,16 +500,8 @@ export function Room3D({ spec }: Room3DProps) {
             position: [center.x + w / 2 - (w / 2 - dx - ww / 2) / 2, h / 2, z],
             size: [w / 2 - dx - ww / 2, hh, t],
             color: wallColor,
-            isDoor: false,
           })
         }
-
-        wallList.push({
-          position: [center.x + dx, hh / 2, z + sign * t],
-          size: [ww, hh + 0.05, 0.05],
-          color: '#8b5a2b',
-          isDoor: true,
-        })
       }
     }
 
@@ -606,14 +554,17 @@ export function Room3D({ spec }: Room3DProps) {
         </Text>
       </Billboard>
 
-      {spec.doorways.map((door, i) => (
-        <Door3D
-          key={`door-${i}`}
-          roomCenter={spec.center}
-          roomSize={spec.size}
-          door={door}
-        />
-      ))}
+      {spec.doorways
+        .filter((door) => spec.id < door.connectsTo)
+        .map((door, i) => (
+          <Door3D
+            key={`door-${i}`}
+            roomId={spec.id}
+            roomCenter={spec.center}
+            roomSize={spec.size}
+            door={door}
+          />
+        ))}
 
       <RoomDecorations spec={spec} />
     </group>

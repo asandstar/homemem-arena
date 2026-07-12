@@ -15,6 +15,8 @@ export const breakfastTask: TaskConfig = {
   iconKey: 'breakfast',
   tags: ['限时挑战', '早餐闹钟', '流程陷阱', '扣分机制', '记忆大师'],
   timeLimit: 120,
+  spawnPosition: { x: 0, z: -1.5 },
+  spawnRotation: Math.PI,
   briefing: `⏰ 深夜 · 记忆宅邸厨房
 
 "滴答...滴答...不对不对！"
@@ -365,24 +367,24 @@ export const breakfastTask: TaskConfig = {
       id: 'se-fridge-auto-close',
       trigger: (step) => step === 12,
       type: 'message',
-      message: '⏰ 咔哒——冰箱门自己关上了。（早餐闹钟：开着冰箱门不礼貌！）',
-      description: '早餐闹钟自动关上了冰箱门',
+      message: '⏰ 早餐闹钟瞪着冰箱门...好像在催你记得关好冰箱。（早餐闹钟：开着冰箱门不礼貌！）',
+      description: '早餐闹钟提醒玩家注意冰箱门状态',
       memoryType: 'object',
     },
     {
       id: 'se-milk-deduct-points',
       trigger: (step) => step === 15,
       type: 'message',
-      message: '⏰ 牛奶在外面太久了！扣分扣分！（早餐闹钟：牛奶要冰的才对！）',
-      description: '牛奶放置时间过长触发扣分',
+      message: '⏰ 牛奶在外面太久了！快放回去！（早餐闹钟：牛奶要冰的才对！）',
+      description: '牛奶放置时间过长，早餐闹钟催促放回',
       memoryType: 'temporal',
     },
     {
       id: 'se-milk-deduct-more',
       trigger: (step) => step === 25,
       type: 'message',
-      message: '⏰ 还没放回去？再扣！（早餐闹钟：快快快！流程要对！）',
-      description: '牛奶放置时间过长第二次扣分',
+      message: '⏰ 还没放回去？牛奶要变质了！（早餐闹钟：快快快！流程要对！）',
+      description: '牛奶放置时间过长第二次催促',
       memoryType: 'temporal',
     },
     {

@@ -439,6 +439,7 @@ export function HUD() {
               robotRotation={robotRotation}
               observedObjects={entities.filter((e) => e.currentRoom === currentRoom && e.status !== 'hidden' && e.status !== 'held')}
               taskRooms={task?.rooms}
+              isMobile={isMobile}
             />
           )}
           {heldEntity && !minimapOpen && (

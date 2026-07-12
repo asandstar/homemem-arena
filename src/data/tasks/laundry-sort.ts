@@ -15,6 +15,8 @@ export const laundrySortTask: TaskConfig = {
   iconKey: 'shirt',
   tags: ['限时挑战', '袜子幽灵', '位置交换', '分类大师'],
   timeLimit: 90,
+  spawnPosition: { x: 0, z: 2.0 },
+  spawnRotation: Math.PI,
   briefing: `👻 下午 · 记忆宅邸洗衣房
 
 "嘿嘿...你好..."
@@ -235,8 +237,8 @@ export const laundrySortTask: TaskConfig = {
       id: 'se-baskets-swapped',
       trigger: (step) => step === 12,
       type: 'message',
-      message: '🔄 咦？白篮子和深色篮子的位置...好像换了？（袜子幽灵：别看我，我什么都没做~）',
-      description: '袜子幽灵交换了白色篮子和深色篮子的位置',
+      message: '🔄 袜子幽灵在篮子旁边飘来飘去...是不是想搞什么鬼？（袜子幽灵：嘿嘿，我什么都没做~）',
+      description: '袜子幽灵在篮子旁徘徊，暗示可能会交换位置',
       memoryType: 'spatial',
     },
     {

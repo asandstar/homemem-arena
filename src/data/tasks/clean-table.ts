@@ -15,6 +15,8 @@ export const cleanTableTask: TaskConfig = {
   iconKey: 'dish',
   tags: ['限时挑战', '餐盘精', '状态识别', '手忙脚乱'],
   timeLimit: 75,
+  spawnPosition: { x: 0, z: -1.5 },
+  spawnRotation: Math.PI,
   briefing: `🍽️ 清晨 · 记忆宅邸餐厅
 
 "嘻嘻嘻——新来的小精灵？"

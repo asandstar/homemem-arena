@@ -12,6 +12,7 @@ interface MinimapProps {
   observedObjects: EntityState[]
   isVisible?: boolean
   taskRooms?: RoomId[]
+  isMobile?: boolean
 }
 
 const MIN_ZOOM = 0.3
@@ -27,6 +28,7 @@ export function Minimap({
   observedObjects,
   isVisible = true,
   taskRooms,
+  isMobile = false,
 }: MinimapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -321,49 +323,54 @@ export function Minimap({
       className="minimap-container"
       style={{
         touchAction: 'none',
-        width: '260px',
-        height: '260px',
+        width: '100%',
+        height: 'auto',
+        aspectRatio: '1 / 1',
         position: 'relative',
       }}
     >
       <div className="absolute top-1 right-1 flex gap-1 z-10">
         <button
           onClick={handleZoomIn}
-          className="w-6 h-6 flex items-center justify-center bg-slate-800/90 hover:bg-slate-700 text-white text-xs rounded border border-slate-600/50 pointer-events-auto"
+          className={`flex items-center justify-center bg-slate-800/90 hover:bg-slate-700 text-white text-xs rounded border border-slate-600/50 pointer-events-auto ${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`}
           aria-label="放大"
         >
           +
         </button>
         <button
           onClick={handleZoomOut}
-          className="w-6 h-6 flex items-center justify-center bg-slate-800/90 hover:bg-slate-700 text-white text-xs rounded border border-slate-600/50 pointer-events-auto"
+          className={`flex items-center justify-center bg-slate-800/90 hover:bg-slate-700 text-white text-xs rounded border border-slate-600/50 pointer-events-auto ${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`}
           aria-label="缩小"
         >
           −
         </button>
-        <button
-          onClick={handleReset}
-          className="w-6 h-6 flex items-center justify-center bg-slate-800/90 hover:bg-slate-700 text-white text-xs rounded border border-slate-600/50 pointer-events-auto"
-          aria-label="重置视图"
-          title="重置视图"
-        >
-          ⟳
-        </button>
-        <button
-          onClick={handleToggleFollow}
-          className={`w-6 h-6 flex items-center justify-center text-xs rounded border pointer-events-auto ${
-            minimapFollowPlayer
-              ? 'bg-amber-600/90 hover:bg-amber-500 text-white border-amber-400/50'
-              : 'bg-slate-800/90 hover:bg-slate-700 text-white border-slate-600/50'
-          }`}
-          aria-label={minimapFollowPlayer ? '取消跟随' : '跟随玩家'}
-          title={minimapFollowPlayer ? '取消跟随' : '跟随玩家'}
-        >
-          ⌖
-        </button>
+        {!isMobile && (
+          <button
+            onClick={handleReset}
+            className="w-6 h-6 flex items-center justify-center bg-slate-800/90 hover:bg-slate-700 text-white text-xs rounded border border-slate-600/50 pointer-events-auto"
+            aria-label="重置视图"
+            title="重置视图"
+          >
+            ⟳
+          </button>
+        )}
+        {!isMobile && (
+          <button
+            onClick={handleToggleFollow}
+            className={`w-6 h-6 flex items-center justify-center text-xs rounded border pointer-events-auto ${
+              minimapFollowPlayer
+                ? 'bg-amber-600/90 hover:bg-amber-500 text-white border-amber-400/50'
+                : 'bg-slate-800/90 hover:bg-slate-700 text-white border-slate-600/50'
+            }`}
+            aria-label={minimapFollowPlayer ? '取消跟随' : '跟随玩家'}
+            title={minimapFollowPlayer ? '取消跟随' : '跟随玩家'}
+          >
+            ⌖
+          </button>
+        )}
         <button
           onClick={toggleMinimap}
-          className="w-6 h-6 flex items-center justify-center bg-slate-800/90 hover:bg-slate-700 text-white text-xs rounded border border-slate-600/50 pointer-events-auto"
+          className={`flex items-center justify-center bg-slate-800/90 hover:bg-slate-700 text-white text-xs rounded border border-slate-600/50 pointer-events-auto ${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`}
           aria-label="收起小地图"
           title="收起小地图"
         >
