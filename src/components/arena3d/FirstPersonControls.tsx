@@ -38,8 +38,8 @@ import {
 } from '../../game/interactionTargets'
 
 const ROTATION_SYNC_THRESHOLD = 0.001
-const FOV_MIN = 45
-const FOV_MAX = 95
+const FOV_MIN = 30
+const FOV_MAX = 110
 
 export function FirstPersonControls() {
   const { camera, gl } = useThree()
@@ -168,6 +168,11 @@ export function FirstPersonControls() {
           break
         }
         case 'Escape':
+          if (isMouseLockedRef.current) {
+            isMouseLockedRef.current = false
+            document.exitPointerLock?.()
+            addToast('info', '鼠标已释放，点击游戏画面重新锁定')
+          }
           break
       }
     }
@@ -201,6 +206,7 @@ export function FirstPersonControls() {
 
   const isDraggingRef = useRef(false)
   const isPointerOverCanvasRef = useRef(false)
+  const isMouseLockedRef = useRef(true)
   const touchStartRef = useRef({ x: 0, y: 0 })
   const touchRotRef = useRef({ yaw: 0, pitch: 0 })
   const lastTouchTimeRef = useRef(0)
@@ -260,11 +266,17 @@ export function FirstPersonControls() {
 
     const handleMouseDown = (e: MouseEvent) => {
       if (e.button !== 0) return
+      if (!isMouseLockedRef.current) {
+        isMouseLockedRef.current = true
+        canvas.requestPointerLock?.()
+        return
+      }
       isDraggingRef.current = true
       canvas.style.cursor = 'grabbing'
     }
 
     const handleMouseMove = (e: MouseEvent) => {
+      if (!isMouseLockedRef.current) return
       if (!isDraggingRef.current && !isPointerOverCanvasRef.current) return
       if (isDraggingRef.current || (isPointerOverCanvasRef.current && phase === 'playing')) {
         targetYawRef.current -= e.movementX * MOUSE_SENSITIVITY
@@ -418,15 +430,28 @@ export function FirstPersonControls() {
     let moveDx = 0
     let moveDz = 0
     if (viewMode === 'top-down') {
-      // top-down 相机俯视：屏幕上方对应 -Z，W 应让角色向 -Z（屏幕上方）移动
-      if (moveState.current.forward) moveDz -= 1
-      if (moveState.current.backward) moveDz += 1
-      if (moveState.current.left) moveDx -= 1
-      if (moveState.current.right) moveDx += 1
-      const len = Math.hypot(moveDx, moveDz)
-      if (len > 0) {
-        moveDx = (moveDx / len) * speed * delta
-        moveDz = (moveDz / len) * speed * delta
+      const forward = Number(moveState.current.forward) - Number(moveState.current.backward)
+      const right = Number(moveState.current.right) - Number(moveState.current.left)
+
+      const hasInput = forward !== 0 || right !== 0
+
+      if (hasInput) {
+        const cameraForward = new THREE.Vector3()
+        camera.getWorldDirection(cameraForward)
+        cameraForward.y = 0
+        cameraForward.normalize()
+
+        const cameraRight = new THREE.Vector3()
+        cameraRight.crossVectors(cameraForward, new THREE.Vector3(0, 1, 0)).normalize()
+
+        const moveDir = new THREE.Vector3(0, 0, 0)
+          .addScaledVector(cameraForward, forward)
+          .addScaledVector(cameraRight, right)
+          .normalize()
+
+        const distance = speed * delta
+        moveDx = moveDir.x * distance
+        moveDz = moveDir.z * distance
       }
     } else {
       const forward = Number(moveState.current.forward) - Number(moveState.current.backward)
