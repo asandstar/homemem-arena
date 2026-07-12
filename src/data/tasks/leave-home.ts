@@ -15,14 +15,14 @@ export const leaveHomeTask: TaskConfig = {
   rooms: ['living', 'bedroom', 'kitchen', 'entrance'],
   iconKey: 'door',
   tags: ['空间记忆', '限时挑战', '钥匙猫'],
-  briefing: `🌅 早上 8:00 · 主人还有 5 分钟出门
+  briefing: `🌅 早上 8:00 · 主人还有 10 分钟出门
 
 玄关贴着便签：「小橡！钥匙手机雨伞！拜托了！——再不走就赶不上公交了」
 钥匙应该在茶几上，手机在卧室，猫蹲在沙发背上舔爪子，眼神不太 innocent。`,
   completionText: '主人冲出门前看了一眼托盘：「全齐了！小橡你太靠谱了！」\n猫跳上窗台，甩了甩尾巴。明天，它大概还会来。',
   failureText: '主人翻遍口袋，叹了口气：「算了...今天蹭同事车吧。」\n似乎听见沙发缝里传来金属碰撞声。猫的耳朵动了一下。',
   systemPrompt: '【MEM-07 日志】任务：协助主人出门。当前状态：物品位置待确认，疑似猫科干预。策略：冷静搜索，记录位置，效率优先。',
-  timeLimit: 300,
+  timeLimit: 600,
   spawnPosition: { x: 0, z: -1.5 },
   spawnRotation: Math.PI,
 
@@ -44,7 +44,7 @@ export const leaveHomeTask: TaskConfig = {
       name: '手机',
       category: 'phone',
       initialRoom: 'bedroom',
-      initialPosition: { x: -7.2, y: 0, z: -0.8 },
+      initialPosition: { x: -1.2, y: 0, z: -0.8 },
       size: { x: 0.08, y: 0.16, z: 0.005 },
       color: '#1f2937',
       hiddenInContainer: 'cnt-bedside-drawer',
@@ -80,7 +80,7 @@ export const leaveHomeTask: TaskConfig = {
       id: 'cnt-bedside-drawer',
       name: '床头柜抽屉',
       room: 'bedroom',
-      position: { x: -7.2, y: 0.3, z: -0.8 },
+      position: { x: -1.2, y: 0.3, z: -0.8 },
       size: { x: 0.5, y: 0.5, z: 0.4 },
       surfaceHeight: 0.55,
       color: '#a16207',

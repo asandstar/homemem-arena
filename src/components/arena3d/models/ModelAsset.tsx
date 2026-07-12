@@ -213,15 +213,44 @@ function ModelContent({
         child.castShadow = config?.castShadow ?? true
         child.receiveShadow = config?.receiveShadow ?? false
 
-        if (child.material instanceof THREE.MeshStandardMaterial) {
-          const materialType = config?.materialType || 'plastic'
-          const matConfig = MATERIAL_CONFIG[materialType] || MATERIAL_CONFIG.plastic
+        const materialType = config?.materialType || 'plastic'
+        const matConfig = MATERIAL_CONFIG[materialType] || MATERIAL_CONFIG.plastic
+
+        if (child.material instanceof THREE.MeshStandardMaterial ||
+            child.material instanceof THREE.MeshPhysicalMaterial) {
           child.material.roughness = matConfig.roughness
           child.material.metalness = matConfig.metalness
-          // 应用外部传入的 color（如果有）
+          if (matConfig.emissive) {
+            child.material.emissive.set(matConfig.emissive)
+            child.material.emissiveIntensity = matConfig.emissiveIntensity || 0
+          }
           if (color) {
             child.material.color.set(color)
           }
+        } else if (child.material instanceof THREE.MeshPhongMaterial) {
+          child.material.shininess = 10
+          if (color) {
+            child.material.color.set(color)
+          }
+        } else if (child.material instanceof THREE.MeshLambertMaterial) {
+          if (color) {
+            child.material.color.set(color)
+          }
+        } else if (child.material instanceof THREE.MeshBasicMaterial) {
+          if (color) {
+            child.material.color.set(color)
+          }
+        } else {
+          const newMat = new THREE.MeshStandardMaterial({
+            color: color || '#a8a29e',
+            roughness: matConfig.roughness,
+            metalness: matConfig.metalness,
+          })
+          if (matConfig.emissive) {
+            newMat.emissive.set(matConfig.emissive)
+            newMat.emissiveIntensity = matConfig.emissiveIntensity || 0
+          }
+          child.material = newMat
         }
       }
     })
@@ -242,20 +271,35 @@ function ModelContent({
 
     if (clonedScene) {
       clonedScene.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+        if (child instanceof THREE.Mesh) {
           const highlightColor = config?.highlightColor || '#3b82f6'
 
-          if (selected) {
-            child.material.emissive.set(highlightColor)
-            child.material.emissiveIntensity = 0.6
-          } else if (hovered) {
-            child.material.emissive.set(highlightColor)
-            child.material.emissiveIntensity = 0.3
-          } else {
-            const materialType = config?.materialType || 'plastic'
-            const matConfig = MATERIAL_CONFIG[materialType] || MATERIAL_CONFIG.plastic
-            child.material.emissive.set(matConfig.emissive || '#000000')
-            child.material.emissiveIntensity = matConfig.emissiveIntensity || 0
+          if (child.material instanceof THREE.MeshStandardMaterial ||
+              child.material instanceof THREE.MeshPhysicalMaterial) {
+            if (selected) {
+              child.material.emissive.set(highlightColor)
+              child.material.emissiveIntensity = 0.6
+            } else if (hovered) {
+              child.material.emissive.set(highlightColor)
+              child.material.emissiveIntensity = 0.3
+            } else {
+              const materialType = config?.materialType || 'plastic'
+              const matConfig = MATERIAL_CONFIG[materialType] || MATERIAL_CONFIG.plastic
+              child.material.emissive.set(matConfig.emissive || '#000000')
+              child.material.emissiveIntensity = matConfig.emissiveIntensity || 0
+            }
+          } else if (child.material instanceof THREE.MeshPhongMaterial ||
+                     child.material instanceof THREE.MeshLambertMaterial) {
+            if (selected) {
+              child.material.emissive?.set(highlightColor)
+              child.material.emissiveIntensity = 0.6
+            } else if (hovered) {
+              child.material.emissive?.set(highlightColor)
+              child.material.emissiveIntensity = 0.3
+            } else {
+              child.material.emissive?.set('#000000')
+              child.material.emissiveIntensity = 0
+            }
           }
         }
       })
