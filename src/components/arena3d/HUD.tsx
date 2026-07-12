@@ -3,7 +3,7 @@ import { useGameStore } from '../../store/useGameStore'
 import { useUiStore } from '../../store/useUiStore'
 import { Target, Clock, CheckCircle2, AlertTriangle, Zap, Package, Keyboard, Brain, Lock, Unlock, Trash2, ChevronDown, ChevronUp, Skull, AlertCircle, X, Cat, Smartphone, RotateCcw, Volume2, VolumeX, HelpCircle, Eye, EyeOff, MapPin, Box, History, Play } from 'lucide-react'
 import { Minimap } from './Minimap'
-import { initAudio, updateRoomAmbient } from '../../audio/sfx'
+import { initAudio, updateRoomAmbient, stopRoomAmbient } from '../../audio/sfx'
 import { playBgm, stopBgm, setBgmVolume, getBgmVolume } from '../../audio/bgm'
 import type { GoalSpec } from '../../types/task'
 import { HelpPanel } from '../help/HelpPanel'
@@ -214,11 +214,17 @@ export function HUD() {
     } else {
       stopBgm()
     }
+    return () => {
+      stopBgm()
+    }
   }, [phase, task])
 
   useEffect(() => {
     if (phase === 'playing') {
       updateRoomAmbient(currentRoom)
+    }
+    return () => {
+      stopRoomAmbient()
     }
   }, [currentRoom, phase])
 
@@ -238,7 +244,7 @@ export function HUD() {
   }
 
   return (
-    <div className="absolute inset-0 pointer-events-none">
+    <div className="absolute inset-0 pointer-events-none" data-testid="arena-hud">
       {chaosValue > 20 && (
         <div
           className="absolute inset-0 pointer-events-none"
@@ -262,7 +268,7 @@ export function HUD() {
         </div>
       )}
 
-      <div className={`absolute top-4 left-4 pointer-events-auto transition-all duration-300 ${isMobile ? 'max-w-[140px]' : isCompact ? 'max-w-[200px]' : 'max-w-[280px]'} w-full z-20`}>
+      <div className={`absolute top-4 left-4 pointer-events-auto transition-all duration-300 ${isMobile ? 'max-w-[140px]' : isCompact ? 'max-w-[200px]' : 'max-w-[280px]'} w-full z-20`} data-testid="task-panel">
         <div className="bg-slate-900/95 backdrop-blur-md rounded-xl p-3 shadow-xl border border-purple-500/30">
           <div className="flex items-center justify-between mb-2">
             <h2 className={`font-bold text-white flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
@@ -375,6 +381,7 @@ export function HUD() {
           </div>
           <div
             className="flex items-center justify-between mb-2 cursor-help relative"
+            data-testid="chaos-meter"
             onMouseEnter={() => setChaosTooltipOpen(true)}
             onMouseLeave={() => setChaosTooltipOpen(false)}
             onClick={() => {
@@ -419,7 +426,7 @@ export function HUD() {
         </div>
       </div>
 
-      <div className="absolute top-4 right-4 pointer-events-auto z-20" style={{ width: isMobile ? '100px' : isCompact ? '140px' : '180px' }}>
+      <div className="absolute top-4 right-4 pointer-events-auto z-20" data-testid="minimap" style={{ width: isMobile ? '100px' : isCompact ? '140px' : '180px' }}>
         <div className={`bg-slate-900/90 backdrop-blur-md rounded-xl shadow-xl border border-slate-700/50 ${isMobile ? 'p-2' : 'p-3'}`}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-slate-400">小地图</span>
@@ -617,7 +624,7 @@ export function HUD() {
                 </div>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2" data-testid="memory-slots">
               {memorySlots.map((slot, index) => (
                 <div
                   key={index}

@@ -1,0 +1,26 @@
+# Checklist
+
+- [x] `docs/CURRENT_STATE_DELTA_AUDIT.md` 已生成，包含 16 个章节
+- [x] 报告中所有结论引用具体文件和行号
+- [x] 无法确认的内容标记为 unknown
+- [x] 历史报告中的问题经验证后才列为当前问题
+- [x] `npm test` 结果已记录
+- [x] `npm run lint` 结果已记录
+- [x] `npm run build` 结果已记录
+- [x] `npm run qa` 结果已记录（或记录为 QA 工具链问题）
+- [x] `npm run e2e` 确认为 missing
+- [x] useGameStore Slice 组合架构已确认（引用行号）
+- [x] Scene Graph 存在且实际使用已确认
+- [x] Event Bus 存在且实际使用已确认
+- [x] Commands 统一交互已确认
+- [x] 程序记忆系统接入 breakfast 已确认
+- [x] 已有文档清单完整（含 exists/isOutdated/conflictsWithCode）
+- [x] 文档与代码冲突逐条列出
+- [x] Blocker / Critical / Major / Minor 分级清晰
+- [x] 第一关可对外试玩判定有依据
+- [x] 四关可玩状态逐关评估
+- [x] 未修改任何业务代码
+- [x] 未修改任何现有文档
+- [x] 未修改 package.json
+- [x] 未提交 Git
+- [x] 未推送远程

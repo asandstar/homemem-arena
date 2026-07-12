@@ -17,22 +17,13 @@ export const laundrySortTask: TaskConfig = {
   timeLimit: 90,
   spawnPosition: { x: 0, z: 2.0 },
   spawnRotation: Math.PI,
-  briefing: `👻 下午 · 记忆宅邸洗衣房
+  briefing: `👻 下午 3:00 · 洗衣房异动
 
-"嘿嘿...你好..."
-洗衣篮后面传来小小的声音，
-一只半透明的、穿着白袜子的小幽灵飘了出来。
-
-"我是袜子幽灵...
-一个人洗衣服好无聊，
-陪我玩捉迷藏好不好？"
-
-⚠️ 袜子幽灵会移动衣物、交换篮子位置哦
-⏰ 限时 1 分 30 秒
-🎯 目标：白色→白篮，深色→深篮，毛巾→毛巾篮`,
-  completionText: '衣物都分类好啦！袜子幽灵飘在毛巾篮上，晃着两只白袜子："你好厉害哦...下次...下次我一定藏得更好！"',
-  failureText: '衣服还是乱糟糟的...袜子幽灵从衣物堆里探出头："找不到了吧...嘿嘿...下次再玩哦..."',
-  systemPrompt: '【小橡的内心独白】袜子幽灵好害羞啊...不过分类衣服我可是练过的！记住颜色和篮子位置，一件一件来，别被它打乱节奏！',
+主人的便签：「这批衣服分三类，白/深/毛巾，放错会染色——拜托了小橡！」
+洗衣篮旁散落着衣物，检测到猫正用爪子拨弄一只袜子。`,
+  completionText: '所有衣物分类完毕。主人回复：「完美！小橡比洗衣机还好用！」\n猫蹲在空篮子里，盯着分类好的衣物，尾巴不耐烦地甩动。',
+  failureText: '时间到了，衣物还是乱成一堆。主人：「算了，我送干洗店吧...」\n检测到洗衣机后方似乎有猫的袜子收藏阵。至少有 7 只。',
+  systemPrompt: '【MEM-07 日志】任务：衣物分类。检测到物品位置异常变动，疑似猫科搬运。策略：追踪位置变化，按颜色分类，计数防遗漏。',
 
   objects: [
     // 白色衣物
@@ -248,6 +239,24 @@ export const laundrySortTask: TaskConfig = {
       message: '❓ 一件彩色条纹衬衫凭空出现了...（袜子幽灵：这是我...我收藏的宝贝~）',
       description: '袜子幽灵变出了一件神秘的彩色条纹衬衫',
       memoryType: 'object',
+    },
+    {
+      id: 'se-owner-reminder',
+      trigger: (step) => step === 3,
+      type: 'message',
+      message: '📱 主人消息：「那件白衬衫别和深色一起洗！会变粉的！」',
+      description: '主人提醒分类规则',
+      memoryType: 'object',
+      toastType: 'info' as const,
+    },
+    {
+      id: 'se-cat-hides-sock',
+      trigger: (step) => step === 9,
+      type: 'message',
+      message: '🐱 似乎看到猫往洗衣机后面钻。听见了布料摩擦的声音。',
+      description: '猫疑似在藏衣物',
+      memoryType: 'spatial',
+      toastType: 'cat' as const,
     },
   ],
 

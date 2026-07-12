@@ -136,7 +136,7 @@ export function ResultPage() {
   const { failureReasons, policySuggestions, aiSummary } = currentSession || { failureReasons: [], policySuggestions: [], aiSummary: '' }
 
   return (
-    <div className="min-h-screen bg-game-bg p-4 md:p-8 overflow-y-auto">
+    <div className="min-h-screen bg-game-bg p-4 md:p-8 overflow-y-auto" data-testid="result-page">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="text-center">
           <div className="inline-flex items-center gap-2 mb-4">
@@ -357,6 +357,7 @@ export function ResultPage() {
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <button
             onClick={() => navigate(`/play/${taskId}`)}
+            data-testid="replay-button"
             className="px-6 py-3 bg-game-neon-blue text-game-bg font-bold rounded-lg hover:bg-opacity-80 transition-all shadow-[var(--shadow-game-glow-neon)] flex items-center justify-center gap-2"
           >
             <RotateCcw size={20} />

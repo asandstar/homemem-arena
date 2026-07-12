@@ -16,7 +16,11 @@
     "qa:rooms": "npx vite-node scripts/qa-rooms.ts",
     "qa:tasks": "npx vite-node scripts/qa-tasks.ts",
     "qa:report": "npx vite-node scripts/qa-report.ts",
-    "qa:all": "npm run qa && npm run qa:report"
+    "qa:all": "npm run qa && npm run qa:report",
+    "dev:e2e": "vite --mode e2e",
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:debug": "playwright test --debug"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
@@ -29,6 +33,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/vite": "^4.3.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

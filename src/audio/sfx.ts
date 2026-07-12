@@ -367,3 +367,38 @@ export function stopRoomAmbient(): void {
     currentRoomType = null
   }, 600)
 }
+
+/**
+ * 停止所有持续音源（混乱环境音 + 房间环境音）。
+ * 用于离开 ArenaPage 时的统一清理，避免浏览器后退后音频继续播放。
+ */
+export function stopAllSfx(): void {
+  stopChaosAmbient()
+  stopRoomAmbient()
+}
+
+/**
+ * 是否有活跃的房间环境音。
+ * 用于 E2E 测试验证音频 cleanup。
+ */
+export function hasActiveRoomAmbient(): boolean {
+  return roomAmbientOscillator !== null
+}
+
+/**
+ * 是否有活跃的混乱环境音。
+ */
+export function hasActiveChaosAmbient(): boolean {
+  return ambientOscillator !== null
+}
+
+/**
+ * 获取当前活跃的持续音源数量。
+ * 用于 E2E 测试验证离开 ArenaPage 后所有持续音源已停止。
+ */
+export function getActiveContinuousSfxCount(): number {
+  let count = 0
+  if (roomAmbientOscillator) count++
+  if (ambientOscillator) count++
+  return count
+}

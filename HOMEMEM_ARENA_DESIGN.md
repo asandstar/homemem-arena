@@ -330,7 +330,7 @@ interface SessionEnvelope {
 - `flow_intervention` 事件、最长目标间隔和操作成功率代理指标；
 - 游戏结束后进入 Probe，再 finalize Session；
 - 路由拆包、缺失模型静默 fallback 和安全 JSON 预览；
-- 258 个测试、全绿 lint 和可用的生产构建。
+- 全绿 lint 和可用的生产构建（当前测试结果以 QA_REPORT.md 和实际 `npm test` 输出为准，不在本文档重复维护精确数量）。
 
 尚未达到本设计契约：
 

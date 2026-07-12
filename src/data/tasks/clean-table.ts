@@ -17,22 +17,13 @@ export const cleanTableTask: TaskConfig = {
   timeLimit: 75,
   spawnPosition: { x: 0, z: -1.5 },
   spawnRotation: Math.PI,
-  briefing: `🍽️ 清晨 · 记忆宅邸餐厅
+  briefing: `🍽️ 上午 9:30 · 餐桌惨案现场
 
-"嘻嘻嘻——新来的小精灵？"
-餐桌上，一个长着小短腿的盘子精灵正蹦来蹦去，
-把脏盘子推得东倒西歪。
-
-"我是餐盘精！
-干净盘子？太无聊了！
-脏脏的才有意思嘛~"
-
-⚠️ 餐盘精会把脏盘子偷偷放回来哦
-⏰ 限时 1 分 15 秒
-🎯 目标：脏杯子脏盘子→洗碗机/水槽，垃圾→垃圾桶，遥控器→客厅茶几`,
-  completionText: '餐桌收拾干净啦！餐盘精瘫在干净的盘子上："唔...干净也不是不行啦...下次我一定赢！"',
-  failureText: '餐桌还是乱糟糟的...餐盘精坐在脏盘子堆里朝你做鬼脸："嘿嘿嘿，收拾不完吧~"',
-  systemPrompt: '【小橡的内心独白】餐盘精好调皮...不过没关系！看颜色区分干净和脏的，一件一件分类，我可以的！',
+室友留了张纸条：「昨晚聚餐太开心了，桌子交给你了——P.S. 垃圾桶在厨房」
+桌上杯盘狼藉，检测到猫正试图把爪子伸进脏杯子里。`,
+  completionText: '餐桌擦得发亮。室友发来消息：「太厉害了！晚上请你吃火锅！」\n猫趴在干净的桌面上，似乎对这个没有味道的平面很失望。',
+  failureText: '桌上还是一片狼藉。室友的语音消息：「呃...那我换个桌子吃吧。」\n似乎看到猫在脏盘子堆里找到了什么，心满意足地嚼着。',
+  systemPrompt: '【MEM-07 日志】任务：清理餐桌。检测到多类物品混杂，需分类归位。注意：相似物品需颜色辨识。猫科生物持续干扰。',
 
   objects: [
     // 脏杯子
@@ -245,6 +236,24 @@ export const cleanTableTask: TaskConfig = {
       message: '💡 两个杯子长得好像...注意看颜色哦，灰色的是脏的，白色的是干净的~',
       description: '系统提醒玩家注意区分干净杯和脏杯',
       memoryType: 'object',
+    },
+    {
+      id: 'se-roommate-text',
+      trigger: (step) => step === 4,
+      type: 'message',
+      message: '📱 室友消息：「对了，有两个杯子长得差不多，别搞混哦哈哈」',
+      description: '室友提醒注意区分杯子',
+      memoryType: 'object',
+      toastType: 'info' as const,
+    },
+    {
+      id: 'se-cat-on-table',
+      trigger: (step) => step === 10,
+      type: 'message',
+      message: '🐱 检测到猫科生物在餐桌附近徘徊。似乎对脏盘子很感兴趣。',
+      description: '猫在餐桌附近活动',
+      memoryType: 'spatial',
+      toastType: 'cat' as const,
     },
   ],
 

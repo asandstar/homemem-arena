@@ -5,11 +5,11 @@
 [![React](https://img.shields.io/badge/React-19-61dafb?style=flat&logo=react)](https://react.dev/)
 [![Three.js](https://img.shields.io/badge/Three.js-R3F-000000?style=flat&logo=three.js)](https://threejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?style=flat&logo=typescript)](https://www.typescriptlang.org/)
-[![Tests](https://img.shields.io/badge/tests-287-green?style=flat)]()
+[![Tests](https://img.shields.io/badge/tests-291-green?style=flat)]()
 
-> 🎮 **一款让你顺便练记忆的 3D 网页小游戏** — 你是记忆有限的家政小精灵"小橡"，在会捣乱的房子里完成家务，应对调皮的记忆小妖。
+> 🎮 **一款让你顺便练记忆的 3D 网页小游戏** — 你是记忆有限的家政机器人，主人昵称你为"小橡"，在会捣乱的房子里完成家务，应对调皮的记忆小妖。
 >
-> 🔬 **研究平台** — 在研究层，小橡对应有限工作记忆的机器人代理 `MEM-07`；游戏记录完整的观察、操作、记忆更新与环境扰动数据，用于研究家务机器人长期记忆策略。
+> 🔬 **研究平台** — 在研究层，小橡对应有限工作记忆的机器人代理，系统型号为 `MEM-07`；游戏记录完整的观察、操作、记忆更新与环境扰动数据，用于研究家务机器人长期记忆策略。
 
 **👉 [立即在线试玩](https://asandstar.github.io/homemem-arena/)**
 
@@ -50,8 +50,8 @@ HomeMem Arena 的功能只有同时满足以下三点才算完成：
 
 | 顺序 | 关卡 | 主要记忆能力 | 核心挑战 |
 |---|---|---|---|
-| 1 | 餐桌混乱 | 物体、程序、空间 | 区分脏净状态并正确归位 |
-| 2 | 出门大作战 | 空间、物体 | 跨房间寻找物品，处理位置变化 |
+| 1 | 出门大作战 | 空间、物体 | 跨房间寻找物品，处理位置变化 |
+| 2 | 餐桌混乱 | 物体、程序、空间 | 区分脏净状态并正确归位 |
 | 3 | 洗衣幽灵 | 计数、物体、空间、时序 | 分类多件衣物并应对位置扰动 |
 | 4 | 早餐时间循环 | 程序、时序、空间、物体 | 完成“准备→归位→关闭”的多阶段流程 |
 
@@ -161,13 +161,13 @@ src/
 
 截至 2026-07-10：
 
-- `npm test`：287 个测试通过（11 个测试文件）；
+- `npm test`：291 个测试通过（12 个测试文件）；
 - `npm run lint`：0 error / 0 warning；
 - `npm run build`：通过；
 - 页面已经按路由拆包，非游戏入口主包约 300 KB；3D Arena chunk 约 1.2 MB（含 Three.js）；
 - 已加入显式生命周期、简报暂停、真实倒计时、统一交互命令、阶段目标和游戏→Probe→结果流程；
 - 已加入当前专注目标、两级停滞救援，以及 `flow_intervention`、最长目标间隔、操作成功率等可审计过程数据；
-- 已实现场景图查询、统一事件总线、Zustand Slice 架构、程序记忆系统等基础设施；
+- 已实现统一事件总线、Zustand Slice 架构、程序记忆系统等基础设施（场景图查询模块 `src/engine/sceneGraph.ts` 当前为 experimental / currently unused，待后续接入或清理）；
 - 自定义 QA 对未声明的 `vite-node` 有运行时依赖；
 - Session schema/version/seed、完整状态 delta、本地持久化和研究数据审计仍属于 P1 工作。
 

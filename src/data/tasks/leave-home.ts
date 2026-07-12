@@ -15,22 +15,13 @@ export const leaveHomeTask: TaskConfig = {
   rooms: ['living', 'bedroom', 'kitchen', 'entrance'],
   iconKey: 'door',
   tags: ['空间记忆', '限时挑战', '钥匙猫'],
-  briefing: `🌅 清晨 · 记忆宅邸
+  briefing: `🌅 早上 8:00 · 主人还有 3 分钟出门
 
-"喵~ 新来的小精灵？"
-一只橘白相间的猫咪从窗帘后探出头，
-爪子里还扒拉着什么亮晶晶的东西。
-
-"我是这房子的钥匙守护者——钥匙猫！
-想帮主人出门？
-先找得到钥匙再说喵~"
-
-⚠️ 钥匙猫已经开始行动了
-⏰ 限时 3 分钟
-🎯 目标：钥匙、手机、雨伞 → 玄关托盘`,
-  completionText: '叮咚——主人顺利出门啦！钥匙猫蹲在玄关，甩着尾巴看着你："还行嘛，新精灵。明天再比过喵~"',
-  failureText: '主人还是迟到了...钥匙猫趴在沙发背上，居高临下地看着你："嘿嘿，找到钥匙了吗？明天加油哦喵~"',
-  systemPrompt: '【小橡的内心独白】第一天上班就遇到调皮的钥匙猫...不行不行，我可是要成为优秀家政小精灵的！冷静，记住位置，一件一件来！',
+玄关贴着便签：「小橡！钥匙手机雨伞！拜托了！——再不走就赶不上公交了」
+钥匙应该在茶几上，手机在卧室，猫蹲在沙发背上舔爪子，眼神不太 innocent。`,
+  completionText: '主人冲出门前看了一眼托盘：「全齐了！小橡你太靠谱了！」\n猫跳上窗台，甩了甩尾巴。明天，它大概还会来。',
+  failureText: '主人翻遍口袋，叹了口气：「算了...今天蹭同事车吧。」\n似乎听见沙发缝里传来金属碰撞声。猫的耳朵动了一下。',
+  systemPrompt: '【MEM-07 日志】任务：协助主人出门。当前状态：物品位置待确认，疑似猫科干预。策略：冷静搜索，记录位置，效率优先。',
   timeLimit: 180,
   spawnPosition: { x: 0, z: -1.5 },
   spawnRotation: Math.PI,
@@ -204,6 +195,24 @@ export const leaveHomeTask: TaskConfig = {
       roomHint: 'bedroom',
       eventEffect: 'phone-ring',
       toastType: 'phone' as const,
+    },
+    {
+      id: 'se-owner-urgent-msg',
+      trigger: (step) => step === 3,
+      type: 'message',
+      message: '📱 主人消息：「小橡找到了吗？我公交车来了！！」',
+      description: '主人催促消息',
+      memoryType: 'object',
+      toastType: 'phone' as const,
+    },
+    {
+      id: 'se-cat-observes',
+      trigger: (step) => step === 8,
+      type: 'message',
+      message: '🐱 似乎检测到猫科生物在卧室门口活动。尾部摆动频率异常。',
+      description: '猫在卧室门口观察',
+      memoryType: 'spatial',
+      toastType: 'cat' as const,
     },
   ],
 

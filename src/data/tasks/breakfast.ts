@@ -17,22 +17,13 @@ export const breakfastTask: TaskConfig = {
   timeLimit: 120,
   spawnPosition: { x: 0, z: -1.5 },
   spawnRotation: Math.PI,
-  briefing: `⏰ 深夜 · 记忆宅邸厨房
+  briefing: `⏰ 深夜 11:00 · 厨房闹钟响了
 
-"滴答...滴答...不对不对！"
-一个长着小短腿的闹钟精灵在厨房台面上蹦来蹦去，
-指针转得飞快。
-
-"我是早餐闹钟！
-流程错了！顺序不对！
-必须...必须重新来一遍！"
-
-⚠️ 早餐闹钟有强迫症，流程错了会重来的
-⏰ 限时 2 分钟
-🎯 目标：准备早餐 → 吃完归位 → 所有容器关好`,
-  completionText: '叮铃铃——早餐闹钟的指针终于停了下来。"对了对了！就是这个顺序！谢谢你，小精灵！终于可以睡觉了zzz..."',
-  failureText: '闹钟的指针越转越快..."不对不对！还是不对！重来！再来一遍！"（时间循环重置了...）',
-  systemPrompt: '【小橡的内心独白】早餐闹钟的强迫症好严重...不过没关系！记住流程：先拿东西，摆到桌上，吃完再归位，最后把所有容器关好。一步一步来！',
+冰箱上贴着主人的流程图：「第一阶段—上桌顺序：牛奶→麦片→碗→杯子。第二阶段—归位：所有物品放回原位，容器全部关好。」
+猫蹲在橱柜顶上，尾巴有节奏地拍打着天花板。`,
+  completionText: '所有物品归位，容器关闭。闹钟的指针终于停了。\n主人发来消息：「小橡你做到了？我循环了 47 次都没成功...」猫打了个哈欠。',
+  failureText: '闹钟的指针疯狂倒转。「错误！错误！流程重置！」\n猫安静地坐在台面上，看着一切重置。它的眼神好像在说：又来了。',
+  systemPrompt: '【MEM-07 日志】任务：执行早餐流程并归位。第一阶段：按序上桌（牛奶→麦片→碗→杯子）。第二阶段：全部归位，容器关闭。检测到时间异常，猫科生物可能干扰计时。',
 
   objects: [
     // 牛奶 - 在冰箱里（需要先打开）
@@ -399,6 +390,24 @@ export const breakfastTask: TaskConfig = {
       description: '把干净餐具错误放入垃圾桶触发惩罚',
       memoryType: 'procedural',
     },
+    {
+      id: 'se-owner-flowchart',
+      trigger: (step) => step === 3,
+      type: 'message',
+      message: '📋 主人的流程图备注：「P.S. 牛奶必须最后放回去，不然会变温。别问我怎么知道的。」',
+      description: '主人补充流程说明',
+      memoryType: 'procedural',
+      toastType: 'info' as const,
+    },
+    {
+      id: 'se-cat-timer',
+      trigger: (step) => step === 18,
+      type: 'message',
+      message: '🐱 检测到猫在闹钟附近活动。指针的转速似乎...不太稳定？',
+      description: '猫疑似干扰计时',
+      memoryType: 'temporal',
+      toastType: 'cat' as const,
+    },
   ],
 
   probes: [
@@ -416,9 +425,9 @@ export const breakfastTask: TaskConfig = {
     {
       id: 'p-object-state-fridge',
       type: 'state',
-      question: '🔒 早餐闹钟会对冰箱做什么？',
-      options: ['把牛奶拿出来', '自动关上冰箱门', '把冰箱变干净', '把冰箱搬走'],
-      correctAnswer: '自动关上冰箱门',
+      question: '🔒 早餐闹钟对冰箱门有什么反应？',
+      options: ['提醒玩家记得关冰箱门', '自动关上冰箱门', '把牛奶拿出来', '把冰箱搬走'],
+      correctAnswer: '提醒玩家记得关冰箱门',
       dependsOnMemoryType: 'object',
       difficulty: 'medium',
       relatedObjectIds: ['obj-milk'],
@@ -470,7 +479,7 @@ export const breakfastTask: TaskConfig = {
     {
       id: 'p-temporal-penalty',
       type: 'state',
-      question: '❌ 牛奶离开冰箱多久会第一次被扣分？',
+      question: '⏰ 系统在第几步第一次提醒牛奶需要归位？',
       options: ['10 步', '15 步', '20 步', '25 步'],
       correctAnswer: '15 步',
       dependsOnMemoryType: 'temporal',

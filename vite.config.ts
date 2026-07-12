@@ -4,8 +4,8 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
-export default defineConfig({
-  base: '/homemem-arena/',
+export default defineConfig(({ mode }) => ({
+  base: mode === 'e2e' ? '/' : '/homemem-arena/',
   plugins: [react(), tailwindcss()],
   test: {
     environment: 'jsdom',
@@ -13,4 +13,4 @@ export default defineConfig({
     setupFiles: [],
     include: ['src/**/*.test.{ts,tsx}'],
   },
-} as Parameters<typeof defineConfig>[0])
+}))

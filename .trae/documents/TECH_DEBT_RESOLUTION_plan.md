@@ -240,10 +240,10 @@ Phase 1: Scene Graph ✅ 已完成
 Phase 2: 事件系统统一 ✅ 已完成
    │
    ▼
-Phase 3: useGameStore 拆分 🔄 进行中（Slice已创建，主Store待重写）
+Phase 3: useGameStore 拆分 ✅ 已完成
    │
    ▼
-Phase 4: 程序记忆实现 ⏳ 待做
+Phase 4: 程序记忆实现 ✅ 已完成
 ```
 
 ### 当前实际进度
@@ -252,8 +252,8 @@ Phase 4: 程序记忆实现 ⏳ 待做
 |-------|------|-----------|
 | Phase 1 | ✅ 完成 | `src/engine/sceneGraph.ts` (384行, 18个API), `sceneGraph.test.ts` (16测试通过) |
 | Phase 2 | ✅ 完成 | `src/engine/eventBus.ts` (41行), `useSessionStore.ts` 已订阅事件总线, `recentEvents` 已从 GameStore 删除 |
-| Phase 3 | 🔄 50% | 9个Slice文件已创建，但 `useGameStore.ts` 仍为1328行单体store，未改为组合模式 |
-| Phase 4 | ⏳ 未开始 | 类型定义中 `memoryType='procedural'` 已存在，但无对应游戏机制 |
+| Phase 3 | ✅ 完成 | `useGameStore.ts` 已从 1328 行缩减到 ~200 行，9 个 Slice 组合模式，外部接口不变 |
+| Phase 4 | ✅ 完成 | `src/game/proceduralMemory.ts` 已实现，`ProceduralStep` + `checkProceduralStep` + 混乱值惩罚 |
 
 **优先级理由**：
 1. **Scene Graph 最先**：零风险、不改动现有接口、为后续所有查询需求提供基础设施

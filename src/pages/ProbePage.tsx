@@ -138,7 +138,7 @@ export function ProbePage() {
   }
 
   return (
-    <div className="flex-1 p-4 md:p-6 max-w-4xl mx-auto w-full">
+    <div className="flex-1 p-4 md:p-6 max-w-4xl mx-auto w-full" data-testid="probe-page">
       <div className="mb-6 text-center">
         <h1 className="text-2xl font-bold text-text">记忆测试</h1>
         <p className="text-text-muted mt-1">任务：{task.name} · 共 {task.probes.length} 题</p>

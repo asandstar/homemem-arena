@@ -95,8 +95,9 @@ export function HomePage() {
             </div>
           </div>
 
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
+            data-testid="home-primary-cta"
             className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-lg py-6 rounded-xl shadow-lg shadow-cyan-500/25 transition-all transform hover:scale-105"
             onClick={() => navigate('/tasks')}
           >

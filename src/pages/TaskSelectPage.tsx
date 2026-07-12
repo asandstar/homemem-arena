@@ -43,7 +43,7 @@ export function TaskSelectPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full">
           {taskTemplates.map((task, index) => (
-            <div key={task.id} className="relative">
+            <div key={task.id} className="relative" data-testid={`task-card-${task.id}`}>
               <div className="absolute -left-2 top-1/2 -translate-y-1/2 z-10 hidden md:block">
                 <div className={`${timeSlots[index].color} bg-slate-900/80 rounded-full p-2 border border-slate-700`}>
                   {(() => {

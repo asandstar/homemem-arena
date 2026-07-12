@@ -9,7 +9,8 @@ import { Scene3D } from '../components/arena3d/Scene3D'
 import { HUD } from '../components/arena3d/HUD'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
-import { initAudio } from '../audio/sfx'
+import { initAudio, stopAllSfx } from '../audio/sfx'
+import { stopBgm } from '../audio/bgm'
 import { executeContainerInteraction, executePick } from '../game/commands'
 import { getTaskById } from '../data/tasks'
 import { DialogBox } from '../components/dialog/DialogBox'
@@ -45,16 +46,18 @@ export function ArenaPage() {
   } = useDialog()
 
   useEffect(() => {
-    if (phase === 'playing' && task) {
+    // briefingOpen 守卫：ArenaPage 重新挂载时 Zustand store 中 phase 可能仍为上一局的 'playing'，
+    // 此时不应触发 dialog。只有在 briefing 关闭后（用户点击开始任务）才触发。
+    if (phase === 'playing' && task && !briefingOpen) {
       triggerDialog('start', task.id)
     }
-  }, [phase, task, triggerDialog])
+  }, [phase, task, briefingOpen, triggerDialog])
 
   useEffect(() => {
-    if (phase === 'playing') {
+    if (phase === 'playing' && !briefingOpen) {
       triggerDialog('roomEnter', currentRoom)
     }
-  }, [currentRoom, phase, triggerDialog])
+  }, [currentRoom, phase, briefingOpen, triggerDialog])
 
   // 初始化任务
   useEffect(() => {
@@ -65,6 +68,14 @@ export function ArenaPage() {
     initializeTask(taskId)
     setBriefingOpen(true)
   }, [taskId, initializeTask, navigate])
+
+  // 离开 ArenaPage 时停止所有音频，避免浏览器后退后继续播放
+  useEffect(() => {
+    return () => {
+      stopBgm()
+      stopAllSfx()
+    }
+  }, [])
 
   // 关卡完成或失败后进入记忆测试，最终分析在 Probe 完成后执行
   useEffect(() => {
@@ -143,9 +154,20 @@ export function ArenaPage() {
       {/* HUD 覆盖层 */}
       <HUD />
 
+      {/* 游戏中返回任务列表按钮 */}
+      {!briefingOpen && task && phase === 'playing' && (
+        <button
+          data-testid="back-to-tasks"
+          onClick={() => navigate('/tasks')}
+          className="absolute top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-auto bg-slate-900/70 backdrop-blur-sm rounded-lg px-3 py-1.5 text-xs text-slate-400 hover:text-white transition-colors shadow-lg border border-slate-700/50"
+        >
+          ← 返回任务列表
+        </button>
+      )}
+
       {/* 任务简报浮层 - 主人便签风格 */}
       {briefingOpen && task && (
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-40">
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-40" data-testid="briefing-modal">
           <div className="max-w-lg mx-4 w-full">
             {/* MEM-07 系统提示 */}
             {task.systemPrompt && (
@@ -196,6 +218,7 @@ export function ArenaPage() {
               <div className="flex gap-3">
                 <Button
                   className="flex-1 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold"
+                  data-testid="briefing-start-button"
                   onClick={() => {
                     initAudio()
                     startSession(task.id, task.name, task.briefing)
@@ -207,6 +230,7 @@ export function ArenaPage() {
                 </Button>
                 <Button
                   className="border border-yellow-400 text-yellow-800 hover:bg-yellow-200/70 bg-yellow-100/60"
+                  data-testid="back-to-tasks"
                   onClick={() => navigate('/tasks')}
                 >
                   返回

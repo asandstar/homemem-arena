@@ -202,6 +202,55 @@ export function FirstPersonControls() {
   const lastTouchTimeRef = useRef(0)
   const isTouchInteractionRef = useRef(false)
 
+  // 使用 ref 保存 tap 处理函数，避免在 useEffect 依赖中列出所有状态
+  // useEffect 只订阅一次事件，tap 时通过 ref 调用最新闭包
+  const tapHandlerRef = useRef<() => void>(() => {})
+
+  useEffect(() => {
+    tapHandlerRef.current = () => {
+      const state = useGameStore.getState()
+      if (state.phase !== 'playing') return
+      const nearbyEntity = findNearestInteractableEntity(
+        state.entities,
+        state.robotPosition,
+        state.currentRoom,
+      )
+      const nearbyContainer = findNearestInteractableContainer(
+        state.task,
+        state.robotPosition,
+        state.currentRoom,
+      )
+      const { addToast: addToastNow } = useToastStore.getState()
+
+      if (state.heldEntityId) {
+        if (nearbyContainer) {
+          const result = executeContainerInteraction(nearbyContainer.id)
+          if (result.success) {
+            addToastNow('success', `已放置到 ${nearbyContainer.name}`)
+          } else if (result.reason) {
+            addToastNow('error', result.reason)
+          }
+        }
+      } else {
+        if (nearbyEntity) {
+          const result = executePick(nearbyEntity.id)
+          if (result.success) {
+            addToastNow('success', `已拾取 ${nearbyEntity.name}`)
+          } else if (result.reason) {
+            addToastNow('error', result.reason)
+          }
+        } else if (nearbyContainer) {
+          const isOpen =
+            state.containerStates[nearbyContainer.id]?.open ?? nearbyContainer.initialOpen
+          const result = executeContainerInteraction(nearbyContainer.id)
+          if (result.success) {
+            addToastNow('info', isOpen ? `已关闭 ${nearbyContainer.name}` : `已打开 ${nearbyContainer.name}`)
+          }
+        }
+      }
+    }
+  })
+
   useEffect(() => {
     const canvas = gl.domElement
 
@@ -253,42 +302,10 @@ export function FirstPersonControls() {
 
     const handleTouchEnd = () => {
       if (!isTouchInteractionRef.current && Date.now() - lastTouchTimeRef.current > 300) {
-        handleTap()
+        tapHandlerRef.current()
       }
       isDraggingRef.current = false
       lastTouchTimeRef.current = Date.now()
-    }
-
-    const handleTap = () => {
-      if (phase !== 'playing') return
-      const nearbyEntity = findNearbyEntity()
-      const nearbyContainer = findNearbyContainer()
-
-      if (heldEntityId) {
-        if (nearbyContainer) {
-          const result = executeContainerInteraction(nearbyContainer.id)
-          if (result.success) {
-            addToast('success', `已放置到 ${nearbyContainer.name}`)
-          } else if (result.reason) {
-            addToast('error', result.reason)
-          }
-        }
-      } else {
-        if (nearbyEntity) {
-          const result = executePick(nearbyEntity.id)
-          if (result.success) {
-            addToast('success', `已拾取 ${nearbyEntity.name}`)
-          } else if (result.reason) {
-            addToast('error', result.reason)
-          }
-        } else if (nearbyContainer) {
-          const isOpen = containerStates[nearbyContainer.id]?.open ?? nearbyContainer.initialOpen
-          const result = executeContainerInteraction(nearbyContainer.id)
-          if (result.success) {
-            addToast('info', isOpen ? `已关闭 ${nearbyContainer.name}` : `已打开 ${nearbyContainer.name}`)
-          }
-        }
-      }
     }
 
     canvas.style.cursor = 'grab'

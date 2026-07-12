@@ -1,17 +1,12 @@
-import { StrictMode, useEffect } from 'react'
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import { useUiStore } from './store/useUiStore'
-import { initAudioEnabled } from './audio/sfx'
+import { AudioInitializer } from './components/AudioInitializer'
+import { installE2eTestApi } from './utils/e2eTestApi'
 
-function AudioInitializer() {
-  const audioEnabled = useUiStore((state) => state.audioEnabled)
-  useEffect(() => {
-    initAudioEnabled(audioEnabled)
-  }, [])
-  return null
-}
+// 仅在 DEV && VITE_E2E === 'true' 时挂载测试 API
+installE2eTestApi()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
