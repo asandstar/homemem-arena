@@ -166,13 +166,13 @@ export const cleanTableTask: TaskConfig = {
     },
     {
       id: 'g-clean-cup',
-      description: '干净杯子保持自由状态',
+      description: '干净杯子未被放入垃圾桶',
       memoryType: 'object',
       predicate: (entities: EntityStateSnapshot[]) => {
         const clean = entities.find((e) => e.configId === 'obj-clean-cup')
-        return clean?.status === 'free' && !clean.placedIn
+        return !clean?.placedIn || clean.placedIn !== 'cnt-trash-bin'
       },
-      achievedMessage: '干净杯子未被错误处理！',
+      achievedMessage: '干净杯子未被误扔！',
     },
     {
       id: 'g-plate',

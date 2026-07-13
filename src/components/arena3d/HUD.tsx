@@ -3,8 +3,8 @@ import { useGameStore } from '../../store/useGameStore'
 import { useUiStore } from '../../store/useUiStore'
 import { Target, Clock, CheckCircle2, AlertTriangle, Zap, Package, Keyboard, Brain, Lock, Unlock, Trash2, ChevronDown, ChevronUp, Skull, AlertCircle, X, Cat, Smartphone, RotateCcw, Volume2, VolumeX, HelpCircle, Eye, EyeOff, MapPin, Box, History, Play } from 'lucide-react'
 import { Minimap } from './Minimap'
-import { initAudio, updateRoomAmbient, stopRoomAmbient } from '../../audio/sfx'
-import { playBgm, stopBgm, setBgmVolume, getBgmVolume } from '../../audio/bgm'
+import { initAudio, updateRoomAmbient } from '../../audio/sfx'
+import { playBgm, setBgmVolume, getBgmVolume } from '../../audio/bgm'
 import type { GoalSpec } from '../../types/task'
 import { HelpPanel } from '../help/HelpPanel'
 import { useSessionStore } from '../../store/useSessionStore'
@@ -211,11 +211,6 @@ export function HUD() {
   useEffect(() => {
     if (phase === 'playing' && task) {
       playBgm(task.id)
-    } else {
-      stopBgm()
-    }
-    return () => {
-      stopBgm()
     }
   }, [phase, task])
 
@@ -223,10 +218,9 @@ export function HUD() {
     if (phase === 'playing') {
       updateRoomAmbient(currentRoom)
     }
-    return () => {
-      stopRoomAmbient()
-    }
   }, [currentRoom, phase])
+
+  
 
   if (hudHidden) {
     return (

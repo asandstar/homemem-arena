@@ -9,8 +9,8 @@ import { Scene3D } from '../components/arena3d/Scene3D'
 import { HUD } from '../components/arena3d/HUD'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
-import { initAudio, stopAllSfx } from '../audio/sfx'
-import { stopBgm } from '../audio/bgm'
+import { initAudio, stopAllSfx, resetRoomAmbientFlag } from '../audio/sfx'
+import { stopBgmImmediate, resetArenaCleanupFlag } from '../audio/bgm'
 import { executeContainerInteraction, executePick } from '../game/commands'
 import { getTaskById } from '../data/tasks'
 import { DialogBox } from '../components/dialog/DialogBox'
@@ -71,9 +71,26 @@ export function ArenaPage() {
 
   // 离开 ArenaPage 时停止所有音频，避免浏览器后退后继续播放
   useEffect(() => {
-    return () => {
-      stopBgm()
+    resetArenaCleanupFlag()
+    resetRoomAmbientFlag()
+
+    const handleCleanup = () => {
+      ;(window as any).__arenaCleanupCalled = true
+      ;(window as any).__lastCleanupTime = Date.now()
+      ;(window as any).__cleanupCallCount = ((window as any).__cleanupCallCount || 0) + 1
+      stopBgmImmediate()
       stopAllSfx()
+    }
+
+    const handleBeforeUnload = () => {
+      handleCleanup()
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      handleCleanup()
     }
   }, [])
 
@@ -158,7 +175,11 @@ export function ArenaPage() {
       {!briefingOpen && task && phase === 'playing' && (
         <button
           data-testid="back-to-tasks"
-          onClick={() => navigate('/tasks')}
+          onClick={() => {
+            stopBgmImmediate()
+            stopAllSfx()
+            navigate('/tasks')
+          }}
           className="absolute top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-auto bg-slate-900/70 backdrop-blur-sm rounded-lg px-3 py-1.5 text-xs text-slate-400 hover:text-white transition-colors shadow-lg border border-slate-700/50"
         >
           ← 返回任务列表

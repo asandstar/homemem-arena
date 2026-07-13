@@ -20,6 +20,12 @@ export interface E2eTestApi {
   isBgmPlaying(): boolean
   hasActiveRoomAmbient(): boolean
   getActiveContinuousSfxCount(): number
+  wasCleanupCalled(): boolean
+  getLastCleanupTime(): number
+  getCleanupCallCount(): number
+  getResetAudioStateCallCount(): number
+  wasBgmStopCalled(): boolean
+  getBgmStopCount(): number
 
   // === Command-backed 方法（调用真实 command 层）===
   /** 按 configId 查找实体并调用 executeSaveMemory */
@@ -32,6 +38,12 @@ export interface E2eTestApi {
   toggleContainer(containerId: string): { success: boolean; reason?: string }
   /** 调用 executeRoomTransition（从当前房间切换到目标房间） */
   transitionToRoom(roomId: string): { success: boolean; reason?: string }
+
+  // === 音频状态管理方法 ===
+  /** 重置音频状态（用于测试前准备） */
+  resetAudioState(): { success: boolean }
+  /** 强制清理音频（仅用于测试诊断） */
+  forceCleanupAudio(): { success: boolean }
 }
 
 declare global {

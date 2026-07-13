@@ -1,7 +1,7 @@
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { updateChaosAmbient, isAudioEnabled } from '../../audio/sfx'
+import { updateChaosAmbient, isAudioEnabled, stopChaosAmbient } from '../../audio/sfx'
 
 interface ChaosEffectProps {
   active: boolean
@@ -13,8 +13,17 @@ export function ChaosEffect({ chaosValue }: ChaosEffectProps) {
   const shakeTime = useRef(0)
   const lastAudioUpdate = useRef(0)
   const chaosLightRef = useRef<THREE.PointLight>(null)
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false
+      stopChaosAmbient()
+    }
+  }, [])
 
   useFrame((_, delta) => {
+    if (!isMounted.current) return
     shakeTime.current += delta
     lastAudioUpdate.current += delta
 

@@ -5,6 +5,7 @@ let bgmGain: GainNode | null = null
 let bgmVolume = 0.3
 let isPlaying = false
 let currentTaskId: string | null = null
+let isArenaCleaningUp = false
 
 interface BgmConfig {
   notes: number[]
@@ -60,7 +61,7 @@ function initAudioContext(): void {
 }
 
 function playNote(config: BgmConfig): void {
-  if (!audioContext || !bgmGain || !isAudioEnabled()) return
+  if (!isPlaying || isArenaCleaningUp || !audioContext || !bgmGain || !isAudioEnabled()) return
 
   const note = config.notes[noteIndex]
   const oscillator = audioContext.createOscillator()
@@ -90,24 +91,62 @@ function playNote(config: BgmConfig): void {
 }
 
 export function playBgm(taskId: string): void {
-  if (!isAudioEnabled()) return
+  console.log(`[BGM] playBgm called, isArenaCleaningUp=${isArenaCleaningUp}, isPlaying=${isPlaying}, taskId=${taskId}`)
+  if (!isAudioEnabled() || isArenaCleaningUp) {
+    console.log(`[BGM] playBgm early return, isAudioEnabled=${isAudioEnabled()}, isArenaCleaningUp=${isArenaCleaningUp}`)
+    return
+  }
   initAudioContext()
 
-  if (currentTaskId === taskId && isPlaying) return
+  if (currentTaskId === taskId && isPlaying) {
+    console.log(`[BGM] playBgm return, same task and already playing`)
+    return
+  }
 
   stopBgm()
 
+  if (isArenaCleaningUp) {
+    console.log(`[BGM] playBgm return after stopBgm, isArenaCleaningUp=${isArenaCleaningUp}`)
+    return
+  }
+
   const config = BGM_CONFIG[taskId] || DEFAULT_BGM
   currentTaskId = taskId
+  
+  if (isArenaCleaningUp) {
+    console.log(`[BGM] playBgm reset currentTaskId, isArenaCleaningUp=${isArenaCleaningUp}`)
+    currentTaskId = null
+    return
+  }
+  
+  console.log(`[BGM] Setting isPlaying = true`)
   isPlaying = true
   noteIndex = 0
+
+  if (isArenaCleaningUp) {
+    console.log(`[BGM] playBgm reset isPlaying after set, isArenaCleaningUp=${isArenaCleaningUp}`)
+    isPlaying = false
+    currentTaskId = null
+    return
+  }
 
   if (bgmGain && audioContext) {
     bgmGain.gain.value = 0
     bgmGain.gain.linearRampToValueAtTime(1, audioContext.currentTime + 2)
   }
 
+  if (isArenaCleaningUp) {
+    console.log(`[BGM] playBgm reset isPlaying after gain, isArenaCleaningUp=${isArenaCleaningUp}`)
+    isPlaying = false
+    currentTaskId = null
+    return
+  }
+
   playNote(config)
+}
+
+export function getIsPlaying(): boolean {
+  return isPlaying
 }
 
 export function stopBgm(): void {
@@ -124,6 +163,32 @@ export function stopBgm(): void {
   if (bgmGain && audioContext) {
     bgmGain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1)
   }
+}
+
+export function stopBgmImmediate(): void {
+  ;(window as any).__bgmStopCalled = true
+  ;(window as any).__bgmStopTime = Date.now()
+  ;(window as any).__bgmStopCount = ((window as any).__bgmStopCount || 0) + 1
+  
+  if (!isPlaying && !noteTimer) return
+
+  isArenaCleaningUp = true
+  isPlaying = false
+  currentTaskId = null
+
+  if (noteTimer) {
+    clearTimeout(noteTimer)
+    noteTimer = null
+  }
+
+  if (bgmGain && audioContext) {
+    bgmGain.gain.cancelScheduledValues(audioContext.currentTime)
+    bgmGain.gain.setValueAtTime(0, audioContext.currentTime)
+  }
+}
+
+export function resetArenaCleanupFlag(): void {
+  isArenaCleaningUp = false
 }
 
 export function setBgmVolume(volume: number): void {

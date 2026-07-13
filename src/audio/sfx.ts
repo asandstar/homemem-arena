@@ -122,6 +122,7 @@ export const SFX_CONFIG: Record<SfxId, SfxConfig> = {
 
 let audioContext: AudioContext | null = null
 let isEnabled = true
+let chaosAmbientStoppedAt = 0
 
 export function initAudio(): void {
   if (!audioContext) {
@@ -200,6 +201,8 @@ export function updateChaosAmbient(chaosValue: number): void {
   }
 
   if (!ambientOscillator) {
+    if (Date.now() - chaosAmbientStoppedAt < 500) return
+    console.log('SFX: creating chaos ambient')
     ambientOscillator = audioContext.createOscillator()
     ambientGain = audioContext.createGain()
     ambientLfo = audioContext.createOscillator()
@@ -243,33 +246,46 @@ export function updateChaosAmbient(chaosValue: number): void {
 }
 
 export function stopChaosAmbient(): void {
-  if (!ambientOscillator || !audioContext) return
-
-  const now = audioContext.currentTime
-  if (ambientGain) {
-    ambientGain.gain.linearRampToValueAtTime(0, now + 0.5)
-  }
-
-  setTimeout(() => {
-    if (ambientOscillator) {
+  chaosAmbientStoppedAt = Date.now()
+  if (ambientOscillator) {
+    if (ambientGain && audioContext) {
+      const now = audioContext.currentTime
+      ambientGain.gain.cancelScheduledValues(now)
+      ambientGain.gain.setValueAtTime(0, now)
+    }
+    try {
       ambientOscillator.stop()
       ambientOscillator.disconnect()
-      ambientOscillator = null
+    } catch {
+      // ignore already stopped/disconnected errors
     }
-    if (ambientLfo) {
+    ambientOscillator = null
+  }
+  if (ambientLfo) {
+    try {
       ambientLfo.stop()
       ambientLfo.disconnect()
-      ambientLfo = null
+    } catch {
+      // ignore already stopped/disconnected errors
     }
-    if (ambientGain) {
+    ambientLfo = null
+  }
+  if (ambientGain) {
+    try {
       ambientGain.disconnect()
-      ambientGain = null
+    } catch {
+      // ignore disconnect errors
     }
-    if (ambientLfoGain) {
+    ambientGain = null
+  }
+  if (ambientLfoGain) {
+    try {
       ambientLfoGain.disconnect()
-      ambientLfoGain = null
+    } catch {
+      // ignore disconnect errors
     }
-  }, 600)
+    ambientLfoGain = null
+  }
 }
 
 export function resetChaosAudio(): void {
@@ -291,6 +307,8 @@ export function playFootstep(speed: number): void {
 let roomAmbientOscillator: OscillatorNode | null = null
 let roomAmbientGain: GainNode | null = null
 let currentRoomType: string | null = null
+let roomAmbientTimer: ReturnType<typeof setTimeout> | null = null
+let isRoomAmbientStopped = false
 
 const ROOM_AMBIENT_CONFIG: Record<string, { freq: number; volume: number; type: OscillatorType }> = {
   living: { freq: 440, volume: 0.03, type: 'sine' },
@@ -302,37 +320,38 @@ const ROOM_AMBIENT_CONFIG: Record<string, { freq: number; volume: number; type: 
 }
 
 export function updateRoomAmbient(roomId: string): void {
+  if (isRoomAmbientStopped) return
   if (!isEnabled || !audioContext) return
   if (currentRoomType === roomId) return
 
   const config = ROOM_AMBIENT_CONFIG[roomId] || ROOM_AMBIENT_CONFIG.living
 
+  if (roomAmbientTimer) {
+    clearTimeout(roomAmbientTimer)
+    roomAmbientTimer = null
+  }
+
   if (roomAmbientOscillator) {
     const now = audioContext.currentTime
     if (roomAmbientGain) {
-      roomAmbientGain.gain.linearRampToValueAtTime(0, now + 0.5)
+      roomAmbientGain.gain.cancelScheduledValues(now)
+      roomAmbientGain.gain.setValueAtTime(0, now)
     }
-    setTimeout(() => {
-      if (roomAmbientOscillator) {
-        roomAmbientOscillator.stop()
-        roomAmbientOscillator.disconnect()
-        roomAmbientOscillator = null
-      }
-      if (roomAmbientGain) {
-        roomAmbientGain.disconnect()
-        roomAmbientGain = null
-      }
-      startRoomAmbient(config)
-    }, 600)
-  } else {
-    startRoomAmbient(config)
+    roomAmbientOscillator.stop()
+    roomAmbientOscillator.disconnect()
+    roomAmbientOscillator = null
+    if (roomAmbientGain) {
+      roomAmbientGain.disconnect()
+      roomAmbientGain = null
+    }
   }
 
+  startRoomAmbient(config)
   currentRoomType = roomId
 }
 
 function startRoomAmbient(config: { freq: number; volume: number; type: OscillatorType }): void {
-  if (!audioContext) return
+  if (!audioContext || isRoomAmbientStopped) return
   roomAmbientOscillator = audioContext.createOscillator()
   roomAmbientGain = audioContext.createGain()
 
@@ -349,23 +368,38 @@ function startRoomAmbient(config: { freq: number; volume: number; type: Oscillat
 }
 
 export function stopRoomAmbient(): void {
-  if (!roomAmbientOscillator || !audioContext) return
-  const now = audioContext.currentTime
-  if (roomAmbientGain) {
-    roomAmbientGain.gain.linearRampToValueAtTime(0, now + 0.5)
+  isRoomAmbientStopped = true
+  if (roomAmbientTimer) {
+    clearTimeout(roomAmbientTimer)
+    roomAmbientTimer = null
   }
-  setTimeout(() => {
-    if (roomAmbientOscillator) {
+  if (roomAmbientOscillator) {
+    if (roomAmbientGain && audioContext) {
+      const now = audioContext.currentTime
+      roomAmbientGain.gain.cancelScheduledValues(now)
+      roomAmbientGain.gain.setValueAtTime(0, now)
+    }
+    try {
       roomAmbientOscillator.stop()
       roomAmbientOscillator.disconnect()
-      roomAmbientOscillator = null
+    } catch {
+      // ignore already stopped/disconnected errors
     }
-    if (roomAmbientGain) {
+    roomAmbientOscillator = null
+  }
+  if (roomAmbientGain) {
+    try {
       roomAmbientGain.disconnect()
-      roomAmbientGain = null
+    } catch {
+      // ignore disconnect errors
     }
-    currentRoomType = null
-  }, 600)
+    roomAmbientGain = null
+  }
+  currentRoomType = null
+}
+
+export function resetRoomAmbientFlag(): void {
+  isRoomAmbientStopped = false
 }
 
 /**

@@ -21,8 +21,8 @@ import {
   type GameCommandResult,
 } from '../game/commands'
 import { sharedRooms } from '../data/rooms'
-import { isBgmPlaying } from '../audio/bgm'
-import { hasActiveRoomAmbient, getActiveContinuousSfxCount } from '../audio/sfx'
+import { isBgmPlaying, stopBgmImmediate, resetArenaCleanupFlag } from '../audio/bgm'
+import { hasActiveRoomAmbient, getActiveContinuousSfxCount, stopAllSfx, resetRoomAmbientFlag } from '../audio/sfx'
 import type { RoomId } from '../types/room'
 
 function toResult(r: GameCommandResult): { success: boolean; reason?: string } {
@@ -58,6 +58,38 @@ function buildTestApi(): E2eTestApi {
     isBgmPlaying: () => isBgmPlaying(),
     hasActiveRoomAmbient: () => hasActiveRoomAmbient(),
     getActiveContinuousSfxCount: () => getActiveContinuousSfxCount(),
+
+    // === 强制清理（仅用于测试诊断）===
+    forceCleanupAudio: () => {
+      stopBgmImmediate()
+      stopAllSfx()
+      return { success: true }
+    },
+    resetAudioState: () => {
+      resetArenaCleanupFlag()
+      resetRoomAmbientFlag()
+      ;(window as any).__resetAudioStateCallCount = ((window as any).__resetAudioStateCallCount || 0) + 1
+      ;(window as any).__lastResetTime = Date.now()
+      return { success: true }
+    },
+    wasCleanupCalled: () => {
+      return !!(window as any).__arenaCleanupCalled
+    },
+    getLastCleanupTime: () => {
+      return (window as any).__lastCleanupTime || 0
+    },
+    getCleanupCallCount: () => {
+      return (window as any).__cleanupCallCount || 0
+    },
+    getResetAudioStateCallCount: () => {
+      return (window as any).__resetAudioStateCallCount || 0
+    },
+    wasBgmStopCalled: () => {
+      return !!(window as any).__bgmStopCalled
+    },
+    getBgmStopCount: () => {
+      return (window as any).__bgmStopCount || 0
+    },
 
     // === Command-backed 方法 ===
     saveMemoryByConfigId: (configId: string) => {

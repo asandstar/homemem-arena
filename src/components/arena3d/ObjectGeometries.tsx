@@ -9,23 +9,32 @@ interface ContainerGeometryProps extends GeometryProps {
   isOpen?: boolean
 }
 
+function createDefaultMaterial(color: string): THREE.MeshStandardMaterial {
+  return new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.7,
+    metalness: 0.1,
+  })
+}
+
 export function KeyModel({ size }: GeometryProps) {
+  const mat = useMemo(() => createDefaultMaterial('#f59e0b'), [])
   return (
     <group>
-      <mesh position={[0, size.y * 0.3, 0]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[0, size.y * 0.3, 0]} rotation={[0, 0, Math.PI / 2]} material={mat}>
         <torusGeometry args={[size.x * 0.15, 0.02, 8, 16]} />
       </mesh>
-      <mesh position={[0, size.y * 0.1, 0]}>
+      <mesh position={[0, size.y * 0.1, 0]} material={mat}>
         <boxGeometry args={[size.x * 0.6, size.y * 0.12, size.z * 0.1]} />
       </mesh>
       <group position={[-size.x * 0.3, size.y * 0.1, 0]}>
-        <mesh position={[0, size.y * 0.08, 0]}>
+        <mesh position={[0, size.y * 0.08, 0]} material={mat}>
           <boxGeometry args={[size.x * 0.25, size.y * 0.06, size.z * 0.1]} />
         </mesh>
-        <mesh position={[0, -size.y * 0.04, 0]}>
+        <mesh position={[0, -size.y * 0.04, 0]} material={mat}>
           <boxGeometry args={[size.x * 0.2, size.y * 0.06, size.z * 0.1]} />
         </mesh>
-        <mesh position={[size.x * 0.08, size.y * 0.02, 0]}>
+        <mesh position={[size.x * 0.08, size.y * 0.02, 0]} material={mat}>
           <boxGeometry args={[size.x * 0.12, size.y * 0.08, size.z * 0.1]} />
         </mesh>
       </group>
@@ -34,18 +43,20 @@ export function KeyModel({ size }: GeometryProps) {
 }
 
 export function PhoneModel({ size }: GeometryProps) {
+  const mat = useMemo(() => createDefaultMaterial('#374151'), [])
+  const screenMat = useMemo(() => createDefaultMaterial('#10b981'), [])
   return (
     <group>
-      <mesh>
+      <mesh material={mat}>
         <boxGeometry args={[size.x, size.y, size.z * 0.08]} />
       </mesh>
-      <mesh position={[0, 0, size.z * 0.05]}>
+      <mesh position={[0, 0, size.z * 0.05]} material={screenMat}>
         <boxGeometry args={[size.x * 0.9, size.y * 0.85, 0.005]} />
       </mesh>
-      <mesh position={[size.x * 0.35, size.y * 0.38, size.z * 0.06]}>
+      <mesh position={[size.x * 0.35, size.y * 0.38, size.z * 0.06]} material={mat}>
         <sphereGeometry args={[0.015, 8, 8]} />
       </mesh>
-      <mesh position={[size.x * 0.4, size.y * 0.38, size.z * 0.06]}>
+      <mesh position={[size.x * 0.4, size.y * 0.38, size.z * 0.06]} material={mat}>
         <sphereGeometry args={[0.01, 8, 8]} />
       </mesh>
     </group>
@@ -53,18 +64,19 @@ export function PhoneModel({ size }: GeometryProps) {
 }
 
 export function UmbrellaModel({ size }: GeometryProps) {
+  const mat = useMemo(() => createDefaultMaterial('#ef4444'), [])
   return (
     <group>
-      <mesh position={[0, size.y * 0.35, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[0, size.y * 0.35, 0]} rotation={[Math.PI / 2, 0, 0]} material={mat}>
         <cylinderGeometry args={[0.015, 0.015, size.y * 0.6, 8]} />
       </mesh>
-      <mesh position={[0, size.y * 0.65, size.x * 0.15]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[0, size.y * 0.65, size.x * 0.15]} rotation={[0, 0, Math.PI / 2]} material={mat}>
         <torusGeometry args={[size.x * 0.1, 0.015, 8, 12]} />
       </mesh>
-      <mesh position={[0, size.y * 0.8, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, size.y * 0.8, 0]} rotation={[-Math.PI / 2, 0, 0]} material={mat}>
         <coneGeometry args={[size.x * 0.4, size.y * 0.3, 8]} />
       </mesh>
-      <mesh position={[0, size.y * 0.95, 0]}>
+      <mesh position={[0, size.y * 0.95, 0]} material={mat}>
         <coneGeometry args={[0.02, 0.05, 6]} />
       </mesh>
     </group>
@@ -72,21 +84,23 @@ export function UmbrellaModel({ size }: GeometryProps) {
 }
 
 export function MilkCartonModel({ size }: GeometryProps) {
+  const mat = useMemo(() => createDefaultMaterial('#fef9c3'), [])
+  const lidMat = useMemo(() => createDefaultMaterial('#4f46e5'), [])
   return (
     <group>
-      <mesh>
+      <mesh material={mat}>
         <boxGeometry args={[size.x, size.y * 0.7, size.z]} />
       </mesh>
-      <mesh position={[0, size.y * 0.5, 0]} rotation={[Math.PI / 6, 0, 0]}>
+      <mesh position={[0, size.y * 0.5, 0]} rotation={[Math.PI / 6, 0, 0]} material={mat}>
         <boxGeometry args={[size.x, size.y * 0.35, 0.02]} />
       </mesh>
-      <mesh position={[0, size.y * 0.5, 0]} rotation={[-Math.PI / 6, 0, 0]}>
+      <mesh position={[0, size.y * 0.5, 0]} rotation={[-Math.PI / 6, 0, 0]} material={mat}>
         <boxGeometry args={[size.x, size.y * 0.35, 0.02]} />
       </mesh>
-      <mesh position={[0, size.y * 0.35, size.z / 2 + 0.005]}>
+      <mesh position={[0, size.y * 0.35, size.z / 2 + 0.005]} material={mat}>
         <boxGeometry args={[size.x * 0.7, size.y * 0.35, 0.01]} />
       </mesh>
-      <mesh position={[0, size.y * 0.78, 0]}>
+      <mesh position={[0, size.y * 0.78, 0]} material={lidMat}>
         <boxGeometry args={[size.x * 0.2, size.y * 0.08, size.z * 0.2]} />
       </mesh>
     </group>
@@ -94,21 +108,22 @@ export function MilkCartonModel({ size }: GeometryProps) {
 }
 
 export function CerealBoxModel({ size }: GeometryProps) {
+  const mat = useMemo(() => createDefaultMaterial('#fbbf24'), [])
   return (
     <group>
-      <mesh>
+      <mesh material={mat}>
         <boxGeometry args={[size.x, size.y, size.z]} />
       </mesh>
-      <mesh position={[0, 0, size.z / 2 + 0.005]}>
+      <mesh position={[0, 0, size.z / 2 + 0.005]} material={mat}>
         <boxGeometry args={[size.x * 0.85, size.y * 0.7, 0.01]} />
       </mesh>
-      <mesh position={[0, size.y / 2 + 0.01, 0]}>
+      <mesh position={[0, size.y / 2 + 0.01, 0]} material={mat}>
         <boxGeometry args={[size.x, 0.02, size.z]} />
       </mesh>
-      <mesh position={[0, size.y / 2 + 0.02, 0]} rotation={[0, 0, Math.PI / 12]}>
+      <mesh position={[0, size.y / 2 + 0.02, 0]} rotation={[0, 0, Math.PI / 12]} material={mat}>
         <boxGeometry args={[size.x * 0.1, 0.015, size.z]} />
       </mesh>
-      <mesh position={[0, size.y / 2 + 0.02, 0]} rotation={[0, 0, -Math.PI / 12]}>
+      <mesh position={[0, size.y / 2 + 0.02, 0]} rotation={[0, 0, -Math.PI / 12]} material={mat}>
         <boxGeometry args={[size.x * 0.1, 0.015, size.z]} />
       </mesh>
     </group>
@@ -116,18 +131,19 @@ export function CerealBoxModel({ size }: GeometryProps) {
 }
 
 export function CupModel({ size }: GeometryProps) {
+  const mat = useMemo(() => createDefaultMaterial('#f87171'), [])
   return (
     <group>
-      <mesh position={[0, size.y * 0.4, 0]}>
+      <mesh position={[0, size.y * 0.4, 0]} material={mat}>
         <cylinderGeometry args={[size.x / 2, size.x / 2 * 0.85, size.y * 0.8, 16]} />
       </mesh>
-      <mesh position={[0, size.y * 0.85, 0]}>
+      <mesh position={[0, size.y * 0.85, 0]} material={mat}>
         <cylinderGeometry args={[size.x / 2 + 0.02, size.x / 2 + 0.02, 0.03, 16]} />
       </mesh>
-      <mesh position={[0, size.y * 0.86, 0]}>
+      <mesh position={[0, size.y * 0.86, 0]} material={mat}>
         <cylinderGeometry args={[size.x / 2 - 0.03, size.x / 2 - 0.03, 0.01, 16]} />
       </mesh>
-      <mesh position={[size.x / 2 + 0.08, size.y * 0.45, 0]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[size.x / 2 + 0.08, size.y * 0.45, 0]} rotation={[0, 0, Math.PI / 2]} material={mat}>
         <torusGeometry args={[size.x * 0.2, 0.025, 8, 12]} />
       </mesh>
     </group>
@@ -135,15 +151,16 @@ export function CupModel({ size }: GeometryProps) {
 }
 
 export function BowlModel({ size }: GeometryProps) {
+  const mat = useMemo(() => createDefaultMaterial('#9ca3af'), [])
   return (
     <group>
-      <mesh position={[0, size.y * 0.3, 0]}>
+      <mesh position={[0, size.y * 0.3, 0]} material={mat}>
         <cylinderGeometry args={[size.x / 2, size.x / 2 * 0.7, size.y * 0.6, 16]} />
       </mesh>
-      <mesh position={[0, size.y * 0.6, 0]}>
+      <mesh position={[0, size.y * 0.6, 0]} material={mat}>
         <cylinderGeometry args={[size.x / 2 + 0.02, size.x / 2 + 0.02, 0.03, 16]} />
       </mesh>
-      <mesh position={[0, size.y * 0.61, 0]}>
+      <mesh position={[0, size.y * 0.61, 0]} material={mat}>
         <cylinderGeometry args={[size.x / 2 - 0.03, size.x / 2 - 0.03, 0.015, 16]} />
       </mesh>
     </group>

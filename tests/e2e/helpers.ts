@@ -113,11 +113,15 @@ export async function navigateToFirstLevelAndStart(page: Page): Promise<void> {
  * 关闭开场对话框（DialogBox 的 z-50 pointer-events-auto 会拦截点击）
  */
 export async function closeStartDialog(page: Page): Promise<void> {
-  const dialogOverlay = page.locator('div.z-50.pointer-events-auto')
-  await dialogOverlay.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
-  if (await dialogOverlay.isVisible()) {
-    await dialogOverlay.locator('button').first().click({ force: true })
-    await dialogOverlay.waitFor({ state: 'hidden', timeout: 5000 })
+  try {
+    const dialogOverlay = page.locator('div.z-50.pointer-events-auto')
+    await dialogOverlay.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
+    if (await dialogOverlay.isVisible()) {
+      await dialogOverlay.locator('button').first().click({ force: true })
+      await dialogOverlay.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+    }
+  } catch {
+    // ignore errors when page is closed or dialog not found
   }
 }
 
@@ -160,11 +164,25 @@ export async function waitForAudioStopped(
   intervalMs = 200,
 ): Promise<boolean> {
   const deadline = Date.now() + timeoutMs
+  let lastBgm = null
+  let lastAmbient = null
+  let lastSfxCount = null
   while (Date.now() < deadline) {
     const bgm = await readState<boolean>(page, 'isBgmPlaying')
     const ambient = await readState<boolean>(page, 'hasActiveRoomAmbient')
     const sfxCount = await readState<number>(page, 'getActiveContinuousSfxCount')
+    
+    if (bgm !== lastBgm || ambient !== lastAmbient || sfxCount !== lastSfxCount) {
+      console.log(`Audio state changed: bgm=${bgm}, ambient=${ambient}, sfxCount=${sfxCount}, time=${Date.now()}`)
+      lastBgm = bgm
+      lastAmbient = ambient
+      lastSfxCount = sfxCount
+    }
+    
     if (!bgm && !ambient && sfxCount === 0) return true
+    if (Date.now() > deadline - 1000) {
+      console.log(`Audio still active at deadline: bgm=${bgm}, ambient=${ambient}, sfxCount=${sfxCount}`)
+    }
     await page.waitForTimeout(intervalMs)
   }
   return false
