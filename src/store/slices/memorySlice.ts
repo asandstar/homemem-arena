@@ -6,6 +6,7 @@ import { playSfx } from '../../audio/sfx'
 import { DEFAULT_LEVEL_BALANCE } from '../../data/levelBalance'
 import { generateId } from '../../utils/format'
 import { sharedRooms } from '../../data/rooms'
+import { playMemorySaveEffect, playMemoryExpireEffect } from '../../effects/particleSystem'
 
 export interface MemorySliceState {
   memorySlots: (MemorySlot | null)[]
@@ -74,6 +75,7 @@ export const createMemorySlice = (set: any, get: any): MemorySliceState => ({
       get().triggerMemorySaveEffect(emptyIndex)
       get().addFloatingText('记忆已保存', 'memory', entity.position.x, entity.position.y + 1)
       playSfx('memory_save')
+      playMemorySaveEffect(entity.position)
       return { success: true, slotIndex: emptyIndex, isUpdate: false }
     }
 
@@ -121,7 +123,7 @@ export const createMemorySlice = (set: any, get: any): MemorySliceState => ({
   },
 
   markMemoryOutdated: (entityConfigId: string) => {
-    const { memorySlots } = get()
+    const { memorySlots, entities, currentRoom } = get()
     const hasMatchingSlot = memorySlots.some((s: MemorySlot | null) => s && s.entityConfigId === entityConfigId && !s.outdated)
     if (!hasMatchingSlot) return
 
@@ -130,5 +132,10 @@ export const createMemorySlice = (set: any, get: any): MemorySliceState => ({
     get().incrementOutdatedMemory()
     get().incrementChaos(DEFAULT_LEVEL_BALANCE.outdatedMemoryChaos)
     playSfx('memory_outdated')
+
+    const entity = entities.find((e: any) => e.configId === entityConfigId)
+    if (entity && entity.currentRoom === currentRoom) {
+      playMemoryExpireEffect(entity.position)
+    }
   },
 })

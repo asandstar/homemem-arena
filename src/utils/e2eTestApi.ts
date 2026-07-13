@@ -110,25 +110,23 @@ function buildTestApi(): E2eTestApi {
       const room = Object.values(sharedRooms).find((r) => r.id === toRoom)
       if (!room) return { success: false, reason: `未知房间: ${roomId}` }
 
-      // 计算落地位置：优先降落在房间内容器附近
-      // placeEntity/useContainer 使用 room.center + container.position 作为容器世界坐标
-      // 距离检查为 2.5，所以需要降落在容器附近
       const task = useGameStore.getState().task
       const containersInRoom = task?.containers.filter((c) => c.room === toRoom) ?? []
+      const entitiesInRoom = useGameStore.getState().entities.filter((e) => e.currentRoom === toRoom && e.status !== 'hidden')
+
+      const allTargets = [
+        ...containersInRoom.map((c) => ({ x: room.center.x + c.position.x, z: room.center.z + c.position.z })),
+        ...entitiesInRoom.map((e) => ({ x: e.position.x, z: e.position.z })),
+      ]
 
       let landingPos: { x: number; y: number; z: number }
-      if (containersInRoom.length > 0) {
-        // 降落在容器位置的质心，确保后续 place/toggle 距离检查通过
-        const sumX = containersInRoom.reduce(
-          (sum, c) => sum + (room.center.x + c.position.x), 0,
-        )
-        const sumZ = containersInRoom.reduce(
-          (sum, c) => sum + (room.center.z + c.position.z), 0,
-        )
+      if (allTargets.length > 0) {
+        const sumX = allTargets.reduce((sum, t) => sum + t.x, 0)
+        const sumZ = allTargets.reduce((sum, t) => sum + t.z, 0)
         landingPos = {
-          x: sumX / containersInRoom.length,
+          x: sumX / allTargets.length,
           y: 0,
-          z: sumZ / containersInRoom.length,
+          z: sumZ / allTargets.length,
         }
       } else {
         landingPos = { x: room.center.x, y: 0, z: room.center.z }

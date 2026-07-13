@@ -47,7 +47,7 @@ export const cleanTableTask: TaskConfig = {
       initialPosition: { x: 0.3, y: 0, z: 0.2 },
       surfaceContainerId: 'cnt-dining-table',
       size: { x: 0.1, y: 0.12, z: 0.1 },
-      color: '#ffffff',
+      color: '#e5e7eb',
       stateProperties: { cleanliness: 'clean' },
     },
     // 盘子
@@ -59,7 +59,7 @@ export const cleanTableTask: TaskConfig = {
       initialPosition: { x: 0, y: 0, z: -0.2 },
       surfaceContainerId: 'cnt-dining-table',
       size: { x: 0.25, y: 0.02, z: 0.25 },
-      color: '#f3f4f6',
+      color: '#d1d5db',
       stateProperties: { cleanliness: 'dirty' },
     },
     // 餐巾纸 (垃圾)
@@ -71,7 +71,7 @@ export const cleanTableTask: TaskConfig = {
       initialPosition: { x: 0.4, y: 0, z: -0.1 },
       surfaceContainerId: 'cnt-dining-table',
       size: { x: 0.1, y: 0.05, z: 0.08 },
-      color: '#fef3c7',
+      color: '#fcd34d',
     },
     // 遥控器
     {
@@ -104,7 +104,7 @@ export const cleanTableTask: TaskConfig = {
       id: 'cnt-dishwasher',
       name: '洗碗机',
       room: 'kitchen',
-      position: { x: 5.0, y: 0.4, z: -2.0 },
+      position: { x: 2.5, y: 0.4, z: -2.0 },
       size: { x: 0.6, y: 0.8, z: 0.6 },
       surfaceHeight: 0.82,
       color: '#a3a3a3',
@@ -116,7 +116,7 @@ export const cleanTableTask: TaskConfig = {
       id: 'cnt-sink',
       name: '水槽',
       room: 'kitchen',
-      position: { x: 6.5, y: 0.4, z: -2.0 },
+      position: { x: 3.0, y: 0.4, z: -2.0 },
       size: { x: 0.5, y: 0.8, z: 0.5 },
       surfaceHeight: 0.82,
       color: '#9ca3af',
@@ -128,7 +128,7 @@ export const cleanTableTask: TaskConfig = {
       id: 'cnt-trash-bin',
       name: '垃圾桶',
       room: 'kitchen',
-      position: { x: 5.0, y: 0.2, z: 2.0 },
+      position: { x: 2.5, y: 0.2, z: 2.0 },
       size: { x: 0.3, y: 0.4, z: 0.3 },
       surfaceHeight: 0.42,
       color: '#1f2937',

@@ -1,11 +1,14 @@
-import { ArrowRight, DoorOpen, Utensils, Shirt, Coffee, Star, Zap } from 'lucide-react'
+import { ArrowRight, DoorOpen, Utensils, Shirt, Coffee, Star, Zap, Clock, RotateCcw } from 'lucide-react'
 import type { TaskConfig } from '../../types/task'
+import type { SaveMetadata } from '../../save/saveSystem'
 
 interface TaskCardProps {
   task: TaskConfig
   levelNumber: number
   onStart: (taskId: string) => void
   timeLabel?: string
+  saveInfo?: SaveMetadata
+  onContinue?: (saveId: string) => void
 }
 
 function difficultyColor(difficulty: string): string {
@@ -49,13 +52,26 @@ function getTaskIcon(iconKey?: string) {
   }
 }
 
-export function TaskCard({ task, levelNumber, onStart, timeLabel }: TaskCardProps) {
+function formatSaveTime(timestamp: number): string {
+  const date = new Date(timestamp)
+  return date.toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function formatElapsedTime(elapsedMs: number): string {
+  const seconds = Math.floor(elapsedMs / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = seconds % 60
+  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
+}
+
+export function TaskCard({ task, levelNumber, onStart, timeLabel, saveInfo, onContinue }: TaskCardProps) {
   return (
-    <button
-      type="button"
-      className="relative w-full text-left bg-slate-800/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 hover:border-purple-500/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-purple-500/10 cursor-pointer group"
-      onClick={() => onStart(task.id)}
-    >
+    <div className="relative w-full bg-slate-800/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 hover:border-purple-500/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-purple-500/10">
       <div className="absolute -top-3 -left-3 w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
         {levelNumber}
       </div>
@@ -83,16 +99,40 @@ export function TaskCard({ task, levelNumber, onStart, timeLabel }: TaskCardProp
 
       <p className="text-sm text-slate-300 mb-4 leading-relaxed">{task.description}</p>
 
+      {saveInfo && !saveInfo.levelCompleted && !saveInfo.levelFailed && (
+        <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock size={14} className="text-amber-400" />
+              <span className="text-xs text-amber-300">上次保存: {formatSaveTime(saveInfo.timestamp)}</span>
+            </div>
+            <span className="text-xs text-amber-300">已用时间: {formatElapsedTime(saveInfo.elapsedMs)}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => onContinue?.(saveInfo.id)}
+            className="mt-2 flex items-center gap-1.5 text-xs text-amber-300 hover:text-amber-200 transition-colors"
+          >
+            <RotateCcw size={12} />
+            继续游戏
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Star className="text-yellow-400 size={16}" />
           <span className="text-sm text-slate-400">{difficultyLabel(task.difficulty)}</span>
         </div>
-        <div className="flex items-center gap-2 text-purple-400 group-hover:text-purple-300 transition-colors">
+        <button
+          type="button"
+          onClick={() => onStart(task.id)}
+          className="flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-colors"
+        >
           <span className="text-sm font-medium">开始挑战</span>
-          <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-        </div>
+          <ArrowRight size={18} className="hover:translate-x-1 transition-transform" />
+        </button>
       </div>
-    </button>
+    </div>
   )
 }

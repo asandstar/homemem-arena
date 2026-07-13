@@ -3,6 +3,8 @@ import { ArrowLeft, Sun, Coffee, CloudMoon, Moon, Volume2, VolumeX, Sparkles } f
 import { taskTemplates } from '../data/tasks'
 import { TaskCard } from '../components/tasks/TaskCard'
 import { useUiStore } from '../store/useUiStore'
+import { getSaveList, loadGame } from '../save/saveSystem'
+import { useGameStore } from '../store/useGameStore'
 
 const timeSlots = [
   { icon: Sun, label: '清晨 07:30', color: 'text-yellow-400' },
@@ -14,9 +16,25 @@ const timeSlots = [
 export function TaskSelectPage() {
   const navigate = useNavigate()
   const { audioEnabled, toggleAudioEnabled } = useUiStore()
+  const { loadFromSave, initializeTask } = useGameStore()
+
+  const saveList = getSaveList()
 
   const handleStart = (taskId: string) => {
     navigate(`/play/${taskId}`)
+  }
+
+  const handleContinue = (saveId: string) => {
+    const saveData = loadGame(saveId)
+    if (saveData) {
+      initializeTask(saveData.taskId)
+      loadFromSave(saveData)
+      navigate(`/play/${saveData.taskId}`)
+    }
+  }
+
+  const getLatestSaveForTask = (taskId: string) => {
+    return saveList.find(s => s.taskId === taskId)
   }
 
   return (
@@ -74,7 +92,14 @@ export function TaskSelectPage() {
                   })()}
                 </div>
               </div>
-              <TaskCard task={task} levelNumber={index + 1} onStart={handleStart} timeLabel={timeSlots[index].label} />
+              <TaskCard
+                  task={task}
+                  levelNumber={index + 1}
+                  onStart={handleStart}
+                  timeLabel={timeSlots[index].label}
+                  saveInfo={getLatestSaveForTask(task.id)}
+                  onContinue={handleContinue}
+                />
             </div>
           ))}
         </div>

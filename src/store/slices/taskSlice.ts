@@ -15,6 +15,7 @@ import { emitEvent } from '../../engine/eventBus'
 import { getFreeObjectInitialPosition } from '../../game/placement'
 import { initProceduralProgress, checkProceduralStep } from '../../game/proceduralMemory'
 import type { ProceduralProgress } from '../../game/proceduralMemory'
+import { playGoalCompleteEffect, playTimeWarningEffect, playTaskCompleteEffect } from '../../effects/particleSystem'
 
 export type GamePhase = 'idle' | 'briefing' | 'playing' | 'probing' | 'analyzing' | 'result' | 'aborted'
 
@@ -209,6 +210,9 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
     startPlaying: () => {
       if (!get().task) return
       set({ phase: 'playing', startTime: Date.now(), elapsedMs: 0 })
+      if (isAudioEnabled()) {
+        playSfx('task_start')
+      }
     },
 
     setGamePhase: (phase: GamePhase) => {
@@ -232,6 +236,8 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
       if (isAudioEnabled()) {
         playSfx('level_complete')
       }
+      const { robotPosition } = get()
+      playTaskCompleteEffect(robotPosition)
     },
 
     checkLevelCompletion: () => {
@@ -252,6 +258,8 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
           get().addEventToast(message, 'info', 3000)
           get().addFloatingText(message, 'info', 0, 0)
           get().addScore(DEFAULT_LEVEL_BALANCE.validMemoryUseScore)
+          const { robotPosition } = get()
+          playGoalCompleteEffect(robotPosition)
           // 通过事件总线统一分发
           emitEvent({
             type: 'task_progress',
@@ -385,12 +393,12 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
     },
 
     tickElapsed: (deltaMs: number) => {
-      const { levelFailed, levelCompleted, phase, task } = get()
+      const { levelFailed, levelCompleted, phase, task, elapsedMs } = get()
       if (phase !== 'playing' || levelFailed || levelCompleted) return
 
       get().updateMoveAnimations()
 
-      const newElapsed = get().elapsedMs + deltaMs
+      const newElapsed = elapsedMs + deltaMs
 
       if (task?.timeLimit && newElapsed >= task.timeLimit * 1000) {
         set({ elapsedMs: task.timeLimit * 1000 })
@@ -406,6 +414,26 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
       const chaos = get().chaosValue
       if (chaos >= DEFAULT_LEVEL_BALANCE.maxChaos && !get().levelFailed) {
         get().setLevelFailed('混乱值过载')
+      }
+
+      if (task?.timeLimit) {
+        const remainingSeconds = Math.floor((task.timeLimit * 1000 - newElapsed) / 1000)
+        const previousRemainingSeconds = Math.floor((task.timeLimit * 1000 - elapsedMs) / 1000)
+        
+        if (remainingSeconds <= 30 && remainingSeconds > 0 && previousRemainingSeconds > 30) {
+          if (isAudioEnabled()) {
+            playSfx('time_warning')
+          }
+          const { robotPosition } = get()
+          playTimeWarningEffect(robotPosition)
+        }
+        if (remainingSeconds <= 10 && remainingSeconds > 0 && previousRemainingSeconds > 10) {
+          if (isAudioEnabled()) {
+            playSfx('time_warning')
+          }
+          const { robotPosition } = get()
+          playTimeWarningEffect(robotPosition)
+        }
       }
 
       get().triggerScriptedEvents()

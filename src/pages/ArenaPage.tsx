@@ -10,11 +10,13 @@ import { HUD } from '../components/arena3d/HUD'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import { initAudio, stopAllSfx, resetRoomAmbientFlag } from '../audio/sfx'
-import { stopBgmImmediate, resetArenaCleanupFlag } from '../audio/bgm'
+import { stopBgmImmediate, resetArenaCleanupFlag, updateBgmState } from '../audio/bgm'
+import { playRoomAmbient, stopAmbientImmediate } from '../audio/ambient'
 import { executeContainerInteraction, executePick } from '../game/commands'
 import { getTaskById } from '../data/tasks'
 import { DialogBox } from '../components/dialog/DialogBox'
 import { useDialog } from '../dialog/useDialog'
+import { startAutoSave, stopAutoSave } from '../save/saveSystem'
 
 export function ArenaPage() {
   const { taskId } = useParams<{ taskId: string }>()
@@ -24,10 +26,13 @@ export function ArenaPage() {
     task,
     phase,
     currentRoom,
+    chaosValue,
+    achievedGoalIds,
     initializeTask,
     startPlaying,
     levelCompleted,
     levelFailed,
+    saveCurrentGame,
   } = useGameStore()
 
   const { startSession } = useSessionStore()
@@ -56,8 +61,18 @@ export function ArenaPage() {
   useEffect(() => {
     if (phase === 'playing' && !briefingOpen) {
       triggerDialog('roomEnter', currentRoom)
+      playRoomAmbient(currentRoom)
     }
   }, [currentRoom, phase, briefingOpen, triggerDialog])
+
+  useEffect(() => {
+    if (phase === 'playing') {
+      const totalGoals = task?.goals?.length ?? 1
+      const completedGoals = achievedGoalIds?.size ?? 0
+      const progress = completedGoals / totalGoals
+      updateBgmState(chaosValue, progress)
+    }
+  }, [chaosValue, phase, task, achievedGoalIds])
 
   // 初始化任务
   useEffect(() => {
@@ -79,10 +94,14 @@ export function ArenaPage() {
       ;(window as any).__lastCleanupTime = Date.now()
       ;(window as any).__cleanupCallCount = ((window as any).__cleanupCallCount || 0) + 1
       stopBgmImmediate()
+      stopAmbientImmediate()
       stopAllSfx()
+      stopAutoSave()
+      saveCurrentGame()
     }
 
     const handleBeforeUnload = () => {
+      saveCurrentGame()
       handleCleanup()
     }
 
@@ -92,7 +111,19 @@ export function ArenaPage() {
       window.removeEventListener('beforeunload', handleBeforeUnload)
       handleCleanup()
     }
-  }, [])
+  }, [saveCurrentGame])
+
+  // 自动保存
+  useEffect(() => {
+    if (phase === 'playing') {
+      startAutoSave(() => {
+        saveCurrentGame()
+      })
+    }
+    return () => {
+      stopAutoSave()
+    }
+  }, [phase, saveCurrentGame])
 
   // 关卡完成或失败后进入记忆测试，最终分析在 Probe 完成后执行
   useEffect(() => {

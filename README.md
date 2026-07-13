@@ -157,20 +157,40 @@ npm run build
 
 ## 文档索引
 
-当前规范：
+### 📖 设计文档
 
-- [产品、游戏与研究设计基线](docs/product-research-game-design.md)
-- [功能设计与系统架构](HOMEMEM_ARENA_DESIGN.md)
-- [叙事设计](NARRATIVE_DESIGN.md)
-- [视觉与交互规格](docs/design-polish-spec.md)
-- [QA Smoke Checklist](QA_SMOKE_CHECKLIST.md)
+| 文档 | 路径 | 说明 |
+|:---|:---|:---|
+| 产品与研究设计基线 | [docs/design/00_product_research_game_design.md](docs/design/00_product_research_game_design.md) | 产品定位与研究目标 |
+| 游戏设计文档 | [docs/design/01_homemem_arena_design.md](docs/design/01_homemem_arena_design.md) | 功能设计与系统架构 |
+| 叙事设计 | [docs/design/02_narrative_design.md](docs/design/02_narrative_design.md) | 故事背景与角色设定 |
+| 视觉与交互规格 | [docs/design/03_design_polish_spec.md](docs/design/03_design_polish_spec.md) | UI/UX设计规范 |
+| 游戏设计概览 | [docs/design/overview.md](docs/design/overview.md) | 游戏简介与核心玩法 |
+| 核心机制 | [docs/design/mechanics.md](docs/design/mechanics.md) | 记忆系统、混乱值、交互等 |
+| 关卡设计 | [docs/design/levels.md](docs/design/levels.md) | 各关卡详细设计 |
 
-历史快照（用于追踪当时的发现，不代表当前事实或未来验收标准）：
+### 🔧 技术文档
 
-- `FOUNDATION_AUDIT.md` / `FOUNDATION_QA.md`
-- `PLAYTEST_REPORT.md` / `PLAYTEST_REPORT_V2.md`
-- `QA_REPORT.md`
-- `NPC_REPRESENTATION_AUDIT.md`
+| 文档 | 路径 | 说明 |
+|:---|:---|:---|
+| 技术架构 | [docs/tech/architecture.md](docs/tech/architecture.md) | 整体架构与目录结构 |
+| 技术债务登记 | [docs/tech/01_technical_debt_register.md](docs/tech/01_technical_debt_register.md) | 技术债务追踪 |
+
+### 🚀 开发指南
+
+| 文档 | 路径 | 说明 |
+|:---|:---|:---|
+| 环境搭建 | [docs/dev/setup.md](docs/dev/setup.md) | 开发环境配置与常用命令 |
+| 编码规范 | [docs/dev/coding-standard.md](docs/dev/coding-standard.md) | 代码风格与最佳实践 |
+
+### 📦 归档文档（历史快照）
+
+| 类型 | 路径 | 说明 |
+|:---|:---|:---|
+| 测试报告 | [docs/archive/playtest-reports/](docs/archive/playtest-reports/) | 测试报告历史 |
+| 审计报告 | [docs/archive/audits/](docs/archive/audits/) | 项目审计历史 |
+| QA报告 | [docs/archive/qa-reports/](docs/archive/qa-reports/) | QA测试报告 |
+| 计划文档 | [docs/archive/old-plans/](docs/archive/old-plans/) | 旧开发计划 |
 
 ## License
 

@@ -12,6 +12,7 @@ import { createScoreSlice } from './slices/scoreSlice'
 import { createFeedbackSlice } from './slices/feedbackSlice'
 import { createAnimationSlice } from './slices/animationSlice'
 import { createFlowSlice } from './slices/flowSlice'
+import { saveGame, type SaveData } from '../save/saveSystem'
 import type {
   ViewMode,
   GamePhase,
@@ -165,6 +166,8 @@ interface GameStore extends GameState {
   updateMoveAnimations: () => void
   updateFlowState: (elapsedMs: number) => void
   checkProceduralAction: (action: 'pick' | 'place' | 'use', targetId: string) => { wrongOrder: boolean; currentStepLabel?: string }
+  saveCurrentGame: () => SaveData | null
+  loadFromSave: (saveData: SaveData) => void
 }
 
 function toEntitySnapshots(entities: EntityState[]): EntityStateSnapshot[] {
@@ -235,5 +238,64 @@ export const useGameStore = create<GameStore>((set, get) => ({
   isGoalAchieved: (goal) => {
     const { entities, achievedGoalIds } = get()
     return isGoalSatisfied(goal, toEntitySnapshots(entities), achievedGoalIds)
+  },
+
+  saveCurrentGame: () => {
+    const state = get()
+    if (!state.task) return null
+
+    try {
+      return saveGame({
+        taskId: state.task.id,
+        taskName: state.task.name,
+        phase: state.phase,
+        robotPosition: state.robotPosition,
+        robotRotation: state.robotRotation,
+        currentRoom: state.currentRoom,
+        entities: state.entities,
+        containerStates: state.containerStates,
+        heldEntityId: state.heldEntityId,
+        stepCount: state.stepCount,
+        elapsedMs: state.elapsedMs,
+        visitedRooms: Array.from(state.visitedRooms),
+        memorySlots: state.memorySlots,
+        chaosValue: state.chaosValue,
+        score: state.score,
+        combo: state.combo,
+        maxCombo: state.maxCombo,
+        triggeredEvents: Array.from(state.triggeredEvents),
+        achievedGoalIds: Array.from(state.achievedGoalIds),
+        proceduralProgress: state.proceduralProgress,
+        levelCompleted: state.levelCompleted,
+        levelFailed: state.levelFailed,
+      })
+    } catch {
+      return null
+    }
+  },
+
+  loadFromSave: (saveData: SaveData) => {
+    set({
+      phase: saveData.phase as GamePhase,
+      robotPosition: saveData.robotPosition,
+      robotRotation: saveData.robotRotation,
+      currentRoom: saveData.currentRoom,
+      entities: saveData.entities,
+      containerStates: saveData.containerStates,
+      heldEntityId: saveData.heldEntityId,
+      stepCount: saveData.stepCount,
+      elapsedMs: saveData.elapsedMs,
+      visitedRooms: new Set(saveData.visitedRooms) as Set<RoomId>,
+      memorySlots: saveData.memorySlots,
+      chaosValue: saveData.chaosValue,
+      score: saveData.score,
+      combo: saveData.combo,
+      maxCombo: saveData.maxCombo,
+      triggeredEvents: new Set(saveData.triggeredEvents),
+      achievedGoalIds: new Set(saveData.achievedGoalIds),
+      proceduralProgress: saveData.proceduralProgress,
+      levelCompleted: saveData.levelCompleted,
+      levelFailed: saveData.levelFailed,
+    })
   },
 }))

@@ -1,4 +1,4 @@
-export type SfxId = 'pick' | 'place_success' | 'place_error' | 'memory_save' | 'memory_outdated' | 'cat_event' | 'phone_ring' | 'level_complete' | 'chaos_warning' | 'footstep' | 'door_open' | 'door_close' | 'drawer_open' | 'drawer_close'
+export type SfxId = 'pick' | 'place_success' | 'place_error' | 'memory_save' | 'memory_outdated' | 'cat_event' | 'phone_ring' | 'level_complete' | 'chaos_warning' | 'footstep' | 'door_open' | 'door_close' | 'drawer_open' | 'drawer_close' | 'character_speak_plate' | 'character_speak_sock' | 'character_speak_alarm' | 'character_speak_cat' | 'drag_object' | 'fridge_open' | 'fridge_close' | 'cabinet_open' | 'cabinet_close' | 'sink_water' | 'dishwasher_start' | 'trash_drop' | 'time_warning' | 'task_start' | 'task_complete' | 'room_enter'
 
 export interface SfxConfig {
   frequency: number
@@ -118,6 +118,133 @@ export const SFX_CONFIG: Record<SfxId, SfxConfig> = {
     slide: { start: 300, end: 150 },
     envelope: { attack: 0.01, decay: 0.06, sustain: 0.3, release: 0.13 },
   },
+  character_speak_plate: {
+    frequency: 880,
+    duration: 0.5,
+    type: 'sine',
+    volume: 0.15,
+    slide: { start: 880, end: 1320 },
+    envelope: { attack: 0.05, decay: 0.15, sustain: 0.4, release: 0.3 },
+  },
+  character_speak_sock: {
+    frequency: 440,
+    duration: 0.6,
+    type: 'triangle',
+    volume: 0.12,
+    slide: { start: 440, end: 660 },
+    envelope: { attack: 0.08, decay: 0.2, sustain: 0.3, release: 0.32 },
+  },
+  character_speak_alarm: {
+    frequency: 1000,
+    duration: 0.4,
+    type: 'square',
+    volume: 0.18,
+    slide: { start: 1000, end: 1500 },
+    envelope: { attack: 0.02, decay: 0.1, sustain: 0.3, release: 0.28 },
+  },
+  character_speak_cat: {
+    frequency: 600,
+    duration: 0.35,
+    type: 'triangle',
+    volume: 0.2,
+    slide: { start: 500, end: 800 },
+    envelope: { attack: 0.03, decay: 0.08, sustain: 0.4, release: 0.24 },
+  },
+  drag_object: {
+    frequency: 300,
+    duration: 0.08,
+    type: 'sawtooth',
+    volume: 0.1,
+    slide: { start: 350, end: 250 },
+    envelope: { attack: 0.005, decay: 0.03, sustain: 0.2, release: 0.045 },
+  },
+  fridge_open: {
+    frequency: 180,
+    duration: 0.5,
+    type: 'sawtooth',
+    volume: 0.12,
+    slide: { start: 200, end: 120 },
+    envelope: { attack: 0.03, decay: 0.15, sustain: 0.2, release: 0.32 },
+  },
+  fridge_close: {
+    frequency: 140,
+    duration: 0.35,
+    type: 'sawtooth',
+    volume: 0.15,
+    slide: { start: 160, end: 90 },
+    envelope: { attack: 0.02, decay: 0.1, sustain: 0.3, release: 0.23 },
+  },
+  cabinet_open: {
+    frequency: 280,
+    duration: 0.35,
+    type: 'square',
+    volume: 0.14,
+    slide: { start: 320, end: 180 },
+    envelope: { attack: 0.02, decay: 0.1, sustain: 0.25, release: 0.23 },
+  },
+  cabinet_close: {
+    frequency: 220,
+    duration: 0.25,
+    type: 'square',
+    volume: 0.16,
+    slide: { start: 260, end: 140 },
+    envelope: { attack: 0.01, decay: 0.08, sustain: 0.3, release: 0.16 },
+  },
+  sink_water: {
+    frequency: 400,
+    duration: 0.8,
+    type: 'sawtooth',
+    volume: 0.1,
+    slide: { start: 500, end: 300 },
+    envelope: { attack: 0.05, decay: 0.2, sustain: 0.3, release: 0.55 },
+  },
+  dishwasher_start: {
+    frequency: 350,
+    duration: 0.6,
+    type: 'sawtooth',
+    volume: 0.12,
+    slide: { start: 400, end: 250 },
+    envelope: { attack: 0.03, decay: 0.15, sustain: 0.25, release: 0.42 },
+  },
+  trash_drop: {
+    frequency: 120,
+    duration: 0.4,
+    type: 'sawtooth',
+    volume: 0.18,
+    slide: { start: 180, end: 60 },
+    envelope: { attack: 0.02, decay: 0.15, sustain: 0.2, release: 0.23 },
+  },
+  time_warning: {
+    frequency: 600,
+    duration: 0.3,
+    type: 'square',
+    volume: 0.2,
+    slide: { start: 600, end: 400 },
+    envelope: { attack: 0.02, decay: 0.08, sustain: 0.2, release: 0.2 },
+  },
+  task_start: {
+    frequency: 523.25,
+    duration: 0.5,
+    type: 'sine',
+    volume: 0.25,
+    slide: { start: 523.25, end: 1046.5 },
+    envelope: { attack: 0.05, decay: 0.15, sustain: 0.3, release: 0.3 },
+  },
+  task_complete: {
+    frequency: 523.25,
+    duration: 1.0,
+    type: 'sine',
+    volume: 0.3,
+    envelope: { attack: 0.05, decay: 0.15, sustain: 0.5, release: 0.3 },
+  },
+  room_enter: {
+    frequency: 659.25,
+    duration: 0.35,
+    type: 'sine',
+    volume: 0.15,
+    slide: { start: 523.25, end: 659.25 },
+    envelope: { attack: 0.03, decay: 0.1, sustain: 0.3, release: 0.22 },
+  },
 }
 
 let audioContext: AudioContext | null = null
@@ -174,6 +301,122 @@ export function playSfx(sfxId: SfxId): void {
 
   oscillator.start(now)
   oscillator.stop(now + config.duration)
+}
+
+let activeSfxOscillators: Set<OscillatorNode> = new Set()
+let activeSfxGainNodes: Set<GainNode> = new Set()
+
+export function playSfxWithControl(sfxId: SfxId): void {
+  if (!isEnabled || !audioContext) return
+
+  const config = SFX_CONFIG[sfxId]
+  if (!config) return
+
+  const oscillator = audioContext.createOscillator()
+  const gainNode = audioContext.createGain()
+
+  activeSfxOscillators.add(oscillator)
+  activeSfxGainNodes.add(gainNode)
+
+  oscillator.type = config.type
+  oscillator.frequency.setValueAtTime(config.frequency, audioContext.currentTime)
+
+  if (config.slide) {
+    oscillator.frequency.linearRampToValueAtTime(
+      config.slide.end,
+      audioContext.currentTime + config.duration
+    )
+  }
+
+  const envelope = config.envelope || { attack: 0.01, decay: 0.1, sustain: 0.3, release: 0.1 }
+  const now = audioContext.currentTime
+
+  gainNode.gain.setValueAtTime(0, now)
+  gainNode.gain.linearRampToValueAtTime(config.volume, now + envelope.attack)
+  gainNode.gain.linearRampToValueAtTime(config.volume * envelope.sustain, now + envelope.attack + envelope.decay)
+  gainNode.gain.linearRampToValueAtTime(0, now + config.duration)
+
+  oscillator.connect(gainNode)
+  gainNode.connect(audioContext.destination)
+
+  oscillator.start(now)
+
+  oscillator.onended = () => {
+    activeSfxOscillators.delete(oscillator)
+    activeSfxGainNodes.delete(gainNode)
+    try {
+      oscillator.disconnect()
+      gainNode.disconnect()
+    } catch {
+      // ignore disconnect errors
+    }
+  }
+
+  oscillator.stop(now + config.duration)
+}
+
+export function stopAllSfxInstances(): void {
+  const now = audioContext?.currentTime || 0
+  for (const oscillator of activeSfxOscillators) {
+    try {
+      oscillator.stop(now)
+    } catch {
+      // ignore already stopped errors
+    }
+  }
+  for (const gainNode of activeSfxGainNodes) {
+    try {
+      gainNode.disconnect()
+    } catch {
+      // ignore disconnect errors
+    }
+  }
+  activeSfxOscillators.clear()
+  activeSfxGainNodes.clear()
+}
+
+export function playCharacterSpeak(speaker: string): void {
+  switch (speaker) {
+    case 'plate-spirit':
+      playSfx('character_speak_plate')
+      break
+    case 'sock-ghost':
+      playSfx('character_speak_sock')
+      break
+    case 'alarm-clock':
+      playSfx('character_speak_alarm')
+      break
+    case 'cat':
+    case 'narrator':
+      playSfx('character_speak_cat')
+      break
+    default:
+      playSfx('character_speak_cat')
+  }
+}
+
+export function playChord(frequencies: number[], duration: number, volume: number = 0.2): void {
+  if (!isEnabled || !audioContext) return
+
+  const now = audioContext.currentTime
+
+  for (const freq of frequencies) {
+    const oscillator = audioContext.createOscillator()
+    const gainNode = audioContext.createGain()
+
+    oscillator.type = 'sine'
+    oscillator.frequency.value = freq
+
+    gainNode.gain.setValueAtTime(0, now)
+    gainNode.gain.linearRampToValueAtTime(volume, now + 0.05)
+    gainNode.gain.linearRampToValueAtTime(0, now + duration)
+
+    oscillator.connect(gainNode)
+    gainNode.connect(audioContext.destination)
+
+    oscillator.start(now)
+    oscillator.stop(now + duration)
+  }
 }
 
 let lastChaosWarningTime = 0
@@ -409,6 +652,7 @@ export function resetRoomAmbientFlag(): void {
 export function stopAllSfx(): void {
   stopChaosAmbient()
   stopRoomAmbient()
+  stopAllSfxInstances()
 }
 
 /**

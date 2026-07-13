@@ -1,6 +1,7 @@
 import type { RoomId, RoomSpec, Vec3 } from '../../types/room'
 import { sharedRooms } from '../../data/rooms'
 import type { ViewMode } from '../gameTypes'
+import { playSfx, isAudioEnabled } from '../../audio/sfx'
 
 export interface PlayerSliceState {
   robotPosition: Vec3
@@ -54,6 +55,10 @@ export const createPlayerSlice = (set: any, get: any): PlayerSlice => ({
       visitedRooms: newVisited,
       entities: updatedEntities,
     })
+
+    if (!stillVisited && isAudioEnabled()) {
+      playSfx('room_enter')
+    }
   },
 
   forgetCloseContainer: (_roomId: RoomId) => {

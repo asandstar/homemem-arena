@@ -14,6 +14,7 @@ import { PALETTE, ROOM_AMBIENT_COLORS } from './colors'
 import { CatPrintsEffect } from './feedback/CatPrintsEffect'
 import { CatShadowEffect } from './feedback/CatShadowEffect'
 import { PhoneRingEffect } from './feedback/PhoneRingEffect'
+import { ParticleRenderer } from './effects/ParticleRenderer'
 import { PropModel } from './models/PropModel'
 import { CATEGORY_TO_MODEL_ID } from './modelIds'
 import * as THREE from 'three'
@@ -278,6 +279,7 @@ function SceneContents({ onEntityClick, onContainerClick }: Scene3DProps) {
       <HeldItem />
       <FirstPersonControls />
       <ChaosEffect active={chaosEffectActive} chaosValue={chaosValue} />
+      <ParticleRenderer />
     </>
   )
 }

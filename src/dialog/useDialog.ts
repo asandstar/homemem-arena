@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useGameStore } from '../store/useGameStore'
 import { useToastStore } from '../store/useToastStore'
+import { playCharacterSpeak } from '../audio/sfx'
 import type { DialogSequence, DialogChoice, DialogState } from './dialog'
 import { getDialogSequenceByTrigger } from './dialogs'
 
@@ -94,6 +95,12 @@ export function useDialog() {
       setCurrentSequence(null)
     }
   }, [dialogState.isOpen])
+
+  useEffect(() => {
+    if (dialogState.isOpen && currentNode && currentNode.text) {
+      playCharacterSpeak(currentNode.speaker)
+    }
+  }, [dialogState.currentNodeIndex])
 
   return {
     dialogState,

@@ -5,6 +5,7 @@ import { DEFAULT_LEVEL_BALANCE } from '../../data/levelBalance'
 import { calcCorrectPlaceScore } from '../../game/scoring'
 import { snapEntityToWorld } from '../../game/placement'
 import { playSfx } from '../../audio/sfx'
+import { playPickEffect, playPlaceEffect } from '../../effects/particleSystem'
 
 export interface EntitySliceState {
   entities: EntityState[]
@@ -66,6 +67,8 @@ export const createEntitySlice = (set: any, get: any): EntitySlice => ({
           : e
       )),
     })
+
+    playPickEffect(entity.position)
 
     // 程序记忆检查
     const procResult = get().checkProceduralAction('pick', entity.configId)
@@ -129,6 +132,7 @@ export const createEntitySlice = (set: any, get: any): EntitySlice => ({
       message: '放置成功！',
     })
     playSfx('place_success')
+    playPlaceEffect(containerPos)
 
     const placedEntity = entities.find((e: any) => e.id === heldEntityId)
     const placedPosition = placedEntity
@@ -273,6 +277,28 @@ export const createEntitySlice = (set: any, get: any): EntitySlice => ({
       },
       entities: entityUpdates.length > 0 ? entityUpdates : get().entities,
     })
+
+    if (newOpen) {
+      if (containerId.includes('fridge')) {
+        playSfx('fridge_open')
+      } else if (containerId.includes('cabinet')) {
+        playSfx('cabinet_open')
+      } else if (containerId.includes('drawer') || containerId.includes('bedside')) {
+        playSfx('drawer_open')
+      } else if (containerId.includes('door')) {
+        playSfx('door_open')
+      }
+    } else {
+      if (containerId.includes('fridge')) {
+        playSfx('fridge_close')
+      } else if (containerId.includes('cabinet')) {
+        playSfx('cabinet_close')
+      } else if (containerId.includes('drawer') || containerId.includes('bedside')) {
+        playSfx('drawer_close')
+      } else if (containerId.includes('door')) {
+        playSfx('door_close')
+      }
+    }
 
     // 程序记忆检查
     const procResultUse = get().checkProceduralAction('use', containerId)
