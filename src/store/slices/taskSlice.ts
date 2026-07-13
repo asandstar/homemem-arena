@@ -232,12 +232,23 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
     },
 
     setLevelCompleted: () => {
+      const { task, score, elapsedMs } = get()
       set({ phase: 'probing', levelCompleted: true })
       if (isAudioEnabled()) {
         playSfx('level_complete')
       }
       const { robotPosition } = get()
       playTaskCompleteEffect(robotPosition)
+
+      if (task) {
+        get().completeLevel(task.id, score, elapsedMs)
+
+        const taskIds = ['task-clean-table', 'task-leave-home', 'task-laundry-sort', 'task-breakfast']
+        const currentIndex = taskIds.indexOf(task.id)
+        if (currentIndex >= 0 && currentIndex < taskIds.length - 1) {
+          get().unlockLevel(taskIds[currentIndex + 1])
+        }
+      }
     },
 
     checkLevelCompletion: () => {

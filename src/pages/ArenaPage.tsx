@@ -317,12 +317,13 @@ export function ArenaPage() {
         </div>
       )}
 
+      {/* 对话弹窗 */}
       {dialogState.isOpen && currentNode && (
         <DialogBox
           node={currentNode}
-          onClose={closeDialog}
           onChoice={handleChoice}
           onNext={handleNext}
+          onClose={closeDialog}
         />
       )}
 

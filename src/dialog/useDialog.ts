@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useGameStore } from '../store/useGameStore'
 import { useToastStore } from '../store/useToastStore'
 import { playCharacterSpeak } from '../audio/sfx'
@@ -15,6 +15,7 @@ const initialDialogState: DialogState = {
 export function useDialog() {
   const [dialogState, setDialogState] = useState<DialogState>(initialDialogState)
   const [currentSequence, setCurrentSequence] = useState<DialogSequence | null>(null)
+  const autoContinueTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   
   const { addScore } = useGameStore()
   const { addToast: addUiToast } = useToastStore()
@@ -22,6 +23,9 @@ export function useDialog() {
   const currentNode = currentSequence?.nodes[dialogState.currentNodeIndex] ?? null
 
   const openDialog = useCallback((sequence: DialogSequence) => {
+    if (autoContinueTimer.current) {
+      clearTimeout(autoContinueTimer.current)
+    }
     setCurrentSequence(sequence)
     setDialogState({
       currentSequenceId: sequence.id,
@@ -32,6 +36,9 @@ export function useDialog() {
   }, [])
 
   const closeDialog = useCallback(() => {
+    if (autoContinueTimer.current) {
+      clearTimeout(autoContinueTimer.current)
+    }
     setDialogState((prev) => ({ ...prev, isOpen: false }))
     setCurrentSequence(null)
   }, [])
@@ -79,6 +86,9 @@ export function useDialog() {
   }, [addScore, addUiToast, openDialog])
 
   const handleNext = useCallback(() => {
+    if (autoContinueTimer.current) {
+      clearTimeout(autoContinueTimer.current)
+    }
     setDialogState((prev) => {
       if (currentSequence && prev.currentNodeIndex >= currentSequence.nodes.length - 1) {
         return { ...prev, isOpen: false }
@@ -93,14 +103,36 @@ export function useDialog() {
   useEffect(() => {
     if (!dialogState.isOpen) {
       setCurrentSequence(null)
+      return
     }
-  }, [dialogState.isOpen])
+
+    if (currentNode && currentNode.autoContinue && !currentNode.choices?.length) {
+      const delay = currentNode.autoContinueDelay ?? 2000
+      autoContinueTimer.current = setTimeout(() => {
+        handleNext()
+      }, delay)
+    }
+
+    return () => {
+      if (autoContinueTimer.current) {
+        clearTimeout(autoContinueTimer.current)
+      }
+    }
+  }, [dialogState.currentNodeIndex, dialogState.isOpen, currentNode, handleNext])
 
   useEffect(() => {
     if (dialogState.isOpen && currentNode && currentNode.text) {
       playCharacterSpeak(currentNode.speaker)
     }
   }, [dialogState.currentNodeIndex])
+
+  useEffect(() => {
+    return () => {
+      if (autoContinueTimer.current) {
+        clearTimeout(autoContinueTimer.current)
+      }
+    }
+  }, [])
 
   return {
     dialogState,

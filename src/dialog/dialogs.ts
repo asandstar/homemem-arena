@@ -457,6 +457,233 @@ export const dialogSequences: DialogSequence[] = [
       },
     ],
   },
+  {
+    id: 'ds-memory-save',
+    name: '记忆保存反馈',
+    trigger: { type: 'event', value: 'memory_save' },
+    priority: 6,
+    nodes: [
+      {
+        id: 'dm-save-1',
+        speaker: 'system',
+        speakerName: 'MEM-07 系统',
+        text: '📝 记忆已保存至记忆槽。记忆类型：根据物品自动识别空间/物体/时序记忆。',
+        autoContinue: true,
+        autoContinueDelay: 1500,
+      },
+    ],
+  },
+  {
+    id: 'ds-memory-expire',
+    name: '记忆过期警告',
+    trigger: { type: 'event', value: 'memory_expire' },
+    priority: 7,
+    nodes: [
+      {
+        id: 'dm-expire-1',
+        speaker: 'system',
+        speakerName: 'MEM-07 系统',
+        text: '⚠️ 警告！记忆槽中的信息已过期，该物品的位置可能已发生变化。',
+        autoContinue: true,
+        autoContinueDelay: 1500,
+      },
+      {
+        id: 'dm-expire-2',
+        speaker: 'narrator',
+        speakerName: '记忆宅邸',
+        text: '记忆的光芒渐渐熄灭，仿佛被时间吞噬...',
+        autoContinue: true,
+        autoContinueDelay: 1500,
+      },
+    ],
+  },
+  {
+    id: 'ds-clean-table-complete',
+    name: '餐桌混乱完成',
+    trigger: { type: 'event', value: 'level_complete_task-clean-table' },
+    priority: 15,
+    nodes: [
+      {
+        id: 'dct-complete-1',
+        speaker: 'character',
+        speakerName: '餐盘精',
+        text: '哼...居然全部收拾干净了！下次我会把盘子藏到更隐蔽的地方！',
+      },
+      {
+        id: 'dct-complete-2',
+        speaker: 'narrator',
+        speakerName: '记忆宅邸',
+        text: '餐桌上终于恢复了整洁，室友的纸条清晰地露了出来："谢谢你，新来的小精灵！"',
+      },
+      {
+        id: 'dct-complete-3',
+        speaker: 'system',
+        speakerName: 'MEM-07 系统',
+        text: '任务完成！检测到记忆使用效率：你的空间记忆和物体记忆都表现出色！',
+        autoContinue: true,
+        autoContinueDelay: 2000,
+      },
+    ],
+  },
+  {
+    id: 'ds-leave-home-complete',
+    name: '出门大作战完成',
+    trigger: { type: 'event', value: 'level_complete_task-leave-home' },
+    priority: 15,
+    nodes: [
+      {
+        id: 'dlh-complete-1',
+        speaker: 'character',
+        speakerName: '钥匙猫',
+        text: '喵！主人终于可以准时出门了！你比我想象的要厉害嘛~',
+      },
+      {
+        id: 'dlh-complete-2',
+        speaker: 'character',
+        speakerName: '钥匙猫',
+        text: '下次我会把钥匙藏到更有趣的地方，等着瞧吧喵！',
+        choices: [
+          {
+            id: 'c-dlh-complete-next',
+            text: '期待下次挑战！',
+            effect: { type: 'score', value: 50 },
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'ds-laundry-sort-complete',
+    name: '洗衣幽灵完成',
+    trigger: { type: 'event', value: 'level_complete_task-laundry-sort' },
+    priority: 15,
+    nodes: [
+      {
+        id: 'dls-complete-1',
+        speaker: 'character',
+        speakerName: '袜子幽灵',
+        text: '呜...所有衣服都分类好了！我的游戏输了...',
+      },
+      {
+        id: 'dls-complete-2',
+        speaker: 'character',
+        speakerName: '袜子幽灵',
+        text: '不过没关系，下次我会把所有袜子都藏起来！哈哈哈！',
+      },
+      {
+        id: 'dls-complete-3',
+        speaker: 'narrator',
+        speakerName: '记忆宅邸',
+        text: '三只篮子整整齐齐，洗衣房终于恢复了平静...',
+        autoContinue: true,
+        autoContinueDelay: 2000,
+      },
+    ],
+  },
+  {
+    id: 'ds-breakfast-complete',
+    name: '早餐时间循环完成',
+    trigger: { type: 'event', value: 'level_complete_task-breakfast' },
+    priority: 15,
+    nodes: [
+      {
+        id: 'dbf-complete-1',
+        speaker: 'character',
+        speakerName: '早餐闹钟',
+        text: '嘀嘀嘀！流程正确！时间循环已打破！恭喜你！',
+      },
+      {
+        id: 'dbf-complete-2',
+        speaker: 'narrator',
+        speakerName: '记忆宅邸',
+        text: '闹钟的指针终于停了下来，厨房恢复了正常的时间流动...',
+      },
+      {
+        id: 'dbf-complete-3',
+        speaker: 'system',
+        speakerName: 'MEM-07 系统',
+        text: '任务完成！你的程序记忆能力非常出色，完美按照流程图完成了所有步骤！',
+        autoContinue: true,
+        autoContinueDelay: 2000,
+      },
+      {
+        id: 'dbf-complete-4',
+        speaker: 'narrator',
+        speakerName: '记忆宅邸',
+        text: '🌙 深夜十一点的厨房终于安静了下来。今天的工作结束了，明天又是新的一天...',
+      },
+    ],
+  },
+  {
+    id: 'ds-rank-s',
+    name: 'S级评价',
+    trigger: { type: 'event', value: 'rank_s' },
+    priority: 20,
+    nodes: [
+      {
+        id: 'dr-s-1',
+        speaker: 'system',
+        speakerName: 'MEM-07 系统',
+        text: '🏆 恭喜！获得 S 级评价！你的记忆能力达到了专业水准！',
+      },
+      {
+        id: 'dr-s-2',
+        speaker: 'narrator',
+        speakerName: '记忆宅邸',
+        text: '光芒闪耀！这是对你完美表现的最高认可！',
+        autoContinue: true,
+        autoContinueDelay: 2000,
+      },
+    ],
+  },
+  {
+    id: 'ds-rank-a',
+    name: 'A级评价',
+    trigger: { type: 'event', value: 'rank_a' },
+    priority: 20,
+    nodes: [
+      {
+        id: 'dr-a-1',
+        speaker: 'system',
+        speakerName: 'MEM-07 系统',
+        text: '🌟 优秀！获得 A 级评价！你的记忆能力非常出色！',
+        autoContinue: true,
+        autoContinueDelay: 1500,
+      },
+    ],
+  },
+  {
+    id: 'ds-wrong-place',
+    name: '放错位置',
+    trigger: { type: 'event', value: 'wrong_place' },
+    priority: 4,
+    nodes: [
+      {
+        id: 'dw-wrong-1',
+        speaker: 'system',
+        speakerName: 'MEM-07 系统',
+        text: '❌ 放置错误！这个物品不属于这里。',
+        autoContinue: true,
+        autoContinueDelay: 1000,
+      },
+    ],
+  },
+  {
+    id: 'ds-memory-help',
+    name: '记忆提示',
+    trigger: { type: 'event', value: 'memory_hint' },
+    priority: 3,
+    nodes: [
+      {
+        id: 'dm-hint-1',
+        speaker: 'system',
+        speakerName: 'MEM-07 系统',
+        text: '💡 提示：记忆槽中有该物品的位置信息，可以查看记忆来确认正确位置。',
+        autoContinue: true,
+        autoContinueDelay: 1500,
+      },
+    ],
+  },
 ]
 
 export function getDialogSequenceByTrigger(

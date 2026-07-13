@@ -12,6 +12,7 @@ import { createScoreSlice } from './slices/scoreSlice'
 import { createFeedbackSlice } from './slices/feedbackSlice'
 import { createAnimationSlice } from './slices/animationSlice'
 import { createFlowSlice } from './slices/flowSlice'
+import { createProgressSlice } from './slices/progressSlice'
 import { saveGame, type SaveData } from '../save/saveSystem'
 import type {
   ViewMode,
@@ -25,6 +26,7 @@ import type {
   FeedbackState,
 } from './gameTypes'
 import type { ProceduralProgress } from '../game/proceduralMemory'
+import type { ProgressState } from './slices/progressSlice'
 
 // Re-export shared types for backward compatibility
 export type {
@@ -112,7 +114,7 @@ export interface GameStats {
   taskName: string | null
 }
 
-interface GameStore extends GameState {
+interface GameStore extends GameState, ProgressState {
   initializeTask: (taskId: string) => void
   resetTask: () => void
   startPlaying: () => void
@@ -202,6 +204,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   ...createFeedbackSlice(set, get),
   ...createAnimationSlice(set, get),
   ...createFlowSlice(set, get),
+  ...createProgressSlice(set, get),
 
   // Cross-slice aggregations that don't belong to any single slice
   getGameStats: () => {
