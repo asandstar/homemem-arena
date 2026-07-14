@@ -17,6 +17,7 @@ import { PhoneRingEffect } from './feedback/PhoneRingEffect'
 import { ParticleRenderer } from './effects/ParticleRenderer'
 import { PropModel } from './models/PropModel'
 import { CATEGORY_TO_MODEL_ID } from './modelIds'
+import { PixelationPass } from './effects/PixelationPass'
 import * as THREE from 'three'
 
 interface Scene3DProps {
@@ -173,13 +174,13 @@ function SceneContents({ onEntityClick, onContainerClick }: Scene3DProps) {
         position={[8, 15, 8]}
         intensity={0.4}
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[1024, 1024]}
         shadow-camera-near={0.5}
-        shadow-camera-far={50}
-        shadow-camera-left={-15}
-        shadow-camera-right={15}
-        shadow-camera-top={15}
-        shadow-camera-bottom={-15}
+        shadow-camera-far={30}
+        shadow-camera-left={-10}
+        shadow-camera-right={10}
+        shadow-camera-top={10}
+        shadow-camera-bottom={-10}
         shadow-bias={-0.0005}
         shadow-normalBias={0.02}
       />
@@ -280,6 +281,7 @@ function SceneContents({ onEntityClick, onContainerClick }: Scene3DProps) {
       <FirstPersonControls />
       <ChaosEffect active={chaosEffectActive} chaosValue={chaosValue} />
       <ParticleRenderer />
+      <PixelationPass pixelSize={4} />
     </>
   )
 }

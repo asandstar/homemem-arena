@@ -163,6 +163,7 @@ interface GameStore extends GameState, ProgressState {
   addEventToast: (message: string, type: EventToastType, duration?: number, icon?: string) => void
   removeEventToast: (id: string) => void
   markMemoryOutdated: (entityConfigId: string) => void
+  decayMemories: (deltaMs: number) => void
   triggerEventEffect: (effectName: string) => void
   startMoveAnimation: (entityId: string, toRoom: RoomId, toPos: Vec3) => void
   updateMoveAnimations: () => void

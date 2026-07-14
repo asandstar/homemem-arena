@@ -18,7 +18,14 @@ export const leaveHomeTask: TaskConfig = {
   briefing: `🌅 早上 8:00 · 主人还有 10 分钟出门
 
 玄关贴着便签：「小橡！钥匙手机雨伞！拜托了！——再不走就赶不上公交了」
-钥匙应该在茶几上，手机在卧室，猫蹲在沙发背上舔爪子，眼神不太 innocent。`,
+
+📋 物品清单：
+  🔑 钥匙 → 客厅茶几上（金色小物件）
+  📱 手机 → 卧室床头柜抽屉里（需打开抽屉）
+  ☂️ 雨伞 → 玄关伞架旁
+
+⚠️ 注意：沙发上有只猫，眼神不太 innocent...
+💡 提示：靠近物品时屏幕会显示方向箭头，帮你定位！`,
   completionText: '主人冲出门前看了一眼托盘：「全齐了！小橡你太靠谱了！」\n猫跳上窗台，甩了甩尾巴。明天，它大概还会来。',
   failureText: '主人翻遍口袋，叹了口气：「算了...今天蹭同事车吧。」\n似乎听见沙发缝里传来金属碰撞声。猫的耳朵动了一下。',
   systemPrompt: '【MEM-07 日志】任务：协助主人出门。当前状态：物品位置待确认，疑似猫科干预。策略：冷静搜索，记录位置，效率优先。',
@@ -35,7 +42,7 @@ export const leaveHomeTask: TaskConfig = {
       initialRoom: 'living',
       initialPosition: { x: -1.5, y: 0, z: 0.5 },
       surfaceContainerId: 'cnt-coffee-table',
-      size: { x: 0.15, y: 0.05, z: 0.1 },
+      size: { x: 0.2, y: 0.06, z: 0.14 },
       color: '#fbbf24',
     },
     // 手机 - 在卧室床头柜（被遮挡）
@@ -121,6 +128,7 @@ export const leaveHomeTask: TaskConfig = {
       id: 'g-key-on-tray',
       description: '钥匙放到玄关托盘',
       memoryType: 'spatial',
+      relatedObjectIds: ['obj-key'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const key = entities.find((e) => e.configId === 'obj-key')
         return key?.placedIn === 'cnt-entrance-tray' && key.status === 'placed'
@@ -131,6 +139,7 @@ export const leaveHomeTask: TaskConfig = {
       id: 'g-phone-on-tray',
       description: '手机放到玄关托盘',
       memoryType: 'object',
+      relatedObjectIds: ['obj-phone'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const phone = entities.find((e) => e.configId === 'obj-phone')
         return phone?.placedIn === 'cnt-entrance-tray' && phone.status === 'placed'
@@ -141,6 +150,7 @@ export const leaveHomeTask: TaskConfig = {
       id: 'g-umbrella-on-tray',
       description: '雨伞放到玄关托盘或伞架',
       memoryType: 'spatial',
+      relatedObjectIds: ['obj-umbrella'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const umbrella = entities.find((e) => e.configId === 'obj-umbrella')
         return (umbrella?.placedIn === 'cnt-entrance-tray' || umbrella?.placedIn === 'cnt-umbrella-stand') && umbrella.status === 'placed'
@@ -154,13 +164,13 @@ export const leaveHomeTask: TaskConfig = {
       id: 'se-cat-pushes-key',
       trigger: (step, entities) => {
         const key = entities.find((e) => e.configId === 'obj-key')
-        return step > 4 && key?.currentRoom === 'living' && key?.status === 'free'
+        return step > 8 && key?.currentRoom === 'living' && key?.status === 'free'
       },
       type: 'move-entity',
       targetId: 'obj-key',
-      targetPosition: { room: 'living', x: 2.0, y: 0, z: -2.5 },
-      message: '🐱 啪嗒——钥匙猫一爪子把钥匙从茶几扒拉到了客厅角落的沙发缝旁！（钥匙猫：追我呀喵~）',
-      description: '钥匙猫把钥匙从茶几推到了客厅角落沙发缝旁',
+      targetPosition: { room: 'living', x: 1.5, y: 0, z: -1.5 },
+      message: '🐱 啪嗒——钥匙猫一爪子把钥匙从茶几扒拉到了沙发旁边！（钥匙猫：追我呀喵~）\n💡 屏幕边缘会显示方向箭头，跟着箭头走！',
+      description: '钥匙猫把钥匙从茶几推到了沙发旁',
       memoryType: 'spatial',
       markMemoryOutdated: 'obj-key',
       eventEffect: 'cat-prints',
@@ -170,13 +180,13 @@ export const leaveHomeTask: TaskConfig = {
       id: 'se-cat-pushes-key-2',
       trigger: (step, entities) => {
         const key = entities.find((e) => e.configId === 'obj-key')
-        return step > 10 && key?.currentRoom === 'living' && key?.status === 'free'
+        return step > 15 && key?.currentRoom === 'living' && key?.status === 'free'
       },
       type: 'move-entity',
       targetId: 'obj-key',
-      targetPosition: { room: 'bedroom', x: 2.5, y: 0, z: 0 },
-      message: '🐱 嗖——钥匙猫叼起钥匙，一溜烟钻进了卧室，把钥匙丢在了卧室门口的地毯上！（钥匙猫：来抓我呀喵~）',
-      description: '钥匙猫把钥匙从客厅叼到了卧室门口',
+      targetPosition: { room: 'bedroom', x: 1.5, y: 0, z: 0.5 },
+      message: '🐱 嗖——钥匙猫叼起钥匙，钻进了卧室，把钥匙丢在了卧室地板上！（钥匙猫：来抓我呀喵~）\n💡 去卧室找找！屏幕箭头会指引方向。',
+      description: '钥匙猫把钥匙从客厅叼到了卧室地板上',
       memoryType: 'spatial',
       markMemoryOutdated: 'obj-key',
       eventEffect: 'cat-prints',
@@ -186,10 +196,10 @@ export const leaveHomeTask: TaskConfig = {
       id: 'se-phone-rings',
       trigger: (step, entities) => {
         const phone = entities.find((e) => e.configId === 'obj-phone')
-        return step >= 2 && phone?.status !== 'held' && phone?.status !== 'placed'
+        return step >= 3 && phone?.status !== 'held' && phone?.status !== 'placed'
       },
       type: 'message',
-      message: '📳 嗡嗡嗡——卧室的床头柜方向传来手机震动声。也许该打开抽屉看看？',
+      message: '📳 嗡嗡嗡——卧室方向传来手机震动声。去卧室打开床头柜抽屉看看？',
       description: '手机响铃提示所在房间方向和容器',
       memoryType: 'object',
       roomHint: 'bedroom',
@@ -198,7 +208,7 @@ export const leaveHomeTask: TaskConfig = {
     },
     {
       id: 'se-owner-urgent-msg',
-      trigger: (step) => step === 3,
+      trigger: (step) => step === 5,
       type: 'message',
       message: '📱 主人消息：「小橡找到了吗？我公交车来了！！」',
       description: '主人催促消息',
@@ -207,12 +217,21 @@ export const leaveHomeTask: TaskConfig = {
     },
     {
       id: 'se-cat-observes',
-      trigger: (step) => step === 8,
+      trigger: (step) => step === 10,
       type: 'message',
       message: '🐱 似乎检测到猫科生物在卧室门口活动。尾部摆动频率异常。',
       description: '猫在卧室门口观察',
       memoryType: 'spatial',
       toastType: 'cat' as const,
+    },
+    {
+      id: 'se-search-hint',
+      trigger: (step) => step === 6,
+      type: 'message',
+      message: '💡 提示：如果找不到物品，注意屏幕边缘的方向箭头——它会指向还未收集的任务物品！',
+      description: '寻物提示系统引导',
+      memoryType: 'object',
+      toastType: 'phone' as const,
     },
   ],
 

@@ -13,6 +13,8 @@ interface MinimapProps {
   isVisible?: boolean
   taskRooms?: RoomId[]
   isMobile?: boolean
+  isFullscreen?: boolean
+  onToggleFullscreen?: () => void
 }
 
 const MIN_ZOOM = 0.3
@@ -29,6 +31,8 @@ export function Minimap({
   isVisible = true,
   taskRooms,
   isMobile = false,
+  isFullscreen = false,
+  onToggleFullscreen,
 }: MinimapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -84,7 +88,7 @@ export function Minimap({
     const { width, height } = dimensions
     const rangeX = Math.max(bounds.maxX - bounds.minX, 1)
     const rangeZ = Math.max(bounds.maxZ - bounds.minZ, 1)
-    const paddingFactor = 1.25
+    const paddingFactor = 0.95
     const scaleX = width / (rangeX * paddingFactor)
     const scaleY = height / (rangeZ * paddingFactor)
     return Math.min(scaleX, scaleY)
@@ -320,16 +324,21 @@ export function Minimap({
   return (
     <div
       ref={containerRef}
-      className="minimap-container"
+      className={`minimap-container ${isFullscreen ? 'fixed inset-4 z-50' : ''}`}
       style={{
         touchAction: 'none',
-        width: '100%',
-        height: 'auto',
-        aspectRatio: '1 / 1',
-        position: 'relative',
+        width: isFullscreen ? 'auto' : '100%',
+        height: isFullscreen ? 'auto' : 'auto',
+        aspectRatio: isFullscreen ? '16 / 10' : '1 / 1',
+        position: isFullscreen ? 'fixed' : 'relative',
+        backgroundColor: isFullscreen ? 'rgba(17, 24, 39, 0.95)' : 'transparent',
+        borderRadius: isFullscreen ? '16px' : '8px',
+        padding: isFullscreen ? '16px' : '0',
+        boxShadow: isFullscreen ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)' : 'none',
+        border: isFullscreen ? '2px solid #374151' : 'none',
       }}
     >
-      <div className="absolute top-1 right-1 flex gap-1 z-10">
+      <div className="absolute top-2 right-2 flex gap-1 z-10">
         <button
           onClick={handleZoomIn}
           className={`flex items-center justify-center bg-slate-800/90 hover:bg-slate-700 text-white text-xs rounded border border-slate-600/50 pointer-events-auto ${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`}
@@ -368,8 +377,24 @@ export function Minimap({
             ⌖
           </button>
         )}
+        {onToggleFullscreen && (
+          <button
+            onClick={onToggleFullscreen}
+            className="w-6 h-6 flex items-center justify-center bg-slate-800/90 hover:bg-slate-700 text-white text-xs rounded border border-slate-600/50 pointer-events-auto"
+            aria-label={isFullscreen ? '退出全屏' : '全屏地图'}
+            title={isFullscreen ? '退出全屏' : '全屏地图'}
+          >
+            {isFullscreen ? '▢' : '⛶'}
+          </button>
+        )}
         <button
-          onClick={toggleMinimap}
+          onClick={() => {
+            if (isFullscreen && onToggleFullscreen) {
+              onToggleFullscreen()
+            } else {
+              toggleMinimap()
+            }
+          }}
           className={`flex items-center justify-center bg-slate-800/90 hover:bg-slate-700 text-white text-xs rounded border border-slate-600/50 pointer-events-auto ${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`}
           aria-label="收起小地图"
           title="收起小地图"

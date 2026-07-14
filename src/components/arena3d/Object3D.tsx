@@ -55,8 +55,27 @@ export function Object3D({ entity, onClick, isHeld }: Object3DProps) {
   const [successPulse, setSuccessPulse] = useState(false)
   const [pulseTime, setPulseTime] = useState(0)
 
-  const { shakingEntityId, robotPosition, heldEntityId, task } = useGameStore()
+  const { shakingEntityId, robotPosition, heldEntityId, task, achievedGoalIds } = useGameStore()
   const isShaking = shakingEntityId === entity.id
+
+  const isTaskTarget = useMemo(() => {
+    if (!task || entity.status === 'held' || entity.status === 'placed') return false
+    return task.goals.some((goal) => {
+      if (achievedGoalIds.has(goal.id)) return false
+      try {
+        return goal.predicate([{
+          configId: entity.configId,
+          status: 'placed',
+          currentRoom: entity.currentRoom,
+          placedIn: '___check___',
+          category: entity.category,
+          properties: entity.properties,
+        }])
+      } catch {
+        return false
+      }
+    })
+  }, [task, entity, achievedGoalIds])
 
   const cat = String(entity.category)
 
@@ -265,6 +284,10 @@ export function Object3D({ entity, onClick, isHeld }: Object3DProps) {
         </Billboard>
       )}
 
+      {isTaskTarget && !isHeld && (
+        <TaskTargetGlow halfHeight={halfHeight} entityName={entity.name} />
+      )}
+
       {isHeld && (
         <>
           <mesh position={[0, -halfHeight, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -287,5 +310,48 @@ export function Object3D({ entity, onClick, isHeld }: Object3DProps) {
         </>
       )}
     </group>
+  )
+}
+
+function TaskTargetGlow({ halfHeight, entityName }: { halfHeight: number; entityName: string }) {
+  const glowRef = useRef(0)
+  const meshRef = useRef<THREE.Mesh>(null)
+  const lightRef = useRef<THREE.PointLight>(null)
+
+  useFrame((_, delta) => {
+    glowRef.current += delta
+    const pulse = 0.5 + Math.sin(glowRef.current * 3) * 0.5
+    if (meshRef.current) {
+      const mat = meshRef.current.material as THREE.MeshBasicMaterial
+      mat.opacity = 0.3 + pulse * 0.4
+    }
+    if (lightRef.current) {
+      lightRef.current.intensity = 0.4 + pulse * 0.4
+    }
+  })
+
+  return (
+    <>
+      <mesh ref={meshRef} position={[0, -halfHeight - 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.22, 0.35, 24]} />
+        <meshBasicMaterial color="#fbbf24" transparent opacity={0.5} />
+      </mesh>
+      <pointLight ref={lightRef} position={[0, 0.1, 0]} color="#fbbf24" intensity={0.5} distance={2} />
+      <Billboard position={[0, halfHeight + 0.3, 0]}>
+        <mesh>
+          <boxGeometry args={[0.5, 0.16, 0.02]} />
+          <meshBasicMaterial color="#92400e" transparent opacity={0.85} />
+        </mesh>
+        <Text
+          position={[0, 0, 0.01]}
+          fontSize={0.07}
+          color="#fbbf24"
+          anchorX="center"
+          anchorY="middle"
+        >
+          ★ {entityName}
+        </Text>
+      </Billboard>
+    </>
   )
 }

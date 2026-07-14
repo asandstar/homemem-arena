@@ -201,6 +201,7 @@ export const breakfastTask: TaskConfig = {
       kind: 'milestone',
       stage: '准备',
       memoryType: 'procedural',
+      relatedObjectIds: ['obj-milk'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const milk = entities.find((e) => e.configId === 'obj-milk')
         return milk?.status === 'free' || milk?.status === 'held'
@@ -213,6 +214,7 @@ export const breakfastTask: TaskConfig = {
       kind: 'milestone',
       stage: '准备',
       memoryType: 'procedural',
+      relatedObjectIds: ['obj-cup'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const cup = entities.find((e) => e.configId === 'obj-cup')
         return cup?.status === 'free' || cup?.status === 'held'
@@ -226,6 +228,7 @@ export const breakfastTask: TaskConfig = {
       stage: '准备',
       dependsOnGoalIds: ['g-open-fridge'],
       memoryType: 'object',
+      relatedObjectIds: ['obj-milk'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const milk = entities.find((e) => e.configId === 'obj-milk')
         return milk?.status === 'free' || milk?.status === 'held'
@@ -239,6 +242,7 @@ export const breakfastTask: TaskConfig = {
       stage: '准备',
       dependsOnGoalIds: ['g-open-cabinet'],
       memoryType: 'object',
+      relatedObjectIds: ['obj-cup'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const cup = entities.find((e) => e.configId === 'obj-cup')
         return cup?.status === 'free' || cup?.status === 'held'
@@ -252,6 +256,7 @@ export const breakfastTask: TaskConfig = {
       stage: '准备',
       dependsOnGoalIds: ['g-open-cabinet'],
       memoryType: 'object',
+      relatedObjectIds: ['obj-bowl'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const bowl = entities.find((e) => e.configId === 'obj-bowl')
         return bowl?.status === 'free' || bowl?.status === 'held'
@@ -265,6 +270,7 @@ export const breakfastTask: TaskConfig = {
       stage: '准备',
       dependsOnGoalIds: ['g-open-cabinet'],
       memoryType: 'object',
+      relatedObjectIds: ['obj-cereal'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const cereal = entities.find((e) => e.configId === 'obj-cereal')
         return cereal?.status === 'free' || cereal?.status === 'held'
@@ -278,6 +284,7 @@ export const breakfastTask: TaskConfig = {
       stage: '上桌',
       dependsOnGoalIds: ['g-get-milk', 'g-get-cup', 'g-get-bowl', 'g-get-cereal'],
       memoryType: 'procedural',
+      relatedObjectIds: ['obj-milk', 'obj-cereal', 'obj-cup', 'obj-bowl'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const ids = ['obj-milk', 'obj-cereal', 'obj-cup', 'obj-bowl']
         return ids.every((id) => {
@@ -301,6 +308,7 @@ export const breakfastTask: TaskConfig = {
       stage: '归位',
       dependsOnGoalIds: ['g-prepare-breakfast'],
       memoryType: 'object',
+      relatedObjectIds: ['obj-milk'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const milk = entities.find((e) => e.configId === 'obj-milk')
         return milk?.placedIn === 'cnt-fridge' || milk?.status === 'hidden'
@@ -314,6 +322,7 @@ export const breakfastTask: TaskConfig = {
       stage: '归位',
       dependsOnGoalIds: ['g-prepare-breakfast'],
       memoryType: 'object',
+      relatedObjectIds: ['obj-cereal'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const cereal = entities.find((e) => e.configId === 'obj-cereal')
         return cereal?.placedIn === 'cnt-cabinet-upper' || cereal?.placedIn === 'cnt-cabinet-lower' || cereal?.status === 'hidden'
@@ -327,6 +336,7 @@ export const breakfastTask: TaskConfig = {
       stage: '归位',
       dependsOnGoalIds: ['g-prepare-breakfast'],
       memoryType: 'object',
+      relatedObjectIds: ['obj-cup', 'obj-bowl'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const cup = entities.find((e) => e.configId === 'obj-cup')
         const bowl = entities.find((e) => e.configId === 'obj-bowl')
@@ -342,6 +352,7 @@ export const breakfastTask: TaskConfig = {
       stage: '收尾',
       dependsOnGoalIds: ['g-return-milk', 'g-return-cereal', 'g-return-cup-bowl'],
       memoryType: 'procedural',
+      relatedObjectIds: ['obj-milk', 'obj-cereal'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const milk = entities.find((e) => e.configId === 'obj-milk')
         const cereal = entities.find((e) => e.configId === 'obj-cereal')
@@ -357,7 +368,7 @@ export const breakfastTask: TaskConfig = {
       trigger: (step) => step === 8,
       type: 'move-entity',
       targetId: 'obj-cereal',
-      targetPosition: { room: 'kitchen', x: 7.5, y: 1.5, z: 0 },
+      targetPosition: { room: 'kitchen', x: 3.2, y: 1.5, z: 0 },
       message: '⏰ 叮铃——麦片盒跑到上层橱柜去了！（早餐闹钟：放错地方了！应该在这里！）',
       description: '早餐闹钟把麦片移动到了上层橱柜',
       memoryType: 'spatial',

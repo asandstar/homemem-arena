@@ -6,7 +6,7 @@ import type { MemoryType } from './memory'
 
 export type { MemoryType }
 
-export type Difficulty = 'easy' | 'medium' | 'hard'
+export type Difficulty = 'tutorial' | 'easy' | 'medium' | 'hard'
 
 /** 单个目标 */
 export interface GoalSpec {
@@ -22,6 +22,8 @@ export interface GoalSpec {
   memoryType: MemoryType
   /** 目标判定函数（接收当前所有实体状态） */
   predicate: (entities: EntityStateSnapshot[]) => boolean
+  /** 与此目标关联的物品 configId 列表（用于判定任务关键物品，影响记忆优先级） */
+  relatedObjectIds?: string[]
   /** 完成时的简短消息 */
   achievedMessage?: string
   /**

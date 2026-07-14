@@ -98,6 +98,7 @@ export function HUD() {
   const [chaosTooltipOpen, setChaosTooltipOpen] = useState(false)
   const [isCompact, setIsCompact] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [minimapFullscreen, setMinimapFullscreen] = useState(false)
 
   useEffect(() => {
     const checkCompact = () => {
@@ -148,6 +149,12 @@ export function HUD() {
   const achievedGoals = task?.goals.filter((goal: GoalSpec) => isGoalAchieved(goal)).length ?? 0
   const totalGoals = task?.goals.length ?? 0
   const progress = totalGoals > 0 ? (achievedGoals / totalGoals) * 100 : 0
+  const roomUncollectedItems = entities.filter(e =>
+    e.type === 'object' &&
+    e.currentRoom === currentRoom &&
+    (e.status === 'free' || e.status === 'hidden')
+  )
+  const isRoomCleared = roomUncollectedItems.length === 0
   const activeGoal = findActiveGoal(
     task,
     entities.map((entity) => ({
@@ -279,55 +286,63 @@ export function HUD() {
               </button>
             </div>
           </div>
-          {taskPanelOpen && task?.goals && (
+          {task?.goals && task.goals.length > 0 && (
             <div className="space-y-1 overflow-y-auto pr-1" style={{ maxHeight: isMobile ? '10vh' : isCompact ? '15vh' : '25vh' }}>
-              {activeGoal && (
-                <div className="mb-2 rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-2.5 py-2">
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-cyan-300">
-                    当前专注{activeGoal.stage ? ` · ${activeGoal.stage}` : ''}
-                  </div>
-                  <div className="mt-0.5 text-xs font-semibold leading-relaxed text-white">
-                    {activeGoal.description}
-                  </div>
-                  {activeFlowHint?.goalId === activeGoal.id && (
-                    <div className="mt-1.5 border-t border-cyan-300/20 pt-1.5 text-[11px] leading-relaxed text-cyan-100/90">
-                      {activeFlowHint.message}
+              <div className="flex items-center justify-between px-2 py-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-purple-300/80">目标进度</span>
+                <span className="text-[10px] font-bold text-purple-300">{achievedGoals}/{totalGoals}</span>
+              </div>
+              {taskPanelOpen && (
+                <>
+                  {activeGoal && (
+                    <div className="mb-2 rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-2.5 py-2">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-cyan-300">
+                        当前专注{activeGoal.stage ? ` · ${activeGoal.stage}` : ''}
+                      </div>
+                      <div className="mt-0.5 text-xs font-semibold leading-relaxed text-white">
+                        {activeGoal.description}
+                      </div>
+                      {activeFlowHint?.goalId === activeGoal.id && (
+                        <div className="mt-1.5 border-t border-cyan-300/20 pt-1.5 text-[11px] leading-relaxed text-cyan-100/90">
+                          {activeFlowHint.message}
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
-              )}
-              {task.goals.map((goal: GoalSpec) => {
-                const isAchieved = isGoalAchieved(goal)
-                return (
-                  <div
-                    key={goal.id}
-                    className={`flex items-center gap-2 px-2 py-1.5 rounded transition-all ${
-                      isAchieved
-                        ? 'bg-green-500/10'
-                        : 'hover:bg-slate-800/50'
-                    }`}
-                  >
-                    <span className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      isAchieved
-                        ? 'bg-green-500 border-green-500 animate-pulse'
-                        : 'border-2 border-slate-500 bg-slate-800/30'
-                    }`}>
-                      {isAchieved && <CheckCircle2 size={12} className="text-white" />}
-                    </span>
-                    <span className={`text-xs font-medium flex-1 ${
-                      isAchieved
-                        ? 'text-green-400 line-through opacity-60'
-                        : 'text-white'
-                    }`}>
-                      {goal.description}
-                    </span>
-                    {getMemoryTypeIcon(goal.memoryType)}
+                  {task.goals.map((goal: GoalSpec) => {
+                    const isAchieved = isGoalAchieved(goal)
+                    return (
+                      <div
+                        key={goal.id}
+                        className={`flex items-center gap-2 px-2 py-1.5 rounded transition-all ${
+                          isAchieved
+                            ? 'bg-green-500/10'
+                            : 'hover:bg-slate-800/50'
+                        }`}
+                      >
+                        <span className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          isAchieved
+                            ? 'bg-green-500 border-green-500 animate-pulse'
+                            : 'border-2 border-slate-500 bg-slate-800/30'
+                        }`}>
+                          {isAchieved && <CheckCircle2 size={12} className="text-white" />}
+                        </span>
+                        <span className={`text-xs font-medium flex-1 ${
+                          isAchieved
+                            ? 'text-green-400 line-through opacity-60'
+                            : 'text-white'
+                        }`}>
+                          {goal.description}
+                        </span>
+                        {getMemoryTypeIcon(goal.memoryType)}
+                      </div>
+                    )
+                  })}
+                  <div className="text-[10px] text-purple-400/60 mt-2 pt-2 border-t border-slate-700/50 text-center">
+                    按 Tab 隐藏任务面板 · 按 R 显示事件日志
                   </div>
-                )
-              })}
-              <div className="text-[10px] text-purple-400/60 mt-2 pt-2 border-t border-slate-700/50 text-center">
-                按 Tab 隐藏任务面板 · 按 R 显示事件日志
-              </div>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -367,7 +382,10 @@ export function HUD() {
               )}
             </div>
             {combo > 0 && (
-              <div className="flex items-center gap-1 bg-yellow-500/20 px-3 py-1.5 rounded-full">
+              <div
+                key={combo}
+                className="flex items-center gap-1 bg-yellow-500/20 px-3 py-1.5 rounded-full animate-combo-pop"
+              >
                 <Zap size={14} className="text-yellow-400" />
                 <span className="text-yellow-400 font-bold text-sm">{combo} COMBO!</span>
               </div>
@@ -420,7 +438,7 @@ export function HUD() {
         </div>
       </div>
 
-      <div className="absolute top-4 right-4 pointer-events-auto z-20" data-testid="minimap" style={{ width: isMobile ? '100px' : isCompact ? '140px' : '180px' }}>
+      <div className="absolute top-4 right-4 pointer-events-auto z-20" data-testid="minimap" style={{ width: isMobile ? '160px' : isCompact ? '220px' : '280px' }}>
         <div className={`bg-slate-900/90 backdrop-blur-md rounded-xl shadow-xl border border-slate-700/50 ${isMobile ? 'p-2' : 'p-3'}`}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-slate-400">小地图</span>
@@ -441,6 +459,8 @@ export function HUD() {
               observedObjects={entities.filter((e) => e.currentRoom === currentRoom && e.status !== 'hidden' && e.status !== 'held')}
               taskRooms={task?.rooms}
               isMobile={isMobile}
+              isFullscreen={minimapFullscreen}
+              onToggleFullscreen={() => setMinimapFullscreen(!minimapFullscreen)}
             />
           )}
           {heldEntity && !minimapOpen && (
@@ -449,6 +469,18 @@ export function HUD() {
               <span className="text-xs text-white truncate">持有: {heldEntity.name}</span>
             </div>
           )}
+          <div className="mt-2 pt-2 border-t border-slate-700 flex items-center justify-between">
+            <span className="text-[10px] text-slate-500">房间状态</span>
+            {isRoomCleared ? (
+              <span className="text-[10px] text-green-400 flex items-center gap-1 font-semibold">
+                <CheckCircle2 size={10} /> 已清理
+              </span>
+            ) : (
+              <span className="text-[10px] text-amber-400 flex items-center gap-1">
+                <Package size={10} /> {roomUncollectedItems.length} 个待收集
+              </span>
+            )}
+          </div>
           <button
             onClick={() => {
               if (!task) return
@@ -588,6 +620,12 @@ export function HUD() {
                   <span className="text-[10px] text-blue-400 flex items-center gap-0.5"><History size={8} />时间</span>
                   <span className="text-[10px] text-orange-400 flex items-center gap-0.5"><Play size={8} />程序</span>
                 </div>
+                <div className="flex items-center gap-1 ml-2 pl-2 border-l border-slate-700">
+                  <span className="text-[10px] text-green-400 flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />高</span>
+                  <span className="text-[10px] text-yellow-400 flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-yellow-500 inline-block" />中</span>
+                  <span className="text-[10px] text-red-400 flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />模糊</span>
+                  <span className="text-[10px] text-orange-400 flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block" />关键</span>
+                </div>
               </div>
               <div className="flex items-center gap-1">
                 <button
@@ -632,13 +670,24 @@ export function HUD() {
                             ? 'bg-red-900/30 border-red-500/70 animate-outdated-glitch'
                             : slot.locked
                               ? 'bg-purple-900/50 border-purple-500'
-                              : 'bg-slate-800/50 border-slate-500 hover:border-purple-400'
+                              : slot.confidence > 60
+                                ? 'bg-green-900/30 border-green-500/60'
+                                : slot.confidence > 30
+                                  ? 'bg-yellow-900/30 border-yellow-500/60'
+                                  : 'bg-red-900/30 border-red-500/60'
                             : 'bg-slate-800/30 border-dashed border-slate-600'
                   }`}
-                  style={{ width: isCompact ? '48px' : '96px', height: isCompact ? '40px' : '56px' }}
+                  style={{
+                    width: isCompact ? '48px' : '96px',
+                    height: isCompact ? '40px' : '56px',
+                    ...(slot && !slot.outdated && slot.confidence < 30 ? { filter: 'blur(0.6px)' } : {}),
+                  }}
                 >
                   {slot ? (
                     <>
+                      {slot.priority === 'high' && (
+                        <span className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-orange-400" title="任务关键" />
+                      )}
                       <button
                         onClick={() => lockMemorySlot(index)}
                         className="absolute top-1 right-1 p-0.5 rounded hover:bg-white/10"
@@ -659,6 +708,7 @@ export function HUD() {
                         <div className="font-semibold truncate flex items-center gap-1">
                           {slot.objectName}
                           {slot.outdated && <span className="text-red-400 text-[8px]">!</span>}
+                          {!slot.outdated && slot.confidence < 30 && <span className="text-red-400 text-[8px]">模糊</span>}
                         </div>
                         <div className={`text-[10px] ${slot.outdated ? 'text-red-400' : 'text-slate-400'} flex items-center gap-1`}>
                           {slot.roomName}
@@ -667,7 +717,7 @@ export function HUD() {
                         <div className="w-full h-1 bg-slate-700 rounded-full mt-1">
                           <div
                             className={`h-full rounded-full transition-all ${
-                              slot.confidence > 70 ? 'bg-green-500' : slot.confidence > 40 ? 'bg-yellow-500' : 'bg-red-500'
+                              slot.confidence > 60 ? 'bg-green-500' : slot.confidence > 30 ? 'bg-yellow-500' : 'bg-red-500'
                             }`}
                             style={{ width: `${slot.confidence}%` }}
                           />
@@ -848,6 +898,14 @@ export function HUD() {
         }
         .animate-toast-in {
           animation: toast-in 0.3s ease-out forwards;
+        }
+        @keyframes combo-pop {
+          0% { transform: scale(0.5); opacity: 0.5; }
+          50% { transform: scale(1.3); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-combo-pop {
+          animation: combo-pop 0.4s ease-out;
         }
         @keyframes outdated-glitch {
           0%, 100% { opacity: 1; transform: translateX(0); }

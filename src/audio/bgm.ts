@@ -354,9 +354,6 @@ export function stopBgmImmediate(): void {
   ;(window as any).__bgmStopTime = Date.now()
   ;(window as any).__bgmStopCount = ((window as any).__bgmStopCount || 0) + 1
   
-  if (!isPlaying && trackStates.length === 0) return
-
-  isArenaCleaningUp = true
   isPlaying = false
   currentTaskId = null
   clearAllTracks()
@@ -365,10 +362,16 @@ export function stopBgmImmediate(): void {
     masterGain.gain.cancelScheduledValues(audioContext.currentTime)
     masterGain.gain.setValueAtTime(0, audioContext.currentTime)
   }
+
+  if (audioContext) {
+    audioContext.close().then(() => {
+      audioContext = null
+      masterGain = null
+    })
+  }
 }
 
 export function resetArenaCleanupFlag(): void {
-  isArenaCleaningUp = false
 }
 
 export function setBgmVolume(volume: number): void {

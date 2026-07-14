@@ -212,9 +212,39 @@ function ModelContent({
       if (child instanceof THREE.Mesh) {
         child.castShadow = config?.castShadow ?? true
         child.receiveShadow = config?.receiveShadow ?? false
+        child.geometry.computeVertexNormals()
+        child.geometry.normalizeNormals()
 
         const materialType = config?.materialType || 'plastic'
         const matConfig = MATERIAL_CONFIG[materialType] || MATERIAL_CONFIG.plastic
+
+        const applyPixelStyle = (mat: THREE.Material) => {
+          if (mat instanceof THREE.MeshStandardMaterial ||
+              mat instanceof THREE.MeshPhysicalMaterial ||
+              mat instanceof THREE.MeshPhongMaterial ||
+              mat instanceof THREE.MeshLambertMaterial) {
+            mat.flatShading = true
+            if (mat instanceof THREE.MeshStandardMaterial ||
+                mat instanceof THREE.MeshPhysicalMaterial) {
+              mat.roughness = 0.8
+              mat.metalness = 0.1
+            }
+            if (mat.map) {
+              mat.map.minFilter = THREE.NearestFilter
+              mat.map.magFilter = THREE.NearestFilter
+              mat.map.generateMipmaps = false
+            }
+            if (mat.emissiveMap) {
+              mat.emissiveMap.minFilter = THREE.NearestFilter
+              mat.emissiveMap.magFilter = THREE.NearestFilter
+              mat.emissiveMap.generateMipmaps = false
+            }
+            if (mat.aoMap) {
+              mat.aoMap.minFilter = THREE.NearestFilter
+              mat.aoMap.magFilter = THREE.NearestFilter
+            }
+          }
+        }
 
         if (child.material instanceof THREE.MeshStandardMaterial ||
             child.material instanceof THREE.MeshPhysicalMaterial) {
@@ -227,24 +257,29 @@ function ModelContent({
           if (color) {
             child.material.color.set(color)
           }
+          applyPixelStyle(child.material)
         } else if (child.material instanceof THREE.MeshPhongMaterial) {
           child.material.shininess = 10
           if (color) {
             child.material.color.set(color)
           }
+          applyPixelStyle(child.material)
         } else if (child.material instanceof THREE.MeshLambertMaterial) {
           if (color) {
             child.material.color.set(color)
           }
+          applyPixelStyle(child.material)
         } else if (child.material instanceof THREE.MeshBasicMaterial) {
           if (color) {
             child.material.color.set(color)
           }
+          applyPixelStyle(child.material)
         } else {
           const newMat = new THREE.MeshStandardMaterial({
             color: color || '#a8a29e',
-            roughness: matConfig.roughness,
-            metalness: matConfig.metalness,
+            roughness: 0.8,
+            metalness: 0.1,
+            flatShading: true,
           })
           if (matConfig.emissive) {
             newMat.emissive.set(matConfig.emissive)

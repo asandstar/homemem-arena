@@ -1,12 +1,13 @@
 import type { EntityState } from '../../types/object'
 import type { RoomSpec } from '../../types/room'
-import type { MemorySlot } from '../gameTypes'
-import { markOutdatedByEntityConfigId } from '../../game/memorySlots'
+import type { MemorySlot, MemoryPriority } from '../gameTypes'
+import { markOutdatedByEntityConfigId, updateMemoryConfidence, getTaskCriticalObjectIds, findOverwriteableSlot } from '../../game/memorySlots'
 import { playSfx } from '../../audio/sfx'
 import { DEFAULT_LEVEL_BALANCE } from '../../data/levelBalance'
 import { generateId } from '../../utils/format'
 import { sharedRooms } from '../../data/rooms'
 import { playMemorySaveEffect, playMemoryExpireEffect } from '../../effects/particleSystem'
+import { emitEvent } from '../../engine/eventBus'
 
 export interface MemorySliceState {
   memorySlots: (MemorySlot | null)[]
@@ -17,6 +18,7 @@ export interface MemorySliceState {
   clearMemorySlot: (slotIndex: number) => void
   markMemoryOutdated: (entityConfigId: string) => void
   setFlashingSlotIndex: (index: number | null) => void
+  decayMemories: (deltaMs: number) => void
 }
 
 export const createMemorySlice = (set: any, get: any): MemorySliceState => ({
@@ -37,6 +39,10 @@ export const createMemorySlice = (set: any, get: any): MemorySliceState => ({
     const existingIndex = memorySlots.findIndex((s: MemorySlot | null) => s && s.entityConfigId === entity.configId)
     const isUpdate = existingIndex !== -1
 
+    // 判断记忆优先级：任务关键物品（出现在 task.goals 中的物品）为 high，其余为 medium
+    const criticalIds = task?.goals ? getTaskCriticalObjectIds(task.goals) : new Set<string>()
+    const priority: MemoryPriority = criticalIds.has(entity.configId) ? 'high' : 'medium'
+
     const newMemory: MemorySlot = {
       id: generateId('mem'),
       objectName: entity.name,
@@ -48,6 +54,7 @@ export const createMemorySlice = (set: any, get: any): MemorySliceState => ({
       confidence: 100,
       outdated: false,
       entityConfigId: entity.configId,
+      priority,
     }
 
     if (isUpdate) {
@@ -76,27 +83,29 @@ export const createMemorySlice = (set: any, get: any): MemorySliceState => ({
       get().addFloatingText('记忆已保存', 'memory', entity.position.x, entity.position.y + 1)
       playSfx('memory_save')
       playMemorySaveEffect(entity.position)
+      emitEvent({
+        type: 'memory_write',
+        id: generateId('evt'),
+        timestamp: Date.now(),
+        step: get().stepCount,
+        memoryId: newMemory.id,
+        memoryType: 'spatial',
+        content: `${entity.name} in ${roomName}`,
+      })
       return { success: true, slotIndex: emptyIndex, isUpdate: false }
     }
 
-    const unlockedIndices = memorySlots
-      .map((slot: MemorySlot | null, idx: number) => (slot && !slot.locked ? idx : -1))
-      .filter((idx: number) => idx !== -1)
+    const overwriteIndex = findOverwriteableSlot(memorySlots)
 
-    if (unlockedIndices.length > 0) {
-      const oldestIndex = unlockedIndices.reduce((oldest: number, idx: number) => {
-        if (!memorySlots[oldest] || !memorySlots[idx]) return oldest
-        return memorySlots[idx]!.timestamp < memorySlots[oldest]!.timestamp ? idx : oldest
-      }, unlockedIndices[0])
-
+    if (overwriteIndex !== -1) {
       const newSlots = [...memorySlots]
-      newSlots[oldestIndex] = newMemory
+      newSlots[overwriteIndex] = newMemory
       set({ memorySlots: newSlots })
       get().incrementMemoryUsed()
-      get().triggerMemorySaveEffect(oldestIndex)
+      get().triggerMemorySaveEffect(overwriteIndex)
       get().addFloatingText('记忆已覆盖', 'memory', entity.position.x, entity.position.y + 1)
       playSfx('memory_save')
-      return { success: true, slotIndex: oldestIndex, isUpdate: false }
+      return { success: true, slotIndex: overwriteIndex, isUpdate: false }
     }
 
     return { success: false, isUpdate: false }
@@ -137,5 +146,11 @@ export const createMemorySlice = (set: any, get: any): MemorySliceState => ({
     if (entity && entity.currentRoom === currentRoom) {
       playMemoryExpireEffect(entity.position)
     }
+  },
+
+  decayMemories: (deltaMs: number) => {
+    const { memorySlots } = get()
+    const newSlots = updateMemoryConfidence(memorySlots, deltaMs)
+    set({ memorySlots: newSlots })
   },
 })

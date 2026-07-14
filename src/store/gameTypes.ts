@@ -10,6 +10,8 @@ import type { RoomId, Vec3 } from '../types/room'
 export type ViewMode = 'first-person' | 'top-down'
 export type GamePhase = 'idle' | 'briefing' | 'playing' | 'probing' | 'analyzing' | 'result' | 'aborted'
 
+export type MemoryPriority = 'high' | 'medium' | 'low'
+
 export interface MemorySlot {
   id: string
   objectName: string
@@ -22,6 +24,8 @@ export interface MemorySlot {
   outdated: boolean
   entityConfigId: string
   memoryType?: string
+  /** 记忆优先级：high=任务关键（不易被覆盖），medium=普通，low=最易被覆盖 */
+  priority?: MemoryPriority
 }
 
 export type FloatingTextType = 'score' | 'combo' | 'error' | 'memory' | 'info'

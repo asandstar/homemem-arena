@@ -241,9 +241,20 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
       playTaskCompleteEffect(robotPosition)
 
       if (task) {
+        emitEvent({
+          type: 'task_progress',
+          goalId: 'level_complete',
+          status: 'achieved',
+          description: '任务完成',
+          id: generateId('evt'),
+          timestamp: Date.now(),
+          step: get().stepCount,
+          taskId: task.id,
+        } as any)
+
         get().completeLevel(task.id, score, elapsedMs)
 
-        const taskIds = ['task-clean-table', 'task-leave-home', 'task-laundry-sort', 'task-breakfast']
+        const taskIds = ['task-clean-table', 'task-leave-home', 'task-laundry-sort', 'task-breakfast', 'task-night-patrol']
         const currentIndex = taskIds.indexOf(task.id)
         if (currentIndex >= 0 && currentIndex < taskIds.length - 1) {
           get().unlockLevel(taskIds[currentIndex + 1])
@@ -426,6 +437,8 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
       if (chaos >= DEFAULT_LEVEL_BALANCE.maxChaos && !get().levelFailed) {
         get().setLevelFailed('混乱值过载')
       }
+
+      get().decayMemories(deltaMs)
 
       if (task?.timeLimit) {
         const remainingSeconds = Math.floor((task.timeLimit * 1000 - newElapsed) / 1000)

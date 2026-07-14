@@ -17,7 +17,7 @@ export function useDialog() {
   const [currentSequence, setCurrentSequence] = useState<DialogSequence | null>(null)
   const autoContinueTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   
-  const { addScore } = useGameStore()
+  const { addScore, incrementChaos } = useGameStore()
   const { addToast: addUiToast } = useToastStore()
 
   const currentNode = currentSequence?.nodes[dialogState.currentNodeIndex] ?? null
@@ -63,10 +63,24 @@ export function useDialog() {
         case 'hint':
           addUiToast('info', choice.effect.value as string)
           break
-        case 'memory':
+        case 'memory': {
+          const slotCount = choice.effect.value as number
+          useGameStore.setState((state) => ({
+            memorySlots: [...state.memorySlots, ...new Array(slotCount).fill(null)],
+          }))
+          addUiToast('success', `获得 ${slotCount} 个额外记忆槽！`)
           break
-        case 'chaos':
+        }
+        case 'chaos': {
+          const amount = choice.effect.value as number
+          incrementChaos(amount)
+          if (amount >= 0) {
+            addUiToast('error', `混乱值 +${amount}`)
+          } else {
+            addUiToast('success', `混乱值 ${amount}`)
+          }
           break
+        }
       }
     }
 
@@ -83,7 +97,7 @@ export function useDialog() {
       history: [...prev.history, choice.id],
       currentNodeIndex: prev.currentNodeIndex + 1,
     }))
-  }, [addScore, addUiToast, openDialog])
+  }, [addScore, incrementChaos, addUiToast, openDialog])
 
   const handleNext = useCallback(() => {
     if (autoContinueTimer.current) {

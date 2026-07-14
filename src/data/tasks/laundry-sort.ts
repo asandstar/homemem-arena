@@ -155,6 +155,7 @@ export const laundrySortTask: TaskConfig = {
       id: 'g-white-sorted',
       description: '所有白色衣物（包括神秘彩色衬衫）放入白色衣物篮',
       memoryType: 'object',
+      relatedObjectIds: ['obj-white-shirt', 'obj-white-socks', 'obj-white-towel-small', 'obj-mystery-shirt'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const whiteIds = ['obj-white-shirt', 'obj-white-socks', 'obj-white-towel-small', 'obj-mystery-shirt']
         return whiteIds.every((id) => {
@@ -168,6 +169,7 @@ export const laundrySortTask: TaskConfig = {
       id: 'g-dark-sorted',
       description: '所有深色衣物放入深色衣物篮',
       memoryType: 'object',
+      relatedObjectIds: ['obj-black-tshirt', 'obj-jeans'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const darkIds = ['obj-black-tshirt', 'obj-jeans']
         return darkIds.every((id) => {
@@ -181,6 +183,7 @@ export const laundrySortTask: TaskConfig = {
       id: 'g-towel-sorted',
       description: '所有毛巾放入毛巾篮',
       memoryType: 'object',
+      relatedObjectIds: ['obj-towel-large', 'obj-towel-small'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const towelIds = ['obj-towel-large', 'obj-towel-small']
         return towelIds.every((id) => {
@@ -194,6 +197,7 @@ export const laundrySortTask: TaskConfig = {
       id: 'g-mystery-item',
       description: '神秘彩色条纹衬衫放入白色衣物篮',
       memoryType: 'object',
+      relatedObjectIds: ['obj-mystery-shirt'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const mystery = entities.find((ent) => ent.configId === 'obj-mystery-shirt')
         return mystery?.placedIn === 'cnt-white-basket'

@@ -1,11 +1,18 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Brain, AlertTriangle, Trophy, Volume2, VolumeX, MapPin, Box, History, Play, Cpu, Activity, Sparkles } from 'lucide-react'
+import { ArrowRight, Brain, AlertTriangle, Trophy, Volume2, VolumeX, MapPin, Box, History, Play } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { useUiStore } from '../store/useUiStore'
 
 export function HomePage() {
   const navigate = useNavigate()
   const { audioEnabled, toggleAudioEnabled } = useUiStore()
+
+  const levels = [
+    { icon: '🚪', name: '出门大作战', desc: '主人快迟到了！找钥匙、手机、雨伞，小心猫咪把钥匙推到地上' },
+    { icon: '🍽️', name: '餐桌混乱', desc: '区分脏盘子和干净盘子，室友还会偷偷把脏盘子放回来' },
+    { icon: '👕', name: '洗衣幽灵', desc: '衣物分类大作战，幽灵会交换篮子位置、藏起袜子' },
+    { icon: '⏰', name: '早餐时间循环', desc: '困在时间循环里的早餐，按正确流程准备再归位' },
+  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col relative overflow-hidden">
@@ -30,40 +37,30 @@ export function HomePage() {
       <div className="relative z-1 flex-1 flex flex-col items-center justify-center px-4 py-16">
         {/* 头部 */}
         <div className="text-center mb-12">
-          <div className="relative mb-6">
-            <div className="absolute inset-0 bg-cyan-500 blur-3xl opacity-10" />
-            <Cpu className="relative text-cyan-400 w-24 h-24 mx-auto animate-pulse" />
-          </div>
-          <h1 className="text-5xl md:text-7xl font-bold mb-4">
+          <div className="text-6xl mb-4" style={{ animation: 'pulse 3s ease-in-out infinite' }}>🏠</div>
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">
             <span className="bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-              HomeMem Arena
+              记忆宅邸：失忆管家
             </span>
           </h1>
-          <p className="text-xl md:text-2xl text-slate-300 mb-6">
-            家政记忆训练系统
+          <p className="text-lg md:text-xl text-slate-300 mb-6">
+            一款让你在玩游戏时顺便练记忆的 3D 网页小游戏
           </p>
           <div className="inline-flex items-center gap-2 px-5 py-2 bg-purple-500/20 border border-purple-500/30 rounded-full text-sm text-violet-300">
-            <Sparkles size={14} />
-            记忆增强机器人训练平台 · 休闲闯关
+            <span>🎮</span>
+            <span>生活娱乐赛道 · 记忆训练 · 休闲闯关</span>
           </div>
         </div>
 
-        {/* 介绍卡片 */}
+        {/* 创意介绍 */}
         <div className="bg-slate-800/60 backdrop-blur-md rounded-2xl p-8 max-w-3xl w-full mb-8 border border-slate-700/50 shadow-xl">
-          <div className="text-center mb-6">
-            <p className="text-slate-300 leading-relaxed mb-4">
-              欢迎来到 <span className="text-cyan-400 font-bold">HomeMem Arena</span>！
-              你是实习家政机器人 <span className="text-purple-400 font-bold">「小橡」</span>，
-              正在进行记忆增强策略的训练实验。
-            </p>
-            <p className="text-slate-300 leading-relaxed mb-4">
-              宅邸中存在记忆扰动机制——物体位置会随时间变化。
-              你的 <span className="text-purple-400 font-bold">记忆容量有限</span>，
-              需要合理分配记忆资源来完成任务。
-            </p>
-            <p className="text-slate-300 leading-relaxed">
-              在 <span className="text-red-400 font-bold">混乱值</span> 达到临界点之前，
-              完成所有任务目标，测试你的记忆增强策略效能！
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-slate-100 mb-3">🤖 失忆的家务机器人</h3>
+            <p className="text-slate-300 leading-relaxed text-sm mb-4">
+              你是一台记忆模块出了故障的家务机器人 <span className="text-cyan-400 font-bold">MEM-07</span>，
+              只能同时记住 <span className="text-purple-400 font-bold">3 件物品</span> 的位置。
+              在一栋"会捣乱"的房子里，你需要限时完成各种家务任务：找钥匙、收拾餐桌、分类衣物、准备早餐...
+              而房子里的猫咪、室友、幽灵甚至时间循环，都会不断干扰你的记忆。
             </p>
           </div>
 
@@ -71,7 +68,7 @@ export function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/30 text-center hover:border-purple-500/30 hover:-translate-y-1 transition-all duration-300">
               <Brain className="text-purple-400 w-8 h-8 mx-auto mb-2" />
-              <div className="text-sm font-medium text-slate-200 mb-1">有限记忆</div>
+              <div className="text-sm font-medium text-slate-200 mb-1">有限记忆槽</div>
               <div className="text-xs text-slate-400">策略性选择保存什么</div>
             </div>
             <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/30 text-center hover:border-pink-500/30 hover:-translate-y-1 transition-all duration-300">
@@ -80,7 +77,7 @@ export function HomePage() {
               <div className="text-xs text-slate-400">猫咪、幽灵、时间循环</div>
             </div>
             <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/30 text-center hover:border-cyan-500/30 hover:-translate-y-1 transition-all duration-300">
-              <Activity className="text-cyan-400 w-8 h-8 mx-auto mb-2" />
+              <div className="text-cyan-400 text-2xl mb-2">📈</div>
               <div className="text-sm font-medium text-slate-200 mb-1">混乱值系统</div>
               <div className="text-xs text-slate-400">环境越乱越考验应变</div>
             </div>
@@ -109,6 +106,17 @@ export function HomePage() {
               <div className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent mb-1">3D</div>
               <div className="text-xs text-slate-400">沉浸式场景</div>
             </div>
+          </div>
+
+          {/* 关卡一览 */}
+          <div className="grid grid-cols-2 gap-3 mb-8">
+            {levels.map((level) => (
+              <div key={level.name} className="bg-slate-800/40 rounded-xl p-3 border border-slate-700/30 hover:border-pink-500/30 hover:-translate-y-1 transition-all duration-300">
+                <div className="text-2xl mb-1">{level.icon}</div>
+                <div className="text-sm font-medium text-slate-200 mb-1">{level.name}</div>
+                <div className="text-xs text-slate-400 leading-relaxed">{level.desc}</div>
+              </div>
+            ))}
           </div>
 
           {/* 记忆类型 */}
@@ -140,7 +148,7 @@ export function HomePage() {
             className="w-full bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white font-bold text-lg py-6 rounded-xl shadow-lg shadow-purple-500/25 transition-all transform hover:scale-105"
             onClick={() => navigate('/tasks')}
           >
-            开始实验
+            开始闯关
             <ArrowRight size={24} className="ml-2" />
           </Button>
           <button
@@ -152,37 +160,13 @@ export function HomePage() {
           </button>
         </div>
 
-        {/* 能力卡片 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 max-w-3xl w-full">
-          <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/30 hover:border-cyan-500/30 hover:-translate-y-1 transition-all duration-300">
-            <div className="text-cyan-400 font-bold mb-2 flex items-center gap-2">
-              <MapPin size={14} /> 空间追踪
-            </div>
-            <div className="text-xs text-slate-400">记住物体位置，追踪移动轨迹</div>
-          </div>
-          <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/30 hover:border-purple-500/30 hover:-translate-y-1 transition-all duration-300">
-            <div className="text-purple-400 font-bold mb-2 flex items-center gap-2">
-              <Box size={14} /> 物体识别
-            </div>
-            <div className="text-xs text-slate-400">识别不同类别物体，匹配目标容器</div>
-          </div>
-          <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/30 hover:border-blue-500/30 hover:-translate-y-1 transition-all duration-300">
-            <div className="text-blue-400 font-bold mb-2 flex items-center gap-2">
-              <History size={14} /> 时序记忆
-            </div>
-            <div className="text-xs text-slate-400">记忆事件顺序，理解因果关系</div>
-          </div>
-          <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/30 hover:border-orange-500/30 hover:-translate-y-1 transition-all duration-300">
-            <div className="text-orange-400 font-bold mb-2 flex items-center gap-2">
-              <Play size={14} /> 程序学习
-            </div>
-            <div className="text-xs text-slate-400">学习操作序列，优化任务流程</div>
-          </div>
-        </div>
-
-        <div className="mt-8 text-center">
-          <p className="text-xs text-slate-500 font-mono">
-            Inspired by RoboMME: Benchmarking and Understanding Memory for Robotic Generalist Policies
+        {/* 底部 */}
+        <div className="text-center">
+          <p className="text-xs text-slate-500">
+            🏠 记忆宅邸：失忆管家 · Memory Butler
+          </p>
+          <p className="text-xs text-slate-600 mt-1">
+            React + Three.js + TypeScript · 网页即开即玩
           </p>
         </div>
       </div>

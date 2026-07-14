@@ -1,12 +1,10 @@
 // 3D Arena 页面 - 整合 3D 场景 + HUD + 操作面板
 
-import { useEffect, useCallback, useState } from 'react'
+import { useEffect, useCallback, useState, lazy, Suspense } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useGameStore } from '../store/useGameStore'
 import { useSessionStore } from '../store/useSessionStore'
 import { useToastStore } from '../store/useToastStore'
-import { Scene3D } from '../components/arena3d/Scene3D'
-import { HUD } from '../components/arena3d/HUD'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import { initAudio, stopAllSfx, resetRoomAmbientFlag } from '../audio/sfx'
@@ -14,9 +12,14 @@ import { stopBgmImmediate, resetArenaCleanupFlag, updateBgmState } from '../audi
 import { playRoomAmbient, stopAmbientImmediate } from '../audio/ambient'
 import { executeContainerInteraction, executePick } from '../game/commands'
 import { getTaskById } from '../data/tasks'
-import { DialogBox } from '../components/dialog/DialogBox'
 import { useDialog } from '../dialog/useDialog'
 import { startAutoSave, stopAutoSave } from '../save/saveSystem'
+import { subscribeEvent } from '../engine/eventBus'
+
+const Scene3D = lazy(() => import('../components/arena3d/Scene3D').then((m) => ({ default: m.Scene3D })))
+const HUD = lazy(() => import('../components/arena3d/HUD').then((m) => ({ default: m.HUD })))
+const DialogBox = lazy(() => import('../components/dialog/DialogBox').then((m) => ({ default: m.DialogBox })))
+const ItemHintIndicator = lazy(() => import('../components/arena3d/ItemHintIndicator').then((m) => ({ default: m.ItemHintIndicator })))
 
 export function ArenaPage() {
   const { taskId } = useParams<{ taskId: string }>()
@@ -28,6 +31,9 @@ export function ArenaPage() {
     currentRoom,
     chaosValue,
     achievedGoalIds,
+    combo,
+    wrongPlaceCount,
+    activeFlowHint,
     initializeTask,
     startPlaying,
     levelCompleted,
@@ -65,6 +71,25 @@ export function ArenaPage() {
     }
   }, [currentRoom, phase, briefingOpen, triggerDialog])
 
+  // 监听事件总线触发对话
+  useEffect(() => {
+    if (!task || briefingOpen) return
+
+    const unsubscribe = subscribeEvent((event) => {
+      if (event.type === 'task_progress' && event.status === 'achieved') {
+        if (event.goalId === 'level_complete') {
+          triggerDialog('event', `level_complete_${event.taskId}`)
+        } else {
+          triggerDialog('goalComplete', event.goalId)
+        }
+      } else if (event.type === 'memory_write') {
+        triggerDialog('event', 'memory_save')
+      }
+    })
+
+    return unsubscribe
+  }, [task, briefingOpen, triggerDialog])
+
   useEffect(() => {
     if (phase === 'playing') {
       const totalGoals = task?.goals?.length ?? 1
@@ -74,12 +99,37 @@ export function ArenaPage() {
     }
   }, [chaosValue, phase, task, achievedGoalIds])
 
+  // 连击对话触发
+  useEffect(() => {
+    if (!task || briefingOpen || phase !== 'playing') return
+    if (combo >= 3) {
+      triggerDialog('event', 'combo_3')
+    }
+  }, [combo, task, briefingOpen, phase, triggerDialog])
+
+  // 错误操作对话触发
+  useEffect(() => {
+    if (!task || briefingOpen || phase !== 'playing') return
+    if (wrongPlaceCount > 0) {
+      triggerDialog('event', 'wrong_pick')
+    }
+  }, [wrongPlaceCount, task, briefingOpen, phase, triggerDialog])
+
+  // 停滞对话触发（通过 flow hint）
+  useEffect(() => {
+    if (!task || briefingOpen || phase !== 'playing') return
+    if (activeFlowHint && activeFlowHint.level >= 2) {
+      triggerDialog('event', 'stagnation')
+    }
+  }, [activeFlowHint, task, briefingOpen, phase, triggerDialog])
+
   // 初始化任务
   useEffect(() => {
     if (!taskId || !getTaskById(taskId)) {
       navigate('/tasks', { replace: true })
       return
     }
+    setNarrativeText(null)
     initializeTask(taskId)
     setBriefingOpen(true)
   }, [taskId, initializeTask, navigate])
@@ -193,16 +243,27 @@ export function ArenaPage() {
     <div className="flex-1 relative h-full overflow-hidden">
       {/* 3D 场景 */}
       <div className="absolute inset-0">
-        <Scene3D
-          onEntityClick={handleEntityClick}
-          onContainerClick={handleContainerClick}
-        />
+        <Suspense fallback={null}>
+          <Scene3D
+            onEntityClick={handleEntityClick}
+            onContainerClick={handleContainerClick}
+          />
+        </Suspense>
       </div>
 
       {/* HUD 覆盖层 */}
-      <HUD />
+      <Suspense fallback={null}>
+        <HUD />
+      </Suspense>
 
-      {/* 游戏中返回任务列表按钮 */}
+      {/* 寻物方向指示器 */}
+      {!briefingOpen && phase === 'playing' && (
+        <Suspense fallback={null}>
+          <ItemHintIndicator />
+        </Suspense>
+      )}
+
+      {/* 游戏中返回任务列表按钮 - 移到左上角 */}
       {!briefingOpen && task && phase === 'playing' && (
         <button
           data-testid="back-to-tasks"
@@ -211,7 +272,7 @@ export function ArenaPage() {
             stopAllSfx()
             navigate('/tasks')
           }}
-          className="absolute top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-auto bg-slate-900/70 backdrop-blur-sm rounded-lg px-3 py-1.5 text-xs text-slate-400 hover:text-white transition-colors shadow-lg border border-slate-700/50"
+          className="absolute top-4 left-4 z-30 pointer-events-auto bg-slate-900/70 backdrop-blur-sm rounded-lg px-3 py-1.5 text-xs text-slate-400 hover:text-white transition-colors shadow-lg border border-slate-700/50"
         >
           ← 返回任务列表
         </button>
@@ -319,14 +380,15 @@ export function ArenaPage() {
 
       {/* 对话弹窗 */}
       {dialogState.isOpen && currentNode && (
-        <DialogBox
-          node={currentNode}
-          onChoice={handleChoice}
-          onNext={handleNext}
-          onClose={closeDialog}
-        />
+        <Suspense fallback={null}>
+          <DialogBox
+            node={currentNode}
+            onChoice={handleChoice}
+            onNext={handleNext}
+            onClose={closeDialog}
+          />
+        </Suspense>
       )}
-
     </div>
   )
 }

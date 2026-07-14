@@ -63,6 +63,7 @@ export interface TaskProgressEvent extends BaseEvent {
   goalId: string
   status: 'achieved' | 'failed'
   description: string
+  taskId?: string
 }
 
 /** 为避免玩家长时间停滞而触发的渐进式心流辅助 */
