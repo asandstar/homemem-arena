@@ -8,9 +8,9 @@ interface PixelationPassProps {
 
 export function PixelationPass({ pixelSize = 4 }: PixelationPassProps) {
   const { gl, scene, camera, size } = useThree()
-  const renderTargetRef = useRef<THREE.WebGLRenderTarget | null>(null)
   const pixelMaterialRef = useRef<THREE.ShaderMaterial | null>(null)
   const quadRef = useRef<THREE.Mesh>(null)
+  const renderTargetRef = useRef<THREE.WebGLRenderTarget | null>(null)
 
   useEffect(() => {
     const target = new THREE.WebGLRenderTarget(
@@ -25,17 +25,9 @@ export function PixelationPass({ pixelSize = 4 }: PixelationPassProps) {
     )
     renderTargetRef.current = target
 
-    return () => {
-      target.dispose()
-    }
-  }, [size.width, size.height])
-
-  useEffect(() => {
-    if (!renderTargetRef.current) return
-
     const material = new THREE.ShaderMaterial({
       uniforms: {
-        tDiffuse: { value: renderTargetRef.current!.texture },
+        tDiffuse: { value: target.texture },
         pixelSize: { value: pixelSize },
         resolution: { value: new THREE.Vector2(size.width, size.height) },
       },
@@ -59,13 +51,17 @@ export function PixelationPass({ pixelSize = 4 }: PixelationPassProps) {
           gl_FragColor = texture2D(tDiffuse, coord);
         }
       `,
+      depthTest: false,
+      depthWrite: false,
+      transparent: true,
     })
     pixelMaterialRef.current = material
 
     return () => {
+      target.dispose()
       material.dispose()
     }
-  }, [renderTargetRef.current?.texture, pixelSize, size.width, size.height])
+  }, [pixelSize, size.width, size.height])
 
   useFrame(() => {
     if (!renderTargetRef.current || !pixelMaterialRef.current || !quadRef.current) return
@@ -75,8 +71,12 @@ export function PixelationPass({ pixelSize = 4 }: PixelationPassProps) {
     gl.setRenderTarget(null)
 
     pixelMaterialRef.current.uniforms.tDiffuse.value = renderTargetRef.current.texture
+
+    gl.autoClear = false
+    gl.clearDepth()
     quadRef.current.material = pixelMaterialRef.current
     gl.render(quadRef.current, camera)
+    gl.autoClear = true
   })
 
   return (

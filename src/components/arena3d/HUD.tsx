@@ -438,7 +438,7 @@ export function HUD() {
         </div>
       </div>
 
-      <div className="absolute top-4 right-4 pointer-events-auto z-20" data-testid="minimap" style={{ width: isMobile ? '160px' : isCompact ? '220px' : '280px' }}>
+      <div className="absolute top-4 right-4 pointer-events-auto z-20" data-testid="minimap" style={{ width: isMobile ? '200px' : isCompact ? '300px' : '360px' }}>
         <div className={`bg-slate-900/90 backdrop-blur-md rounded-xl shadow-xl border border-slate-700/50 ${isMobile ? 'p-2' : 'p-3'}`}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-slate-400">小地图</span>

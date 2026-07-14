@@ -5,6 +5,7 @@ let masterGain: GainNode | null = null
 let isPlaying = false
 let currentTaskId: string | null = null
 let isArenaCleaningUp = false
+let currentVolume = 0.5
 
 interface TrackConfig {
   notes: number[]
@@ -375,13 +376,18 @@ export function resetArenaCleanupFlag(): void {
 }
 
 export function setBgmVolume(volume: number): void {
-  if (!audioContext || !masterGain) return
   const clampedVolume = Math.max(0, Math.min(1, volume))
-  masterGain.gain.linearRampToValueAtTime(clampedVolume * 0.5, audioContext.currentTime + 0.5)
+  currentVolume = clampedVolume
+  if (audioContext && masterGain) {
+    masterGain.gain.linearRampToValueAtTime(clampedVolume * 0.5, audioContext.currentTime + 0.5)
+  }
 }
 
 export function getBgmVolume(): number {
-  return masterGain?.gain.value || 0
+  if (masterGain && audioContext) {
+    return masterGain.gain.value / 0.5
+  }
+  return currentVolume
 }
 
 export function isBgmPlaying(): boolean {

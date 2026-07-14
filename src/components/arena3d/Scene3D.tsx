@@ -288,13 +288,15 @@ function SceneContents({ onEntityClick, onContainerClick }: Scene3DProps) {
 
 export function Scene3D(props: Scene3DProps) {
   return (
-    <Canvas
-      id="arena-canvas"
-      shadows={{ type: THREE.PCFShadowMap }}
-      camera={{ position: [0, 1.6, 0], fov: 75, near: 0.1, far: 100 }}
-      style={{ background: '#1f2937' }}
-    >
-      <SceneContents {...props} />
-    </Canvas>
+    <div style={{ width: '100%', height: '100%', filter: 'pixelate(4px)' }}>
+      <Canvas
+        id="arena-canvas"
+        shadows={{ type: THREE.PCFShadowMap }}
+        camera={{ position: [0, 1.7, 3], rotation: [0, Math.PI, 0], fov: 75, near: 0.1, far: 100 }}
+        style={{ background: '#1f2937' }}
+      >
+        <SceneContents {...props} />
+      </Canvas>
+    </div>
   )
 }
