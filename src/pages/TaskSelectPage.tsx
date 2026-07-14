@@ -12,6 +12,7 @@ const timeSlots = [
   { icon: Coffee, label: '上午 08:00', color: 'text-orange-400', emoji: '☕' },
   { icon: CloudMoon, label: '下午 15:00', color: 'text-purple-400', emoji: '🌆' },
   { icon: Moon, label: '深夜 23:00', color: 'text-blue-400', emoji: '🌙' },
+  { icon: Moon, label: '凌晨 02:00', color: 'text-indigo-400', emoji: '🌌' },
 ]
 
 export function TaskSelectPage() {
@@ -116,7 +117,7 @@ export function TaskSelectPage() {
         </div>
 
         <div className="relative max-w-4xl w-full">
-          <div className="absolute left-8 md:left-1/2 top-8 bottom-8 w-1 bg-gradient-to-b from-yellow-500/30 via-orange-500/30 via-purple-500/30 to-blue-500/30" />
+          <div className="absolute left-8 md:left-1/2 top-8 bottom-8 w-1 bg-gradient-to-b from-yellow-500/30 via-orange-500/30 via-purple-500/30 via-blue-500/30 to-indigo-500/30" />
 
           <div className="space-y-6">
             {taskTemplates.map((task, index) => {
