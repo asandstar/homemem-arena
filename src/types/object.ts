@@ -74,6 +74,8 @@ export interface ContainerSpec {
   targetLabel?: string
   /** 容器表面高度（用于放置物体时锚定 y 坐标） */
   surfaceHeight?: number
+  /** 是否为抽屉式容器 */
+  isDrawer?: boolean
 }
 
 /** 物体运行时状态 */

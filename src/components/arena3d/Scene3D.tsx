@@ -32,7 +32,7 @@ function RoomLights({ rooms, currentRoom }: { rooms: typeof sharedRooms; current
     kitchen: { color: ROOM_AMBIENT_COLORS.kitchen, intensity: 0.45, positionOffset: [0, 2.8, 0], distance: 12 },
     entrance: { color: ROOM_AMBIENT_COLORS.entrance, intensity: 0.35, positionOffset: [0, 2.5, 0], distance: 8 },
     laundry: { color: ROOM_AMBIENT_COLORS.laundry, intensity: 0.45, positionOffset: [0, 2.8, 0], distance: 15 },
-    dining: { color: ROOM_AMBIENT_COLORS.dining, intensity: 0.55, positionOffset: [0, 2.8, 0], distance: 12 },
+    dining: { color: ROOM_AMBIENT_COLORS.dining, intensity: 0.8, positionOffset: [0, 2.8, 0], distance: 12 },
   }
 
   return (
@@ -40,7 +40,7 @@ function RoomLights({ rooms, currentRoom }: { rooms: typeof sharedRooms; current
       {Object.entries(rooms).map(([id, room]) => {
         const config = roomLightConfig[id as RoomId]
         const isCurrentRoom = id === currentRoom
-        const intensity = isCurrentRoom ? config.intensity : config.intensity * 0.15
+        const intensity = isCurrentRoom ? config.intensity : config.intensity * 0.3
         
         return (
           <pointLight
@@ -168,7 +168,7 @@ function SceneContents({ onEntityClick, onContainerClick }: Scene3DProps) {
 
   return (
     <>
-      <ambientLight intensity={0.15} color={PALETTE.ambient.neutral} />
+      <ambientLight intensity={0.35} color={PALETTE.ambient.neutral} />
       
       <directionalLight
         position={[8, 15, 8]}

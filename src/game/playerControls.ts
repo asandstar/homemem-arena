@@ -5,13 +5,13 @@
 // - pitch (rotation.x)：绕 X 轴旋转，正值表示抬头
 // - roll (rotation.z)：始终为 0
 
-export const PLAYER_SPEED = 4.0
-export const TOP_DOWN_SPEED = 5.5
+export const PLAYER_SPEED = 3.0
+export const TOP_DOWN_SPEED = 4.5
 export const PLAYER_RADIUS = 0.3
 export const PLAYER_HEIGHT = 1.6
 export const PITCH_MIN = -Math.PI / 3
 export const PITCH_MAX = Math.PI / 3
-export const MOUSE_SENSITIVITY = 0.002
+export const MOUSE_SENSITIVITY = 0.0015
 
 export const ACCELERATION = 40.0
 export const DECELERATION = 50.0

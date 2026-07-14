@@ -1,10 +1,10 @@
 import { useEffect, useCallback, useState } from 'react'
 import { useGameStore } from '../../store/useGameStore'
 import { useUiStore } from '../../store/useUiStore'
-import { Target, Clock, CheckCircle2, AlertTriangle, Zap, Package, Keyboard, Brain, Lock, Unlock, Trash2, ChevronDown, ChevronUp, Skull, AlertCircle, X, Cat, Smartphone, RotateCcw, Volume2, VolumeX, HelpCircle, Eye, EyeOff, MapPin, Box, History, Play } from 'lucide-react'
+import { Target, Clock, CheckCircle2, AlertTriangle, Zap, Package, Keyboard, Brain, Lock, Unlock, Trash2, ChevronDown, ChevronUp, Skull, AlertCircle, X, Cat, Smartphone, HelpCircle, Eye, EyeOff, MapPin, Box, History, Play } from 'lucide-react'
 import { Minimap } from './Minimap'
-import { initAudio, updateRoomAmbient } from '../../audio/sfx'
-import { playBgm, setBgmVolume, getBgmVolume } from '../../audio/bgm'
+import { updateRoomAmbient } from '../../audio/sfx'
+import { playBgm } from '../../audio/bgm'
 import type { GoalSpec } from '../../types/task'
 import { HelpPanel } from '../help/HelpPanel'
 import { useSessionStore } from '../../store/useSessionStore'
@@ -57,7 +57,6 @@ export function HUD() {
     elapsedMs,
     floatingTexts,
     eventToasts,
-    resetTask,
     isGoalAchieved,
     achievedGoalIds,
     activeFlowHint,
@@ -71,14 +70,11 @@ export function HUD() {
     controlsOpen,
     memoryBarOpen,
     hudHidden,
-    audioEnabled,
     toggleTaskPanel,
     toggleEventLog,
     toggleMinimap,
     toggleControls,
-    toggleMemoryBar,
     toggleHudHidden,
-    toggleAudioEnabled,
   } = useUiStore()
 
   const heldEntity = heldEntityId ? entities.find(e => e.id === heldEntityId) : null
@@ -94,7 +90,6 @@ export function HUD() {
 
   const [helpOpen, setHelpOpen] = useState(false)
   const [helpDefaultTab, setHelpDefaultTab] = useState('controls')
-  const [memoryTooltipOpen, setMemoryTooltipOpen] = useState(false)
   const [chaosTooltipOpen, setChaosTooltipOpen] = useState(false)
   const [isCompact, setIsCompact] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
@@ -244,8 +239,20 @@ export function HUD() {
     )
   }
 
+  const hasOutdatedMemory = memorySlots.some(s => s?.outdated)
+
   return (
     <div className="absolute inset-0 pointer-events-none" data-testid="arena-hud">
+      {hasOutdatedMemory && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            opacity: 0.08,
+          }}
+        >
+          <div className="absolute inset-0 animate-outdated-pulse" />
+        </div>
+      )}
       {chaosValue > 20 && (
         <div
           className="absolute inset-0 pointer-events-none"
@@ -481,43 +488,6 @@ export function HUD() {
               </span>
             )}
           </div>
-          <button
-            onClick={() => {
-              if (!task) return
-              resetTask()
-              useSessionStore.getState().startSession(task.id, task.name, task.briefing)
-              useGameStore.getState().startPlaying()
-            }}
-            className="w-full mt-2 pt-2 border-t border-slate-700 flex items-center justify-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors"
-          >
-            <RotateCcw size={12} />
-            重新开始
-          </button>
-          <button
-            onClick={() => {
-              toggleAudioEnabled()
-              const enabled = useUiStore.getState().audioEnabled
-              if (enabled) initAudio()
-            }}
-            className="w-full mt-2 flex items-center justify-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
-          >
-            {audioEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />}
-            {audioEnabled ? '音效开启' : '音效关闭'}
-          </button>
-          <div className="mt-2 pt-2 border-t border-slate-700">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] text-slate-500">背景音乐</span>
-              <span className="text-[10px] text-slate-400">{Math.round(getBgmVolume() * 100)}%</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={Math.round(getBgmVolume() * 100)}
-              onChange={(e) => setBgmVolume(Number(e.target.value) / 100)}
-              className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
-            />
-          </div>
         </div>
       </div>
 
@@ -613,48 +583,17 @@ export function HUD() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Brain size={14} className="text-purple-400" />
-                <span className="text-xs text-slate-400">记忆槽 (按 E 保存)</span>
-                <div className="flex items-center gap-1 ml-2">
-                  <span className="text-[10px] text-green-400 flex items-center gap-0.5"><MapPin size={8} />空间</span>
-                  <span className="text-[10px] text-purple-400 flex items-center gap-0.5"><Box size={8} />物体</span>
-                  <span className="text-[10px] text-blue-400 flex items-center gap-0.5"><History size={8} />时间</span>
-                  <span className="text-[10px] text-orange-400 flex items-center gap-0.5"><Play size={8} />程序</span>
-                </div>
-                <div className="flex items-center gap-1 ml-2 pl-2 border-l border-slate-700">
-                  <span className="text-[10px] text-green-400 flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />高</span>
-                  <span className="text-[10px] text-yellow-400 flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-yellow-500 inline-block" />中</span>
-                  <span className="text-[10px] text-red-400 flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />模糊</span>
-                  <span className="text-[10px] text-orange-400 flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block" />关键</span>
-                </div>
+                <span className="text-xs text-slate-400">记忆槽</span>
               </div>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={toggleMemoryBar}
-                  className="p-1 rounded hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors"
-                >
-                  <X size={12} />
-                </button>
-                <button
-                  onClick={() => {
-                    setMemoryTooltipOpen(false)
-                    openHelp('memory')
-                  }}
-                  onMouseEnter={() => setMemoryTooltipOpen(true)}
-                  onMouseLeave={() => setMemoryTooltipOpen(false)}
+                  onClick={() => openHelp('memory')}
                   className="p-1 rounded hover:bg-slate-700/50 text-slate-500 hover:text-purple-400 transition-colors"
+                  title="记忆系统帮助"
                 >
-                  <HelpCircle size={14} />
+                  <HelpCircle size={12} />
                 </button>
               </div>
-              {memoryTooltipOpen && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-800/95 border border-purple-500/30 rounded-lg p-3 shadow-xl z-20">
-                  <p className="text-xs text-white font-medium mb-2">🧠 记忆系统</p>
-                  <p className="text-xs text-slate-300 leading-relaxed mb-2">
-                    保存物体位置，之后可以回顾。记忆会随时间过期，重要的记得锁定！
-                  </p>
-                  <p className="text-[10px] text-purple-400">点击查看详细说明 →</p>
-                </div>
-              )}
             </div>
             <div className="flex gap-2" data-testid="memory-slots">
               {memorySlots.map((slot, index) => (
@@ -670,17 +609,12 @@ export function HUD() {
                             ? 'bg-red-900/30 border-red-500/70 animate-outdated-glitch'
                             : slot.locked
                               ? 'bg-purple-900/50 border-purple-500'
-                              : slot.confidence > 60
-                                ? 'bg-green-900/30 border-green-500/60'
-                                : slot.confidence > 30
-                                  ? 'bg-yellow-900/30 border-yellow-500/60'
-                                  : 'bg-red-900/30 border-red-500/60'
+                              : 'bg-slate-800/50 border-slate-500/60'
                             : 'bg-slate-800/30 border-dashed border-slate-600'
                   }`}
                   style={{
-                    width: isCompact ? '48px' : '96px',
-                    height: isCompact ? '40px' : '56px',
-                    ...(slot && !slot.outdated && slot.confidence < 30 ? { filter: 'blur(0.6px)' } : {}),
+                    width: isCompact ? '48px' : '80px',
+                    height: isCompact ? '40px' : '48px',
                   }}
                 >
                   {slot ? (
@@ -688,9 +622,12 @@ export function HUD() {
                       {slot.priority === 'high' && (
                         <span className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-orange-400" title="任务关键" />
                       )}
+                      {slot.outdated && (
+                        <span className="absolute top-1 right-1 text-red-400 text-[8px] font-bold">!</span>
+                      )}
                       <button
                         onClick={() => lockMemorySlot(index)}
-                        className="absolute top-1 right-1 p-0.5 rounded hover:bg-white/10"
+                        className="absolute top-1 right-5 p-0.5 rounded hover:bg-white/10"
                       >
                         {slot.locked ? (
                           <Lock size={isCompact ? 8 : 10} className="text-purple-400" />
@@ -700,28 +637,28 @@ export function HUD() {
                       </button>
                       <button
                         onClick={() => clearMemorySlot(index)}
-                        className="absolute top-1 right-8 p-0.5 rounded hover:bg-red-500/20"
+                        className="absolute top-1 right-1 p-0.5 rounded hover:bg-red-500/20"
                       >
                         <Trash2 size={isCompact ? 8 : 10} className="text-red-400" />
                       </button>
                       <div className="text-xs text-white mt-3">
-                        <div className="font-semibold truncate flex items-center gap-1">
-                          {slot.objectName}
-                          {slot.outdated && <span className="text-red-400 text-[8px]">!</span>}
-                          {!slot.outdated && slot.confidence < 30 && <span className="text-red-400 text-[8px]">模糊</span>}
-                        </div>
-                        <div className={`text-[10px] ${slot.outdated ? 'text-red-400' : 'text-slate-400'} flex items-center gap-1`}>
-                          {slot.roomName}
+                        <div className="flex items-center gap-1">
                           {getMemoryTypeIcon(slot.memoryType)}
+                          <span className="font-semibold truncate">{slot.objectName}</span>
                         </div>
-                        <div className="w-full h-1 bg-slate-700 rounded-full mt-1">
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              slot.confidence > 60 ? 'bg-green-500' : slot.confidence > 30 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${slot.confidence}%` }}
-                          />
+                        <div className={`text-[10px] ${slot.outdated ? 'text-red-400' : 'text-slate-400'}`}>
+                          {slot.roomName}
                         </div>
+                        {!isCompact && (
+                          <div className="mt-1">
+                            <div className="h-1 bg-slate-700 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full transition-all ${slot.outdated ? 'bg-red-500' : slot.confidence > 60 ? 'bg-green-500' : slot.confidence > 30 ? 'bg-yellow-500' : 'bg-orange-500'}`}
+                                style={{ width: `${slot.confidence}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </>
                   ) : (
@@ -747,12 +684,23 @@ export function HUD() {
           {nearbyEntity && (
             <div className="px-2 py-1 rounded bg-slate-950/70 text-xs text-purple-200">
               <kbd className="mr-1.5 font-mono text-purple-400">E</kbd>
-              保存/更新 {nearbyEntity.name} 的记忆
+              {memorySlots.some(s => s?.objectName === nearbyEntity.name && s.outdated)
+                ? `更新 ${nearbyEntity.name} 的记忆`
+                : `保存 ${nearbyEntity.name} 的记忆`}
             </div>
           )}
           {nearbyEntity?.configId === 'obj-key' && memorySlots.every((s) => s === null) && (
-            <div className="mt-2 max-w-[260px] px-3 py-2 rounded-lg bg-gradient-to-br from-purple-500/30 to-pink-500/30 border border-purple-400/50 text-[11px] text-purple-100 shadow-lg animate-pulse">
-              💡 第一次靠近物体！按 E 保存它的位置记忆，捣乱事件后可以回顾。保存一次 +50 分！
+            <div className="mt-2 max-w-[260px] px-4 py-3 rounded-lg bg-gradient-to-br from-purple-600/40 to-pink-600/40 border-2 border-purple-400/60 text-xs text-purple-100 shadow-xl animate-pulse">
+              <div className="font-bold mb-1">🧠 第一次靠近钥匙！</div>
+              <div>按 <kbd className="px-1.5 py-0.5 rounded bg-purple-500/30 text-purple-300 font-mono">E</kbd> 保存位置记忆</div>
+              <div className="text-purple-200/80 mt-1">捣乱事件后可以回顾，保存一次 +50 分！</div>
+            </div>
+          )}
+          {nearbyEntity && memorySlots.some(s => s?.objectName === nearbyEntity.name && s.outdated) && (
+            <div className="mt-2 max-w-[260px] px-4 py-3 rounded-lg bg-gradient-to-br from-red-600/30 to-orange-600/30 border-2 border-red-400/50 text-xs text-red-100 shadow-xl animate-pulse">
+              <div className="font-bold mb-1">⚠️ 记忆已过期！</div>
+              <div>按 <kbd className="px-1.5 py-0.5 rounded bg-red-500/30 text-red-300 font-mono">E</kbd> 更新 {nearbyEntity.name} 的记忆</div>
+              <div className="text-red-200/80 mt-1">更新记忆 +30 分！</div>
             </div>
           )}
         </div>
@@ -915,6 +863,13 @@ export function HUD() {
         }
         .animate-outdated-glitch {
           animation: outdated-glitch 0.5s infinite;
+        }
+        @keyframes outdated-pulse {
+          0%, 100% { background-color: rgba(239, 68, 68, 0); }
+          50% { background-color: rgba(239, 68, 68, 0.3); }
+        }
+        .animate-outdated-pulse {
+          animation: outdated-pulse 1.5s ease-in-out infinite;
         }
         .chaos-vignette {
           background: radial-gradient(ellipse at center, transparent 40%, rgba(127, 29, 29, 0.6) 100%);

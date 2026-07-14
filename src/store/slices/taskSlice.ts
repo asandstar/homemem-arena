@@ -318,7 +318,7 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
     },
 
     triggerScriptedEvents: () => {
-      const { task, stepCount, triggeredEvents, chaosValue, levelFailed, levelCompleted, phase } = get()
+      const { task, stepCount, triggeredEvents, chaosValue, levelFailed, levelCompleted, phase, currentRoom } = get()
       if (phase !== 'playing' || !task || levelFailed || levelCompleted) return
 
       const chaosMultiplier = 1 + (chaosValue / 100) * 2
@@ -335,7 +335,7 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
           }
         } else if (typeof event.trigger === 'function') {
           const entitySnapshots = get().getEntitySnapshot()
-          shouldTrigger = event.trigger(stepCount, entitySnapshots)
+          shouldTrigger = event.trigger(stepCount, entitySnapshots, currentRoom)
         }
 
         if (shouldTrigger) {

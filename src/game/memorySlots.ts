@@ -10,9 +10,23 @@ export interface MemorySlotData {
   outdated: boolean
   entityConfigId: string
   priority?: 'high' | 'medium' | 'low'
+  memoryType?: 'spatial' | 'object' | 'temporal' | 'procedural'
 }
 
 export type MemorySlot = MemorySlotData | null
+
+export const MEMORY_TYPE_WEIGHTS: Record<string, { scoreBonus: number; chaosReduction: number }> = {
+  spatial: { scoreBonus: 50, chaosReduction: 5 },
+  object: { scoreBonus: 30, chaosReduction: 3 },
+  temporal: { scoreBonus: 40, chaosReduction: 4 },
+  procedural: { scoreBonus: 60, chaosReduction: 6 },
+}
+
+export const MEMORY_PRIORITY_SCORE: Record<string, number> = {
+  high: 100,
+  medium: 50,
+  low: 20,
+}
 
 export function findSlotByEntityConfigId(
   slots: MemorySlot[],
@@ -41,12 +55,15 @@ export function markOutdatedByEntityConfigId(
   })
 }
 
-export function updateMemoryConfidence(slots: MemorySlot[], elapsedMs: number): MemorySlot[] {
-  const decayRate = 0.005
+export function updateMemoryConfidence(slots: MemorySlot[], elapsedMs: number, chaosMultiplier: number = 1): MemorySlot[] {
+  const baseDecayRate = 0.005
   return slots.map(s => {
     if (s && !s.locked && s.confidence > 10) {
+      const decayRate = baseDecayRate * chaosMultiplier
       const decay = (elapsedMs / 1000) * decayRate * 100
-      const newConfidence = Math.max(10, s.confidence - decay)
+      const priorityFactor = s.priority === 'high' ? 0.7 : s.priority === 'low' ? 1.3 : 1
+      const adjustedDecay = decay * priorityFactor
+      const newConfidence = Math.max(10, s.confidence - adjustedDecay)
       return {
         ...s,
         confidence: newConfidence,
@@ -55,6 +72,32 @@ export function updateMemoryConfidence(slots: MemorySlot[], elapsedMs: number): 
     }
     return s
   })
+}
+
+export function markRelatedMemoryOutdated(
+  slots: MemorySlot[],
+  entityConfigId: string
+): MemorySlot[] {
+  const targetSlot = slots.find(s => s?.entityConfigId === entityConfigId)
+  if (!targetSlot) return slots
+
+  const relatedIds = findRelatedEntityIds(entityConfigId)
+  return slots.map(s => {
+    if (s && !s.locked && relatedIds.includes(s.entityConfigId)) {
+      return { ...s, outdated: true, confidence: Math.max(20, s.confidence * 0.7) }
+    }
+    return s
+  })
+}
+
+function findRelatedEntityIds(entityConfigId: string): string[] {
+  const relatedMap: Record<string, string[]> = {
+    'obj-key': ['cnt-entrance-tray', 'obj-phone'],
+    'obj-phone': ['cnt-nightstand', 'obj-key'],
+    'obj-umbrella': ['cnt-entrance-tray'],
+    'cnt-entrance-tray': ['obj-key', 'obj-phone', 'obj-umbrella'],
+  }
+  return relatedMap[entityConfigId] || []
 }
 
 /**

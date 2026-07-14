@@ -29,3 +29,17 @@ export function getChaosColor(chaos: number): string {
     case 'critical': return '#dc2626'
   }
 }
+
+export function getMemoryDecayMultiplier(chaos: number, config: LevelBalanceConfig): number {
+  if (chaos < config.chaosMemoryDecayMultiplierThreshold) return 1
+  if (chaos < 60) return 1.5
+  if (chaos < 80) return 2
+  return 3
+}
+
+export function getRandomEventProbability(chaos: number): number {
+  if (chaos < 50) return 0
+  if (chaos < 70) return 0.02
+  if (chaos < 85) return 0.05
+  return 0.1
+}

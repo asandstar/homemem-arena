@@ -115,8 +115,8 @@ export function Container3D({
 
   const proximityGlow = useMemo(() => {
     if (distance >= 4.0) return 0
-    if (distance <= 1.0) return 1
-    return (4.0 - distance) / 3.0
+    if (distance <= 1.5) return 1
+    return (4.0 - distance) / 2.5
   }, [distance])
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {

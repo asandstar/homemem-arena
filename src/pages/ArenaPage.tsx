@@ -39,6 +39,8 @@ export function ArenaPage() {
     levelCompleted,
     levelFailed,
     saveCurrentGame,
+    getGameStats,
+    memorySlots,
   } = useGameStore()
 
   const { startSession } = useSessionStore()
@@ -46,6 +48,7 @@ export function ArenaPage() {
 
   const [briefingOpen, setBriefingOpen] = useState(true)
   const [narrativeText, setNarrativeText] = useState<string | null>(null)
+  const [showStats, setShowStats] = useState(false)
 
   const {
     dialogState,
@@ -175,6 +178,23 @@ export function ArenaPage() {
     }
   }, [phase, saveCurrentGame])
 
+  const getMemoryStrategyComment = () => {
+    const stats = getGameStats()
+    if (stats.levelFailed) {
+      return '时间到了！下次记得更快一点找到钥匙哦！'
+    }
+    if (stats.memoryUsedCount >= 2 && stats.memoryUpdateCount >= 1) {
+      return '记忆大师！你完美地保存并更新了记忆，简直是记忆系统的最佳使用者！'
+    }
+    if (stats.memoryUsedCount >= 1 && stats.memoryUpdateCount >= 1) {
+      return '反应迅速！猫事件后你很快找到了钥匙并更新了记忆，效率很高！'
+    }
+    if (stats.memoryUsedCount >= 1) {
+      return '做得不错！你使用了记忆系统保存位置，下次试试更新记忆吧！'
+    }
+    return '记忆新手！这次你没有使用记忆系统，但仍然完成了任务。试试保存记忆，会更轻松！'
+  }
+
   // 关卡完成或失败后进入记忆测试，最终分析在 Probe 完成后执行
   useEffect(() => {
     if (levelCompleted || levelFailed) {
@@ -185,12 +205,12 @@ export function ArenaPage() {
       }
 
       const timer = setTimeout(() => {
-        navigate(`/probe/${taskId}`)
+        setShowStats(true)
       }, 1500)
 
       return () => clearTimeout(timer)
     }
-  }, [levelCompleted, levelFailed, task, taskId, navigate])
+  }, [levelCompleted, levelFailed, task])
 
   // 处理点击物体
   const handleEntityClick = useCallback(
@@ -355,7 +375,7 @@ export function ArenaPage() {
       )}
 
       {/* 叙事弹窗 - 关卡完成/失败 */}
-      {narrativeText && (
+      {narrativeText && !showStats && (
         <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 pointer-events-none">
           <div className={`max-w-md mx-4 p-6 rounded-2xl shadow-2xl border ${
             levelCompleted
@@ -373,6 +393,120 @@ export function ArenaPage() {
               }`}>
                 {narrativeText}
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 结算统计弹窗 */}
+      {showStats && (
+        <div className="absolute inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-50 pointer-events-auto">
+          <div className={`max-w-md mx-4 p-6 rounded-2xl shadow-2xl border ${
+            levelCompleted
+              ? 'bg-gradient-to-br from-emerald-900/95 to-slate-900 border-emerald-500/30'
+              : 'bg-gradient-to-br from-red-900/95 to-slate-900 border-red-500/30'
+          }`}>
+            <div className="text-center mb-6">
+              {levelCompleted ? (
+                <p className="text-4xl mb-2">🎉</p>
+              ) : (
+                <p className="text-4xl mb-2">⏰</p>
+              )}
+              <h2 className={`text-xl font-bold ${
+                levelCompleted ? 'text-emerald-400' : 'text-red-400'
+              }`}>
+                {levelCompleted ? '任务完成！' : '时间到！'}
+              </h2>
+            </div>
+
+            {/* 得分和评级 */}
+            <div className="flex justify-center items-center gap-6 mb-6">
+              <div className="text-center">
+                <div className="text-xs text-slate-400">得分</div>
+                <div className="text-3xl font-bold text-white">{getGameStats().score}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-slate-400">评级</div>
+                <div className="text-3xl font-bold text-yellow-400">
+                  {getGameStats().score >= 900 ? 'S' : getGameStats().score >= 700 ? 'A' : getGameStats().score >= 500 ? 'B' : getGameStats().score >= 300 ? 'C' : 'D'}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-slate-400">用时</div>
+                <div className="text-2xl font-bold text-cyan-400">
+                  {Math.round(getGameStats().elapsedMs / 1000)}s
+                </div>
+              </div>
+            </div>
+
+            {/* 记忆表现 */}
+            <div className="bg-slate-800/50 rounded-xl p-4 mb-4">
+              <h3 className="text-sm font-semibold text-purple-300 mb-3 flex items-center gap-2">
+                <span>🧠</span> 记忆表现
+              </h3>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-slate-700/30 rounded-lg p-2 text-center">
+                  <div className="text-xs text-slate-400">保存次数</div>
+                  <div className="text-lg font-bold text-green-400">{getGameStats().memoryUsedCount}</div>
+                </div>
+                <div className="bg-slate-700/30 rounded-lg p-2 text-center">
+                  <div className="text-xs text-slate-400">有效记忆</div>
+                  <div className="text-lg font-bold text-blue-400">
+                    {memorySlots.filter(s => s && !s.outdated).length}
+                  </div>
+                </div>
+                <div className="bg-slate-700/30 rounded-lg p-2 text-center">
+                  <div className="text-xs text-slate-400">过期记忆</div>
+                  <div className="text-lg font-bold text-red-400">
+                    {memorySlots.filter(s => s && s.outdated).length}
+                  </div>
+                </div>
+                <div className="bg-slate-700/30 rounded-lg p-2 text-center">
+                  <div className="text-xs text-slate-400">更新次数</div>
+                  <div className="text-lg font-bold text-yellow-400">{getGameStats().memoryUpdateCount}</div>
+                </div>
+                <div className="bg-slate-700/30 rounded-lg p-2 text-center col-span-2">
+                  <div className="text-xs text-slate-400">记忆效率</div>
+                  <div className="text-lg font-bold text-purple-400">
+                    {getGameStats().memoryUsedCount > 0
+                      ? Math.round((memorySlots.filter(s => s && !s.outdated).length / getGameStats().memoryUsedCount) * 100)
+                      : 0}%
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 个性化评价 */}
+            <div className="bg-gradient-to-r from-purple-900/40 to-pink-900/40 rounded-xl p-4 mb-6 border border-purple-500/30">
+              <h3 className="text-sm font-semibold text-purple-300 mb-2 flex items-center gap-2">
+                <span>🤖</span> 你的机器人记忆策略
+              </h3>
+              <p className="text-sm text-slate-200 leading-relaxed">
+                {getMemoryStrategyComment()}
+              </p>
+            </div>
+
+            {/* 按钮 */}
+            <div className="flex gap-3">
+              <Button
+                className="flex-1 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold"
+                onClick={() => {
+                  navigate(`/probe/${taskId}`)
+                }}
+              >
+                继续
+              </Button>
+              <Button
+                variant="secondary"
+                className="border border-slate-500 text-slate-300 hover:bg-slate-800"
+                onClick={() => {
+                  stopBgmImmediate()
+                  stopAllSfx()
+                  navigate('/tasks')
+                }}
+              >
+                返回
+              </Button>
             </div>
           </div>
         </div>

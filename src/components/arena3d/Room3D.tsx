@@ -64,6 +64,34 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </FallbackColorizer>
 
+      <group position={[center.x - size.x / 2 + 0.9, 0.15, center.z + 0.2]} receiveShadow>
+        <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[0.25, 0.12, 0.08]} />
+          <meshStandardMaterial color="#ef4444" roughness={0.4} />
+        </mesh>
+      </group>
+      <group position={[center.x - size.x / 2 + 1.2, 0.12, center.z + 0.15]} receiveShadow>
+        <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[0.22, 0.1, 0.08]} />
+          <meshStandardMaterial color="#3b82f6" roughness={0.4} />
+        </mesh>
+      </group>
+
+      <group position={[center.x - 0.4, 0.12, center.z - size.z / 2 + 0.7]} receiveShadow>
+        <mesh position={[0.15, 0, 0]}>
+          <boxGeometry args={[0.15, 0.1, 0.1]} />
+          <meshStandardMaterial color="#6b4e3d" roughness={0.4} />
+        </mesh>
+        <mesh position={[-0.15, 0, 0]}>
+          <sphereGeometry args={[0.04, 12, 12]} />
+          <meshStandardMaterial color="#fbbf24" roughness={0.3} />
+        </mesh>
+        <mesh position={[-0.15, 0, 0.08]}>
+          <sphereGeometry args={[0.035, 12, 12]} />
+          <meshStandardMaterial color="#ef4444" roughness={0.3} />
+        </mesh>
+      </group>
+
       <FallbackColorizer modelId="hook" color="#4a4a4a">
         <group position={[center.x + size.x / 2 - 0.3, 1.5, center.z]} receiveShadow>
           <HookFallback size={{ x: 1.0, y: 0.3, z: 0.05 }} />
@@ -173,6 +201,69 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
       <FallbackColorizer modelId="coffee_table" color="#8b7355">
         <group position={[center.x - 0.5, 0, center.z - 0.3]} castShadow receiveShadow>
           <CoffeeTableModel size={{ x: 1.4, y: 0.45, z: 0.7 }} />
+        </group>
+      </FallbackColorizer>
+
+      <group position={[center.x - 0.8, 0.48, center.z - 0.5]} receiveShadow>
+        <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[0.25, 0.02, 0.35]} />
+          <meshStandardMaterial color="#3b82f6" roughness={0.3} />
+        </mesh>
+        <mesh position={[0.02, 0.02, 0.02]}>
+          <boxGeometry args={[0.24, 0.015, 0.34]} />
+          <meshStandardMaterial color="#ef4444" roughness={0.3} />
+        </mesh>
+        <mesh position={[0.04, 0.035, 0.04]}>
+          <boxGeometry args={[0.23, 0.015, 0.33]} />
+          <meshStandardMaterial color="#22c55e" roughness={0.3} />
+        </mesh>
+      </group>
+
+      <group position={[center.x - 0.2, 0.48, center.z - 0.1]} receiveShadow>
+        <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.15, 0.15, 0.04, 16]} />
+          <meshStandardMaterial color="#d4a574" roughness={0.4} />
+        </mesh>
+        <mesh position={[0, 0.06, 0]}>
+          <sphereGeometry args={[0.04, 12, 12]} />
+          <meshStandardMaterial color="#ef4444" roughness={0.3} />
+        </mesh>
+        <mesh position={[0.06, 0.05, 0.03]}>
+          <sphereGeometry args={[0.035, 12, 12]} />
+          <meshStandardMaterial color="#fbbf24" roughness={0.3} />
+        </mesh>
+        <mesh position={[-0.05, 0.05, 0.04]}>
+          <sphereGeometry args={[0.03, 12, 12]} />
+          <meshStandardMaterial color="#22c55e" roughness={0.3} />
+        </mesh>
+      </group>
+
+      <FallbackColorizer modelId="cat" color="#8b7355">
+        <group position={[center.x + 0.3, 0.45, center.z - 1.4]} rotation={[0, Math.PI / 4, 0]} receiveShadow>
+          <mesh position={[0, 0, 0]}>
+            <boxGeometry args={[0.4, 0.25, 0.3]} />
+            <meshStandardMaterial color="#8b7355" roughness={0.3} />
+          </mesh>
+          <mesh position={[-0.15, 0.15, 0]}>
+            <sphereGeometry args={[0.12, 16, 16]} />
+            <meshStandardMaterial color="#8b7355" roughness={0.3} />
+          </mesh>
+          <mesh position={[-0.22, 0.18, -0.05]}>
+            <sphereGeometry args={[0.04, 8, 8]} />
+            <meshStandardMaterial color="#8b7355" roughness={0.3} />
+          </mesh>
+          <mesh position={[-0.08, 0.18, -0.05]}>
+            <sphereGeometry args={[0.04, 8, 8]} />
+            <meshStandardMaterial color="#8b7355" roughness={0.3} />
+          </mesh>
+          <mesh position={[-0.23, 0.17, -0.02]}>
+            <sphereGeometry args={[0.02, 8, 8]} />
+            <meshStandardMaterial color="#1f2937" roughness={0.1} />
+          </mesh>
+          <mesh position={[-0.09, 0.17, -0.02]}>
+            <sphereGeometry args={[0.02, 8, 8]} />
+            <meshStandardMaterial color="#1f2937" roughness={0.1} />
+          </mesh>
         </group>
       </FallbackColorizer>
 

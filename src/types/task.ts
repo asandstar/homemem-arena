@@ -12,6 +12,8 @@ export type Difficulty = 'tutorial' | 'easy' | 'medium' | 'medium-hard' | 'hard'
 export interface GoalSpec {
   id: string
   description: string
+  /** 目标优先级：high=高优先级（必须完成），medium=中优先级（重要），low=低优先级（可选） */
+  priority?: 'high' | 'medium' | 'low'
   /** 历史里程碑达成后保持完成；终局约束必须在结算时仍成立 */
   kind?: 'milestone' | 'terminal-constraint'
   /** 只有依赖目标已经达成后，当前目标才会开始判定 */
@@ -63,7 +65,7 @@ export interface EntityStateSnapshot {
 export interface ScriptedEventSpec {
   id: string
   /** 触发时机：步数 N 后触发，或条件函数 */
-  trigger: number | ((step: number, entities: EntityStateSnapshot[]) => boolean)
+  trigger: number | ((step: number, entities: EntityStateSnapshot[], currentRoom: RoomId) => boolean)
   /** 事件类型 */
   type: 'move-entity' | 'hide-entity' | 'show-entity' | 'message'
   /** 目标物体 ID（移动/隐藏/显示 时使用） */

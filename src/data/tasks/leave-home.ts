@@ -1,7 +1,8 @@
 // 关卡 2：出门大作战
-// 目标：在 180 秒内找到钥匙、手机、雨伞和钱包，放到玄关托盘
-// 记忆类型：空间记忆 + 物体位置记忆
-// 捣乱事件：钥匙猫推钥匙、手机响铃、钱包藏在沙发缝
+// 目标：找到钥匙、手机、雨伞放到玄关托盘
+// 记忆类型：空间记忆 + 物体位置记忆 + 程序记忆
+// 核心循环：发现物品 → 保存记忆 → 事件触发移动 → 记忆过期 → 更新记忆 → 完成任务
+// 策略要点：3个记忆槽对应3个目标物品，需要合理分配，关键物品优先锁定
 
 import type { TaskConfig } from '../../types/task'
 import type { EntityStateSnapshot } from '../../types/task'
@@ -9,28 +10,27 @@ import type { EntityStateSnapshot } from '../../types/task'
 export const leaveHomeTask: TaskConfig = {
   id: 'task-leave-home',
   name: '出门大作战',
-  description: '🌅 早上八点，主人要出门上班啦！可是钥匙猫又开始调皮了，把钥匙扒拉得到处都是。快找到钥匙、手机、雨伞和钱包，在主人迟到之前放到玄关托盘上吧！',
+  description: '🌅 早上八点，主人要出门上班啦！可是钥匙猫又开始调皮了，把钥匙扒拉得到处都是。快找到钥匙、手机和雨伞，在主人迟到之前放到玄关托盘上吧！',
   memoryTypes: ['spatial', 'object'],
-  difficulty: 'medium',
-  rooms: ['living', 'bedroom', 'kitchen', 'entrance'],
+  difficulty: 'easy',
+  rooms: ['living', 'entrance', 'bedroom'],
   iconKey: 'door',
   tags: ['空间记忆', '限时挑战', '钥匙猫'],
   briefing: `🌅 早上 8:00 · 主人还有 10 分钟出门
 
-玄关贴着便签：「小橡！钥匙手机雨伞钱包！拜托了！——再不走就赶不上公交了」
+玄关贴着便签：「小橡！钥匙！手机！雨伞！拜托了！——再不走就赶不上公交了」
 
 📋 物品清单：
   🔑 钥匙 → 客厅茶几上（金色小物件）
-  📱 手机 → 卧室床头柜抽屉里（需打开抽屉）
-  ☂️ 雨伞 → 玄关伞架旁
-  👛 钱包 → 客厅沙发上
+  📱 手机 → 卧室床头柜抽屉里（需要先打开抽屉）
+  ☂️ 雨伞 → 玄关伞架上
 
-⚠️ 注意：沙发上有只猫，眼神不太 innocent...
-💡 提示：靠近物品时屏幕会显示方向箭头，帮你定位！`,
-  completionText: '主人冲出门前看了一眼托盘：「全齐了！小橡你太靠谱了！」\n猫跳上窗台，甩了甩尾巴。明天，它大概还会来。',
+⚠️ 注意：沙发上有只猫，眼神不太 innocent...手机可能会响铃提示位置！
+💡 提示：你只有3个记忆槽，合理分配很重要！关键物品记得锁定！`,
+  completionText: '主人冲出门前看了一眼托盘：「钥匙、手机、雨伞都找到了！小橡你太靠谱了！」\n猫跳上窗台，甩了甩尾巴。明天，它大概还会来。',
   failureText: '主人翻遍口袋，叹了口气：「算了...今天蹭同事车吧。」\n似乎听见沙发缝里传来金属碰撞声。猫的耳朵动了一下。',
-  systemPrompt: '【MEM-07 日志】任务：协助主人出门。当前状态：物品位置待确认，疑似猫科干预。策略：冷静搜索，记录位置，效率优先。',
-  timeLimit: 240,
+  systemPrompt: '【MEM-07 日志】任务：协助主人出门。当前状态：钥匙位置待确认，手机位置待搜索，雨伞位置已知。策略：优先确认关键物品，合理分配记忆槽。',
+  timeLimit: 180,
   spawnPosition: { x: 0, z: -1.5 },
   spawnRotation: Math.PI,
 
@@ -50,30 +50,20 @@ export const leaveHomeTask: TaskConfig = {
       name: '手机',
       category: 'phone',
       initialRoom: 'bedroom',
-      initialPosition: { x: -6.5, y: 0, z: -1.5 },
-      size: { x: 0.08, y: 0.16, z: 0.015 },
+      initialPosition: { x: 0.3, y: 0, z: 0.5 },
+      surfaceContainerId: 'cnt-nightstand',
+      size: { x: 0.18, y: 0.09, z: 0.02 },
       color: '#1f2937',
-      hiddenInContainer: 'cnt-bedside-drawer',
     },
     {
       id: 'obj-umbrella',
       name: '雨伞',
       category: 'umbrella',
       initialRoom: 'entrance',
-      initialPosition: { x: 0.8, y: 0, z: -2.3 },
+      initialPosition: { x: -2.5, y: 0, z: -2.3 },
       surfaceContainerId: 'cnt-umbrella-stand',
-      size: { x: 0.1, y: 1.0, z: 0.1 },
-      color: '#ef4444',
-    },
-    {
-      id: 'obj-wallet',
-      name: '钱包',
-      category: 'wallet',
-      initialRoom: 'living',
-      initialPosition: { x: 0, y: 0, z: -1.8 },
-      surfaceContainerId: 'cnt-sofa-main',
-      size: { x: 0.15, y: 0.08, z: 0.1 },
-      color: '#7c2d12',
+      size: { x: 0.15, y: 0.8, z: 0.15 },
+      color: '#3b82f6',
     },
   ],
 
@@ -90,29 +80,6 @@ export const leaveHomeTask: TaskConfig = {
       acceptedCategories: [],
     },
     {
-      id: 'cnt-bedside-drawer',
-      name: '床头柜抽屉',
-      room: 'bedroom',
-      position: { x: -6.5, y: 0.3, z: -1.5 },
-      size: { x: 0.55, y: 0.55, z: 0.45 },
-      surfaceHeight: 0.55,
-      color: '#a16207',
-      initialOpen: false,
-      acceptedCategories: [],
-      containsObjectIds: ['obj-phone'],
-    },
-    {
-      id: 'cnt-umbrella-stand',
-      name: '伞架',
-      room: 'entrance',
-      position: { x: 0.8, y: 0.3, z: -2.3 },
-      size: { x: 0.3, y: 0.6, z: 0.3 },
-      surfaceHeight: 0.6,
-      color: '#475569',
-      initialOpen: true,
-      acceptedCategories: ['umbrella'],
-    },
-    {
       id: 'cnt-sofa-main',
       name: '主沙发',
       room: 'living',
@@ -120,6 +87,29 @@ export const leaveHomeTask: TaskConfig = {
       size: { x: 2.4, y: 0.9, z: 1.0 },
       surfaceHeight: 0.45,
       color: '#8b5a2b',
+      initialOpen: true,
+      acceptedCategories: [],
+    },
+    {
+      id: 'cnt-nightstand',
+      name: '床头柜',
+      room: 'bedroom',
+      position: { x: 0.5, y: 0.4, z: 0.8 },
+      size: { x: 0.6, y: 0.5, z: 0.4 },
+      surfaceHeight: 0.5,
+      color: '#4a3728',
+      initialOpen: false,
+      acceptedCategories: [],
+      isDrawer: true,
+    },
+    {
+      id: 'cnt-umbrella-stand',
+      name: '伞架',
+      room: 'entrance',
+      position: { x: -2.5, y: 0.4, z: -2.3 },
+      size: { x: 0.3, y: 0.4, z: 0.3 },
+      surfaceHeight: 0.4,
+      color: '#6b7280',
       initialOpen: true,
       acceptedCategories: [],
     },
@@ -132,7 +122,7 @@ export const leaveHomeTask: TaskConfig = {
       surfaceHeight: 0.55,
       color: '#f59e0b',
       initialOpen: true,
-      acceptedCategories: ['key', 'phone', 'umbrella', 'wallet'],
+      acceptedCategories: ['key', 'phone', 'umbrella'],
       isTargetZone: true,
       targetLabel: '玄关托盘（目标区）',
     },
@@ -142,6 +132,7 @@ export const leaveHomeTask: TaskConfig = {
     {
       id: 'g-key-on-tray',
       description: '钥匙放到玄关托盘',
+      priority: 'high',
       memoryType: 'spatial',
       relatedObjectIds: ['obj-key'],
       predicate: (entities: EntityStateSnapshot[]) => {
@@ -153,6 +144,7 @@ export const leaveHomeTask: TaskConfig = {
     {
       id: 'g-phone-on-tray',
       description: '手机放到玄关托盘',
+      priority: 'high',
       memoryType: 'object',
       relatedObjectIds: ['obj-phone'],
       predicate: (entities: EntityStateSnapshot[]) => {
@@ -163,39 +155,29 @@ export const leaveHomeTask: TaskConfig = {
     },
     {
       id: 'g-umbrella-on-tray',
-      description: '雨伞放到玄关托盘或伞架',
+      description: '雨伞放到玄关托盘',
+      priority: 'medium',
       memoryType: 'spatial',
       relatedObjectIds: ['obj-umbrella'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const umbrella = entities.find((e) => e.configId === 'obj-umbrella')
-        return (umbrella?.placedIn === 'cnt-entrance-tray' || umbrella?.placedIn === 'cnt-umbrella-stand') && umbrella.status === 'placed'
+        return umbrella?.placedIn === 'cnt-entrance-tray' && umbrella.status === 'placed'
       },
       achievedMessage: '雨伞已归位！',
-    },
-    {
-      id: 'g-wallet-on-tray',
-      description: '钱包放到玄关托盘',
-      memoryType: 'object',
-      relatedObjectIds: ['obj-wallet'],
-      predicate: (entities: EntityStateSnapshot[]) => {
-        const wallet = entities.find((e) => e.configId === 'obj-wallet')
-        return wallet?.placedIn === 'cnt-entrance-tray' && wallet.status === 'placed'
-      },
-      achievedMessage: '钱包已归位！',
     },
   ],
 
   scriptedEvents: [
     {
       id: 'se-cat-pushes-key',
-      trigger: (step, entities) => {
+      trigger: (step, entities, currentRoom) => {
         const key = entities.find((e) => e.configId === 'obj-key')
-        return step > 8 && key?.currentRoom === 'living' && key?.status === 'free'
+        return step > 2 && currentRoom !== 'living' && key?.currentRoom === 'living' && key?.status === 'free'
       },
       type: 'move-entity',
       targetId: 'obj-key',
       targetPosition: { room: 'living', x: 1.5, y: 0, z: -1.5 },
-      message: '🐱 啪嗒——钥匙猫一爪子把钥匙从茶几扒拉到了沙发旁边！（钥匙猫：追我呀喵~）\n💡 屏幕边缘会显示方向箭头，跟着箭头走！',
+      message: '🐱 啪嗒——钥匙猫一爪子把钥匙从茶几扒拉到了沙发旁边！（钥匙猫：往沙发方向找找呀喵~）',
       description: '钥匙猫把钥匙从茶几推到了沙发旁',
       memoryType: 'spatial',
       markMemoryOutdated: 'obj-key',
@@ -203,69 +185,51 @@ export const leaveHomeTask: TaskConfig = {
       toastType: 'cat' as const,
     },
     {
-      id: 'se-cat-hides-wallet',
-      trigger: (step, entities) => {
-        const wallet = entities.find((e) => e.configId === 'obj-wallet')
-        return step > 12 && wallet?.currentRoom === 'living' && wallet?.status === 'free'
-      },
-      type: 'move-entity',
-      targetId: 'obj-wallet',
-      targetPosition: { room: 'living', x: -2.0, y: 0, z: -0.8 },
-      message: '🐱 喵呜——钥匙猫把钱包扒拉到了沙发缝里！（钥匙猫：这个软软的东西好舒服喵~）',
-      description: '钥匙猫把钱包扒拉到沙发缝',
-      memoryType: 'spatial',
-      markMemoryOutdated: 'obj-wallet',
-      eventEffect: 'cat-prints',
-      toastType: 'cat' as const,
-    },
-    {
-      id: 'se-phone-rings',
-      trigger: (step, entities) => {
+      id: 'se-phone-ringing',
+      trigger: (step, entities, currentRoom) => {
         const phone = entities.find((e) => e.configId === 'obj-phone')
-        return step >= 3 && phone?.status !== 'held' && phone?.status !== 'placed'
+        return step >= 3 && phone?.status !== 'placed' && phone?.currentRoom === 'bedroom' && currentRoom !== 'bedroom'
       },
       type: 'message',
-      message: '📳 嗡嗡嗡——卧室方向传来手机震动声。去卧室打开床头柜抽屉看看？',
-      description: '手机响铃提示所在房间方向和容器',
+      message: '📱 卧室方向传来手机铃声！快去床头柜找找吧！',
+      description: '手机响铃提示位置',
       memoryType: 'object',
-      roomHint: 'bedroom',
-      eventEffect: 'phone-ring',
       toastType: 'phone' as const,
     },
     {
-      id: 'se-owner-urgent-msg',
-      trigger: (step) => step === 5,
+      id: 'se-save-hint',
+      trigger: (step) => step === 2,
       type: 'message',
-      message: '📱 主人消息：「小橡找到了吗？我公交车来了！！」',
+      message: '💡 提示：靠近物品时按 E 保存位置记忆，就算被移动了也能回顾！你有3个记忆槽，合理分配哦！',
+      description: '记忆系统引导提示',
+      memoryType: 'object',
+      toastType: 'info' as const,
+    },
+    {
+      id: 'se-owner-urgent-msg',
+      trigger: (step) => step === 8,
+      type: 'message',
+      message: '📱 主人消息：「小橡找到了吗？钥匙、手机、雨伞都要带！我公交车来了！！」',
       description: '主人催促消息',
       memoryType: 'object',
       toastType: 'phone' as const,
     },
     {
-      id: 'se-cat-observes',
+      id: 'se-update-hint',
       trigger: (step) => step === 10,
       type: 'message',
-      message: '🐱 似乎检测到猫科生物在卧室门口活动。尾部摆动频率异常。',
-      description: '猫在卧室门口观察',
-      memoryType: 'spatial',
-      toastType: 'cat' as const,
-    },
-    {
-      id: 'se-search-hint',
-      trigger: (step) => step === 6,
-      type: 'message',
-      message: '💡 提示：如果找不到物品，注意屏幕边缘的方向箭头——它会指向还未收集的任务物品！',
-      description: '寻物提示系统引导',
+      message: '💡 提示：如果记忆过期了，找到物品新位置后按 E 更新记忆！更新记忆还能获得额外分数！',
+      description: '更新记忆引导提示',
       memoryType: 'object',
-      toastType: 'phone' as const,
+      toastType: 'info' as const,
     },
     {
-      id: 'se-wallet-hint',
-      trigger: (step) => step === 15,
+      id: 'se-memory-lock-hint',
+      trigger: (step) => step === 4,
       type: 'message',
-      message: '💡 提示：钱包可能在沙发附近——钥匙猫好像对它很感兴趣！',
-      description: '钱包位置提示',
-      memoryType: 'spatial',
+      message: '🔒 提示：点击记忆槽上的锁图标可以锁定记忆！锁定的记忆不会过期，也不会被覆盖！',
+      description: '记忆锁定引导提示',
+      memoryType: 'object',
       toastType: 'info' as const,
     },
   ],
@@ -281,30 +245,48 @@ export const leaveHomeTask: TaskConfig = {
       difficulty: 'medium',
     },
     {
-      id: 'p-loc-phone-original',
+      id: 'p-loc-key-moved',
       type: 'location',
-      question: '手机一开始放在哪里？',
-      options: ['客厅茶几上', '卧室床头柜抽屉里', '厨房台面上', '玄关托盘上'],
-      correctAnswer: '卧室床头柜抽屉里',
+      question: '钥匙猫把钥匙推到了哪里？',
+      options: ['沙发旁边', '茶几上', '卧室里', '玄关托盘'],
+      correctAnswer: '沙发旁边',
       dependsOnMemoryType: 'spatial',
       difficulty: 'medium',
     },
     {
-      id: 'p-state-phone',
+      id: 'p-loc-phone',
+      type: 'location',
+      question: '手机最初放在哪个房间的什么位置？',
+      options: ['卧室床头柜抽屉里', '客厅茶几上', '厨房台面上', '玄关托盘上'],
+      correctAnswer: '卧室床头柜抽屉里',
+      dependsOnMemoryType: 'object',
+      difficulty: 'medium',
+    },
+    {
+      id: 'p-loc-umbrella',
+      type: 'location',
+      question: '雨伞最初放在哪个房间的什么位置？',
+      options: ['玄关伞架上', '客厅沙发上', '卧室床头柜上', '厨房角落里'],
+      correctAnswer: '玄关伞架上',
+      dependsOnMemoryType: 'spatial',
+      difficulty: 'easy',
+    },
+    {
+      id: 'p-memory-used',
       type: 'state',
-      question: '手机最初是否可见？',
-      options: ['可见，在茶几上', '不可见，藏在抽屉里'],
-      correctAnswer: '不可见，藏在抽屉里',
+      question: '你是否使用了记忆系统保存物品位置？',
+      options: ['是', '否'],
+      correctAnswer: '是',
       dependsOnMemoryType: 'object',
       difficulty: 'easy',
     },
     {
-      id: 'p-count-items',
-      type: 'count',
-      question: '需要带到玄关的物品一共有几件？',
-      options: ['2', '3', '4', '5'],
-      correctAnswer: '3',
-      dependsOnMemoryType: 'temporal',
+      id: 'p-memory-locked',
+      type: 'state',
+      question: '你是否使用了记忆锁定功能保护重要物品？',
+      options: ['是', '否'],
+      correctAnswer: '是',
+      dependsOnMemoryType: 'object',
       difficulty: 'easy',
     },
   ],
