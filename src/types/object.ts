@@ -10,11 +10,13 @@ export type ObjectCategory =
   | 'phone'
   | 'umbrella'
   | 'power-bank'
+  | 'wallet'
   // 餐桌任务
   | 'cup'
   | 'plate'
   | 'tissue'
   | 'remote'
+  | 'fork'
   // 洗衣任务
   | 'white-clothes'
   | 'dark-clothes'

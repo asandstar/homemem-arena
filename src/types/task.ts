@@ -6,7 +6,7 @@ import type { MemoryType } from './memory'
 
 export type { MemoryType }
 
-export type Difficulty = 'tutorial' | 'easy' | 'medium' | 'hard'
+export type Difficulty = 'tutorial' | 'easy' | 'medium' | 'medium-hard' | 'hard'
 
 /** 单个目标 */
 export interface GoalSpec {
@@ -83,7 +83,7 @@ export interface ScriptedEventSpec {
   /** 房间方向提示 */
   roomHint?: string
   /** Toast 类型覆盖（优先于自动判断） */
-  toastType?: 'cat' | 'phone' | 'warning' | 'event' | 'info'
+  toastType?: 'cat' | 'phone' | 'warning' | 'event' | 'info' | 'success'
 }
 
 /** 记忆测试题 */
