@@ -1,4 +1,4 @@
-// 关卡 5：深夜巡逻
+// 关卡 4：深夜巡逻
 // 目标：在黑暗中巡逻所有房间，找到被夜间异动打乱的物品并确认归位
 // 记忆类型：空间记忆 + 时间记忆
 // 特色：视野受限（黑暗）、巡逻全部房间、随机夜间事件（电器异响、窗户晃动）
@@ -9,68 +9,63 @@ import type { EntityStateSnapshot } from '../../types/task'
 export const nightPatrolTask: TaskConfig = {
   id: 'task-night-patrol',
   name: '深夜巡逻',
-  description: '🌙 深夜两点，主人已经熟睡。MEM-07 启动夜间巡逻模式——黑暗中似乎有东西被挪动了，还有电器异响和窗户晃动...在 480 秒内巡查所有房间，找到 5 件被打乱的物品并确认归位吧！',
+  description: '🌙 深夜两点，主人已经熟睡。MEM-07 启动夜间巡逻模式——黑暗中似乎有东西被挪动了，还有电器异响和窗户晃动...在 300 秒内巡查所有房间，找到 4 件被打乱的物品并确认归位吧！',
   memoryTypes: ['spatial', 'temporal'],
-  difficulty: 'hard',
+  difficulty: 'medium-hard',
   rooms: ['living', 'bedroom', 'kitchen', 'entrance', 'dining'],
   iconKey: 'door',
   tags: ['深夜巡逻', '视野受限', '空间记忆', '时间记忆', '随机事件'],
-  timeLimit: 480,
+  timeLimit: 300,
   spawnPosition: { x: 0, z: -1.5 },
   spawnRotation: Math.PI,
   briefing: `🌙 深夜 2:00 · 主人已熟睡 · 夜间巡逻模式启动
 
-MEM-07：「检测到夜间异常：5 件物品偏离了归属位置，疑似被气流或电器震动移位。」
+MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被气流或电器震动移位。」
 
 📋 巡查清单（找到每件物品并放回归属位以确认）：
   🎮 遥控器 → 归属：客厅茶几
   📱 手机   → 归属：卧室床头柜
   🥣 碗     → 归属：厨房台面
   ☂️ 雨伞   → 归属：玄关伞架
-  ☕ 杯子   → 归属：餐厅餐桌
 
 ⚠️ 黑暗中视野受限，只能看清眼前的物体。
 💡 屏幕边缘的方向指示会标记待确认物品的位置——跟着它巡查每个房间。
 🤫 主人在睡觉，动作轻一点。小心电器异响和窗户晃动...`,
-  completionText: '所有物品确认归位，屋子重归宁静。MEM-07：「巡逻完成，5/5 物品位置已确认。主人翻了个身，继续沉睡。」\n窗外月光洒进客厅，猫影从窗台一跃而下，消失在夜色里。',
+  completionText: '所有物品确认归位，屋子重归宁静。MEM-07：「巡逻完成，4/4 物品位置已确认。主人翻了个身，继续沉睡。」\n窗外月光洒进客厅，猫影从窗台一跃而下，消失在夜色里。',
   failureText: '巡逻超时，部分物品仍未确认。MEM-07：「时间不足，夜间异常未完全排查。」\n卧室传来主人翻身的声音——还好没被吵醒。明天晚上，再巡逻一次吧。',
-  systemPrompt: '【MEM-07 日志】任务：夜间巡逻确认。模式：低光巡查。检测到 5 件物品位移，疑似气流/电器震动所致。策略：依次巡查所有房间，定位物品并归位确认。注意：电器异响与窗户晃动可能进一步移动物品。',
+  systemPrompt: '【MEM-07 日志】任务：夜间巡逻确认。模式：低光巡查。检测到 4 件物品位移，疑似气流/电器震动所致。策略：依次巡查所有房间，定位物品并归位确认。注意：电器异响与窗户晃动可能进一步移动物品。',
 
   objects: [
-    // 遥控器 - 被打乱到卧室地板（归属：客厅茶几）
     {
       id: 'obj-remote',
       name: '遥控器',
       category: 'remote',
       initialRoom: 'bedroom',
-      initialPosition: { x: 1.5, y: 0, z: -1.0 },
+      initialPosition: { x: -6.5, y: 0, z: -1.0 },
       size: { x: 0.18, y: 0.05, z: 0.05 },
       color: '#1f2937',
       stateProperties: { displaced: true, homeRoom: 'living' },
     },
-    // 手机 - 被打乱到厨房地板（归属：卧室床头柜）
     {
       id: 'obj-phone',
       name: '手机',
       category: 'phone',
       initialRoom: 'kitchen',
-      initialPosition: { x: -2.0, y: 0, z: 1.5 },
+      initialPosition: { x: 6.0, y: 0, z: 1.5 },
       size: { x: 0.08, y: 0.16, z: 0.015 },
       color: '#1f2937',
       stateProperties: { displaced: true, homeRoom: 'bedroom' },
     },
-    // 碗 - 被打乱到餐厅地板（归属：厨房台面）
     {
       id: 'obj-bowl',
       name: '碗',
       category: 'bowl',
       initialRoom: 'dining',
-      initialPosition: { x: 2.0, y: 0, z: -1.5 },
+      initialPosition: { x: 18.0, y: 0, z: -1.5 },
       size: { x: 0.15, y: 0.08, z: 0.15 },
       color: '#fbbf24',
       stateProperties: { displaced: true, homeRoom: 'kitchen' },
     },
-    // 雨伞 - 被打乱到客厅地板（归属：玄关伞架）
     {
       id: 'obj-umbrella',
       name: '雨伞',
@@ -81,41 +76,28 @@ MEM-07：「检测到夜间异常：5 件物品偏离了归属位置，疑似被
       color: '#ef4444',
       stateProperties: { displaced: true, homeRoom: 'entrance' },
     },
-    // 杯子 - 被打乱到玄关地板（归属：餐厅餐桌）
-    {
-      id: 'obj-cup',
-      name: '杯子',
-      category: 'cup',
-      initialRoom: 'entrance',
-      initialPosition: { x: -1.5, y: 0, z: 1.5 },
-      size: { x: 0.1, y: 0.12, z: 0.1 },
-      color: '#60a5fa',
-      stateProperties: { displaced: true, homeRoom: 'dining' },
-    },
   ],
 
   containers: [
-    // 客厅 - 茶几（遥控器归属位）
     {
       id: 'cnt-patrol-coffee-table',
       name: '客厅茶几',
       room: 'living',
-      position: { x: -1.5, y: 0.2, z: 0.5 },
-      size: { x: 0.8, y: 0.4, z: 0.5 },
-      surfaceHeight: 0.4,
+      position: { x: -0.5, y: 0.2, z: -0.3 },
+      size: { x: 1.4, y: 0.45, z: 0.7 },
+      surfaceHeight: 0.45,
       color: '#8b5a2b',
       initialOpen: true,
       acceptedCategories: ['remote'],
       isTargetZone: true,
       targetLabel: '客厅茶几（遥控器确认位）',
     },
-    // 卧室 - 床头柜（手机归属位）
     {
       id: 'cnt-patrol-nightstand',
       name: '卧室床头柜',
       room: 'bedroom',
-      position: { x: -1.5, y: 0.3, z: -0.8 },
-      size: { x: 0.5, y: 0.5, z: 0.4 },
+      position: { x: -6.5, y: 0.3, z: -1.5 },
+      size: { x: 0.55, y: 0.55, z: 0.45 },
       surfaceHeight: 0.55,
       color: '#a16207',
       initialOpen: true,
@@ -123,12 +105,11 @@ MEM-07：「检测到夜间异常：5 件物品偏离了归属位置，疑似被
       isTargetZone: true,
       targetLabel: '卧室床头柜（手机确认位）',
     },
-    // 厨房 - 台面（碗归属位）
     {
       id: 'cnt-patrol-kitchen-counter',
       name: '厨房台面',
       room: 'kitchen',
-      position: { x: 2.5, y: 0.45, z: -2.0 },
+      position: { x: 10.5, y: 0.45, z: -2.0 },
       size: { x: 1.5, y: 0.7, z: 0.6 },
       surfaceHeight: 0.7,
       color: '#94a3b8',
@@ -137,12 +118,11 @@ MEM-07：「检测到夜间异常：5 件物品偏离了归属位置，疑似被
       isTargetZone: true,
       targetLabel: '厨房台面（碗确认位）',
     },
-    // 玄关 - 伞架（雨伞归属位）
     {
       id: 'cnt-patrol-umbrella-stand',
       name: '玄关伞架',
       room: 'entrance',
-      position: { x: -1.5, y: 0.3, z: 2.0 },
+      position: { x: 0.8, y: 0.3, z: -2.3 },
       size: { x: 0.3, y: 0.6, z: 0.3 },
       surfaceHeight: 0.6,
       color: '#475569',
@@ -150,20 +130,6 @@ MEM-07：「检测到夜间异常：5 件物品偏离了归属位置，疑似被
       acceptedCategories: ['umbrella'],
       isTargetZone: true,
       targetLabel: '玄关伞架（雨伞确认位）',
-    },
-    // 餐厅 - 餐桌（杯子归属位）
-    {
-      id: 'cnt-patrol-dining-table',
-      name: '餐厅餐桌',
-      room: 'dining',
-      position: { x: 0, y: 0.45, z: 0 },
-      size: { x: 1.8, y: 0.9, z: 0.9 },
-      surfaceHeight: 0.9,
-      color: '#92400e',
-      initialOpen: true,
-      acceptedCategories: ['cup'],
-      isTargetZone: true,
-      targetLabel: '餐厅餐桌（杯子确认位）',
     },
   ],
 
@@ -208,16 +174,6 @@ MEM-07：「检测到夜间异常：5 件物品偏离了归属位置，疑似被
       },
       achievedMessage: '雨伞已确认归位！',
     },
-    {
-      id: 'g-confirm-cup',
-      description: '找到杯子并放回餐厅餐桌确认归位',
-      memoryType: 'temporal',
-      predicate: (entities: EntityStateSnapshot[]) => {
-        const cup = entities.find((e) => e.configId === 'obj-cup')
-        return cup?.placedIn === 'cnt-patrol-dining-table'
-      },
-      achievedMessage: '杯子已确认归位！',
-    },
   ],
 
   scriptedEvents: [
@@ -254,7 +210,7 @@ MEM-07：「检测到夜间异常：5 件物品偏离了归属位置，疑似被
       type: 'move-entity',
       targetId: 'obj-umbrella',
       targetPosition: { room: 'living', x: -2.5, y: 0, z: 2.0 },
-      message: '🪟 砰——窗户被夜风吹得猛晃一下！客厅那把雨伞被震得滚到了房间另一侧。（夜间异响：窗户晃动）',
+      message: '🪟 砰——窗户被夜风吹得猛晃一下！客厅那把雨伞被震得滚到了房间另一侧。\n💡 提示：雨伞被吹到客厅另一侧了！',
       description: '窗户晃动把客厅的雨伞震到了房间另一侧',
       memoryType: 'spatial',
       markMemoryOutdated: 'obj-umbrella',
@@ -262,31 +218,46 @@ MEM-07：「检测到夜间异常：5 件物品偏离了归属位置，疑似被
       toastType: 'event' as const,
     },
     {
-      id: 'se-fridge-buzz',
-      trigger: (step) => step === 14,
+      id: 'se-phone-glow',
+      trigger: (step) => step === 4,
       type: 'message',
-      message: '⚡ 又是一阵电器嗡嗡声...冰箱好像在自动除霜。得快点确认完所有物品。',
-      description: '冰箱自动除霜的电器异响',
-      memoryType: 'temporal',
-      toastType: 'event' as const,
+      message: '💡 提示：手机在黑暗中会微微发光，仔细找找！',
+      description: '手机发光提示',
+      memoryType: 'object',
+      toastType: 'info' as const,
     },
     {
-      id: 'se-cat-shadow',
-      trigger: (step) => step === 18,
+      id: 'se-half-time-check',
+      trigger: (step) => step === 12,
       type: 'message',
-      message: '🐱 黑暗中似乎有个猫影一闪而过，尾巴尖微微发亮...它大概也在夜间巡逻。',
-      description: '黑暗中的猫影',
+      message: '⏰ 时间过半！检查一下：还有几件物品没确认？\n💡 提示：记得查看右上角的任务进度！',
+      description: '时间过半提示',
+      memoryType: 'temporal',
+      toastType: 'warning' as const,
+    },
+    {
+      id: 'se-cat-sight',
+      trigger: (step) => step === 8,
+      type: 'message',
+      message: '🐱 黑暗中闪过一道影子...似乎是猫在窗台走动。',
+      description: '猫在窗台的氛围事件',
       memoryType: 'spatial',
-      toastType: 'cat' as const,
+      toastType: 'event' as const,
     },
     {
-      id: 'se-window-rattle-2',
-      trigger: (step) => step === 24,
+      id: 'se-celebrate-found',
+      trigger: (step, entities) => {
+        const placedCount = ['obj-remote', 'obj-phone', 'obj-bowl', 'obj-umbrella'].filter(id => {
+          const e = entities.find(ent => ent.configId === id)
+          return e?.placedIn && e.status === 'placed'
+        }).length
+        return placedCount === 2 && step > 5
+      },
       type: 'message',
-      message: '🪟 窗户又晃了一下，这次声音小多了。希望没有别的东西被震移位。',
-      description: '窗户第二次轻微晃动',
-      memoryType: 'temporal',
-      toastType: 'event' as const,
+      message: '🌟 太棒了！已经确认一半了！继续加油！',
+      description: '完成一半的庆祝',
+      memoryType: 'procedural',
+      toastType: 'success' as const,
     },
   ],
 

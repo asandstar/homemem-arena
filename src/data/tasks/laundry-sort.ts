@@ -8,14 +8,14 @@ import type { EntityStateSnapshot } from '../../types/task'
 export const laundrySortTask: TaskConfig = {
   id: 'task-laundry-sort',
   name: '洗衣幽灵',
-  description: '👻 下午三点，洗衣房传来窸窸窣窣的声音...原来是害羞的袜子幽灵在玩捉迷藏！它会偷偷移动衣物、交换篮子位置，还会变出神秘的彩色衬衫！在 90 秒内完成衣物分类吧！',
+  description: '👻 下午三点，洗衣房传来窸窸窣窣的声音...原来是害羞的袜子幽灵在玩捉迷藏！它会偷偷移动衣物、交换篮子位置，还会变出神秘的彩色衬衫！在 120 秒内完成衣物分类吧！',
   memoryTypes: ['temporal', 'procedural', 'object', 'spatial'],
   difficulty: 'medium',
   rooms: ['laundry'],
   iconKey: 'shirt',
   tags: ['限时挑战', '袜子幽灵', '位置交换', '分类大师'],
-  timeLimit: 90,
-  spawnPosition: { x: 0, z: 2.0 },
+  timeLimit: 120,
+  spawnPosition: { x: 24, z: 2.0 },
   spawnRotation: Math.PI,
   briefing: `👻 下午 3:00 · 洗衣房异动
 
@@ -26,13 +26,12 @@ export const laundrySortTask: TaskConfig = {
   systemPrompt: '【MEM-07 日志】任务：衣物分类。检测到物品位置异常变动，疑似猫科搬运。策略：追踪位置变化，按颜色分类，计数防遗漏。',
 
   objects: [
-    // 白色衣物
     {
       id: 'obj-white-shirt',
       name: '白衬衫',
       category: 'white-clothes',
       initialRoom: 'laundry',
-      initialPosition: { x: -3.0, y: 0.4, z: 1.0 },
+      initialPosition: { x: 21.0, y: 0.4, z: 1.0 },
       size: { x: 0.4, y: 0.05, z: 0.5 },
       color: '#e5e7eb',
     },
@@ -41,7 +40,7 @@ export const laundrySortTask: TaskConfig = {
       name: '白袜子',
       category: 'white-clothes',
       initialRoom: 'laundry',
-      initialPosition: { x: -2.4, y: 0.05, z: 1.2 },
+      initialPosition: { x: 21.6, y: 0.05, z: 1.2 },
       size: { x: 0.15, y: 0.05, z: 0.15 },
       color: '#e5e7eb',
     },
@@ -50,17 +49,16 @@ export const laundrySortTask: TaskConfig = {
       name: '小白巾',
       category: 'white-clothes',
       initialRoom: 'laundry',
-      initialPosition: { x: -3.0, y: 0.4, z: 1.4 },
+      initialPosition: { x: 21.0, y: 0.4, z: 1.4 },
       size: { x: 0.25, y: 0.05, z: 0.25 },
       color: '#d1d5db',
     },
-    // 深色衣物
     {
       id: 'obj-black-tshirt',
       name: '黑 T 恤',
       category: 'dark-clothes',
       initialRoom: 'laundry',
-      initialPosition: { x: 0, y: 0.4, z: 1.0 },
+      initialPosition: { x: 24.0, y: 0.4, z: 1.0 },
       size: { x: 0.4, y: 0.05, z: 0.5 },
       color: '#1f2937',
     },
@@ -69,17 +67,25 @@ export const laundrySortTask: TaskConfig = {
       name: '牛仔裤',
       category: 'dark-clothes',
       initialRoom: 'laundry',
-      initialPosition: { x: 0.6, y: 0.4, z: 1.2 },
+      initialPosition: { x: 24.6, y: 0.4, z: 1.2 },
       size: { x: 0.4, y: 0.05, z: 0.7 },
       color: '#1e3a8a',
     },
-    // 毛巾
+    {
+      id: 'obj-dark-socks',
+      name: '黑袜子',
+      category: 'dark-clothes',
+      initialRoom: 'laundry',
+      initialPosition: { x: 24.0, y: 0.05, z: 1.4 },
+      size: { x: 0.15, y: 0.05, z: 0.15 },
+      color: '#374151',
+    },
     {
       id: 'obj-towel-large',
       name: '大浴巾',
       category: 'towel',
       initialRoom: 'laundry',
-      initialPosition: { x: 3.0, y: 0.4, z: 1.0 },
+      initialPosition: { x: 27.0, y: 0.4, z: 1.0 },
       size: { x: 0.6, y: 0.05, z: 0.8 },
       color: '#fcd34d',
     },
@@ -88,17 +94,16 @@ export const laundrySortTask: TaskConfig = {
       name: '小方巾',
       category: 'towel',
       initialRoom: 'laundry',
-      initialPosition: { x: 3.0, y: 0.05, z: 1.2 },
+      initialPosition: { x: 27.0, y: 0.05, z: 1.2 },
       size: { x: 0.2, y: 0.05, z: 0.2 },
       color: '#fbbf24',
     },
-    // 神秘彩色条纹衬衫（特殊物品）
     {
       id: 'obj-mystery-shirt',
       name: '彩色条纹衬衫',
       category: 'white-clothes',
       initialRoom: 'laundry',
-      initialPosition: { x: 1.5, y: 0.05, z: 1.4 },
+      initialPosition: { x: 25.5, y: 0.05, z: 1.4 },
       size: { x: 0.4, y: 0.05, z: 0.5 },
       color: '#ec4899',
       stateProperties: { mystery: true, specialItem: true },
@@ -106,12 +111,11 @@ export const laundrySortTask: TaskConfig = {
   ],
 
   containers: [
-    // 白色篮子
     {
       id: 'cnt-white-basket',
       name: '白色衣物篮',
       room: 'laundry',
-      position: { x: -3.0, y: 0.25, z: -2.0 },
+      position: { x: 21.0, y: 0.25, z: -2.0 },
       size: { x: 0.8, y: 0.5, z: 0.6 },
       surfaceHeight: 0.55,
       color: '#f9fafb',
@@ -120,12 +124,11 @@ export const laundrySortTask: TaskConfig = {
       isTargetZone: true,
       targetLabel: '白色衣物篮',
     },
-    // 深色篮子
     {
       id: 'cnt-dark-basket',
       name: '深色衣物篮',
       room: 'laundry',
-      position: { x: 0, y: 0.25, z: -2.0 },
+      position: { x: 24, y: 0.25, z: -2.0 },
       size: { x: 0.8, y: 0.5, z: 0.6 },
       surfaceHeight: 0.55,
       color: '#1f2937',
@@ -134,12 +137,11 @@ export const laundrySortTask: TaskConfig = {
       isTargetZone: true,
       targetLabel: '深色衣物篮',
     },
-    // 毛巾篮
     {
       id: 'cnt-towel-basket',
       name: '毛巾篮',
       room: 'laundry',
-      position: { x: 2.5, y: 0.25, z: -2.0 },
+      position: { x: 26.5, y: 0.25, z: -2.0 },
       size: { x: 0.8, y: 0.5, z: 0.6 },
       surfaceHeight: 0.55,
       color: '#fcd34d',
@@ -169,9 +171,9 @@ export const laundrySortTask: TaskConfig = {
       id: 'g-dark-sorted',
       description: '所有深色衣物放入深色衣物篮',
       memoryType: 'object',
-      relatedObjectIds: ['obj-black-tshirt', 'obj-jeans'],
+      relatedObjectIds: ['obj-black-tshirt', 'obj-jeans', 'obj-dark-socks'],
       predicate: (entities: EntityStateSnapshot[]) => {
-        const darkIds = ['obj-black-tshirt', 'obj-jeans']
+        const darkIds = ['obj-black-tshirt', 'obj-jeans', 'obj-dark-socks']
         return darkIds.every((id) => {
           const e = entities.find((ent) => ent.configId === id)
           return e?.placedIn === 'cnt-dark-basket'
@@ -212,8 +214,8 @@ export const laundrySortTask: TaskConfig = {
       trigger: (step) => step === 5,
       type: 'move-entity',
       targetId: 'obj-white-socks',
-      targetPosition: { room: 'laundry', x: 2.5, y: 0.05, z: 1.4 },
-      message: '👻 嗖——白袜子不见了！（袜子幽灵：嘿嘿，找不到了吧~）',
+      targetPosition: { room: 'laundry', x: 26.5, y: 0.05, z: 1.4 },
+      message: '👻 嗖——白袜子不见了！（袜子幽灵：嘿嘿，找不到了吧~）\n💡 提示：白袜子跑到毛巾篮附近了！',
       description: '袜子幽灵把白袜子移到了毛巾篮附近',
       memoryType: 'spatial',
       eventEffect: 'cat-prints',
@@ -224,16 +226,28 @@ export const laundrySortTask: TaskConfig = {
       trigger: (step) => step === 9,
       type: 'move-entity',
       targetId: 'obj-towel-small',
-      targetPosition: { room: 'laundry', x: -1.0, y: 0.05, z: 1.4 },
-      message: '👻 呼——小方巾也飘走了！（袜子幽灵：捉迷藏真好玩~）',
+      targetPosition: { room: 'laundry', x: 21.0, y: 0.05, z: 1.4 },
+      message: '👻 呼——小方巾也飘走了！（袜子幽灵：捉迷藏真好玩~）\n💡 提示：小方巾跑到白色篮子那边了！',
       description: '袜子幽灵把小方巾移到了白色篮子那边',
       memoryType: 'spatial',
       eventEffect: 'cat-prints',
       toastType: 'cat' as const,
     },
     {
+      id: 'se-cat-hides-dark-socks',
+      trigger: (step) => step === 13,
+      type: 'move-entity',
+      targetId: 'obj-dark-socks',
+      targetPosition: { room: 'laundry', x: 22.5, y: 0.05, z: 1.6 },
+      message: '🐱 喵——猫把黑袜子扒拉到了洗衣机后面！',
+      description: '猫把黑袜子藏到洗衣机后面',
+      memoryType: 'spatial',
+      eventEffect: 'cat-prints',
+      toastType: 'cat' as const,
+    },
+    {
       id: 'se-baskets-swapped',
-      trigger: (step) => step === 12,
+      trigger: (step) => step === 16,
       type: 'message',
       message: '🔄 袜子幽灵在篮子旁边飘来飘去...是不是想搞什么鬼？（袜子幽灵：嘿嘿，我什么都没做~）',
       description: '袜子幽灵在篮子旁徘徊，暗示可能会交换位置',
@@ -264,6 +278,45 @@ export const laundrySortTask: TaskConfig = {
       description: '猫疑似在藏衣物',
       memoryType: 'spatial',
       toastType: 'cat' as const,
+    },
+    {
+      id: 'se-time-warning',
+      trigger: (step) => step === 18,
+      type: 'message',
+      message: '⏰ 时间过半了！加快速度！袜子幽灵越来越兴奋了...',
+      description: '时间警告',
+      memoryType: 'temporal',
+      toastType: 'warning' as const,
+    },
+    {
+      id: 'se-celebrate-progress',
+      trigger: (step, entities) => {
+        const whiteIds = ['obj-white-shirt', 'obj-white-socks', 'obj-white-towel-small', 'obj-mystery-shirt']
+        const darkIds = ['obj-black-tshirt', 'obj-jeans', 'obj-dark-socks']
+        const towelIds = ['obj-towel-large', 'obj-towel-small']
+        
+        const completedWhite = whiteIds.filter(id => {
+          const e = entities.find(ent => ent.configId === id)
+          return e?.placedIn === 'cnt-white-basket'
+        }).length
+        
+        const completedDark = darkIds.filter(id => {
+          const e = entities.find(ent => ent.configId === id)
+          return e?.placedIn === 'cnt-dark-basket'
+        }).length
+        
+        const completedTowel = towelIds.filter(id => {
+          const e = entities.find(ent => ent.configId === id)
+          return e?.placedIn === 'cnt-towel-basket'
+        }).length
+        
+        return (completedWhite === 4 || completedDark === 3 || completedTowel === 2) && step > 5
+      },
+      type: 'message',
+      message: '🌟 太棒了！完成一类！袜子幽灵有点沮丧了...',
+      description: '完成一类衣物的庆祝',
+      memoryType: 'procedural',
+      toastType: 'success' as const,
     },
   ],
 
