@@ -1116,41 +1116,53 @@ export function PlantFallback({ size }: FallbackProps) {
   const s = getSize(size)
   return (
     <group>
-      <mesh position={[0, s.y * 0.12, 0]}>
-        <cylinderGeometry args={[s.x * 0.22, s.x * 0.18, s.y * 0.24, 16]} />
+      <mesh position={[0, s.y * 0.06, 0]}>
+        <cylinderGeometry args={[s.x * 0.25, s.x * 0.22, s.y * 0.12, 16]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.ceramic_white, metalness: 0.1 })} />
       </mesh>
-      <mesh position={[0, s.y * 0.24, 0]}>
-        <cylinderGeometry args={[s.x * 0.2, s.x * 0.2, 0.02, 16]} />
+      <mesh position={[0, s.y * 0.12, 0]}>
+        <cylinderGeometry args={[s.x * 0.22, s.x * 0.22, 0.02, 16]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_silver, metalness: 0.3 })} />
+      </mesh>
+      <mesh position={[0, s.y * 0.09, 0]}>
+        <cylinderGeometry args={[s.x * 0.18, s.x * 0.15, s.y * 0.05, 12]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_dark, metalness: 0.2 })} />
       </mesh>
       <mesh position={[0, s.y * 0.18, 0]}>
-        <cylinderGeometry args={[s.x * 0.15, s.x * 0.12, s.y * 0.08, 12]} />
+        <cylinderGeometry args={[0.03, 0.025, s.y * 0.18, 10]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_silver, metalness: 0.3 })} />
       </mesh>
-      <mesh position={[0, s.y * 0.32, 0]}>
-        <cylinderGeometry args={[0.03, 0.025, s.y * 0.2, 10]} />
-      </mesh>
-      <mesh position={[s.x * 0.08, s.y * 0.42, 0]} rotation={[0, 0, -Math.PI / 6]}>
+      <mesh position={[s.x * 0.08, s.y * 0.28, 0]} rotation={[0, 0, -Math.PI / 6]}>
         <cylinderGeometry args={[0.02, 0.015, s.y * 0.15, 8]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_silver, metalness: 0.3 })} />
       </mesh>
-      <mesh position={[-s.x * 0.08, s.y * 0.4, 0]} rotation={[0, 0, Math.PI / 6]}>
+      <mesh position={[-s.x * 0.08, s.y * 0.26, 0]} rotation={[0, 0, Math.PI / 6]}>
         <cylinderGeometry args={[0.02, 0.015, s.y * 0.12, 8]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_silver, metalness: 0.3 })} />
       </mesh>
-      <mesh position={[0, s.y * 0.6, 0]} rotation={[-Math.PI / 4, 0, 0]}>
+      <mesh position={[0, s.y * 0.45, 0]} rotation={[-Math.PI / 4, 0, 0]}>
         <sphereGeometry args={[s.x * 0.2, 12, 12]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.accent_green, metalness: 0.1 })} />
       </mesh>
-      <mesh position={[s.x * 0.2, s.y * 0.55, s.z * 0.1]} rotation={[-Math.PI / 3, Math.PI / 4, 0]}>
+      <mesh position={[s.x * 0.2, s.y * 0.42, s.z * 0.1]} rotation={[-Math.PI / 3, Math.PI / 4, 0]}>
         <sphereGeometry args={[s.x * 0.15, 10, 10]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.accent_green, metalness: 0.1 })} />
       </mesh>
-      <mesh position={[-s.x * 0.18, s.y * 0.52, -s.z * 0.08]} rotation={[-Math.PI / 3, -Math.PI / 5, 0]}>
+      <mesh position={[-s.x * 0.18, s.y * 0.38, -s.z * 0.08]} rotation={[-Math.PI / 3, -Math.PI / 5, 0]}>
         <sphereGeometry args={[s.x * 0.14, 10, 10]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.accent_green, metalness: 0.1 })} />
       </mesh>
-      <mesh position={[0, s.y * 0.48, s.z * 0.18]} rotation={[-Math.PI / 5, 0, Math.PI / 6]}>
+      <mesh position={[0, s.y * 0.35, s.z * 0.18]} rotation={[-Math.PI / 5, 0, Math.PI / 6]}>
         <sphereGeometry args={[s.x * 0.12, 10, 10]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.accent_green, metalness: 0.1 })} />
       </mesh>
-      <mesh position={[s.x * 0.12, s.y * 0.65, -s.z * 0.12]} rotation={[-Math.PI / 4, Math.PI / 3, 0]}>
+      <mesh position={[s.x * 0.12, s.y * 0.52, -s.z * 0.12]} rotation={[-Math.PI / 4, Math.PI / 3, 0]}>
         <sphereGeometry args={[s.x * 0.13, 10, 10]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.accent_green, metalness: 0.1 })} />
       </mesh>
-      <mesh position={[-s.x * 0.1, s.y * 0.6, s.z * 0.1]} rotation={[-Math.PI / 3, -Math.PI / 4, 0]}>
+      <mesh position={[-s.x * 0.1, s.y * 0.48, s.z * 0.1]} rotation={[-Math.PI / 3, -Math.PI / 4, 0]}>
         <sphereGeometry args={[s.x * 0.11, 10, 10]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.accent_green, metalness: 0.1 })} />
       </mesh>
     </group>
   )
@@ -1308,6 +1320,403 @@ export function HookFallback({ size }: FallbackProps) {
       </mesh>
       <mesh position={[s.x / 2 - 0.02, s.y / 2, 0]}>
         <boxGeometry args={[0.015, s.y * 0.9, s.z * 0.9]} />
+      </mesh>
+    </group>
+  )
+}
+
+export function BookshelfFallback({ size }: FallbackProps) {
+  const s = getSize(size)
+  const shelfCount = 5
+  return (
+    <group>
+      <mesh position={[0, s.y / 2, 0]}>
+        <boxGeometry args={[s.x, s.y, s.z]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_medium, metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[0, s.y / 2, s.z / 2 + 0.005]}>
+        <boxGeometry args={[s.x * 0.95, s.y * 0.95, 0.02]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_light, metalness: 0.1 })} />
+      </mesh>
+      {Array.from({ length: shelfCount }).map((_, i) => (
+        <mesh key={i} position={[0, s.y * 0.12 + i * (s.y * 0.76) / shelfCount, s.z / 2 - 0.01]}>
+          <boxGeometry args={[s.x * 0.92, 0.03, s.z * 0.88]} />
+          <meshStandardMaterial {...PixelMaterial({ color: px.wood_dark, metalness: 0.2 })} />
+        </mesh>
+      ))}
+      {Array.from({ length: shelfCount }).map((_, row) =>
+        Array.from({ length: 5 }).map((_, col) => {
+          const bookColors = [px.accent_red, px.accent_cyan, px.accent_green, px.accent_yellow, px.accent_purple]
+          const bookWidth = s.x * 0.15
+          const bookHeight = s.y * 0.12 + Math.random() * s.y * 0.04
+          return (
+            <mesh
+              key={`${row}-${col}`}
+              position={[s.x * (-0.36 + col * 0.18), s.y * 0.12 + row * (s.y * 0.76) / shelfCount + bookHeight / 2, s.z / 2 - 0.02]}
+              rotation={[0, 0, (Math.random() - 0.5) * 0.08]}
+            >
+              <boxGeometry args={[bookWidth, bookHeight, s.z * 0.025]} />
+              <meshStandardMaterial {...PixelMaterial({ color: bookColors[col % bookColors.length], metalness: 0.1 })} />
+            </mesh>
+          )
+        })
+      )}
+      <mesh position={[0, s.y * 0.98, 0]}>
+        <boxGeometry args={[s.x * 1.05, 0.03, s.z * 1.05]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_dark, metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[-s.x / 2 + 0.015, s.y / 2, 0]}>
+        <boxGeometry args={[0.02, s.y * 0.95, s.z * 0.95]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_dark, metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[s.x / 2 - 0.015, s.y / 2, 0]}>
+        <boxGeometry args={[0.02, s.y * 0.95, s.z * 0.95]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_dark, metalness: 0.2 })} />
+      </mesh>
+    </group>
+  )
+}
+
+export function ChairFallback({ size }: FallbackProps) {
+  const s = getSize(size)
+  return (
+    <group>
+      <mesh position={[0, s.y * 0.38, 0]}>
+        <boxGeometry args={[s.x * 0.85, s.y * 0.08, s.z * 0.85]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_medium, metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[-s.x * 0.32, s.y * 0.2, s.z * 0.32]}>
+        <boxGeometry args={[0.05, s.y * 0.42, 0.05]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_dark, metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[s.x * 0.32, s.y * 0.2, s.z * 0.32]}>
+        <boxGeometry args={[0.05, s.y * 0.42, 0.05]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_dark, metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[-s.x * 0.32, s.y * 0.2, -s.z * 0.32]}>
+        <boxGeometry args={[0.05, s.y * 0.42, 0.05]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_dark, metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[s.x * 0.32, s.y * 0.2, -s.z * 0.32]}>
+        <boxGeometry args={[0.05, s.y * 0.42, 0.05]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_dark, metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[0, s.y * 0.72, 0]} rotation={[-Math.PI / 12, 0, 0]}>
+        <boxGeometry args={[s.x, s.y * 0.35, s.z * 0.8]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.fabric_cream, metalness: 0.1 })} />
+      </mesh>
+      <mesh position={[-s.x / 2 + 0.05, s.y * 0.55, 0]}>
+        <boxGeometry args={[0.06, s.y * 0.45, s.z * 0.75]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_medium, metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[s.x / 2 - 0.05, s.y * 0.55, 0]}>
+        <boxGeometry args={[0.06, s.y * 0.45, s.z * 0.75]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_medium, metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[-s.x * 0.35, s.y * 0.05, s.z * 0.35]}>
+        <boxGeometry args={[0.04, 0.03, 0.04]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_silver, metalness: 0.3 })} />
+      </mesh>
+      <mesh position={[s.x * 0.35, s.y * 0.05, s.z * 0.35]}>
+        <boxGeometry args={[0.04, 0.03, 0.04]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_silver, metalness: 0.3 })} />
+      </mesh>
+      <mesh position={[-s.x * 0.35, s.y * 0.05, -s.z * 0.35]}>
+        <boxGeometry args={[0.04, 0.03, 0.04]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_silver, metalness: 0.3 })} />
+      </mesh>
+      <mesh position={[s.x * 0.35, s.y * 0.05, -s.z * 0.35]}>
+        <boxGeometry args={[0.04, 0.03, 0.04]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_silver, metalness: 0.3 })} />
+      </mesh>
+    </group>
+  )
+}
+
+export function TVFallback({ size }: FallbackProps) {
+  const s = getSize(size)
+  return (
+    <group>
+      <mesh position={[0, s.y * 0.45, 0]}>
+        <boxGeometry args={[s.x, s.y * 0.85, s.z]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.plastic_black, metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[0, s.y * 0.45, s.z / 2 + 0.005]}>
+        <boxGeometry args={[s.x * 0.92, s.y * 0.75, 0.01]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.screen_green, metalness: 0.1 })} />
+      </mesh>
+      <mesh position={[0, s.y * 0.45, s.z / 2 + 0.01]}>
+        <boxGeometry args={[s.x * 0.88, s.y * 0.7, 0.005]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.accent_cyan, metalness: 0.1 })} />
+      </mesh>
+      <mesh position={[s.x * 0.42, s.y * 0.25, s.z / 2 + 0.02]}>
+        <sphereGeometry args={[0.02, 8, 8]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.accent_yellow, metalness: 0.1 })} />
+      </mesh>
+      <mesh position={[s.x * 0.35, s.y * 0.2, s.z / 2 + 0.02]}>
+        <sphereGeometry args={[0.015, 8, 8]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.accent_red, metalness: 0.1 })} />
+      </mesh>
+      <mesh position={[s.x * 0.28, s.y * 0.15, s.z / 2 + 0.02]}>
+        <sphereGeometry args={[0.015, 8, 8]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.accent_green, metalness: 0.1 })} />
+      </mesh>
+      <mesh position={[0, s.y * 0.92, 0]}>
+        <boxGeometry args={[s.x * 0.95, 0.02, s.z * 0.95]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.fabric_gray, metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[0, s.y * 0.08, 0]}>
+        <boxGeometry args={[s.x * 0.9, 0.02, s.z * 0.9]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_silver, metalness: 0.3 })} />
+      </mesh>
+      <mesh position={[-s.x * 0.35, s.y * 0.04, -s.z * 0.3]}>
+        <boxGeometry args={[0.02, 0.06, 0.06]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_silver, metalness: 0.3 })} />
+      </mesh>
+      <mesh position={[s.x * 0.35, s.y * 0.04, -s.z * 0.3]}>
+        <boxGeometry args={[0.02, 0.06, 0.06]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_silver, metalness: 0.3 })} />
+      </mesh>
+    </group>
+  )
+}
+
+export function ClockFallback({ size }: FallbackProps) {
+  const s = getSize(size)
+  return (
+    <group>
+      <mesh position={[0, s.y / 2, 0]}>
+        <cylinderGeometry args={[s.x / 2, s.x / 2, s.z, 24]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_gold, metalness: 0.3 })} />
+      </mesh>
+      <mesh position={[0, s.y / 2, s.z / 2 + 0.005]}>
+        <cylinderGeometry args={[s.x / 2 - 0.02, s.x / 2 - 0.02, 0.015, 24]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.bg_light, metalness: 0.1 })} />
+      </mesh>
+      <mesh position={[0, s.y / 2, s.z / 2 + 0.015]}>
+        <cylinderGeometry args={[s.x / 2 + 0.03, s.x / 2 + 0.03, 0.01, 24]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_gold, metalness: 0.3 })} />
+      </mesh>
+      <mesh position={[0, s.y / 2, s.z / 2 + 0.02]}>
+        <sphereGeometry args={[0.03, 12, 12]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.accent_red, metalness: 0.1 })} />
+      </mesh>
+      <mesh position={[0, s.y * 0.6, s.z / 2 + 0.02]} rotation={[-Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.01, 0.01, s.x * 0.25, 8]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_gold, metalness: 0.3 })} />
+      </mesh>
+      <mesh position={[s.y * 0.15, s.y / 2, s.z / 2 + 0.02]} rotation={[-Math.PI / 2, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.008, 0.008, s.x * 0.18, 8]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_silver, metalness: 0.3 })} />
+      </mesh>
+      {Array.from({ length: 12 }).map((_, i) => {
+        const angle = (i * Math.PI * 2) / 12
+        const isHour = i % 3 === 0
+        return (
+          <mesh
+            key={i}
+            position={[Math.cos(angle) * s.x * 0.35, s.y / 2 + (isHour ? 0.015 : 0.01), Math.sin(angle) * s.x * 0.35 + s.z / 2 + 0.02]}
+          >
+            {isHour ? (
+              <boxGeometry args={[0.015, 0.015, 0.005]} />
+            ) : (
+              <sphereGeometry args={[0.008, 8, 8]} />
+            )}
+            <meshStandardMaterial {...PixelMaterial({ color: px.metal_gold, metalness: 0.3 })} />
+          </mesh>
+        )
+      })}
+      <mesh position={[0, s.y / 2, -s.z / 2 - 0.005]}>
+        <cylinderGeometry args={[s.x / 2 - 0.02, s.x / 2 - 0.02, 0.02, 24]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_gold, metalness: 0.3 })} />
+      </mesh>
+    </group>
+  )
+}
+
+export function PaintingFallback({ size }: FallbackProps) {
+  const s = getSize(size)
+  const frameColors = [px.wood_dark, px.metal_gold, px.wood_medium]
+  const canvasColors = [px.accent_pink, px.accent_cyan, px.accent_yellow, px.accent_purple]
+  return (
+    <group>
+      <mesh position={[0, s.y / 2, 0]}>
+        <boxGeometry args={[s.x, s.y, s.z]} />
+        <meshStandardMaterial {...PixelMaterial({ color: frameColors[0], metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[0, s.y / 2, s.z / 2 + 0.005]}>
+        <boxGeometry args={[s.x * 0.88, s.y * 0.88, 0.008]} />
+        <meshStandardMaterial {...PixelMaterial({ color: canvasColors[0], metalness: 0.1 })} />
+      </mesh>
+      <mesh position={[0, s.y * 0.4, s.z / 2 + 0.01]}>
+        <boxGeometry args={[s.x * 0.6, s.y * 0.5, 0.005]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.accent_cyan, metalness: 0.1 })} />
+      </mesh>
+      <mesh position={[0, s.y * 0.65, s.z / 2 + 0.012]}>
+        <boxGeometry args={[s.x * 0.5, s.y * 0.3, 0.003]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.accent_yellow, metalness: 0.1 })} />
+      </mesh>
+      <mesh position={[-s.x * 0.2, s.y * 0.5, s.z / 2 + 0.01]}>
+        <boxGeometry args={[s.x * 0.25, s.y * 0.35, 0.004]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.accent_pink, metalness: 0.1 })} />
+      </mesh>
+      <mesh position={[s.x * 0.2, s.y * 0.55, s.z / 2 + 0.01]}>
+        <sphereGeometry args={[s.x * 0.12, 10, 10]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.accent_green, metalness: 0.1 })} />
+      </mesh>
+      <mesh position={[-s.x / 2 + 0.03, s.y / 2, 0]}>
+        <boxGeometry args={[0.03, s.y * 0.95, s.z * 0.95]} />
+        <meshStandardMaterial {...PixelMaterial({ color: frameColors[1], metalness: 0.3 })} />
+      </mesh>
+      <mesh position={[s.x / 2 - 0.03, s.y / 2, 0]}>
+        <boxGeometry args={[0.03, s.y * 0.95, s.z * 0.95]} />
+        <meshStandardMaterial {...PixelMaterial({ color: frameColors[1], metalness: 0.3 })} />
+      </mesh>
+      <mesh position={[0, s.y - 0.02, 0]}>
+        <boxGeometry args={[s.x * 0.95, 0.03, s.z * 0.95]} />
+        <meshStandardMaterial {...PixelMaterial({ color: frameColors[1], metalness: 0.3 })} />
+      </mesh>
+      <mesh position={[0, 0.02, 0]}>
+        <boxGeometry args={[s.x * 0.95, 0.03, s.z * 0.95]} />
+        <meshStandardMaterial {...PixelMaterial({ color: frameColors[1], metalness: 0.3 })} />
+      </mesh>
+    </group>
+  )
+}
+
+export function ShelfFallback({ size }: FallbackProps) {
+  const s = getSize(size)
+  const shelfCount = 3
+  return (
+    <group>
+      <mesh position={[-s.x / 2 + 0.02, s.y / 2, 0]}>
+        <boxGeometry args={[0.03, s.y, s.z]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_silver, metalness: 0.3 })} />
+      </mesh>
+      <mesh position={[s.x / 2 - 0.02, s.y / 2, 0]}>
+        <boxGeometry args={[0.03, s.y, s.z]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_silver, metalness: 0.3 })} />
+      </mesh>
+      {Array.from({ length: shelfCount }).map((_, i) => (
+        <mesh key={i} position={[0, s.y * 0.15 + i * (s.y * 0.7) / shelfCount, s.z / 2 - 0.01]}>
+          <boxGeometry args={[s.x, 0.025, s.z]} />
+          <meshStandardMaterial {...PixelMaterial({ color: px.metal_silver, metalness: 0.3 })} />
+        </mesh>
+      ))}
+      {Array.from({ length: shelfCount }).map((_, row) =>
+        Array.from({ length: 3 }).map((_, col) => (
+          <mesh
+            key={`${row}-${col}`}
+            position={[s.x * (-0.35 + col * 0.35), s.y * 0.15 + row * (s.y * 0.7) / shelfCount + 0.1, s.z / 2 - 0.05]}
+          >
+            <boxGeometry args={[s.x * 0.15, s.y * 0.15, s.z * 0.08]} />
+            <meshStandardMaterial {...PixelMaterial({ color: px.ceramic_white, metalness: 0.1 })} />
+          </mesh>
+        ))
+      )}
+      <mesh position={[0, s.y * 0.95, s.z / 2 - 0.01]}>
+        <boxGeometry args={[s.x, 0.03, s.z]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_silver, metalness: 0.3 })} />
+      </mesh>
+    </group>
+  )
+}
+
+export function DresserFallback({ size }: FallbackProps) {
+  const s = getSize(size)
+  const drawerCount = 6
+  return (
+    <group>
+      <mesh position={[0, s.y / 2, 0]}>
+        <boxGeometry args={[s.x, s.y, s.z]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_light, metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[0, s.y / 2, s.z / 2 + 0.005]}>
+        <boxGeometry args={[s.x * 0.94, s.y * 0.94, 0.02]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_medium, metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[0, s.y * 0.88, 0]}>
+        <boxGeometry args={[s.x * 0.9, 0.03, s.z * 0.9]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_dark, metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[0, s.y * 0.92, 0]}>
+        <boxGeometry args={[s.x * 0.85, 0.02, s.z * 0.85]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.ceramic_white, metalness: 0.1 })} />
+      </mesh>
+      <mesh position={[0, s.y * 0.95, 0]}>
+        <sphereGeometry args={[0.025, 10, 10]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_gold, metalness: 0.3 })} />
+      </mesh>
+      {Array.from({ length: drawerCount }).map((_, i) => {
+        const row = Math.floor(i / 3)
+        const col = i % 3
+        return (
+          <mesh
+            key={i}
+            position={[s.x * (-0.3 + col * 0.3), s.y * 0.12 + row * (s.y * 0.55) / 2 + (s.y * 0.22) / 2, s.z / 2 + 0.02]}
+          >
+            <boxGeometry args={[s.x * 0.24, s.y * 0.22, 0.015]} />
+            <meshStandardMaterial {...PixelMaterial({ color: px.wood_dark, metalness: 0.2 })} />
+          </mesh>
+        )
+      })}
+      {Array.from({ length: drawerCount }).map((_, i) => {
+        const row = Math.floor(i / 3)
+        const col = i % 3
+        return (
+          <mesh
+            key={`knob-${i}`}
+            position={[s.x * (-0.3 + col * 0.3), s.y * 0.12 + row * (s.y * 0.55) / 2 + (s.y * 0.22) / 2, s.z / 2 + 0.04]}
+          >
+            <sphereGeometry args={[0.015, 8, 8]} />
+            <meshStandardMaterial {...PixelMaterial({ color: px.metal_gold, metalness: 0.3 })} />
+          </mesh>
+        )
+      })}
+      <mesh position={[0, s.y * 0.05, 0]}>
+        <boxGeometry args={[s.x * 1.05, 0.04, s.z * 1.05]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_dark, metalness: 0.2 })} />
+      </mesh>
+    </group>
+  )
+}
+
+export function CabinetFallback2({ size, isOpen = false }: FallbackProps) {
+  const s = getSize(size)
+  const shelfCount = 4
+  return (
+    <group>
+      <mesh position={[0, s.y / 2, 0]}>
+        <boxGeometry args={[s.x, s.y, s.z]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_medium, metalness: 0.2 })} />
+      </mesh>
+      <mesh position={[0, s.y / 2, s.z / 2 + 0.005]}>
+        <boxGeometry args={[s.x * 0.92, s.y * 0.92, 0.025]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_light, metalness: 0.2 })} />
+      </mesh>
+      {Array.from({ length: shelfCount }).map((_, i) => (
+        <mesh key={i} position={[0, s.y * 0.15 + i * (s.y * 0.7) / shelfCount, s.z / 2 - 0.01]}>
+          <boxGeometry args={[s.x * 0.85, 0.02, s.z * 0.8]} />
+          <meshStandardMaterial {...PixelMaterial({ color: px.wood_dark, metalness: 0.2 })} />
+        </mesh>
+      ))}
+      <mesh
+        position={isOpen ? [0, s.y / 2, s.z / 2 + s.x * 0.4] : [0, s.y / 2, s.z / 2 + 0.03]}
+        rotation={isOpen ? [0, -Math.PI / 2, 0] : [0, 0, 0]}
+      >
+        <boxGeometry args={[s.x * 0.96, s.y * 0.94, 0.035]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_light, metalness: 0.2 })} />
+      </mesh>
+      <mesh
+        position={isOpen ? [-s.x * 0.1, s.y / 2, s.z / 2 + s.x * 0.35] : [s.x * 0.38, s.y / 2, s.z / 2 + 0.05]}
+        rotation={isOpen ? [0, -Math.PI / 2, 0] : [0, 0, 0]}
+      >
+        <boxGeometry args={[0.02, 0.08, 0.04]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.metal_gold, metalness: 0.3 })} />
+      </mesh>
+      <mesh position={[0, s.y * 0.05, 0]}>
+        <boxGeometry args={[s.x * 1.08, 0.05, s.z * 1.08]} />
+        <meshStandardMaterial {...PixelMaterial({ color: px.wood_dark, metalness: 0.2 })} />
       </mesh>
     </group>
   )
