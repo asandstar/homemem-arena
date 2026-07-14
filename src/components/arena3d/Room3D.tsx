@@ -28,6 +28,13 @@ import {
   TrashFallback,
   TowelFallback,
   EntranceTrayFallback,
+  BookshelfFallback,
+  ChairFallback,
+  TVFallback,
+  ClockFallback,
+  PaintingFallback,
+  ShelfFallback,
+  DresserFallback,
 } from './models/FallbackModels'
 
 interface Room3DProps {
@@ -40,47 +47,88 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
   const renderEntrance = () => (
     <group>
       <FallbackColorizer modelId="rug" color="#8b7355">
-        <group position={[center.x, 0, center.z + size.z / 2 - 0.6]} receiveShadow>
-          <RugFallback size={{ x: 1.4, y: 0.04, z: 0.8 }} />
+        <group position={[center.x, 0, center.z + size.z / 2 - 0.8]} receiveShadow>
+          <RugFallback size={{ x: 2.0, y: 0.04, z: 1.2 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="cabinet" color="#8b5a2b">
-        <group position={[center.x - size.x / 2 + 0.5, 0, center.z - 0.3]} castShadow receiveShadow>
-          <ShoeCabinetModel size={{ x: 1.0, y: 1.0, z: 0.35 }} />
+        <group position={[center.x - size.x / 2 + 0.6, 0, center.z - 0.5]} castShadow receiveShadow>
+          <ShoeCabinetModel size={{ x: 1.2, y: 1.1, z: 0.4 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="shoes" color="#4a4a4a">
-        <group position={[center.x - size.x / 2 + 0.5, 0, center.z + 0.5]} receiveShadow>
-          <ShoesFallback size={{ x: 0.3, y: 0.15, z: 0.4 }} />
+        <group position={[center.x - size.x / 2 + 0.6, 0, center.z + 0.3]} receiveShadow>
+          <ShoesFallback size={{ x: 0.35, y: 0.15, z: 0.45 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="hook" color="#4a4a4a">
-        <group position={[center.x + size.x / 2 - 0.3, 1.4, center.z]} receiveShadow>
-          <HookFallback size={{ x: 0.8, y: 0.25, z: 0.05 }} />
+        <group position={[center.x + size.x / 2 - 0.3, 1.5, center.z]} receiveShadow>
+          <HookFallback size={{ x: 1.0, y: 0.3, z: 0.05 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="entray" color="#d4a574">
-        <group position={[center.x - 0.3, 0, center.z - size.z / 2 + 0.6]} receiveShadow>
-          <EntranceTrayFallback size={{ x: 0.4, y: 0.08, z: 0.3 }} />
+        <group position={[center.x - 0.4, 0, center.z - size.z / 2 + 0.7]} receiveShadow>
+          <EntranceTrayFallback size={{ x: 0.5, y: 0.1, z: 0.35 }} />
         </group>
       </FallbackColorizer>
 
-      <mesh position={[center.x + 0.6, 0.35, center.z - size.z / 2 + 0.8]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.12, 0.15, 0.7, 8]} />
-        <meshStandardMaterial color="#654321" />
-      </mesh>
-      <mesh position={[center.x + 0.6, 0.74, center.z - size.z / 2 + 0.8]} receiveShadow>
-        <cylinderGeometry args={[0.1, 0.1, 0.08, 8]} />
-        <meshStandardMaterial color="#8b5a2b" />
-      </mesh>
+      <FallbackColorizer modelId="umbrella" color="#ef4444">
+        <group position={[center.x + 0.8, 0.4, center.z - size.z / 2 + 0.7]} castShadow receiveShadow>
+          <mesh position={[0, 0.25, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.012, 0.012, 0.5, 8]} />
+            <meshStandardMaterial color="#654321" />
+          </mesh>
+          <mesh position={[0, 0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.25, 0.2, 8]} />
+            <meshStandardMaterial color="#ef4444" />
+          </mesh>
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="umbrella" color="#3b82f6">
+        <group position={[center.x + 0.5, 0.4, center.z - size.z / 2 + 0.7]} castShadow receiveShadow>
+          <mesh position={[0, 0.25, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.012, 0.012, 0.45, 8]} />
+            <meshStandardMaterial color="#654321" />
+          </mesh>
+          <mesh position={[0, 0.48, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 6]}>
+            <coneGeometry args={[0.22, 0.18, 8]} />
+            <meshStandardMaterial color="#3b82f6" />
+          </mesh>
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="painting" color="#8b5a2b">
+        <group position={[center.x, 1.0, center.z + size.z / 2 - 0.3]} rotation={[0, Math.PI, 0]} receiveShadow>
+          <PaintingFallback size={{ x: 0.6, y: 0.45, z: 0.05 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="clock" color="#d4a574">
+        <group position={[center.x + size.x / 2 - 0.3, 1.6, center.z + 1.0]} receiveShadow>
+          <ClockFallback size={{ x: 0.3, y: 0.3, z: 0.05 }} />
+        </group>
+      </FallbackColorizer>
 
       <FallbackColorizer modelId="plant" color="#22c55e">
-        <group position={[center.x - size.x / 2 + 1.2, 0, center.z + 0.8]} receiveShadow>
+        <group position={[center.x - size.x / 2 + 1.0, 0, center.z + 0.8]} receiveShadow>
+          <PlantFallback size={{ x: 0.3, y: 0.7, z: 0.3 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="plant" color="#15803d">
+        <group position={[center.x + size.x / 2 - 1.0, 0, center.z - 0.5]} receiveShadow>
           <PlantFallback size={{ x: 0.25, y: 0.6, z: 0.25 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="shelf" color="#9ca3af">
+        <group position={[center.x + size.x / 2 - 0.5, 0, center.z + 1.5]} castShadow receiveShadow>
+          <ShelfFallback size={{ x: 0.4, y: 0.8, z: 0.15 }} />
         </group>
       </FallbackColorizer>
     </group>
@@ -89,66 +137,120 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
   const renderLiving = () => (
     <group>
       <FallbackColorizer modelId="rug" color="#a0522d">
-        <group position={[center.x, 0, center.z - 0.3]} receiveShadow>
-          <RugFallback size={{ x: 3.5, y: 0.04, z: 2.5 }} />
+        <group position={[center.x, 0, center.z - 0.5]} receiveShadow>
+          <RugFallback size={{ x: 4.0, y: 0.04, z: 3.0 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="sofa" color="#8b5a2b">
-        <group position={[center.x, 0, center.z - 0.8]} castShadow receiveShadow>
-          <SofaModel size={{ x: 2.2, y: 0.9, z: 0.9 }} />
+        <group position={[center.x, 0, center.z - 1.2]} castShadow receiveShadow>
+          <SofaModel size={{ x: 2.4, y: 0.9, z: 1.0 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="pillow" color="#ff6b6b">
-        <group position={[center.x - 0.8, 0.45, center.z - 0.9]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
+        <group position={[center.x - 0.9, 0.45, center.z - 1.3]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.3 }} />
         </group>
       </FallbackColorizer>
       <FallbackColorizer modelId="pillow" color="#4ecdc4">
-        <group position={[center.x, 0.45, center.z - 0.95]} rotation={[0, -Math.PI / 8, 0]} receiveShadow>
+        <group position={[center.x, 0.45, center.z - 1.35]} rotation={[0, -Math.PI / 8, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.3 }} />
         </group>
       </FallbackColorizer>
       <FallbackColorizer modelId="pillow" color="#ffe66d">
-        <group position={[center.x + 0.8, 0.45, center.z - 0.9]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
+        <group position={[center.x + 0.9, 0.45, center.z - 1.3]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.3 }} />
         </group>
       </FallbackColorizer>
 
+      <FallbackColorizer modelId="sofa" color="#6b4e3d">
+        <group position={[center.x - 2.0, 0, center.z - 0.5]} castShadow receiveShadow rotation={[0, Math.PI / 2, 0]}>
+          <SofaModel size={{ x: 1.6, y: 0.85, z: 0.9 }} />
+        </group>
+      </FallbackColorizer>
+
       <FallbackColorizer modelId="coffee_table" color="#8b7355">
-        <group position={[center.x, 0, center.z + 0.6]} castShadow receiveShadow>
-          <CoffeeTableModel size={{ x: 1.2, y: 0.4, z: 0.6 }} />
+        <group position={[center.x - 0.5, 0, center.z - 0.3]} castShadow receiveShadow>
+          <CoffeeTableModel size={{ x: 1.4, y: 0.45, z: 0.7 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="cabinet" color="#4a4a4a">
-        <group position={[center.x, 0, center.z + size.z / 2 - 0.6]} castShadow receiveShadow>
-          <TVStandModel size={{ x: 2.0, y: 0.5, z: 0.4 }} />
+        <group position={[center.x, 0, center.z + size.z / 2 - 0.5]} castShadow receiveShadow>
+          <TVStandModel size={{ x: 2.2, y: 0.55, z: 0.45 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="tv" color="#1f2937">
+        <group position={[center.x, 0.8, center.z + size.z / 2 - 0.45]} castShadow receiveShadow>
+          <TVFallback size={{ x: 1.8, y: 1.0, z: 0.15 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="bookshelf" color="#6b4423">
+        <group position={[center.x + size.x / 2 - 0.6, 0, center.z - 1.5]} castShadow receiveShadow>
+          <BookshelfFallback size={{ x: 0.8, y: 1.8, z: 0.35 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="shelf" color="#9ca3af">
+        <group position={[center.x + size.x / 2 - 0.6, 0, center.z + 1.0]} castShadow receiveShadow>
+          <ShelfFallback size={{ x: 0.7, y: 1.2, z: 0.2 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="painting" color="#8b5a2b">
+        <group position={[center.x - size.x / 2 + 0.3, 1.2, center.z + 1.5]} rotation={[0, Math.PI, 0]} receiveShadow>
+          <PaintingFallback size={{ x: 0.8, y: 0.6, z: 0.05 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="clock" color="#d4a574">
+        <group position={[center.x + size.x / 2 - 0.3, 1.8, center.z]} receiveShadow>
+          <ClockFallback size={{ x: 0.4, y: 0.4, z: 0.05 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="lamp" color="#f5d49a">
-        <group position={[center.x + size.x / 2 - 1.2, 0, center.z - 1.2]} receiveShadow>
+        <group position={[center.x + size.x / 2 - 1.0, 0, center.z - 2.0]} receiveShadow>
           <LampFallback size={{ x: 0.4, y: 1.8, z: 0.4 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="lamp" color="#e8d5b7">
-        <group position={[center.x - size.x / 2 + 1.2, 0, center.z + 0.8]} receiveShadow>
+        <group position={[center.x - size.x / 2 + 1.0, 0, center.z + 0.5]} receiveShadow>
           <LampFallback size={{ x: 0.35, y: 1.6, z: 0.35 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="plant" color="#16a34a">
-        <group position={[center.x - size.x / 2 + 0.8, 0, center.z - 1.5]} receiveShadow>
+        <group position={[center.x - size.x / 2 + 0.6, 0, center.z - 2.0]} receiveShadow>
           <PlantFallback size={{ x: 0.5, y: 1.2, z: 0.5 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="plant" color="#22c55e">
-        <group position={[center.x + size.x / 2 - 0.8, 0, center.z + 1.2]} receiveShadow>
+        <group position={[center.x + size.x / 2 - 0.6, 0, center.z + 2.0]} receiveShadow>
           <PlantFallback size={{ x: 0.35, y: 0.8, z: 0.35 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="plant" color="#15803d">
+        <group position={[center.x + 1.5, 0, center.z - 2.0]} receiveShadow>
+          <PlantFallback size={{ x: 0.4, y: 1.0, z: 0.4 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="chair" color="#8b7355">
+        <group position={[center.x + 1.5, 0, center.z + 1.0]} castShadow receiveShadow>
+          <ChairFallback size={{ x: 0.5, y: 0.7, z: 0.5 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="coffee_table" color="#6b4e3d">
+        <group position={[center.x + 1.8, 0, center.z + 0.8]} castShadow receiveShadow>
+          <CoffeeTableModel size={{ x: 0.6, y: 0.35, z: 0.6 }} />
         </group>
       </FallbackColorizer>
     </group>
@@ -157,133 +259,288 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
   const renderKitchen = () => (
     <group>
       <FallbackColorizer modelId="rug" color="#7a7a7a">
-        <group position={[center.x, 0, center.z]} receiveShadow>
-          <RugFallback size={{ x: 2.5, y: 0.04, z: 1.5 }} />
+        <group position={[center.x, 0, center.z - 0.5]} receiveShadow>
+          <RugFallback size={{ x: 3.0, y: 0.04, z: 2.0 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="cabinet" color="#6b7280">
-        <group position={[center.x + size.x / 2 - 0.5, 0, center.z - size.z / 2 + 0.8]} castShadow receiveShadow>
+        <group position={[center.x - size.x / 2 + 0.5, 0, center.z - size.z / 2 + 0.6]} castShadow receiveShadow>
           <CoffeeTableModel size={{ x: 0.8, y: 0.9, z: 0.6 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="cabinet" color="#6b7280">
-        <group position={[center.x - size.x / 2 + 0.5, 0, center.z - size.z / 2 + 0.8]} castShadow receiveShadow>
+        <group position={[center.x - size.x / 2 + 0.5, 0, center.z + 0.5]} castShadow receiveShadow>
           <CoffeeTableModel size={{ x: 0.8, y: 0.9, z: 0.6 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="cabinet" color="#6b7280">
-        <group position={[center.x, 0, center.z + size.z / 2 - 0.6]} castShadow receiveShadow>
-          <CoffeeTableModel size={{ x: 1.5, y: 0.9, z: 0.6 }} />
+        <group position={[center.x - size.x / 2 + 0.5, 0, center.z + size.z / 2 - 0.6]} castShadow receiveShadow>
+          <CoffeeTableModel size={{ x: 0.8, y: 0.9, z: 0.6 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="cabinet" color="#6b7280">
+        <group position={[center.x, 0, center.z + size.z / 2 - 0.5]} castShadow receiveShadow>
+          <CoffeeTableModel size={{ x: 1.6, y: 0.9, z: 0.6 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="cabinet" color="#6b7280">
+        <group position={[center.x + size.x / 2 - 0.5, 0, center.z + size.z / 2 - 0.6]} castShadow receiveShadow>
+          <CoffeeTableModel size={{ x: 0.8, y: 0.9, z: 0.6 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="cabinet" color="#6b7280">
+        <group position={[center.x + size.x / 2 - 0.5, 0, center.z + 0.5]} castShadow receiveShadow>
+          <CoffeeTableModel size={{ x: 0.8, y: 0.9, z: 0.6 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="fridge" color="#f9fafb">
+        <group position={[center.x + size.x / 2 - 0.6, 0, center.z - size.z / 2 + 0.8]} castShadow receiveShadow>
+          <mesh position={[0, 1.0, 0]}>
+            <boxGeometry args={[0.7, 2.0, 0.6]} />
+            <meshStandardMaterial color="#f9fafb" roughness={0.2} metalness={0.1} />
+          </mesh>
+          <mesh position={[0, 1.6, 0.31]}>
+            <boxGeometry args={[0.3, 0.7, 0.02]} />
+            <meshStandardMaterial color="#3b82f6" roughness={0.1} metalness={0.2} />
+          </mesh>
+          <mesh position={[0.25, 1.6, 0.32]}>
+            <sphereGeometry args={[0.02, 8, 8]} />
+            <meshStandardMaterial color="#ef4444" />
+          </mesh>
+          <mesh position={[0.25, 1.2, 0.32]}>
+            <sphereGeometry args={[0.02, 8, 8]} />
+            <meshStandardMaterial color="#22c55e" />
+          </mesh>
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="sink" color="#9ca3af">
+        <group position={[center.x - 0.5, 0.85, center.z + size.z / 2 - 0.5]} castShadow receiveShadow>
+          <mesh position={[0, 0.15, 0]}>
+            <boxGeometry args={[0.6, 0.3, 0.4]} />
+            <meshStandardMaterial color="#9ca3af" roughness={0.3} metalness={0.2} />
+          </mesh>
+          <mesh position={[0, 0.3, 0]}>
+            <cylinderGeometry args={[0.2, 0.2, 0.02, 16]} />
+            <meshStandardMaterial color="#e5e7eb" roughness={0.1} metalness={0.1} />
+          </mesh>
+          <mesh position={[0.15, 0.4, 0]}>
+            <cylinderGeometry args={[0.015, 0.015, 0.15, 8]} />
+            <meshStandardMaterial color="#6b7280" metalness={0.3} />
+          </mesh>
+          <mesh position={[0.15, 0.48, 0.08]}>
+            <boxGeometry args={[0.06, 0.02, 0.02]} />
+            <meshStandardMaterial color="#6b7280" metalness={0.3} />
+          </mesh>
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="stove" color="#374151">
+        <group position={[center.x + 0.5, 0.85, center.z + size.z / 2 - 0.5]} castShadow receiveShadow>
+          <mesh position={[0, 0.1, 0]}>
+            <boxGeometry args={[0.7, 0.2, 0.5]} />
+            <meshStandardMaterial color="#374151" roughness={0.2} metalness={0.2} />
+          </mesh>
+          <mesh position={[-0.15, 0.2, 0]}>
+            <cylinderGeometry args={[0.12, 0.12, 0.02, 12]} />
+            <meshStandardMaterial color="#1f2937" roughness={0.1} metalness={0.3} />
+          </mesh>
+          <mesh position={[0.15, 0.2, 0]}>
+            <cylinderGeometry args={[0.12, 0.12, 0.02, 12]} />
+            <meshStandardMaterial color="#1f2937" roughness={0.1} metalness={0.3} />
+          </mesh>
+          <mesh position={[0, 0.22, -0.12]}>
+            <cylinderGeometry args={[0.1, 0.1, 0.02, 12]} />
+            <meshStandardMaterial color="#1f2937" roughness={0.1} metalness={0.3} />
+          </mesh>
+          <mesh position={[0.25, 0.15, 0.18]}>
+            <boxGeometry args={[0.04, 0.06, 0.03]} />
+            <meshStandardMaterial color="#fbbf24" />
+          </mesh>
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="microwave" color="#1f2937">
+        <group position={[center.x + 0.5, 1.5, center.z + size.z / 2 - 0.5]} castShadow receiveShadow>
+          <mesh position={[0, 0, 0]}>
+            <boxGeometry args={[0.5, 0.35, 0.4]} />
+            <meshStandardMaterial color="#1f2937" roughness={0.2} metalness={0.2} />
+          </mesh>
+          <mesh position={[0, 0.02, 0.21]}>
+            <boxGeometry args={[0.35, 0.25, 0.01]} />
+            <meshStandardMaterial color="#0ea5e9" roughness={0.1} metalness={0.1} />
+          </mesh>
+          <mesh position={[0.15, -0.05, 0.22]}>
+            <sphereGeometry args={[0.015, 8, 8]} />
+            <meshStandardMaterial color="#fbbf24" />
+          </mesh>
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="plant" color="#22c55e">
-        <group position={[center.x - 0.5, 0, center.z + size.z / 2 - 0.5]} receiveShadow>
-          <PlantFallback size={{ x: 0.2, y: 0.35, z: 0.2 }} />
+        <group position={[center.x - 0.8, 0, center.z + size.z / 2 - 0.5]} receiveShadow>
+          <PlantFallback size={{ x: 0.25, y: 0.45, z: 0.25 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="trash" color="#374151">
-        <group position={[center.x + size.x / 2 - 0.6, 0, center.z + 0.5]} receiveShadow>
-          <TrashFallback size={{ x: 0.3, y: 0.4, z: 0.3 }} />
+        <group position={[center.x + size.x / 2 - 0.6, 0, center.z - 1.0]} receiveShadow>
+          <TrashFallback size={{ x: 0.35, y: 0.45, z: 0.35 }} />
         </group>
       </FallbackColorizer>
 
-      <mesh position={[center.x + 0.6, 1.0, center.z + size.z / 2 - 0.5]} castShadow receiveShadow>
+      <FallbackColorizer modelId="shelf" color="#9ca3af">
+        <group position={[center.x + size.x / 2 - 0.6, 0, center.z + 2.0]} castShadow receiveShadow>
+          <ShelfFallback size={{ x: 0.5, y: 1.0, z: 0.15 }} />
+        </group>
+      </FallbackColorizer>
+
+      <mesh position={[center.x + 0.8, 1.0, center.z + size.z / 2 - 0.5]} castShadow receiveShadow>
         <boxGeometry args={[0.15, 0.2, 0.08]} />
         <meshStandardMaterial color="#fbbf24" />
       </mesh>
-      <mesh position={[center.x + 0.6, 1.15, center.z + size.z / 2 - 0.5]} receiveShadow>
+      <mesh position={[center.x + 0.8, 1.15, center.z + size.z / 2 - 0.5]} receiveShadow>
         <cylinderGeometry args={[0.03, 0.03, 0.08, 8]} />
         <meshStandardMaterial color="#ef4444" />
       </mesh>
+
+      <FallbackColorizer modelId="chair" color="#6b4e3d">
+        <group position={[center.x + 1.5, 0, center.z - 1.0]} castShadow receiveShadow>
+          <ChairFallback size={{ x: 0.45, y: 0.65, z: 0.45 }} />
+        </group>
+      </FallbackColorizer>
     </group>
   )
 
   const renderBedroom = () => (
     <group>
       <FallbackColorizer modelId="rug" color="#9e7a7a">
-        <group position={[center.x, 0, center.z]} receiveShadow>
-          <RugFallback size={{ x: 2.5, y: 0.04, z: 1.8 }} />
+        <group position={[center.x, 0, center.z - 0.3]} receiveShadow>
+          <RugFallback size={{ x: 3.0, y: 0.04, z: 2.2 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="bed" color="#d4c5b0">
-        <group position={[center.x, 0, center.z - 0.5]} castShadow receiveShadow>
-          <BedModel size={{ x: 1.8, y: 1.0, z: 2.2 }} />
+        <group position={[center.x, 0, center.z - 0.8]} castShadow receiveShadow>
+          <BedModel size={{ x: 2.0, y: 1.0, z: 2.4 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="pillow" color="#fec8d8">
-        <group position={[-0.5, 0.65, center.z - 1.2]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
+        <group position={[-0.6, 0.65, center.z - 1.5]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.4, y: 0.18, z: 0.3 }} />
         </group>
       </FallbackColorizer>
       <FallbackColorizer modelId="pillow" color="#e0bbe4">
-        <group position={[0.5, 0.65, center.z - 1.2]} rotation={[0, -Math.PI / 6, 0]} receiveShadow>
+        <group position={[0.6, 0.65, center.z - 1.5]} rotation={[0, -Math.PI / 6, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.4, y: 0.18, z: 0.3 }} />
+        </group>
+      </FallbackColorizer>
+      <FallbackColorizer modelId="pillow" color="#fef3c7">
+        <group position={[0, 0.62, center.z - 1.4]} rotation={[0, Math.PI / 8, 0]} receiveShadow>
+          <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.28 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="cabinet" color="#8b7355">
-        <group position={[center.x + 1.3, 0, center.z - 1.3]} castShadow receiveShadow>
-          <NightstandModel size={{ x: 0.5, y: 0.55, z: 0.4 }} />
+        <group position={[center.x + 1.5, 0, center.z - 1.5]} castShadow receiveShadow>
+          <NightstandModel size={{ x: 0.55, y: 0.55, z: 0.45 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="lamp" color="#f5d49a">
-        <group position={[center.x + 1.3, 0.55, center.z - 1.3]} receiveShadow>
-          <LampFallback size={{ x: 0.2, y: 0.45, z: 0.2 }} />
+        <group position={[center.x + 1.5, 0.55, center.z - 1.5]} receiveShadow>
+          <LampFallback size={{ x: 0.22, y: 0.45, z: 0.22 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="cabinet" color="#8b7355">
-        <group position={[center.x - size.x / 2 + 0.8, 0, center.z - 1.3]} castShadow receiveShadow>
-          <NightstandModel size={{ x: 0.5, y: 0.55, z: 0.4 }} />
+        <group position={[center.x - size.x / 2 + 0.85, 0, center.z - 1.5]} castShadow receiveShadow>
+          <NightstandModel size={{ x: 0.55, y: 0.55, z: 0.45 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="lamp" color="#e8d5b7">
-        <group position={[center.x - size.x / 2 + 0.8, 0.55, center.z - 1.3]} receiveShadow>
-          <LampFallback size={{ x: 0.2, y: 0.45, z: 0.2 }} />
+        <group position={[center.x - size.x / 2 + 0.85, 0.55, center.z - 1.5]} receiveShadow>
+          <LampFallback size={{ x: 0.22, y: 0.45, z: 0.22 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="desk" color="#8b7355">
-        <group position={[center.x + 1.4, 0, center.z + 0.8]} castShadow receiveShadow>
-          <DeskModel size={{ x: 1.2, y: 0.75, z: 0.6 }} />
+        <group position={[center.x + 1.6, 0, center.z + 1.0]} castShadow receiveShadow>
+          <DeskModel size={{ x: 1.3, y: 0.75, z: 0.65 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="lamp" color="#f5d49a">
-        <group position={[center.x + 1.0, 0.75, center.z + 0.7]} receiveShadow>
+        <group position={[center.x + 1.2, 0.75, center.z + 0.9]} receiveShadow>
           <LampFallback size={{ x: 0.18, y: 0.4, z: 0.18 }} />
         </group>
       </FallbackColorizer>
 
+      <FallbackColorizer modelId="chair" color="#6b4e3d">
+        <group position={[center.x + 2.5, 0, center.z + 1.0]} castShadow receiveShadow rotation={[0, Math.PI, 0]}>
+          <ChairFallback size={{ x: 0.45, y: 0.65, z: 0.45 }} />
+        </group>
+      </FallbackColorizer>
+
       <FallbackColorizer modelId="cabinet" color="#d4c5b0">
-        <group position={[center.x - size.x / 2 + 0.8, 0, center.z + 0.8]} castShadow receiveShadow>
-          <WardrobeModel size={{ x: 1.6, y: 2.0, z: 0.6 }} />
+        <group position={[center.x - size.x / 2 + 0.85, 0, center.z + 0.6]} castShadow receiveShadow>
+          <WardrobeModel size={{ x: 1.8, y: 2.1, z: 0.65 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="dresser" color="#c4a7a7">
+        <group position={[center.x - 1.5, 0, center.z + 1.5]} castShadow receiveShadow>
+          <DresserFallback size={{ x: 1.2, y: 0.9, z: 0.45 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="bookshelf" color="#6b4423">
+        <group position={[center.x + size.x / 2 - 0.6, 0, center.z + 1.0]} castShadow receiveShadow>
+          <BookshelfFallback size={{ x: 0.7, y: 1.6, z: 0.3 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="painting" color="#8b5a2b">
+        <group position={[center.x, 1.2, center.z + size.z / 2 - 0.3]} rotation={[0, Math.PI, 0]} receiveShadow>
+          <PaintingFallback size={{ x: 0.7, y: 0.5, z: 0.05 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="clock" color="#d4a574">
+        <group position={[center.x + size.x / 2 - 0.3, 1.8, center.z - 1.5]} receiveShadow>
+          <ClockFallback size={{ x: 0.35, y: 0.35, z: 0.05 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="towel" color="#ff6b6b">
-        <group position={[center.x + 0.6, 0, center.z + 1.4]} rotation={[Math.PI / 12, Math.PI / 6, Math.PI / 8]} receiveShadow>
+        <group position={[center.x + 0.8, 0, center.z + 1.6]} rotation={[Math.PI / 12, Math.PI / 6, Math.PI / 8]} receiveShadow>
           <TowelFallback size={{ x: 0.5, y: 0.1, z: 0.4 }} />
         </group>
       </FallbackColorizer>
       <FallbackColorizer modelId="towel" color="#4ecdc4">
-        <group position={[center.x + 0.9, 0, center.z + 1.2]} rotation={[-Math.PI / 10, -Math.PI / 8, Math.PI / 12]} receiveShadow>
+        <group position={[center.x + 1.1, 0, center.z + 1.4]} rotation={[-Math.PI / 10, -Math.PI / 8, Math.PI / 12]} receiveShadow>
           <TowelFallback size={{ x: 0.45, y: 0.08, z: 0.4 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="plant" color="#22c55e">
-        <group position={[center.x - size.x / 2 + 1.5, 0.45, center.z + 1.5]} receiveShadow>
+        <group position={[center.x - size.x / 2 + 1.2, 0, center.z + 2.0]} receiveShadow>
           <PlantFallback size={{ x: 0.4, y: 0.9, z: 0.4 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="plant" color="#15803d">
+        <group position={[center.x + 1.0, 0, center.z + 2.5]} receiveShadow>
+          <PlantFallback size={{ x: 0.35, y: 0.75, z: 0.35 }} />
         </group>
       </FallbackColorizer>
     </group>
@@ -300,6 +557,30 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         <WashingMachineGeometry size={{ x: 0.6, y: 1.1, z: 0.6 }} />
         <meshStandardMaterial color="#f3f4f6" />
       </mesh>
+
+      <FallbackColorizer modelId="cabinet" color="#6b7280">
+        <group position={[center.x - size.x / 2 + 0.5, 0, center.z - size.z / 2 + 0.6]} castShadow receiveShadow>
+          <CoffeeTableModel size={{ x: 0.6, y: 0.9, z: 0.5 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="cabinet" color="#6b7280">
+        <group position={[center.x - size.x / 2 + 0.5, 0, center.z + 0.5]} castShadow receiveShadow>
+          <CoffeeTableModel size={{ x: 0.6, y: 0.9, z: 0.5 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="cabinet" color="#6b7280">
+        <group position={[center.x - size.x / 2 + 0.5, 0, center.z + size.z / 2 - 0.6]} castShadow receiveShadow>
+          <CoffeeTableModel size={{ x: 0.6, y: 0.9, z: 0.5 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="shelf" color="#9ca3af">
+        <group position={[center.x + size.x / 2 - 0.5, 0, center.z + 1.5]} castShadow receiveShadow>
+          <ShelfFallback size={{ x: 0.5, y: 1.0, z: 0.15 }} />
+        </group>
+      </FallbackColorizer>
 
       <FallbackColorizer modelId="laundry_basket" color="#ef4444">
         <group position={[center.x - 1.0, 0.25, center.z - 0.3]} castShadow receiveShadow>
@@ -335,6 +616,11 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
           <TowelFallback size={{ x: 0.25, y: 0.5, z: 0.08 }} />
         </group>
       </FallbackColorizer>
+      <FallbackColorizer modelId="towel" color="#ec4899">
+        <group position={[center.x + size.x / 2 - 0.35, 0.9, center.z + 0.4]} receiveShadow>
+          <TowelFallback size={{ x: 0.25, y: 0.5, z: 0.08 }} />
+        </group>
+      </FallbackColorizer>
 
       <mesh position={[center.x - 0.3, 1.225, center.z - size.z / 2 + 1.2]} castShadow receiveShadow>
         <boxGeometry args={[0.12, 0.25, 0.08]} />
@@ -360,18 +646,50 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
           <TowelFallback size={{ x: 0.5, y: 0.09, z: 0.4 }} />
         </group>
       </FallbackColorizer>
+
+      <FallbackColorizer modelId="plant" color="#22c55e">
+        <group position={[center.x + size.x / 2 - 0.8, 0, center.z - 0.5]} receiveShadow>
+          <PlantFallback size={{ x: 0.25, y: 0.6, z: 0.25 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="trash" color="#374151">
+        <group position={[center.x - size.x / 2 + 0.6, 0, center.z - 1.0]} receiveShadow>
+          <TrashFallback size={{ x: 0.3, y: 0.4, z: 0.3 }} />
+        </group>
+      </FallbackColorizer>
+
+      <mesh position={[center.x + 0.5, 1.2, center.z - 0.8]} castShadow receiveShadow>
+        <boxGeometry args={[0.1, 0.15, 0.15]} />
+        <meshStandardMaterial color="#f59e0b" />
+      </mesh>
+
+      <mesh position={[center.x + 0.8, 1.2, center.z - 0.8]} castShadow receiveShadow>
+        <boxGeometry args={[0.08, 0.12, 0.12]} />
+        <meshStandardMaterial color="#ef4444" />
+      </mesh>
     </group>
   )
 
   const renderDining = () => (
     <group>
       <FallbackColorizer modelId="rug" color="#8b7355">
-        <group position={[center.x, 0.02, center.z]} receiveShadow>
-          <RugFallback size={{ x: 3.0, y: 0.04, z: 2.0 }} />
+        <group position={[center.x, 0, center.z]} receiveShadow>
+          <RugFallback size={{ x: 4.0, y: 0.04, z: 3.0 }} />
         </group>
       </FallbackColorizer>
 
-      {/* 餐桌和椅子由 Container3D 渲染，避免双重渲染 */}
+      <FallbackColorizer modelId="cabinet" color="#6b4e3d">
+        <group position={[center.x + size.x / 2 - 0.6, 0, center.z]} castShadow receiveShadow>
+          <CoffeeTableModel size={{ x: 1.2, y: 0.85, z: 0.5 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="shelf" color="#9ca3af">
+        <group position={[center.x + size.x / 2 - 0.5, 0, center.z + 1.5]} castShadow receiveShadow>
+          <ShelfFallback size={{ x: 0.5, y: 1.0, z: 0.15 }} />
+        </group>
+      </FallbackColorizer>
 
       <mesh position={[center.x - 0.5, 0.92, center.z - 0.25]} castShadow receiveShadow>
         <cylinderGeometry args={[0.06, 0.05, 0.1, 12]} />
@@ -398,15 +716,54 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         <meshStandardMaterial color="#fef3c7" roughness={0.5} metalness={0.05} />
       </mesh>
 
+      <mesh position={[center.x - 0.2, 0.88, center.z]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.08, 0.08, 0.18, 8]} />
+        <meshStandardMaterial color="#f59e0b" />
+      </mesh>
+      <mesh position={[center.x + 0.2, 0.88, center.z]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.08, 0.08, 0.18, 8]} />
+        <meshStandardMaterial color="#ef4444" />
+      </mesh>
+
       <FallbackColorizer modelId="lamp" color="#f5d49a">
         <group position={[center.x, 2.7, center.z]} castShadow receiveShadow>
           <ChandelierModel size={{ x: 0.6, y: 0.5, z: 0.6 }} />
         </group>
       </FallbackColorizer>
 
+      <FallbackColorizer modelId="painting" color="#8b5a2b">
+        <group position={[center.x - size.x / 2 + 0.3, 1.2, center.z + 1.0]} rotation={[0, Math.PI, 0]} receiveShadow>
+          <PaintingFallback size={{ x: 0.7, y: 0.55, z: 0.05 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="clock" color="#d4a574">
+        <group position={[center.x + size.x / 2 - 0.3, 1.8, center.z - 1.0]} receiveShadow>
+          <ClockFallback size={{ x: 0.35, y: 0.35, z: 0.05 }} />
+        </group>
+      </FallbackColorizer>
+
       <FallbackColorizer modelId="plant" color="#22c55e">
-        <group position={[center.x - size.x / 2 + 0.8, 0.35, center.z - size.z / 2 + 0.8]} receiveShadow>
+        <group position={[center.x - size.x / 2 + 0.8, 0, center.z - size.z / 2 + 0.8]} receiveShadow>
+          <PlantFallback size={{ x: 0.35, y: 0.8, z: 0.35 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="plant" color="#15803d">
+        <group position={[center.x - size.x / 2 + 0.8, 0, center.z + size.z / 2 - 0.8]} receiveShadow>
           <PlantFallback size={{ x: 0.3, y: 0.7, z: 0.3 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="chair" color="#6b4e3d">
+        <group position={[center.x + 2.0, 0, center.z - 0.8]} castShadow receiveShadow rotation={[0, -Math.PI / 2, 0]}>
+          <ChairFallback size={{ x: 0.45, y: 0.65, z: 0.45 }} />
+        </group>
+      </FallbackColorizer>
+
+      <FallbackColorizer modelId="chair" color="#8b7355">
+        <group position={[center.x + 2.0, 0, center.z + 0.8]} castShadow receiveShadow rotation={[0, -Math.PI / 2, 0]}>
+          <ChairFallback size={{ x: 0.45, y: 0.65, z: 0.45 }} />
         </group>
       </FallbackColorizer>
     </group>
