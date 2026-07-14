@@ -264,6 +264,25 @@ interface GoalSpec {
 
 建议预算：桌面常见设备 60 FPS 目标，低性能模式至少 30 FPS；主线程长任务 < 50ms；非 3D 首屏不加载完整 Three.js 游戏包。
 
+### 10.1 像素艺术风格渲染优化
+
+游戏采用复古像素艺术风格，通过以下方式实现：
+
+- 模型材质使用 `NearestFilter` 纹理过滤，关闭 mipmap 生成；
+- 所有材质启用 `flatShading` 平面着色；
+- 自定义像素化后处理 Pass（`PixelationPass`），可调节像素大小；
+- 统一的复古像素配色方案（16-bit 风格色彩）；
+- 阴影贴图分辨率优化为 1024×1024，减少 GPU 负担。
+
+### 10.2 代码拆分优化
+
+ArenaPage 关键组件采用 React.lazy 动态导入：
+
+- `Scene3D` - 3D 场景渲染组件；
+- `HUD` - 游戏界面 HUD；
+- `DialogBox` - 对话弹窗；
+- `ItemHintIndicator` - 寻物方向指示器。
+
 ## 11. Session 与分析
 
 Session 原始层和派生层分开：
@@ -337,7 +356,14 @@ interface SessionEnvelope {
 
 - session seed、可配置实验 condition 和完整状态 delta；
 - 完整 Session Recorder、持久化和 schema；
-- 四关浏览器 E2E、离线 QA 和 Arena chunk 性能优化。
+- 四关浏览器 E2E 和离线 QA；
 - 基于真人试玩的时间、扰动、辅助阈值和平衡曲线校准。
+
+已完成的性能优化：
+
+- Arena chunk 代码拆分（React.lazy 动态导入）；
+- 像素艺术风格渲染优化（NearestFilter、flatShading、后处理）；
+- 阴影贴图分辨率优化（1024×1024）；
+- 模型材质优化（关闭 mipmap、统一配色）。
 
 实施优先级见 [产品、游戏与研究设计基线](docs/product-research-game-design.md#10-当前优先级)。
