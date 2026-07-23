@@ -92,7 +92,8 @@ export function FirstPersonControls() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      if (phase !== 'playing') return
+      const currentPhase = useGameStore.getState().phase
+      if (currentPhase !== 'playing') return
 
       switch (e.code) {
         case 'KeyW':

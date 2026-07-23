@@ -310,6 +310,54 @@ export function SpoonGeometry({ size }: GeometryProps) {
   return <primitive object={geometry} attach="geometry" />
 }
 
+export function SpoonModel({ size }: GeometryProps) {
+  const mat = useMemo(() => createDefaultMaterial('#9ca3af'), [])
+  return (
+    <group rotation={[0, 0, Math.PI / 2]}>
+      <mesh material={mat}>
+        <SpoonGeometry size={size} />
+      </mesh>
+    </group>
+  )
+}
+
+export function ForkModel({ size }: GeometryProps) {
+  const mat = useMemo(() => createDefaultMaterial('#9ca3af'), [])
+  return (
+    <group rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[0, 0, 0]} material={mat}>
+        <boxGeometry args={[size.x * 0.6, size.y * 0.15, size.z]} />
+      </mesh>
+      {[0, 1, 2, 3].map((i) => (
+        <mesh
+          key={i}
+          position={[size.x * 0.5, size.y * (0.075 + i * 0.05), 0]}
+          material={mat}
+        >
+          <boxGeometry args={[size.x * 0.35, size.y * 0.03, size.z * 0.5]} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+export function TissueModel({ size }: GeometryProps) {
+  const mat = useMemo(() => createDefaultMaterial('#ffffff'), [])
+  return (
+    <group>
+      <mesh position={[0, size.y * 0.3, 0]} material={mat}>
+        <boxGeometry args={[size.x, size.y * 0.6, size.z]} />
+      </mesh>
+      <mesh position={[0, size.y * 0.75, 0]} rotation={[0, 0, Math.PI / 12]} material={mat}>
+        <boxGeometry args={[size.x * 0.9, size.y * 0.35, size.z * 0.9]} />
+      </mesh>
+      <mesh position={[0, size.y * 0.85, 0]} rotation={[0, 0, -Math.PI / 10]} material={mat}>
+        <boxGeometry args={[size.x * 0.8, size.y * 0.25, size.z * 0.8]} />
+      </mesh>
+    </group>
+  )
+}
+
 export function FridgeGeometry({ size }: GeometryProps) {
   const mat = useMemo(() => createDefaultMaterial('#ffffff'), [])
   const handleMat = useMemo(() => createDefaultMaterial('#1f2937'), [])

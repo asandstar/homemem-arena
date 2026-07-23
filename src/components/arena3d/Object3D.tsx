@@ -22,6 +22,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   cup: '杯子',
   bowl: '碗',
   spoon: '勺子',
+  fork: '叉子',
   plate: '盘子',
   umbrella: '雨伞',
   jacket: '外套',

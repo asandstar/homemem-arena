@@ -281,14 +281,17 @@ function SceneContents({ onEntityClick, onContainerClick }: Scene3DProps) {
       <FirstPersonControls />
       <ChaosEffect active={chaosEffectActive} chaosValue={chaosValue} />
       <ParticleRenderer />
-      <PixelationPass pixelSize={4} />
+      {/* E2E 环境（--mode e2e）下禁用 WebGL PixelationPass，避免 headless WebGL Context Lost。
+          注意：CSS filter: pixelate(4px) 在 Chromium 中不生效（非标准 CSS，getComputedStyle 返回 "none"）。
+          真实生产环境依赖 PixelationPass 实现像素化视觉效果，E2E 无替代效果，不影响游戏逻辑。 */}
+      {!(import.meta.env.MODE === 'e2e' || import.meta.env.VITE_E2E === 'true') && <PixelationPass pixelSize={4} />}
     </>
   )
 }
 
 export function Scene3D(props: Scene3DProps) {
   return (
-    <div style={{ width: '100%', height: '100%', filter: 'pixelate(4px)' }}>
+    <div style={{ width: '100%', height: '100%' }}>
       <Canvas
         id="arena-canvas"
         shadows={{ type: THREE.PCFShadowMap }}

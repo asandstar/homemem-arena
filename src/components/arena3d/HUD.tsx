@@ -60,6 +60,8 @@ export function HUD() {
     isGoalAchieved,
     achievedGoalIds,
     activeFlowHint,
+    currentStageId,
+    currentObjective,
   } = useGameStore()
   const { currentSession } = useSessionStore()
 
@@ -80,13 +82,7 @@ export function HUD() {
   const heldEntity = heldEntityId ? entities.find(e => e.id === heldEntityId) : null
   const nearbyEntity = findNearestInteractableEntity(entities, robotPosition, currentRoom)
   const nearbyContainer = findNearestInteractableContainer(task, robotPosition, currentRoom)
-  const interactionPrompt = heldEntity && nearbyContainer
-    ? `放入 ${nearbyContainer.name}`
-    : !heldEntity && nearbyEntity
-      ? `拾取 ${nearbyEntity.name}`
-      : !heldEntity && nearbyContainer
-        ? `${containerStates[nearbyContainer.id]?.open ? '关闭' : '打开'} ${nearbyContainer.name}`
-        : null
+  void nearbyContainer
 
   const [helpOpen, setHelpOpen] = useState(false)
   const [helpDefaultTab, setHelpDefaultTab] = useState('controls')
@@ -144,6 +140,63 @@ export function HUD() {
   const achievedGoals = task?.goals.filter((goal: GoalSpec) => isGoalAchieved(goal)).length ?? 0
   const totalGoals = task?.goals.length ?? 0
   const progress = totalGoals > 0 ? (achievedGoals / totalGoals) * 100 : 0
+
+  // Sprint B.1: 阶段进度（仅任务有 stages 时展示）
+  const stages = task?.stages ?? []
+  const totalStages = stages.length
+  const stageIndex = totalStages > 0 ? Math.max(0, stages.findIndex(s => s.id === currentStageId)) : -1
+  const stageProgress1Based = stageIndex >= 0 ? Math.min(totalStages, stageIndex + 1) : 0
+
+  // Sprint B.1: E/F 上下文提示按阶段定制
+  const keySlot = memorySlots.find(s => s?.entityConfigId === 'obj-key') ?? null
+  const keyOutdated = !!keySlot?.outdated
+  const catFired = eventToasts.some(t => t.type === 'cat')
+  // Sprint B.1: 仅 task-leave-home 阶段规则生效，避免影响其他关卡
+  const isLeaveHome = task?.id === 'task-leave-home'
+  const stageObserveKey = isLeaveHome && currentStageId === 'stage-observe-key'
+  const stageUpdateKey = isLeaveHome && currentStageId === 'stage-update-key-memory'
+  const stageFinalize = isLeaveHome && currentStageId === 'stage-finalize'
+  const nearKey = nearbyEntity?.configId === 'obj-key'
+
+  // [E] 记忆动作文案 + 原因
+  let memoryActionLabel: string | null = null
+  let memoryActionDisabledReason: string | null = null
+  if (nearbyEntity) {
+    if (stageObserveKey && nearKey) {
+      memoryActionLabel = '记录钥匙位置'
+    } else if (stageUpdateKey && nearKey) {
+      memoryActionLabel = '更新钥匙记忆'
+    } else if (memorySlots.some(s => s?.objectName === nearbyEntity.name && s.outdated)) {
+      memoryActionLabel = `更新 ${nearbyEntity.name} 的记忆`
+    } else {
+      memoryActionLabel = `保存 ${nearbyEntity.name} 的位置记忆`
+    }
+  }
+  // [F] 交互动作文案 + 原因
+  let itemActionLabel: string | null = null
+  let itemActionDisabledReason: string | null = null
+  if (heldEntity && nearbyContainer) {
+    itemActionLabel = `放入 ${nearbyContainer.name}`
+  } else if (!heldEntity && nearbyEntity) {
+    if (stageObserveKey && nearKey) {
+      itemActionLabel = '拾取钥匙'
+      itemActionDisabledReason = '先记录钥匙位置'
+    } else if (stageUpdateKey && nearKey) {
+      itemActionLabel = '拾取钥匙'
+      itemActionDisabledReason = '先更新钥匙记忆再拾取'
+    } else {
+      itemActionLabel = `拾取 ${nearbyEntity.name}`
+    }
+  } else if (!heldEntity && nearbyContainer) {
+    itemActionLabel = `${containerStates[nearbyContainer.id]?.open ? '关闭' : '打开'} ${nearbyContainer.name}`
+  }
+  if (stageFinalize && heldEntity && !nearbyContainer) {
+    itemActionLabel = '放入玄关托盘'
+    itemActionDisabledReason = '靠近玄关托盘后再按 F'
+  }
+  void catFired
+  void keyOutdated
+
   const roomUncollectedItems = entities.filter(e =>
     e.type === 'object' &&
     e.currentRoom === currentRoom &&
@@ -276,7 +329,7 @@ export function HUD() {
         </div>
       )}
 
-      <div className={`absolute top-4 left-4 pointer-events-auto transition-all duration-300 ${isMobile ? 'max-w-[140px]' : isCompact ? 'max-w-[200px]' : 'max-w-[280px]'} w-full z-20`} data-testid="task-panel">
+      <div className={`absolute top-4 left-4 pointer-events-auto transition-all duration-300 ${isMobile ? 'max-w-[240px]' : isCompact ? 'max-w-[280px]' : 'max-w-[360px]'} w-full z-20`} data-testid="task-panel">
         <div className="bg-slate-900/95 backdrop-blur-md rounded-xl p-3 shadow-xl border border-purple-500/30">
           <div className="flex items-center justify-between mb-2">
             <h2 className={`font-bold text-white flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
@@ -284,15 +337,37 @@ export function HUD() {
               {task?.name ?? '任务'}
             </h2>
             <div className="flex items-center gap-2">
+              {totalStages > 0 && stageProgress1Based > 0 && (
+                <span data-testid="current-stage-progress" className={`${isMobile ? 'text-[9px]' : 'text-[10px]'} font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40`}>
+                  步骤 {stageProgress1Based}/{totalStages}
+                </span>
+              )}
               <button
                 onClick={toggleTaskPanel}
                 className="p-1 rounded hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors"
-                title="按 Tab 切换"
+                title="按 Tab 展开完整目标"
               >
-                <X size={isMobile ? 10 : 14} />
+                {taskPanelOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
             </div>
           </div>
+
+          {/* Sprint B.1: 当前目标 — 始终显示；最多两行；阶段切换轻量弹入 */}
+          {currentObjective && (
+            <div
+              key={currentStageId ?? 'none'}
+              data-testid="current-objective"
+              className={`mb-2 rounded-lg border-2 border-cyan-400/50 bg-gradient-to-br from-cyan-500/15 to-indigo-500/10 px-3 py-2 animate-objective-pop shadow-lg shadow-cyan-500/10 ${isMobile ? 'text-[11px]' : 'text-xs'}`}
+            >
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-cyan-300/80 mb-1">
+                当前目标
+              </div>
+              <div className="font-semibold leading-snug text-white whitespace-pre-line line-clamp-2">
+                {currentObjective}
+              </div>
+            </div>
+          )}
+
           {task?.goals && task.goals.length > 0 && (
             <div className="space-y-1 overflow-y-auto pr-1" style={{ maxHeight: isMobile ? '10vh' : isCompact ? '15vh' : '25vh' }}>
               <div className="flex items-center justify-between px-2 py-1">
@@ -301,7 +376,7 @@ export function HUD() {
               </div>
               {taskPanelOpen && (
                 <>
-                  {activeGoal && (
+                  {activeGoal && !currentObjective && (
                     <div className="mb-2 rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-2.5 py-2">
                       <div className="text-[10px] font-semibold uppercase tracking-wider text-cyan-300">
                         当前专注{activeGoal.stage ? ` · ${activeGoal.stage}` : ''}
@@ -346,7 +421,7 @@ export function HUD() {
                     )
                   })}
                   <div className="text-[10px] text-purple-400/60 mt-2 pt-2 border-t border-slate-700/50 text-center">
-                    按 Tab 隐藏任务面板 · 按 R 显示事件日志
+                    按 Tab 切换完整目标面板 · 按 R 显示事件日志
                   </div>
                 </>
               )}
@@ -463,7 +538,11 @@ export function HUD() {
               visitedRooms={Array.from(visitedRooms)}
               robotPosition={robotPosition}
               robotRotation={robotRotation}
-              observedObjects={entities.filter((e) => e.currentRoom === currentRoom && e.status !== 'hidden' && e.status !== 'held')}
+              observedObjects={entities.filter((e) => {
+                // Sprint B.1: 关二 stage-key-outdated 期间，隐藏新钥匙位置，避免泄露答案
+                if (isLeaveHome && currentStageId === 'stage-key-outdated' && e.configId === 'obj-key') return false
+                return e.currentRoom === currentRoom && e.status !== 'hidden' && e.status !== 'held'
+              })}
               taskRooms={task?.rooms}
               isMobile={isMobile}
               isFullscreen={minimapFullscreen}
@@ -596,97 +675,118 @@ export function HUD() {
               </div>
             </div>
             <div className="flex gap-2" data-testid="memory-slots">
-              {memorySlots.map((slot, index) => (
-                <div
-                  key={index}
-                  className={`relative rounded-lg border-2 p-2 transition-all ${
-                    savingMemorySlotIndex === index
-                      ? 'animate-memory-save border-purple-400 bg-purple-900/50 shadow-lg shadow-purple-500/50'
-                      : flashingSlotIndex === index
-                        ? 'animate-pulse border-green-400 bg-green-900/30 shadow-lg shadow-green-500/30'
-                        : slot
-                          ? slot.outdated
-                            ? 'bg-red-900/30 border-red-500/70 animate-outdated-glitch'
-                            : slot.locked
-                              ? 'bg-purple-900/50 border-purple-500'
-                              : 'bg-slate-800/50 border-slate-500/60'
-                            : 'bg-slate-800/30 border-dashed border-slate-600'
-                  }`}
-                  style={{
-                    width: isCompact ? '48px' : '80px',
-                    height: isCompact ? '40px' : '48px',
-                  }}
-                >
-                  {slot ? (
-                    <>
-                      {slot.priority === 'high' && (
-                        <span className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-orange-400" title="任务关键" />
-                      )}
-                      {slot.outdated && (
-                        <span className="absolute top-1 right-1 text-red-400 text-[8px] font-bold">!</span>
-                      )}
-                      <button
-                        onClick={() => lockMemorySlot(index)}
-                        className="absolute top-1 right-5 p-0.5 rounded hover:bg-white/10"
-                      >
-                        {slot.locked ? (
-                          <Lock size={isCompact ? 8 : 10} className="text-purple-400" />
-                        ) : (
-                          <Unlock size={isCompact ? 8 : 10} className="text-slate-400" />
+              {memorySlots.map((slot, index) => {
+                const outdated = !!slot?.outdated
+                return (
+                  <div
+                    key={index}
+                    data-testid={outdated ? 'memory-slot-outdated' : `memory-slot-${index}`}
+                    className={`relative rounded-lg border-2 p-2 transition-all ${
+                      savingMemorySlotIndex === index
+                        ? 'animate-memory-save border-purple-400 bg-purple-900/50 shadow-lg shadow-purple-500/50'
+                        : flashingSlotIndex === index
+                          ? 'animate-pulse border-green-400 bg-green-900/30 shadow-lg shadow-green-500/30'
+                          : slot
+                            ? outdated
+                              ? 'bg-gradient-to-br from-red-900/50 to-orange-900/30 border-red-500 shadow-lg shadow-red-500/30 ring-2 ring-red-400/40 animate-outdated-glitch'
+                              : slot.locked
+                                ? 'bg-purple-900/50 border-purple-500 shadow shadow-purple-500/20'
+                                : 'bg-slate-800/50 border-slate-500/60'
+                              : 'bg-slate-800/30 border-dashed border-slate-600'
+                    }`}
+                    style={{
+                      width: isCompact ? '72px' : '108px',
+                      height: isCompact ? '52px' : '64px',
+                    }}
+                  >
+                    {slot ? (
+                      <>
+                        {slot.priority === 'high' && (
+                          <span className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-orange-400" title="任务关键" />
                         )}
-                      </button>
-                      <button
-                        onClick={() => clearMemorySlot(index)}
-                        className="absolute top-1 right-1 p-0.5 rounded hover:bg-red-500/20"
-                      >
-                        <Trash2 size={isCompact ? 8 : 10} className="text-red-400" />
-                      </button>
-                      <div className="text-xs text-white mt-3">
-                        <div className="flex items-center gap-1">
-                          {getMemoryTypeIcon(slot.memoryType)}
-                          <span className="font-semibold truncate">{slot.objectName}</span>
-                        </div>
-                        <div className={`text-[10px] ${slot.outdated ? 'text-red-400' : 'text-slate-400'}`}>
-                          {slot.roomName}
-                        </div>
-                        {!isCompact && (
-                          <div className="mt-1">
-                            <div className="h-1 bg-slate-700 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full transition-all ${slot.outdated ? 'bg-red-500' : slot.confidence > 60 ? 'bg-green-500' : slot.confidence > 30 ? 'bg-yellow-500' : 'bg-orange-500'}`}
-                                style={{ width: `${slot.confidence}%` }}
-                              />
-                            </div>
+                        {outdated && (
+                          <span className="absolute top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-red-500/80 border border-red-400 text-white text-[8px] font-bold tracking-wide shadow">
+                            已过期
+                          </span>
+                        )}
+                        <button
+                          onClick={() => lockMemorySlot(index)}
+                          className="absolute top-1 right-6 p-0.5 rounded hover:bg-white/10"
+                          title={slot.locked ? '已锁定（点击解锁）' : '点击锁定（防止覆盖）'}
+                        >
+                          {slot.locked ? (
+                            <Lock size={isCompact ? 8 : 10} className="text-purple-400" />
+                          ) : (
+                            <Unlock size={isCompact ? 8 : 10} className="text-slate-400" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => clearMemorySlot(index)}
+                          className="absolute top-1 right-1 p-0.5 rounded hover:bg-red-500/20"
+                          title="丢弃这条记忆"
+                        >
+                          <Trash2 size={isCompact ? 8 : 10} className="text-red-400" />
+                        </button>
+                        <div className={`text-xs ${outdated ? 'text-red-100/95' : 'text-white'} mt-3`}>
+                          <div className="flex items-center gap-1">
+                            {getMemoryTypeIcon(slot.memoryType)}
+                            <span className="font-semibold truncate">{slot.objectName}</span>
                           </div>
-                        )}
+                          <div className={`text-[10px] ${outdated ? 'text-red-300 line-through opacity-80' : 'text-slate-400'}`}>
+                            {slot.roomName}
+                          </div>
+                          {!isCompact && (
+                            <div className="mt-1">
+                              <div className="h-1 bg-slate-700 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full transition-all ${outdated ? 'bg-red-500/60 grayscale' : slot.confidence > 60 ? 'bg-green-500' : slot.confidence > 30 ? 'bg-yellow-500' : 'bg-orange-500'}`}
+                                  style={{ width: `${slot.confidence}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-slate-600 text-xs">按 E 保存</span>
                       </div>
-                    </>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-slate-600 text-xs">按 E 保存</span>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
       )}
 
-      {phase === 'playing' && (interactionPrompt || nearbyEntity) && (
+      {phase === 'playing' && (itemActionLabel || memoryActionLabel || nearbyEntity) && (
         <div className="absolute bottom-4 right-4 pointer-events-none flex flex-col items-end gap-1 z-10">
-          {interactionPrompt && (
-            <div className="px-3 py-1.5 rounded-lg bg-slate-950/85 border border-cyan-400/40 text-sm text-white shadow-lg">
-              <kbd className="mr-2 px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono">F</kbd>
-              {interactionPrompt}
+          {/* Sprint B.1: F 交互动作（拾取/打开/放置）按阶段定制，含禁用原因 */}
+          {itemActionLabel && (
+            <div
+              data-testid="context-item-action"
+              className={`px-3 py-1.5 rounded-lg border text-sm shadow-lg ${
+                itemActionDisabledReason
+                  ? 'bg-slate-950/85 border-slate-600/60 text-slate-300'
+                  : 'bg-slate-950/85 border-cyan-400/40 text-white'
+              }`}
+            >
+              <kbd className={`mr-2 px-1.5 py-0.5 rounded font-mono ${itemActionDisabledReason ? 'bg-slate-700/60 text-slate-400 line-through' : 'bg-cyan-500/20 text-cyan-300'}`}>F</kbd>
+              {itemActionLabel}
+              {itemActionDisabledReason && (
+                <span className="ml-2 text-[10px] text-red-300">（{itemActionDisabledReason}）</span>
+              )}
             </div>
           )}
-          {nearbyEntity && (
-            <div className="px-2 py-1 rounded bg-slate-950/70 text-xs text-purple-200">
+          {/* Sprint B.1: E 记忆动作文案（记录/更新/保存）按阶段定制 */}
+          {memoryActionLabel && (
+            <div data-testid="context-memory-action" className="px-2 py-1 rounded bg-slate-950/70 text-xs text-purple-200">
               <kbd className="mr-1.5 font-mono text-purple-400">E</kbd>
-              {memorySlots.some(s => s?.objectName === nearbyEntity.name && s.outdated)
-                ? `更新 ${nearbyEntity.name} 的记忆`
-                : `保存 ${nearbyEntity.name} 的记忆`}
+              {memoryActionLabel}
+              {memoryActionDisabledReason && (
+                <span className="ml-1.5 text-[10px] text-red-300">（{memoryActionDisabledReason}）</span>
+              )}
             </div>
           )}
           {nearbyEntity?.configId === 'obj-key' && memorySlots.every((s) => s === null) && (
