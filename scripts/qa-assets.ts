@@ -15,7 +15,10 @@ function checkDirectoryExists(dir: string, name: string): QaResult {
   return fail('blocker', CATEGORY, `${name}-dir`, `${name} 目录不存在`, `public/assets/models/${name}`)
 }
 
-function checkPathFormat(modelId: string, modelPath: string): QaResult {
+function checkPathFormat(modelId: string, modelPath: string, assetAvailable?: boolean): QaResult {
+  if (assetAvailable === false) {
+    return pass(CATEGORY, 'path-format', `${modelId} 使用程序化 fallback，无需路径`, modelPath)
+  }
   if (modelPath.startsWith('/assets/models/')) {
     return pass(CATEGORY, 'path-format', `${modelId} 路径格式正确`, modelPath)
   }
@@ -107,7 +110,7 @@ function runAssetsCheck(): QaResult[] {
   const tableRows: string[][] = []
 
   for (const [modelId, config] of Object.entries(MODEL_REGISTRY)) {
-    results.push(checkPathFormat(modelId, config.path))
+    results.push(checkPathFormat(modelId, config.path, config.assetAvailable))
     results.push(checkPathMixedUsage(modelId, config.path))
 
     const glbCheck = checkGlbExists(modelId, config.path)

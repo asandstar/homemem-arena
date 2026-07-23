@@ -12,9 +12,13 @@ dist
 dist-ssr
 *.local
 
-# Playwright 临时测试产物（截图基线保存在 qa-artifacts/）
+# Playwright 临时测试产物（基线截图由测试运行时生成，不提交）
 test-results/
 playwright-report/
+qa-artifacts/e2e/*.png
+
+# 自动生成 QA 报告（由 qa:report 生成，不提交）
+QA_REPORT.md
 
 # Editor directories and files
 .vscode/*

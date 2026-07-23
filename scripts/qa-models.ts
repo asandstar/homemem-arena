@@ -422,8 +422,6 @@ function checkDialogCompleteness(): QaResult[] {
   const taskIds = taskTemplates.map(t => t.id)
   const startDialogs = new Set(dialogSequences.filter(d => d.trigger.type === 'start').map(d => d.trigger.value))
   const roomEnterDialogs = new Set(dialogSequences.filter(d => d.trigger.type === 'roomEnter').map(d => d.trigger.value))
-  const goalCompleteDialogs = new Set(dialogSequences.filter(d => d.trigger.type === 'goalComplete').map(d => d.trigger.value))
-  const eventDialogs = new Set(dialogSequences.filter(d => d.trigger.type === 'event').map(d => d.trigger.value))
   
   for (const taskId of taskIds) {
     if (startDialogs.has(taskId)) {
