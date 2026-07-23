@@ -61,7 +61,7 @@ describe('心流辅助', () => {
       phase: 'playing',
       entities: state.entities.map((entity) => (
         entity.id === cup.id
-          ? { ...entity, status: 'placed' as const, placedIn: 'cnt-sink' }
+          ? { ...entity, status: 'placed' as const, placedIn: 'cnt-dishwasher' }
           : entity
       )),
     }))

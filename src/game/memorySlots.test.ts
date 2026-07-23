@@ -155,13 +155,14 @@ describe('memorySlots - 压力/边界测试', () => {
       expect(result[0]?.confidence).toBe(100)
     })
 
-    it('锁定的记忆不被标记为过期', () => {
+    it('锁定的记忆仍然被标记为过期（锁定只防止覆盖，不阻止真实世界变化导致的过期）', () => {
       const slots: MemorySlot[] = [
         makeMemory({ entityConfigId: 'obj-1', locked: true, confidence: 100, outdated: false }),
       ]
       const result = markOutdatedByEntityConfigId(slots, 'obj-1')
-      expect(result[0]?.outdated).toBe(false)
-      expect(result[0]?.confidence).toBe(100)
+      expect(result[0]?.outdated).toBe(true)
+      expect(result[0]?.confidence).toBeLessThan(100)
+      expect(result[0]?.locked).toBe(true)
     })
 
     it('不修改原数组', () => {

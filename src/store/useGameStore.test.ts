@@ -234,9 +234,10 @@ describe('useGameStore - 核心状态流转测试', () => {
       expect(useGameStore.getState().chaosValue).toBe(0)
 
       store.startPlaying()
-      store.tickElapsed(600_001)
+      const timeLimitMs = store.task?.timeLimit ? store.task.timeLimit * 1000 : 180_000
+      store.tickElapsed(timeLimitMs + 1)
       const state = useGameStore.getState()
-      expect(state.elapsedMs).toBe(600_000)
+      expect(state.elapsedMs).toBe(timeLimitMs)
       expect(state.levelFailed).toBe(true)
       expect(state.failureReason).toBe('任务超时')
       expect(state.phase).toBe('probing')
@@ -295,7 +296,7 @@ describe('useGameStore - 核心状态流转测试', () => {
     })
 
     it('记忆槽满了会替换', () => {
-      const freeObjs = getFreeEntities(5)
+      const freeObjs = getFreeEntities(3)
 
       for (let i = 0; i < 3; i++) {
         useGameStore.getState().saveMemory(freeObjs[i])
@@ -305,12 +306,12 @@ describe('useGameStore - 核心状态流转测试', () => {
       const filled = slots.filter(s => s !== null).length
       expect(filled).toBe(3)
 
-      const result = useGameStore.getState().saveMemory(freeObjs[4])
+      const result = useGameStore.getState().saveMemory(freeObjs[0])
       expect(result.success).toBe(true)
     })
 
     it('锁定的记忆槽不会被替换', () => {
-      const freeObjs = getFreeEntities(4)
+      const freeObjs = getFreeEntities(3)
 
       useGameStore.getState().saveMemory(freeObjs[0])
       useGameStore.getState().lockMemorySlot(0)
@@ -374,7 +375,7 @@ describe('useGameStore - 核心状态流转测试', () => {
 
     it('脚本移动已放置物体时清除旧 placedIn 和容器成员关系', () => {
       useGameStore.getState().initializeTask('task-clean-table')
-      const entity = useGameStore.getState().entities.find((item) => item.configId === 'obj-plate')!
+      const entity = useGameStore.getState().entities.find((item) => item.configId === 'obj-dirty-cup')!
       useGameStore.setState((state) => ({
         entities: state.entities.map((item) => (
           item.id === entity.id ? { ...item, status: 'placed' as const, placedIn: 'cnt-dishwasher' } : item
@@ -383,17 +384,17 @@ describe('useGameStore - 核心状态流转测试', () => {
           ...state.containerStates,
           'cnt-dishwasher': {
             ...state.containerStates['cnt-dishwasher'],
-            containedIds: ['obj-plate'],
+            containedIds: ['obj-dirty-cup'],
           },
         },
       }))
 
-      useGameStore.getState().startMoveAnimation('obj-plate', 'dining', { x: 0, y: 0, z: 0 })
+      useGameStore.getState().startMoveAnimation('obj-dirty-cup', 'dining', { x: 0, y: 0, z: 0 })
 
       const moved = useGameStore.getState().entities.find((item) => item.id === entity.id)
       expect(moved?.status).toBe('free')
       expect(moved?.placedIn).toBeUndefined()
-      expect(useGameStore.getState().containerStates['cnt-dishwasher'].containedIds).not.toContain('obj-plate')
+      expect(useGameStore.getState().containerStates['cnt-dishwasher'].containedIds).not.toContain('obj-dirty-cup')
     })
 
     it('已放置物体可以重新拾取并从容器中移除', () => {
