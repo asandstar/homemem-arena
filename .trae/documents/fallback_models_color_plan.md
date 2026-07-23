@@ -1,7 +1,7 @@
 # Fallback 模型材质颜色添加计划
 
 ## 目标
-为 `/Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/models/FallbackModels.tsx` 中的所有 29 个 fallback 模型的 mesh 添加 `meshStandardMaterial` 材质颜色。
+为 `../../src/components/arena3d/models/FallbackModels.tsx` 中的所有 29 个 fallback 模型的 mesh 添加 `meshStandardMaterial` 材质颜色。
 
 ## 修改内容
 
@@ -263,7 +263,7 @@ import { PALETTE } from '../colors'
    - 只在 `<mesh>` 和 `</mesh>` 之间添加材质
    - 使用 `color` 属性设置颜色
 
-3. **运行类型检查**：执行 `cd /Users/azq/asandstar/homemem-arena-web-demo && npx tsc --noEmit` 验证类型
+3. **运行类型检查**：执行 `cd ../.. && npx tsc --noEmit` 验证类型
 
 ## 注意事项
 

@@ -6,11 +6,11 @@
 
 | 系统 | 状态 | 文件 |
 |------|------|------|
-| 物体抖动动画（混乱事件） | ✅ 已有 | [Object3D.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Object3D.tsx#L115-L132) |
-| 物体悬停高亮（光环+文字） | ✅ 已有 | [Object3D.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Object3D.tsx#L185-L274) |
-| 物体成功脉冲动画 | ✅ 已有 | [Object3D.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Object3D.tsx#L122-L131) |
-| 物体移动动画（搬家） | ✅ 已有 | [useGameStore.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/store/useGameStore.ts#L759-L819) |
-| 混乱值全屏红闪 | ✅ 已有 | [ChaosEffect.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/ChaosEffect.tsx) |
+| 物体抖动动画（混乱事件） | ✅ 已有 | [Object3D.tsx](../../src/components/arena3d/Object3D.tsx#L115-L132) |
+| 物体悬停高亮（光环+文字） | ✅ 已有 | [Object3D.tsx](../../src/components/arena3d/Object3D.tsx#L185-L274) |
+| 物体成功脉冲动画 | ✅ 已有 | [Object3D.tsx](../../src/components/arena3d/Object3D.tsx#L122-L131) |
+| 物体移动动画（搬家） | ✅ 已有 | [useGameStore.ts](../../src/store/useGameStore.ts#L759-L819) |
+| 混乱值全屏红闪 | ✅ 已有 | [ChaosEffect.tsx](../../src/components/arena3d/ChaosEffect.tsx) |
 | 猫爪印/猫影/手机震动特效 | ✅ 已有 | feedback/ 目录 |
 | 浮动文字提示 | ✅ 已有 | floatingTexts |
 | 相机平滑移动 | ✅ 已有 | FirstPersonControls.tsx |

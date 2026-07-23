@@ -17,7 +17,7 @@
 
 ### 问题1：模型size与MODEL_HEIGHTS不一致
 
-[breakfast.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/breakfast.ts) 中物体定义：
+[breakfast.ts](../../src/data/tasks/breakfast.ts) 中物体定义：
 
 | 物体 | objSpec.size | MODEL_HEIGHTS | 问题 |
 |------|--------------|---------------|------|
@@ -31,7 +31,7 @@
 
 ### 问题2：scaling 计算逻辑反了
 
-[PropModel.tsx 36-41行](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/models/PropModel.tsx#L36-L41)：
+[PropModel.tsx 36-41行](../../src/components/arena3d/models/PropModel.tsx#L36-L41)：
 
 ```typescript
 const modelScale = useMemo(() => {
@@ -50,7 +50,7 @@ const modelScale = useMemo(() => {
 
 ### 问题3：obj-cup / obj-bowl 出现 fallback 几何体
 
-看 [ModelRegistry.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/models/ModelRegistry.ts)：
+看 [ModelRegistry.ts](../../src/components/arena3d/models/ModelRegistry.ts)：
 
 ```typescript
 cup: {
@@ -63,7 +63,7 @@ cup: {
 
 ### 问题4：悬空——surfaceHeight 逻辑不统一
 
-在 [breakfast.ts 185-186行](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/breakfast.ts#L185-L186)：
+在 [breakfast.ts 185-186行](../../src/data/tasks/breakfast.ts#L185-L186)：
 
 ```typescript
 position: { x: 0, y: 0.45, z: 0 },
@@ -87,7 +87,7 @@ size: { x: 1.8, y: 0.9, z: 0.9 },
 
 **方案**：**为每个模型定义显式的 `displayScale`**，覆盖全局的 `maxDim/0.5` 公式。
 
-修改 [ModelRegistry.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/models/ModelRegistry.ts)：
+修改 [ModelRegistry.ts](../../src/components/arena3d/models/ModelRegistry.ts)：
 
 ```typescript
 export interface ModelConfig {
@@ -126,7 +126,7 @@ cereal_box: {
 },
 ```
 
-修改 [PropModel.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/models/PropModel.tsx#L36-L41)：
+修改 [PropModel.tsx](../../src/components/arena3d/models/PropModel.tsx#L36-L41)：
 
 ```typescript
 const modelScale = useMemo(() => {
@@ -149,7 +149,7 @@ const modelScale = useMemo(() => {
 
 **方案**：在 ModelRegistry 中添加 `pivotOffsetY` 字段。
 
-修改 [ModelAsset.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/models/ModelAsset.tsx)：
+修改 [ModelAsset.tsx](../../src/components/arena3d/models/ModelAsset.tsx)：
 
 ```typescript
 <primitive
@@ -167,7 +167,7 @@ const modelScale = useMemo(() => {
 
 **方案**：用 `surfaceHeight` 显式指定：
 
-修改 [breakfast.ts 181-192行](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/breakfast.ts#L181-L192)：
+修改 [breakfast.ts 181-192行](../../src/data/tasks/breakfast.ts#L181-L192)：
 
 ```typescript
 {
@@ -185,7 +185,7 @@ const modelScale = useMemo(() => {
 },
 ```
 
-修改 [placement.ts 99-106行](file:///Users/azq/asandstar/homemem-arena-web-demo/src/game/placement.ts#L99-L106)：
+修改 [placement.ts 99-106行](../../src/game/placement.ts#L99-L106)：
 
 确保 `getContainerSurfaceY` 优先使用 `surfaceHeight`：
 
@@ -211,7 +211,7 @@ export function getContainerSurfaceY(container: ContainerSpec): number {
 
 **方案**：直接用 `surfaceHeight` 字段明确指定，不再依赖模型高度推断。
 
-修改 [clean-table.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/clean-table.ts) 和 [breakfast.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/breakfast.ts)：
+修改 [clean-table.ts](../../src/data/tasks/clean-table.ts) 和 [breakfast.ts](../../src/data/tasks/breakfast.ts)：
 
 ```typescript
 {
@@ -225,7 +225,7 @@ export function getContainerSurfaceY(container: ContainerSpec): number {
 
 ### 改动5：检查 Room3D 中餐桌模型实际渲染高度
 
-[Room3D.tsx 376-380行](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Room3D.tsx#L376-L380) 渲染餐桌：
+[Room3D.tsx 376-380行](../../src/components/arena3d/Room3D.tsx#L376-L380) 渲染餐桌：
 
 ```tsx
 <FallbackColorizer modelId="dining_table" color="#8b7355">
@@ -247,13 +247,13 @@ export function getContainerSurfaceY(container: ContainerSpec): number {
 
 ### 根因1：Room3D 中渲染的是 **TableGeometry**（程序化几何体），不是 GLB 模型
 
-[Room3D.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Room3D.tsx#L20) 用了 `TableGeometry`、`ChairGeometry` 等**程序化几何体**——它们是手写的 mesh 代码，**完全没有用 ModelAsset 加载 GLB**。
+[Room3D.tsx](../../src/components/arena3d/Room3D.tsx#L20) 用了 `TableGeometry`、`ChairGeometry` 等**程序化几何体**——它们是手写的 mesh 代码，**完全没有用 ModelAsset 加载 GLB**。
 
 所以餐桌/椅子/橱柜等**根本就没有 GLB 模型被加载**——它们都是程序化生成的。
 
 ### 根因2：MODEL_HEIGHTS 中 dining_table=0.75，但 CONTAINER_MODEL_HEIGHTS 中 dining_table=0.9
 
-[placement.ts 38行 vs 76行](file:///Users/azq/asandstar/homemem-arena-web-demo/src/game/placement.ts#L38)：
+[placement.ts 38行 vs 76行](../../src/game/placement.ts#L38)：
 
 ```typescript
 // MODEL_HEIGHTS
@@ -276,7 +276,7 @@ dining_table: 0.9,
 - 白色椭圆（碗）：是 `BowlFallback` 的 cylinderGeometry，颜色是 `FALLBACK_COLORS.bowl.primary` = '#9ca3af' (灰色)
 - 但**没有应用颜色覆盖**（因为 PropModel 传了 entity.color，可能没生效）
 
-看 [Object3D.tsx 64行](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Object3D.tsx#L64)：
+看 [Object3D.tsx 64行](../../src/components/arena3d/Object3D.tsx#L64)：
 
 ```typescript
 const baseColor = entity['color'] || '#f87171'
@@ -297,7 +297,7 @@ const baseColor = entity['color'] || '#f87171'
 - PropModel 没有把 `color` 传递给 ModelContent
 - ModelContent 没有把 color 用上
 
-看 [ModelAsset.tsx ModelContent](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/models/ModelAsset.tsx#L191)：
+看 [ModelAsset.tsx ModelContent](../../src/components/arena3d/models/ModelAsset.tsx#L191)：
 
 ```tsx
 function ModelContent({ modelId, color, hovered, ... })
@@ -319,7 +319,7 @@ function ModelContent({ modelId, color, hovered, ... })
 
 ### 修复1：统一 MODEL_HEIGHTS 和 CONTAINER_MODEL_HEIGHTS 中的 dining_table
 
-[placement.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/game/placement.ts)：
+[placement.ts](../../src/game/placement.ts)：
 
 ```typescript
 export const MODEL_HEIGHTS: Record<string, number> = {
@@ -331,7 +331,7 @@ export const MODEL_HEIGHTS: Record<string, number> = {
 
 ### 修复2：让 ModelContent 使用 color 参数传递给 GLB 和 Fallback
 
-[ModelAsset.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/models/ModelAsset.tsx)：
+[ModelAsset.tsx](../../src/components/arena3d/models/ModelAsset.tsx)：
 
 ```tsx
 function ModelContent({ modelId, color, hovered, ... }) {
@@ -361,7 +361,7 @@ function ModelContent({ modelId, color, hovered, ... }) {
 
 **建议**：保留 `TableGeometry`，但**修正 position.y 让视觉桌面与 surfaceHeight 对齐**。
 
-看 [Room3D.tsx 376-380](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Room3D.tsx#L376-L380)：
+看 [Room3D.tsx 376-380](../../src/components/arena3d/Room3D.tsx#L376-L380)：
 
 ```tsx
 <group position={[center.x, 0.45, center.z]}>
@@ -379,7 +379,7 @@ function ModelContent({ modelId, color, hovered, ... }) {
 
 ### 修复5：重写 `entity['color']` 访问
 
-[Object3D.tsx 64](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Object3D.tsx#L64)：
+[Object3D.tsx 64](../../src/components/arena3d/Object3D.tsx#L64)：
 
 ```typescript
 const baseColor = entity['color'] || '#f87171'
@@ -401,10 +401,10 @@ const baseColor = (entity as any).color || '#f87171'
 
 | 文件 | 修改类型 | 关键改动 |
 |------|----------|----------|
-| [placement.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/game/placement.ts) | 1行修改 | `dining_table: 0.75` → `dining_table: 0.9` |
-| [ModelAsset.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/models/ModelAsset.tsx) | 逻辑修复 | 把 `color` 传给 GLB 材质和 fallback |
-| [Object3D.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Object3D.tsx) | 1行修复 | 修正 `entity['color']` 访问 |
-| [Room3D.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Room3D.tsx) | 0行 | 保持 TableGeometry size.y=0.9 |
+| [placement.ts](../../src/game/placement.ts) | 1行修改 | `dining_table: 0.75` → `dining_table: 0.9` |
+| [ModelAsset.tsx](../../src/components/arena3d/models/ModelAsset.tsx) | 逻辑修复 | 把 `color` 传给 GLB 材质和 fallback |
+| [Object3D.tsx](../../src/components/arena3d/Object3D.tsx) | 1行修复 | 修正 `entity['color']` 访问 |
+| [Room3D.tsx](../../src/components/arena3d/Room3D.tsx) | 0行 | 保持 TableGeometry size.y=0.9 |
 
 ---
 

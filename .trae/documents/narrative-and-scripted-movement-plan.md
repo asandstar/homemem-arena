@@ -10,43 +10,43 @@
 经过代码库探索，**所有实现部分均已落地**，无需重新开发。以下是验证清单：
 
 ### Part A — 文档输出 ✅ 已完成
-- [NARRATIVE_DESIGN.md](file:///Users/azq/asandstar/homemem-arena-web-demo/NARRATIVE_DESIGN.md) — 世界观、MEM-07 设定、四关剧情表、文案风格规范、AI 诊断语气规范
-- [NPC_REPRESENTATION_AUDIT.md](file:///Users/azq/asandstar/homemem-arena-web-demo/NPC_REPRESENTATION_AUDIT.md) — 7 项 NPC 表现审计
+- [NARRATIVE_DESIGN.md](../../NARRATIVE_DESIGN.md) — 世界观、MEM-07 设定、四关剧情表、文案风格规范、AI 诊断语气规范
+- [NPC_REPRESENTATION_AUDIT.md](../../NPC_REPRESENTATION_AUDIT.md) — 7 项 NPC 表现审计
 
 ### Part B — 叙事文案与类型扩展 ✅ 已完成
-- [src/types/task.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/types/task.ts#L56-L100)
+- [src/types/task.ts](../../src/types/task.ts#L56-L100)
   - `ScriptedEventSpec.toastType?: 'cat' | 'phone' | 'warning' | 'event' | 'info'`（L57）
   - `TaskConfig.completionText?` / `failureText?` / `systemPrompt?`（L95-L100）
 - 四个关卡文件均含 briefing（主人便签风）、completionText、failureText、systemPrompt：
-  - [leave-home.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/leave-home.ts#L18-L27)
-  - [clean-table.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/clean-table.ts#L18-L27)（含室友事件 toast）
-  - [laundry-sort.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/laundry-sort.ts#L25-L27)（含 2 个猫事件 + eventEffect: 'cat-prints'）
-  - [breakfast.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/breakfast.ts#L26-L28)
+  - [leave-home.ts](../../src/data/tasks/leave-home.ts#L18-L27)
+  - [clean-table.ts](../../src/data/tasks/clean-table.ts#L18-L27)（含室友事件 toast）
+  - [laundry-sort.ts](../../src/data/tasks/laundry-sort.ts#L25-L27)（含 2 个猫事件 + eventEffect: 'cat-prints'）
+  - [breakfast.ts](../../src/data/tasks/breakfast.ts#L26-L28)
 - toast 类型自动判断 + toastType 覆盖逻辑已在 useGameStore.ts 实现
-- [ResultPage.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/pages/ResultPage.tsx#L36-L40) — MEM-07 诊断语气（"MEM-07 诊断报告。"开头）
+- [ResultPage.tsx](../../src/pages/ResultPage.tsx#L36-L40) — MEM-07 诊断语气（"MEM-07 诊断报告。"开头）
 
 ### Part C — 猫影子效果 ✅ 已完成
-- [CatShadowEffect.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/feedback/CatShadowEffect.tsx) — 扁平黑色椭圆 + 4 段拖尾，0.8s lerp 动画
-- [Scene3D.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Scene3D.tsx#L170-L212) — 集成 CatShadowEffect + CatPrintsEffect 双反馈，动态读取 lastMoveAnimation 位置
+- [CatShadowEffect.tsx](../../src/components/arena3d/feedback/CatShadowEffect.tsx) — 扁平黑色椭圆 + 4 段拖尾，0.8s lerp 动画
+- [Scene3D.tsx](../../src/components/arena3d/Scene3D.tsx#L170-L212) — 集成 CatShadowEffect + CatPrintsEffect 双反馈，动态读取 lastMoveAnimation 位置
 - 保留 CatPrintsEffect，无 lastMoveAnimation 时回退到客厅硬编码位置（向后兼容）
 
 ### Part D — 主人便签 UI + 叙事弹窗 ✅ 已完成
-- [ArenaPage.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/pages/ArenaPage.tsx#L240-L330)
+- [ArenaPage.tsx](../../src/pages/ArenaPage.tsx#L240-L330)
   - Briefing 改为黄色便签纸风格（bg-yellow-100/95, -rotate-1）
   - 上方新增 MEM-07 systemPrompt（青色终端风格）
   - 关卡完成/失败叙事弹窗（绿/红渐变，pointer-events-none）
 
 ### Part E — 脚本化物体移动动画系统 ✅ 已完成
-- [useGameStore.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/store/useGameStore.ts#L52-L61) — `MoveAnimation` 接口
+- [useGameStore.ts](../../src/store/useGameStore.ts#L52-L61) — `MoveAnimation` 接口
 - `startMoveAnimation`（L725-L749）: 设置 `_moving: true`，duration = 600-1000ms，存入 moveAnimations + lastMoveAnimation
 - `updateMoveAnimations`（L751-L786）: 每帧 lerp 插值更新位置，完成后设置最终位置 + 房间 + `_moving: false`
 - `applyScriptedMove`（L722）: 调用 startMoveAnimation 替代瞬移
 - `tickElapsed`（L691）: 开头调用 updateMoveAnimations
-- [Object3D.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Object3D.tsx#L105-L106) — `isMoving` 检查，动画中不可拾取
+- [Object3D.tsx](../../src/components/arena3d/Object3D.tsx#L105-L106) — `isMoving` 检查，动画中不可拾取
 - 第一关猫事件：钥匙从茶几 (−1.2, 0.42, −1.0) 平滑移动到地毯边 (0.5, 0.02, −1.5)
 
 ### 音效集成 ✅ 已确认
-- [sfx.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/audio/sfx.ts) — 含 `cat_event` 和 `phone_ring` 音效类型
+- [sfx.ts](../../src/audio/sfx.ts) — 含 `cat_event` 和 `phone_ring` 音效类型
 
 ---
 

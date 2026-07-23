@@ -1,7 +1,7 @@
 # Fallback 模型材质添加实施计划
 
 ## 目标
-为 `/Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/models/FallbackModels.tsx` 中的所有 fallback 模型组件添加 meshStandardMaterial 材质。
+为 `../../src/components/arena3d/models/FallbackModels.tsx` 中的所有 fallback 模型组件添加 meshStandardMaterial 材质。
 
 ## 实施步骤
 

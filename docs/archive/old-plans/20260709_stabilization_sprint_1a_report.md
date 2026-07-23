@@ -52,12 +52,12 @@
 
 采用"改 Probe 文案匹配实际事件"方案，不新增事件逻辑：
 
-**p-object-state-fridge**（[breakfast.ts#L426-L435](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/breakfast.ts#L426-L435)）：
+**p-object-state-fridge**（[breakfast.ts#L426-L435](../../../src/data/tasks/breakfast.ts#L426-L435)）：
 - 问题改为："🔒 早餐闹钟对冰箱门有什么反应？"
 - 选项改为：`['提醒玩家记得关冰箱门', '自动关上冰箱门', '把牛奶拿出来', '把冰箱搬走']`
 - 正确答案改为：`'提醒玩家记得关冰箱门'`
 
-**p-temporal-penalty**（[breakfast.ts#L480-L489](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/breakfast.ts#L480-L489)）：
+**p-temporal-penalty**（[breakfast.ts#L480-L489](../../../src/data/tasks/breakfast.ts#L480-L489)）：
 - 问题改为："⏰ 系统在第几步第一次提醒牛奶需要归位？"
 - 选项不变：`['10 步', '15 步', '20 步', '25 步']`
 - 正确答案保持：`'15 步'`（事件确实在 step 15 触发）
@@ -75,17 +75,17 @@
 
 ### 修复
 
-**HUD.tsx**（[HUD.tsx#L211-L229](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/HUD.tsx#L211-L229)）：
+**HUD.tsx**（[HUD.tsx#L211-L229](../../../src/components/arena3d/HUD.tsx#L211-L229)）：
 - BGM useEffect 添加 `return () => { stopBgm() }`
 - 房间环境音 useEffect 添加 `return () => { stopRoomAmbient() }`
 - import 新增 `stopRoomAmbient`
 
-**ArenaPage.tsx**（[ArenaPage.tsx#L70-L76](file:///Users/azq/asandstar/homemem-arena-web-demo/src/pages/ArenaPage.tsx#L70-L76)）：
+**ArenaPage.tsx**（[ArenaPage.tsx#L70-L76](../../../src/pages/ArenaPage.tsx#L70-L76)）：
 - 新增空依赖 useEffect，返回 cleanup 函数
 - cleanup 中调用 `stopBgm()` + `stopAllSfx()`
 - import 新增 `stopAllSfx` 和 `stopBgm`
 
-**sfx.ts**（[sfx.ts#L371-L378](file:///Users/azq/asandstar/homemem-arena-web-demo/src/audio/sfx.ts#L371-L378)）：
+**sfx.ts**（[sfx.ts#L371-L378](../../../src/audio/sfx.ts#L371-L378)）：
 - 新增 `stopAllSfx()` 导出，内部调用 `stopChaosAmbient()` + `stopRoomAmbient()`
 - `stopRoomAmbient()` 已存在（第 351-369 行），无需新增
 
@@ -109,7 +109,7 @@
 
 ### 修复的 3 个 warning
 
-1. **`src/main.tsx` react(only-export-components)**：提取 `AudioInitializer` 到独立文件 [AudioInitializer.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/AudioInitializer.tsx)
+1. **`src/main.tsx` react(only-export-components)**：提取 `AudioInitializer` 到独立文件 [AudioInitializer.tsx](../../../src/components/AudioInitializer.tsx)
 2. **`src/main.tsx` react-hooks(exhaustive-deps)**：useEffect 依赖数组从 `[]` 改为 `[audioEnabled]`
 3. **`src/components/arena3d/FirstPersonControls.tsx` react-hooks(exhaustive-deps)**：用 `tapHandlerRef` 模式替代闭包捕获，handleTap 在事件回调内用 `useGameStore.getState()` / `useToastStore.getState()` 读取最新值，useEffect 依赖保持 `[gl]`
 
@@ -170,7 +170,7 @@
 | ID | 描述 | 状态 | 证据 |
 |---|---|---|---|
 | M1 | Scene Graph 384 行死代码 | deferred | 本轮标记为 experimental，不接入也不删除，待后续决策 |
-| M2 | HUD 音频 useEffect 无 cleanup | **已修复** | [HUD.tsx#L211-L229](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/HUD.tsx#L211-L229) |
+| M2 | HUD 音频 useEffect 无 cleanup | **已修复** | [HUD.tsx#L211-L229](../../../src/components/arena3d/HUD.tsx#L211-L229) |
 | M3 | 两个 AudioContext 永不关闭 | deferred | 确认懒初始化单例无累积，统一 Context 推迟 |
 
 ### Minor

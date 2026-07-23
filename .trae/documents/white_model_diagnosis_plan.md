@@ -3,7 +3,7 @@
 ## 一、模型白色的根因诊断
 
 ### 核心问题
-**[Room3D.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Room3D.tsx) 中装饰模型的材质设置方式完全错误。**
+**[Room3D.tsx](../../src/components/arena3d/Room3D.tsx) 中装饰模型的材质设置方式完全错误。**
 
 ### 错误写法（大量存在于 Room3D.tsx）
 ```jsx

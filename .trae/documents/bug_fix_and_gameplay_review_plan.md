@@ -30,7 +30,7 @@
 
 **修复方案**：以 `Room3D.tsx` 的渲染位置为准，更新 `decorFurniture.ts` 中的碰撞盒坐标使其匹配。注意 decorFurniture 的 position 是**房间局部坐标**（不含房间中心），而 Room3D 的渲染位置使用 `center.x + offset` 模式。
 
-需要更新的文件：[decorFurniture.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/decorFurniture.ts)
+需要更新的文件：[decorFurniture.ts](../../src/data/decorFurniture.ts)
 
 逐房间对齐：
 - **living**：sofa (0,-0.8) / coffee_table (0,0.6) / tv_stand (0,2.4) → 注意 Room3D 中枕头位置使用了绝对 x 坐标而非 center.x，也需修正
@@ -48,11 +48,11 @@
 
 **修复方案**：在 `Room3D.tsx` 的 `renderDining()` 中删除餐桌和椅子的硬编码渲染，只保留 `Container3D` 渲染的版本。同样检查客厅茶几是否也有此问题。
 
-需要更新的文件：[Room3D.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Room3D.tsx)
+需要更新的文件：[Room3D.tsx](../../src/components/arena3d/Room3D.tsx)
 
 ### 问题 3：Container3D 的 dining-table 模型 ID 映射错误（中等）
 
-**现状**：[Container3D.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Container3D.tsx) 第 60-61 行将 `dining-table` / `dining_table` 映射为 `coffee_table` 模型，但实际应该用 `dining_table` 模型。
+**现状**：[Container3D.tsx](../../src/components/arena3d/Container3D.tsx) 第 60-61 行将 `dining-table` / `dining_table` 映射为 `coffee_table` 模型，但实际应该用 `dining_table` 模型。
 
 **影响**：Container3D 渲染的餐桌外观和高度与实际不符（coffee_table 高 0.5 vs dining_table 高 0.9）。
 
@@ -68,11 +68,11 @@
 
 **修复方案**：移动端只显示 3 个按钮（放大、缩小、收起），隐藏重置和跟随按钮（或改为长按重置）。
 
-需要更新的文件：[Minimap.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Minimap.tsx)
+需要更新的文件：[Minimap.tsx](../../src/components/arena3d/Minimap.tsx)
 
 ### 问题 5：客厅枕头使用绝对坐标而非 center.x（轻微）
 
-**现状**：[Room3D.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Room3D.tsx) 第 106-118 行，三个枕头使用 `position={[-0.8, ...]}` 而非 `position={[center.x - 0.8, ...]}`。
+**现状**：[Room3D.tsx](../../src/components/arena3d/Room3D.tsx) 第 106-118 行，三个枕头使用 `position={[-0.8, ...]}` 而非 `position={[center.x - 0.8, ...]}`。
 
 **影响**：由于客厅中心恰好是 (0,0,0)，目前无影响。但若房间中心变更，枕头会留在原位。
 

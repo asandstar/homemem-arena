@@ -62,7 +62,7 @@
 
 ### 2.1 路由与页面层
 
-**文件**：[routes.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/routes.tsx), [App.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/App.tsx)
+**文件**：[routes.tsx](../../src/routes.tsx), [App.tsx](../../src/App.tsx)
 
 | 路由 | 页面组件 | 功能 |
 |------|---------|------|
@@ -79,7 +79,7 @@
 
 ### 2.2 核心游戏状态（useGameStore）
 
-**文件**：[useGameStore.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/store/useGameStore.ts)（~1350行）
+**文件**：[useGameStore.ts](../../src/store/useGameStore.ts)（~1350行）
 
 这是整个项目最核心的状态管理，管理所有运行时游戏数据。
 
@@ -133,7 +133,7 @@ idle → briefing → playing → probing → result
 
 ### 2.3 会话记录系统（useSessionStore）
 
-**文件**：[useSessionStore.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/store/useSessionStore.ts)
+**文件**：[useSessionStore.ts](../../src/store/useSessionStore.ts)
 
 记录完整的游戏过程数据，用于研究分析。
 
@@ -166,7 +166,7 @@ idle → briefing → playing → probing → result
 
 ### 2.4 UI状态管理（useUiStore）
 
-**文件**：[useUiStore.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/store/useUiStore.ts)
+**文件**：[useUiStore.ts](../../src/store/useUiStore.ts)
 
 使用 `zustand/persist` 持久化到 localStorage。
 
@@ -186,7 +186,7 @@ idle → briefing → playing → probing → result
 
 #### 类型定义
 
-**文件**：[memory.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/types/memory.ts)
+**文件**：[memory.ts](../../src/types/memory.ts)
 
 ```typescript
 type MemoryType = 'temporal' | 'spatial' | 'object' | 'procedural'
@@ -201,7 +201,7 @@ type MemoryType = 'temporal' | 'spatial' | 'object' | 'procedural'
 
 #### 记忆槽逻辑
 
-**文件**：[memorySlots.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/game/memorySlots.ts)
+**文件**：[memorySlots.ts](../../src/game/memorySlots.ts)
 
 - 3个槽位（`levelBalance.memorySlotCount`）
 - 置信度随时间衰减：`decayRate = 0.005`
@@ -231,7 +231,7 @@ interface MemorySlot {
 
 ### 2.6 混乱系统（Chaos）
 
-**文件**：[chaos.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/game/chaos.ts)
+**文件**：[chaos.ts](../../src/game/chaos.ts)
 
 混乱值代表环境失控程度，影响游戏难度。
 
@@ -253,7 +253,7 @@ interface MemorySlot {
 
 ### 2.7 得分系统
 
-**文件**：[scoring.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/game/scoring.ts)
+**文件**：[scoring.ts](../../src/game/scoring.ts)
 
 | 得分项 | 基础值 | 说明 |
 |-------|-------|------|
@@ -273,7 +273,7 @@ interface MemorySlot {
 
 ### 2.8 碰撞与移动系统
 
-**文件**：[collision.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/game/collision.ts), [playerControls.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/game/playerControls.ts), [playerMovement.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/game/playerMovement.ts)
+**文件**：[collision.ts](../../src/game/collision.ts), [playerControls.ts](../../src/game/playerControls.ts), [playerMovement.ts](../../src/game/playerMovement.ts)
 
 #### 移动参数
 
@@ -296,7 +296,7 @@ interface MemorySlot {
 
 ### 2.9 物体放置系统
 
-**文件**：[placement.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/game/placement.ts)
+**文件**：[placement.ts](../../src/game/placement.ts)
 
 - `MODEL_HEIGHTS`：各种物体类别的模型高度
 - `CONTAINER_MODEL_HEIGHTS`：各种容器模型的表面高度
@@ -310,7 +310,7 @@ interface MemorySlot {
 
 ### 2.10 命令系统
 
-**文件**：[commands.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/game/commands.ts)
+**文件**：[commands.ts](../../src/game/commands.ts)
 
 将游戏操作解耦为命令函数：
 
@@ -325,7 +325,7 @@ interface MemorySlot {
 
 ### 2.11 心流辅助系统（Flow）
 
-**文件**：[flow.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/game/flow.ts)
+**文件**：[flow.ts](../../src/game/flow.ts)
 
 防止玩家长时间停滞：
 
@@ -363,7 +363,7 @@ Canvas (R3F)
 
 #### 模型系统
 
-**文件**：[ModelRegistry.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/models/ModelRegistry.ts)
+**文件**：[ModelRegistry.ts](../../src/components/arena3d/models/ModelRegistry.ts)
 
 - `ModelRegistry`：GLB模型路径映射
 - `ModelAsset`：按需加载GLB模型，带错误边界
@@ -375,7 +375,7 @@ Canvas (R3F)
 
 #### 颜色系统
 
-**文件**：[colors.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/colors.ts)
+**文件**：[colors.ts](../../src/components/arena3d/colors.ts)
 
 - `PALETTE`：全局颜色调色板
 - `ROOM_AMBIENT_COLORS`：各房间灯光颜色
@@ -384,7 +384,7 @@ Canvas (R3F)
 
 ### 2.13 HUD系统
 
-**文件**：[HUD.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/HUD.tsx)（~860行）
+**文件**：[HUD.tsx](../../src/components/arena3d/HUD.tsx)（~860行）
 
 #### 当前布局
 
@@ -421,7 +421,7 @@ Canvas (R3F)
 
 ### 2.14 音效系统
 
-**文件**：[sfx.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/audio/sfx.ts)
+**文件**：[sfx.ts](../../src/audio/sfx.ts)
 
 - 基于 Web Audio API
 - 全局开关：`useUiStore.audioEnabled`（持久化到localStorage）
@@ -433,7 +433,7 @@ Canvas (R3F)
 
 ### 2.15 AI分析系统
 
-**文件**：[analyzeSession.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/ai/analyzeSession.ts), [updateRobotMemory.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/ai/updateRobotMemory.ts)
+**文件**：[analyzeSession.ts](../../src/ai/analyzeSession.ts), [updateRobotMemory.ts](../../src/ai/updateRobotMemory.ts)
 
 #### 功能
 
@@ -462,10 +462,10 @@ Canvas (R3F)
 
 | 关卡 | 文件 | 时间线 | 记忆类型 | 难度 |
 |------|------|-------|---------|------|
-| 出门大作战 | [leave-home.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/leave-home.ts) | 清晨 | 空间+物体 | medium |
-| 餐盘精的恶作剧 | [clean-table.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/clean-table.ts) | 上午 | 空间+物体 | medium |
-| 袜子幽灵捉迷藏 | [laundry-sort.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/laundry-sort.ts) | 下午 | 空间+物体 | hard |
-| 强迫症早餐闹钟 | [breakfast.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/breakfast.ts) | 深夜 | 空间+物体 | hard |
+| 出门大作战 | [leave-home.ts](../../src/data/tasks/leave-home.ts) | 清晨 | 空间+物体 | medium |
+| 餐盘精的恶作剧 | [clean-table.ts](../../src/data/tasks/clean-table.ts) | 上午 | 空间+物体 | medium |
+| 袜子幽灵捉迷藏 | [laundry-sort.ts](../../src/data/tasks/laundry-sort.ts) | 下午 | 空间+物体 | hard |
+| 强迫症早餐闹钟 | [breakfast.ts](../../src/data/tasks/breakfast.ts) | 深夜 | 空间+物体 | hard |
 
 #### 任务配置结构（TaskConfig）
 
@@ -508,7 +508,7 @@ interface TaskConfig {
 
 ### 2.17 房间系统
 
-**文件**：[rooms.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/rooms.ts)
+**文件**：[rooms.ts](../../src/data/rooms.ts)
 
 6个房间的空间布局：
 
@@ -544,7 +544,7 @@ interface TaskConfig {
 
 ### 2.18 交互系统
 
-**文件**：[interactionTargets.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/game/interactionTargets.ts)
+**文件**：[interactionTargets.ts](../../src/game/interactionTargets.ts)
 
 - 物体交互距离：`2m`
 - 容器交互距离：`2.5m`
@@ -555,7 +555,7 @@ interface TaskConfig {
 
 ### 2.19 数值平衡配置
 
-**文件**：[levelBalance.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/levelBalance.ts)
+**文件**：[levelBalance.ts](../../src/data/levelBalance.ts)
 
 所有数值集中管理，避免硬编码：
 
@@ -572,7 +572,7 @@ interface TaskConfig {
 
 ### 2.20 装饰家具系统
 
-**文件**：[decorFurniture.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/decorFurniture.ts)
+**文件**：[decorFurniture.ts](../../src/data/decorFurniture.ts)
 
 每个房间的纯装饰家具定义，不参与游戏交互，仅用于场景填充。
 

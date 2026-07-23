@@ -6,7 +6,7 @@
 
 #### 1. W/S 移动方向反向
 **根因**: `moveForward` 函数使用 `Math.cos(rot)` 计算 Z 轴移动，但 Three.js 相机默认朝 -Z 方向。
-- 当前代码（[useGameStore.ts#L339-L348](file:///Users/azq/asandstar/homemem-arena-web-demo/src/store/useGameStore.ts#L339-L348)）：
+- 当前代码（[useGameStore.ts#L339-L348](../../src/store/useGameStore.ts#L339-L348)）：
   ```typescript
   const dx = Math.sin(robotRotation) * distance
   const dz = Math.cos(robotRotation) * distance  // 正向是 +Z，但相机朝 -Z
@@ -15,7 +15,7 @@
 
 #### 2. 模型大面积白色
 **根因**: Fallback 模型的 mesh 没有指定材质颜色，默认使用白色。
-- [FallbackModels.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/models/FallbackModels.tsx) 中所有 `<mesh>` 都没有 `<meshStandardMaterial>`，默认材质为白色。
+- [FallbackModels.tsx](../../src/components/arena3d/models/FallbackModels.tsx) 中所有 `<mesh>` 都没有 `<meshStandardMaterial>`，默认材质为白色。
 - GLB 加载失败后 fallback 到白色模型，造成大面积纯白。
 
 #### 3. UI 重叠
@@ -25,7 +25,7 @@
 - 左上角 LevelObjectivePanel 过宽
 
 #### 4. 事件日志 undefined
-**根因**: [HUD.tsx#L363-L364](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/HUD.tsx#L363-L364) 的兜底逻辑不足：
+**根因**: [HUD.tsx#L363-L364](../../src/components/arena3d/HUD.tsx#L363-L364) 的兜底逻辑不足：
 ```typescript
 const displayText = 'message' in event ? event.message : 'description' in event ? event.description : event.type
 ```

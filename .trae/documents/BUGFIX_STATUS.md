@@ -18,32 +18,32 @@
 ## 二、已修复的问题
 
 ### 1. W/S/A/D 移动方向正确 ✅
-- **文件**: [FirstPersonControls.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/FirstPersonControls.tsx#L219-L225)
+- **文件**: [FirstPersonControls.tsx](../../src/components/arena3d/FirstPersonControls.tsx#L219-L225)
 - 使用 `camera.getWorldDirection()` 获取前向向量，确保移动方向与视角一致
 - 左右移动使用 `crossVectors` 计算右向量
 
 ### 2. 房间切换问题 ✅
-- **文件**: [FirstPersonControls.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/FirstPersonControls.tsx#L240-L243)
+- **文件**: [FirstPersonControls.tsx](../../src/components/arena3d/FirstPersonControls.tsx#L240-L243)
 - 添加了 `doorThreshold = 1.0`，允许玩家走出房间边界1米到达门的位置
 - 门附近（距离<1.5米）自动切换房间
 
 ### 3. 门洞视觉提示 ✅
-- **文件**: [Room3D.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Room3D.tsx#L609-L708)
+- **文件**: [Room3D.tsx](../../src/components/arena3d/Room3D.tsx#L609-L708)
 - 绿色发光门框
 - 地面箭头指示方向
 - 门洞上方显示房间名（如 `→ 客厅`）
 
 ### 4. 事件日志 undefined 修复 ✅
-- **文件**: [HUD.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/HUD.tsx#L44-L73)
+- **文件**: [HUD.tsx](../../src/components/arena3d/HUD.tsx#L44-L73)
 - `formatEventMessage` 函数对所有事件类型都有 fallback 文案
 - 不会再显示 undefined
 
 ### 5. 模型材质系统 ✅
-- **文件**: [ModelAsset.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/models/ModelAsset.tsx#L94-L189)
+- **文件**: [ModelAsset.tsx](../../src/components/arena3d/models/ModelAsset.tsx#L94-L189)
 - `FallbackColorizer` 组件为自定义几何体自动应用材质
 
 ### 6. 混乱值平衡调整 ✅
-- **文件**: [levelBalance.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/levelBalance.ts)
+- **文件**: [levelBalance.ts](../../src/data/levelBalance.ts)
 - 减缓混乱值增长速度（0.25 → 0.15）
 - 减少惩罚值
 
@@ -56,19 +56,19 @@
 - **影响**: 第一关、所有关卡
 - **描述**: 在第一人称视角下移动时，画面会轻微抖动
 - **原因**: `FirstPersonControls.tsx` 中每帧更新 `robotRotation` 时与相机方向同步，可能导致微小的角度跳动
-- **代码位置**: [FirstPersonControls.tsx#L255-L253](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/FirstPersonControls.tsx#L255-L253)
+- **代码位置**: [FirstPersonControls.tsx#L255-L253](../../src/components/arena3d/FirstPersonControls.tsx#L255-L253)
 
 ### 2. 模型大面积纯白（部分）
 - **严重程度**: 🟡 中
 - **影响**: 第二关（餐桌混乱）
 - **描述**: 餐厅中的杯子和盘子直接使用了白色 `meshStandardMaterial`，未使用 `FallbackColorizer`
-- **代码位置**: [Room3D.tsx#L406-L429](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Room3D.tsx#L406-L429)
+- **代码位置**: [Room3D.tsx#L406-L429](../../src/components/arena3d/Room3D.tsx#L406-L429)
 
 ### 3. 小地图与实际房间位置不完全一致
 - **严重程度**: 🟡 中
 - **影响**: 所有关卡
 - **描述**: 小地图使用 sharedRooms 数据，但洗衣房中心位置与客厅重叠（都是 x:0, z:0），导致显示异常
-- **代码位置**: [rooms.ts#L97-L106](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/rooms.ts#L97-L106)
+- **代码位置**: [rooms.ts#L97-L106](../../src/data/rooms.ts#L97-L106)
 
 ### 4. 第二关「餐桌混乱」目标逻辑问题
 - **严重程度**: 🔴 高

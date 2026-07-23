@@ -15,10 +15,10 @@
 
 | 文件 | 修改内容 |
 |---|---|
-| [leave-home.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/leave-home.ts) | 重写 briefing/completion/failure/systemPrompt + 新增 2 条 message 事件 |
-| [clean-table.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/clean-table.ts) | 同上 + 新增 2 条 message 事件 |
-| [laundry-sort.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/laundry-sort.ts) | 同上 + 新增 2 条 message 事件 |
-| [breakfast.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/data/tasks/breakfast.ts) | 同上 + 新增 2 条 message 事件 |
+| [leave-home.ts](../../src/data/tasks/leave-home.ts) | 重写 briefing/completion/failure/systemPrompt + 新增 2 条 message 事件 |
+| [clean-table.ts](../../src/data/tasks/clean-table.ts) | 同上 + 新增 2 条 message 事件 |
+| [laundry-sort.ts](../../src/data/tasks/laundry-sort.ts) | 同上 + 新增 2 条 message 事件 |
+| [breakfast.ts](../../src/data/tasks/breakfast.ts) | 同上 + 新增 2 条 message 事件 |
 
 ## Step 冲突检查
 

@@ -56,7 +56,7 @@ useUiStore (状态管理)
 
 ### 改动1：在 useUiStore 中添加 audioEnabled 字段
 
-[useUiStore.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/store/useUiStore.ts)：
+[useUiStore.ts](../../src/store/useUiStore.ts)：
 
 ```typescript
 interface UiState {
@@ -87,7 +87,7 @@ export const useUiStore = create<UiState>()(
 
 ### 改动2：修改 sfx.ts 支持从外部读取状态
 
-[sfx.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/audio/sfx.ts)：
+[sfx.ts](../../src/audio/sfx.ts)：
 
 ```typescript
 let audioEnabledOverride: boolean | null = null
@@ -112,7 +112,7 @@ export function isAudioEnabled(): boolean {
 
 ### 改动3：修改 HUD.tsx 使用 store 状态
 
-[HUD.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/HUD.tsx)：
+[HUD.tsx](../../src/components/arena3d/HUD.tsx)：
 
 ```tsx
 import { useUiStore } from '../../store/useUiStore'
@@ -128,7 +128,7 @@ const { audioEnabled, toggleAudioEnabled } = useUiStore()
 
 ### 改动4：游戏结束时自动停止音效
 
-[flow.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/game/flow.ts) 或 [useGameStore.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/store/useGameStore.ts)：
+[flow.ts](../../src/game/flow.ts) 或 [useGameStore.ts](../../src/store/useGameStore.ts)：
 
 ```typescript
 import { stopChaosAmbient } from '../audio/sfx'
@@ -142,7 +142,7 @@ function cleanupGame() {
 
 ### 改动5：首页添加全局音效开关（可选）
 
-[HomePage.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/pages/HomePage.tsx)：
+[HomePage.tsx](../../src/pages/HomePage.tsx)：
 
 ```tsx
 import { useUiStore } from '../store/useUiStore'
@@ -167,11 +167,11 @@ function HomePage() {
 
 | 文件 | 修改类型 | 关键改动 |
 |------|----------|----------|
-| [useUiStore.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/store/useUiStore.ts) | 新增字段 | `audioEnabled` + `toggleAudioEnabled` |
-| [sfx.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/audio/sfx.ts) | 修改逻辑 | 添加 `audioEnabledOverride` 支持外部状态 |
-| [HUD.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/HUD.tsx) | 修改调用 | 使用 store 的 toggleAudioEnabled |
-| [flow.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/game/flow.ts) | 新增清理 | 游戏结束时调用 stopChaosAmbient |
-| [HomePage.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/pages/HomePage.tsx) | 新增按钮 | 全局音效开关（可选） |
+| [useUiStore.ts](../../src/store/useUiStore.ts) | 新增字段 | `audioEnabled` + `toggleAudioEnabled` |
+| [sfx.ts](../../src/audio/sfx.ts) | 修改逻辑 | 添加 `audioEnabledOverride` 支持外部状态 |
+| [HUD.tsx](../../src/components/arena3d/HUD.tsx) | 修改调用 | 使用 store 的 toggleAudioEnabled |
+| [flow.ts](../../src/game/flow.ts) | 新增清理 | 游戏结束时调用 stopChaosAmbient |
+| [HomePage.tsx](../../src/pages/HomePage.tsx) | 新增按钮 | 全局音效开关（可选） |
 
 ---
 

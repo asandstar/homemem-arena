@@ -11,7 +11,7 @@
 
 ### 根因 1：棕色装饰薄板未去重（重复渲染）
 
-[Room3D.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Room3D.tsx) 有两套"门"渲染：
+[Room3D.tsx](../../src/components/arena3d/Room3D.tsx) 有两套"门"渲染：
 
 - **Door3D 组件**（第 609-619 行）：已通过 `spec.id < door.connectsTo` 去重，每个共享门洞只渲染一次（共 5 次）。✓
 - **墙体循环内的 `isDoor: true` 棕色薄板**（第 515-520 行 X 墙、第 551-556 行 Z 墙）：遍历 `spec.doorways` 时对**每个 doorway 都 push**，**没有去重**。每个共享门洞被两个相邻房间各渲染一次（共 10 次），形成两片平行薄板。
@@ -23,7 +23,7 @@
 
 ### 根因 2：铰链落在门板正中间（门从中间打开）
 
-[Door3D.tsx](file:///Users/azq/asandstar/homemem-arena-web-demo/src/components/arena3d/Door3D.tsx#L125-L131) 几何计算：
+[Door3D.tsx](../../src/components/arena3d/Door3D.tsx#L125-L131) 几何计算：
 
 ```
 铰链 group local position = [hingeX, 0, 0] = [halfD, 0, 0] = [0.72, 0, 0]  // 门洞右边缘

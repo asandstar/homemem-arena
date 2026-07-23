@@ -5,7 +5,7 @@
 ### 债务1：useGameStore 过大（1328行，52个action）
 
 **精确状态**：
-- 文件：[useGameStore.ts](file:///Users/azq/asandstar/homemem-arena-web-demo/src/store/useGameStore.ts) 共 **1328行**
+- 文件：[useGameStore.ts](../../src/store/useGameStore.ts) 共 **1328行**
 - 状态字段：**35个**（phase, task, robotPosition, entities, memorySlots, chaosValue, score, combo, feedback, floatingTexts, eventToasts, moveAnimations, flowHintLevel 等）
 - 暴露的action：**52个**
 - 被 **15+** 个组件/模块直接引用
