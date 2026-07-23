@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { EntityStateSnapshot, GoalSpec, TaskConfig } from '../types/task'
+import type { GoalSpec, TaskConfig } from '../types/task'
 import type { EntityState } from '../types/object'
 import type { RoomId, Vec3 } from '../types/room'
 import { calcMemoryEffectiveRate } from '../game/memorySlots'
@@ -89,6 +89,10 @@ export interface GameState {
   flowInterventionCount: number
   activeFlowHint: { goalId: string; level: 1 | 2; message: string } | null
   proceduralProgress: Record<string, ProceduralProgress>
+  /** 当前阶段（仅任务定义了 stages 时有效；否则为 null） */
+  currentStageId: string | null
+  /** 当前阶段玩家目标文案（直接来自 stages[].playerObjective 或 fallback 自动生成） */
+  currentObjective: string | null
 }
 
 export interface GameStats {
@@ -171,28 +175,10 @@ interface GameStore extends GameState, ProgressState {
   checkProceduralAction: (action: 'pick' | 'place' | 'use', targetId: string) => { wrongOrder: boolean; currentStepLabel?: string }
   saveCurrentGame: () => SaveData | null
   loadFromSave: (saveData: SaveData) => void
-}
-
-function toEntitySnapshots(entities: EntityState[]): EntityStateSnapshot[] {
-  return entities.map((e) => ({
-    configId: e.configId,
-    status: e.status,
-    currentRoom: e.currentRoom,
-    placedIn: e.placedIn,
-    category: e.category,
-    properties: e.properties,
-  }))
-}
-
-export function isGoalSatisfied(
-  goal: GoalSpec,
-  entities: EntityStateSnapshot[],
-  achievedGoalIds: Set<string>,
-): boolean {
-  const dependenciesMet = (goal.dependsOnGoalIds ?? []).every((id) => achievedGoalIds.has(id))
-  if (!dependenciesMet) return false
-  if (goal.kind === 'milestone' && achievedGoalIds.has(goal.id)) return true
-  return goal.predicate(entities)
+  /** 阶段机：评估是否可以从当前阶段推进（命令、保存记忆、脚本事件后调用） */
+  evaluateStageTransitions: (hint?: { afterEventId?: string; afterMemoryForEntityId?: string }) => void
+  /** 强制推进到给定阶段（仅用于 leave-home 等任务内部脚本事件） */
+  setStage: (stageId: string) => void
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -237,11 +223,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       failureReason,
       taskName: task?.name ?? null,
     }
-  },
-
-  isGoalAchieved: (goal) => {
-    const { entities, achievedGoalIds } = get()
-    return isGoalSatisfied(goal, toEntitySnapshots(entities), achievedGoalIds)
   },
 
   saveCurrentGame: () => {

@@ -104,7 +104,7 @@ export function TaskSelectPage() {
               小橡的一天
             </span>
           </h1>
-          <p className="text-slate-400 text-lg mb-4">从清晨到深夜，四段记忆挑战在等你~</p>
+          <p className="text-slate-400 text-lg mb-4">从清晨到深夜，五段记忆挑战在等你~</p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-full text-xs text-violet-300">
               <Sparkles size={12} />

@@ -29,8 +29,9 @@ function advanceStep(): number {
   return nextStep
 }
 
-function processPostCommand(): void {
+function processPostCommand(hint?: { afterEventId?: string; afterMemoryForEntityId?: string }): void {
   useGameStore.getState().triggerScriptedEvents()
+  useGameStore.getState().evaluateStageTransitions(hint)
   useGameStore.getState().checkLevelCompletion()
 }
 
@@ -77,6 +78,38 @@ export function executePick(entityId: string): GameCommandResult {
   const entity = before.entities.find((item) => item.id === entityId)
   if (!entity) return { success: false, reason: '物体不存在', action: 'pick' }
 
+  // Sprint B.1: 出门大作战特定阶段禁止拾取钥匙
+  if (before.task?.id === 'task-leave-home' && entity.configId === 'obj-key') {
+    // 阶段一 (observe-key)：保存钥匙记忆前，禁止拾取钥匙
+    if (before.currentStageId === 'stage-observe-key') {
+      const keySaved = before.memorySlots.some(
+        (s) => s !== null && s.entityConfigId === 'obj-key',
+      )
+      if (!keySaved) {
+        return {
+          success: false,
+          reason: '先记录钥匙位置。',
+          action: 'pick',
+        }
+      }
+    }
+    // 阶段四 (update-key-memory)：更新钥匙记忆前，禁止拾取钥匙
+    if (before.currentStageId === 'stage-update-key-memory') {
+      const catFired = before.triggeredEvents.has('se-cat-pushes-key')
+      const keyFresh = before.memorySlots.some(
+        (s) => s !== null && s.entityConfigId === 'obj-key' && !s.outdated,
+      )
+      // 猫事件触发且钥匙记忆未刷新（过期），禁止拾取
+      if (catFired && !keyFresh) {
+        return {
+          success: false,
+          reason: '先更新钥匙记忆再拾取。',
+          action: 'pick',
+        }
+      }
+    }
+  }
+
   const result = before.pickEntity(entityId)
   const step = advanceStep()
   recordAction('pick', entity.configId, result, before.currentRoom, step)
@@ -89,6 +122,30 @@ export function executePlace(containerId: string): GameCommandResult {
   if (blocked) return blocked
 
   const before = useGameStore.getState()
+
+  // 阶段四：钥匙记忆未更新前，禁止放置钥匙到玄关托盘
+  if (before.task?.id === 'task-leave-home') {
+    const heldEntity = before.heldEntityId
+      ? before.entities.find((e) => e.id === before.heldEntityId)
+      : null
+    const container = before.task.containers?.find((c) => c.id === containerId)
+    const isTargetTray =
+      container?.id === 'cnt-entrance-tray' || !!container?.isTargetZone
+    if (isTargetTray && heldEntity && heldEntity.configId === 'obj-key') {
+      const catFired = before.triggeredEvents.has('se-cat-pushes-key')
+      const keyFresh = before.memorySlots.some(
+        (s) => s && s.entityConfigId === 'obj-key' && !s.outdated,
+      )
+      if (catFired && !keyFresh) {
+        return {
+          success: false,
+          reason: '先更新钥匙记忆，再完成出门准备。',
+          action: 'place',
+        }
+      }
+    }
+  }
+
   const result = before.placeEntity(containerId)
   const step = advanceStep()
   recordAction('place', containerId, result, before.currentRoom, step)
@@ -160,7 +217,7 @@ export function executeSaveMemory(entityId: string): GameCommandResult {
     emitEvent(memoryEvent)
   }
 
-  processPostCommand()
+  processPostCommand({ afterMemoryForEntityId: entity.configId })
 
   return { ...result, action: 'save-memory' }
 }

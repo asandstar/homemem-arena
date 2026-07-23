@@ -1,4 +1,4 @@
-import type { EntityStateSnapshot, GoalSpec, TaskConfig } from '../../types/task'
+import type { EntityStateSnapshot, GoalSpec, StageContext, TaskConfig, TaskStageSpec } from '../../types/task'
 import type { EntityState } from '../../types/object'
 import type { RoomId, Vec3 } from '../../types/room'
 import type { ContainerSpec, ObjectSpec } from '../../types/object'
@@ -33,6 +33,7 @@ function toEntitySnapshots(entities: EntityState[]): EntityStateSnapshot[] {
     placedIn: e.placedIn,
     category: e.category,
     properties: e.properties,
+    position: { x: e.position.x, z: e.position.z, y: e.position.y },
   }))
 }
 
@@ -40,11 +41,59 @@ export function isGoalSatisfied(
   goal: GoalSpec,
   entities: EntityStateSnapshot[],
   achievedGoalIds: Set<string>,
+  ctx?: StageContext,
 ): boolean {
   const dependenciesMet = (goal.dependsOnGoalIds ?? []).every((id) => achievedGoalIds.has(id))
   if (!dependenciesMet) return false
   if (goal.kind === 'milestone' && achievedGoalIds.has(goal.id)) return true
-  return goal.predicate(entities)
+  return goal.predicate(entities, entities, ctx)
+}
+
+function buildStageContext(get: any): StageContext {
+  const s = get()
+  const heldEntity = s.heldEntityId ? s.entities.find((e: EntityState) => e.id === s.heldEntityId) : null
+  const playerPosition = { x: s.robotPosition.x, z: s.robotPosition.z, y: s.robotPosition.y ?? 0 }
+  const entitySnapshots = toEntitySnapshots(s.entities)
+  // nearbyEntity 基于真实 EntityState 计算（因为 EntityState 一定有 position），不依赖 snapshot 可选 position
+  let nearby: string | null = null
+  let bestDistance = 2.0
+  for (const e of s.entities as EntityState[]) {
+    if (e.currentRoom !== s.currentRoom) continue
+    if (e.status === 'hidden' || e.status === 'held') continue
+    if (e.properties?._moving === true) continue
+    if (!e.position) continue
+    const d = Math.hypot(e.position.x - playerPosition.x, e.position.z - playerPosition.z)
+    if (d < bestDistance) {
+      bestDistance = d
+      nearby = e.configId
+    }
+  }
+  return {
+    stepCount: s.stepCount,
+    elapsedMs: s.elapsedMs,
+    currentRoom: s.currentRoom,
+    playerPosition,
+    entities: entitySnapshots,
+    memorySlots: (s.memorySlots ?? []).map((sl: any) =>
+      sl
+        ? {
+            entityConfigId: sl.entityConfigId,
+            outdated: !!sl.outdated,
+            locked: !!sl.locked,
+            confidence: sl.confidence ?? 0,
+            timestamp: sl.timestamp ?? 0,
+          }
+        : null,
+    ),
+    achievedGoalIds: new Set(s.achievedGoalIds ?? []),
+    triggeredEvents: new Set(s.triggeredEvents ?? []),
+    memoryUpdateCount: s.memoryUpdateCount ?? 0,
+    memoryUsedCount: s.memoryUsedCount ?? 0,
+    outdatedMemoryCount: s.outdatedMemoryCount ?? 0,
+    heldEntityConfigId: heldEntity?.configId ?? null,
+    containerStates: s.containerStates ?? {},
+    nearbyEntityConfigId: nearby,
+  }
 }
 
 export interface TaskSlice {
@@ -60,6 +109,8 @@ export interface TaskSlice {
   failureReason: string | null
   lastObservedIds: Set<string>
   proceduralProgress: Record<string, ProceduralProgress>
+  currentStageId: string | null
+  currentObjective: string | null
 
   initializeTask: (taskId: string) => void
   resetTask: () => void
@@ -74,6 +125,8 @@ export interface TaskSlice {
   tickElapsed: (deltaMs: number) => void
   incrementStep: () => void
   checkProceduralAction: (action: 'pick' | 'place' | 'use', targetId: string) => { wrongOrder: boolean; currentStepLabel?: string }
+  evaluateStageTransitions: (hint?: { afterEventId?: string; afterMemoryForEntityId?: string }) => void
+  setStage: (stageId: string) => void
 }
 
 export function createTaskSlice(set: any, get: any): TaskSlice {
@@ -90,6 +143,8 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
     failureReason: null,
     lastObservedIds: new Set<string>(),
     proceduralProgress: {},
+    currentStageId: null,
+    currentObjective: null,
 
     initializeTask: (taskId: string) => {
       useUiStore.getState().resetUi()
@@ -195,6 +250,10 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
         flowInterventionCount: 0,
         activeFlowHint: null,
         proceduralProgress: initialProceduralProgress,
+        currentStageId: task.stages?.length ? (task.initialStageId ?? task.stages[0].id) : null,
+        currentObjective: task.stages?.length
+          ? (task.stages.find((s) => s.id === (task.initialStageId ?? task.stages![0].id))?.playerObjective ?? null)
+          : null,
       })
     },
 
@@ -268,9 +327,10 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
 
       const entitySnapshots = get().getEntitySnapshot()
       const achievedGoalIds = new Set<string>(get().achievedGoalIds)
+      const ctx = buildStageContext(get)
 
       task.goals.forEach((goal: GoalSpec) => {
-        const isAchieved = isGoalSatisfied(goal, entitySnapshots, achievedGoalIds)
+        const isAchieved = isGoalSatisfied(goal, entitySnapshots, achievedGoalIds, ctx)
         const alreadyReported = achievedGoalIds.has(goal.id)
 
         if (isAchieved && !alreadyReported) {
@@ -303,7 +363,7 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
       set({ achievedGoalIds })
 
       const allGoalsAchieved = task.goals.every((goal: GoalSpec) => (
-        isGoalSatisfied(goal, entitySnapshots, achievedGoalIds)
+        isGoalSatisfied(goal, entitySnapshots, achievedGoalIds, ctx)
       ))
 
       if (allGoalsAchieved) {
@@ -335,7 +395,13 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
           }
         } else if (typeof event.trigger === 'function') {
           const entitySnapshots = get().getEntitySnapshot()
-          shouldTrigger = event.trigger(stepCount, entitySnapshots, currentRoom)
+          const ctx = buildStageContext(get)
+          const rooms: Record<string, { id: RoomId; name?: string; center?: { x: number; z?: number; y?: number } }> = {}
+          for (const r of task.rooms) {
+            const spec = (sharedRooms as any)[r]
+            rooms[r] = { id: r, name: spec?.name, center: spec?.center }
+          }
+          shouldTrigger = event.trigger(stepCount, entitySnapshots, currentRoom, rooms, ctx)
         }
 
         if (shouldTrigger) {
@@ -410,6 +476,10 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
             timestamp: Date.now(),
             step: stepCount,
           } as any)
+
+          // 阶段机推进：事件触发后走正常评估逻辑，让 completionCondition 决定是否推进
+          // 注意：不能直接强制跳转 stage-key-outdated，必须先经过 stage-fetch-phone 的"手机取得"判定
+          get().evaluateStageTransitions({ afterEventId: event.id })
         }
       })
     },
@@ -464,6 +534,11 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
       get().updateFlowState(newElapsed)
 
       set({ elapsedMs: newElapsed })
+
+      // 定期（约每 200ms）评估阶段推进，避免因缺少命令而停滞
+      if (task?.stages && task.stages.length && Math.floor(newElapsed / 200) !== Math.floor(elapsedMs / 200)) {
+        get().evaluateStageTransitions()
+      }
     },
 
     getEntitySnapshot: () => {
@@ -475,7 +550,7 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
 
     isGoalAchieved: (goal: GoalSpec) => {
       const { entities, achievedGoalIds } = get()
-      return isGoalSatisfied(goal, toEntitySnapshots(entities), achievedGoalIds)
+      return isGoalSatisfied(goal, toEntitySnapshots(entities), achievedGoalIds, buildStageContext(get))
     },
 
     incrementStep: () => {
@@ -517,6 +592,61 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
       }
 
       return { wrongOrder, currentStepLabel }
+    },
+
+    evaluateStageTransitions: (_hint) => {
+      const { task, currentStageId, levelCompleted, levelFailed, phase } = get()
+      if (!task || !task.stages || !task.stages.length) return
+      if (phase !== 'playing' || levelCompleted || levelFailed) return
+      // 在构建上下文前先刷新动画状态，清除已完成动画的 _moving 标记，避免 nearbyEntityConfigId 等判定受影响
+      try {
+        const st = get()
+        if (typeof (st as any).updateMoveAnimations === 'function') {
+          ;(st as any).updateMoveAnimations()
+        }
+      } catch (e) { /* ignore */ }
+      const ctx = buildStageContext(get)
+      let stageId = currentStageId ?? (task.initialStageId ?? task.stages[0].id)
+      let changed = false
+      let guard = 0
+      // 推进策略：从当前阶段开始，只基于 completionCondition 推进到 nextStage；
+      // 进入 nextStage 时才检查其 entryCondition，若不满足则回退到已完成的最远阶段。
+      while (guard < task.stages!.length) {
+        const stage = task.stages!.find((s: TaskStageSpec) => s.id === stageId)
+        if (!stage) break
+        // 当前阶段：只要 completionCondition 满足就推进（entryCondition 只是"进入门槛"，不是保持门槛）
+        if (!stage.completionCondition(ctx)) break
+        const next = stage.nextStage
+        if (!next || next === stageId) break
+        const nextStage = task.stages!.find((s: TaskStageSpec) => s.id === next)
+        // 下一阶段必须满足 entryCondition 才能进入
+        if (nextStage && !nextStage.entryCondition(ctx)) {
+          // 无法进入下一阶段，保持当前阶段
+          break
+        }
+        stageId = next
+        changed = true
+        guard += 1
+      }
+      if (changed || !currentStageId || currentStageId !== stageId) {
+        const resolved = task.stages!.find((s: TaskStageSpec) => s.id === stageId)
+        set({
+          currentStageId: stageId,
+          currentObjective: resolved?.playerObjective ?? null,
+        })
+      }
+    },
+
+    setStage: (stageId: string) => {
+      const { task, phase, levelCompleted, levelFailed } = get()
+      if (!task || !task.stages) return
+      if (phase !== 'playing' || levelCompleted || levelFailed) return
+      const resolved = task.stages.find((s: TaskStageSpec) => s.id === stageId)
+      if (!resolved) return
+      set({
+        currentStageId: stageId,
+        currentObjective: resolved.playerObjective,
+      })
     },
   }
 }

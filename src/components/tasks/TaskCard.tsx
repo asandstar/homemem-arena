@@ -104,7 +104,7 @@ export function TaskCard({
   const rank = progress?.rank ?? null
 
   return (
-    <div className={`relative group ${!unlocked ? 'opacity-60' : ''}`}>
+    <div className={`relative group ${!unlocked ? 'opacity-60' : ''}`} data-testid={`task-card-${task.id}`}>
       {unlocked && isNextToUnlock && (
         <div className="absolute -top-2 -right-2 z-20">
           <div className="bg-amber-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
@@ -209,6 +209,7 @@ export function TaskCard({
             {unlocked ? (
               <button
                 type="button"
+                data-testid={`task-start-${task.id}`}
                 onClick={() => {
                   if (hasSave && onContinue) {
                     onContinue(saveInfo!.id)

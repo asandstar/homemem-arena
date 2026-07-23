@@ -22,8 +22,13 @@ export interface GoalSpec {
   stage?: string
   /** 目标依赖的记忆类型 */
   memoryType: MemoryType
-  /** 目标判定函数（接收当前所有实体状态） */
-  predicate: (entities: EntityStateSnapshot[]) => boolean
+  /** 目标判定函数（entities 必须；snapshot 可选为旧签名兼容；ctx 可选阶段上下文用于记忆/事件断言）。
+   *  为类型安全显式列出三参数都带类型。 */
+  predicate: (
+    entities: EntityStateSnapshot[],
+    snapshot?: EntityStateSnapshot[],
+    ctx?: StageContext,
+  ) => boolean
   /** 与此目标关联的物品 configId 列表（用于判定任务关键物品，影响记忆优先级） */
   relatedObjectIds?: string[]
   /** 完成时的简短消息 */
@@ -59,13 +64,24 @@ export interface EntityStateSnapshot {
   placedIn?: string
   category: string
   properties: Record<string, string | number | boolean>
+  /** 房间内局部坐标（用于阶段上下文内判定距离/靠近；可选，未提供时 nearby 判空） */
+  position?: { x: number; z: number; y?: number }
 }
 
 /** 脚本化环境事件 */
 export interface ScriptedEventSpec {
   id: string
-  /** 触发时机：步数 N 后触发，或条件函数 */
-  trigger: number | ((step: number, entities: EntityStateSnapshot[], currentRoom: RoomId) => boolean)
+  /** 触发时机：步数 N 后触发，或条件函数（可选第 4 参数 rooms 快照，第 5 参数 StageContext 只读 用于阶段机。
+   * 触发函数所有参数都带有类型以避免隐式 any。 */
+  trigger:
+    | number
+    | ((
+        step: number,
+        entities: EntityStateSnapshot[],
+        currentRoom: RoomId,
+        rooms?: Record<string, { id: RoomId; name?: string; center?: { x: number; z?: number; y?: number } }>,
+        ctx?: StageContext,
+      ) => boolean)
   /** 事件类型 */
   type: 'move-entity' | 'hide-entity' | 'show-entity' | 'message'
   /** 目标物体 ID（移动/隐藏/显示 时使用） */
@@ -107,6 +123,45 @@ export interface ProbeQuestionSpec {
   relatedEventIds?: string[]
 }
 
+/** 任务阶段（用于多阶段任务可视化 + 硬约束控制）
+ *
+ * entryCondition / completionCondition 作为任务内纯函数执行。
+ * 每个阶段的 playerObjective 会直接显示到 HUD 当前目标。
+ */
+export interface TaskStageSpec {
+  id: string
+  playerObjective: string
+  entryCondition: (ctx: StageContext) => boolean
+  completionCondition: (ctx: StageContext) => boolean
+  nextStage: string | null
+}
+
+/** 阶段判定上下文：任务状态快照，避免直接依赖 Zustand */
+export interface StageContext {
+  stepCount: number
+  elapsedMs: number
+  currentRoom: RoomId
+  /** 玩家在当前房间内的局部坐标（用于 nearby 判定） */
+  playerPosition: { x: number; z: number; y?: number }
+  entities: EntityStateSnapshot[]
+  memorySlots: Array<{
+    entityConfigId: string
+    outdated: boolean
+    locked: boolean
+    confidence: number
+    timestamp: number
+  } | null>
+  achievedGoalIds: ReadonlySet<string>
+  triggeredEvents: ReadonlySet<string>
+  memoryUpdateCount: number
+  memoryUsedCount: number
+  outdatedMemoryCount: number
+  heldEntityConfigId: string | null
+  containerStates: Record<string, { open: boolean; containedIds: string[] }>
+  /** 距离最近的可交互实体的 configId（范围内 maxDistance=2.0）；null 代表当前无可交互 */
+  nearbyEntityConfigId: string | null
+}
+
 /** 任务配置 */
 export interface TaskConfig {
   id: string
@@ -121,6 +176,10 @@ export interface TaskConfig {
   goals: GoalSpec[]
   scriptedEvents: ScriptedEventSpec[]
   probes: ProbeQuestionSpec[]
+  /** 可选阶段机：仅 task-leave-home 等明确使用阶段机的任务填写 */
+  stages?: TaskStageSpec[]
+  /** 初始阶段 id（当 stages 存在时必填；不填默认 stages[0].id） */
+  initialStageId?: string
   /** 任务开始提示 */
   briefing: string
   /** 关卡完成文案 */

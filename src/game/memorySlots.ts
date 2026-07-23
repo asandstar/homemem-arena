@@ -47,8 +47,9 @@ export function markOutdatedByEntityConfigId(
   slots: MemorySlot[],
   entityConfigId: string
 ): MemorySlot[] {
+  // 注意：锁定只防止被其他物品覆盖，不阻止真实世界变化导致的记忆过期
   return slots.map(s => {
-    if (s && s.entityConfigId === entityConfigId && !s.locked) {
+    if (s && s.entityConfigId === entityConfigId && !s.outdated) {
       return { ...s, outdated: true, confidence: Math.max(20, s.confidence * 0.5) }
     }
     return s

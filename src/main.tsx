@@ -5,7 +5,7 @@ import App from './App.tsx'
 import { AudioInitializer } from './components/AudioInitializer'
 import { installE2eTestApi } from './utils/e2eTestApi'
 
-// 仅在 DEV && VITE_E2E === 'true' 时挂载测试 API
+// 仅在 DEV && (MODE === 'e2e' || VITE_E2E === 'true') 时挂载测试 API
 installE2eTestApi()
 
 createRoot(document.getElementById('root')!).render(

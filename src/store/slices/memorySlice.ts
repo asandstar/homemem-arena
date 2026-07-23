@@ -62,11 +62,10 @@ export const createMemorySlice = (set: any, get: any): MemorySliceState => ({
 
     if (isUpdate) {
       const oldSlot = memorySlots[existingIndex]
-      if (oldSlot?.locked) {
-        return { success: false, slotIndex: existingIndex, isUpdate: false }
-      }
+      // 允许同一个 entityConfigId 的锁定记忆更新过期状态（锁定只防止被其他物品覆盖，不阻止刷新自身位置）
+      const locked = !!oldSlot?.locked
       const newSlots = [...memorySlots]
-      newSlots[existingIndex] = { ...newMemory, id: oldSlot!.id }
+      newSlots[existingIndex] = { ...newMemory, id: oldSlot!.id, locked }
       set({ memorySlots: newSlots })
       get().incrementMemoryUpdate()
       get().addScore(DEFAULT_LEVEL_BALANCE.memoryUpdateScore)

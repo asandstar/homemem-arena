@@ -138,7 +138,7 @@ export function useDialog() {
     if (dialogState.isOpen && currentNode && currentNode.text) {
       playCharacterSpeak(currentNode.speaker)
     }
-  }, [dialogState.currentNodeIndex])
+  }, [dialogState.isOpen, currentNode])
 
   useEffect(() => {
     return () => {
