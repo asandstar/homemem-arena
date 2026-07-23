@@ -75,7 +75,7 @@ export function expectNoErrors(collector: ErrorCollector): void {
 export async function getTestApi(page: Page) {
   return page.evaluate(() => {
     if (!window.__testApi__) {
-      throw new Error('window.__testApi__ is not available. Ensure VITE_E2E=true is set.')
+      throw new Error('window.__testApi__ is not available. Ensure running under `vite --mode e2e` (MODE === e2e) or VITE_E2E=true.')
     }
     return true
   })
@@ -99,8 +99,8 @@ export async function navigateToFirstLevelAndStart(page: Page): Promise<void> {
   await page.goto('/')
   await page.getByTestId('home-primary-cta').click()
   await page.waitForURL('**/tasks')
-  await page.getByTestId('task-card-task-leave-home').click()
-  await page.waitForURL('**/play/task-leave-home')
+  await page.getByTestId('task-start-task-clean-table').click()
+  await page.waitForURL('**/play/task-clean-table')
   // 等待 briefing 出现
   await page.getByTestId('briefing-modal').waitFor({ state: 'visible' })
   // 点击开始任务
