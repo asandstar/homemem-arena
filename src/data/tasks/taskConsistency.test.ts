@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { taskTemplates, taskPresentationById, tutorialTaskId, coreTaskId } from './index'
+import { checkTaskLayout } from '../../../scripts/qa-layout'
 
 describe('任务一致性测试', () => {
   it('taskTemplates 中 task id 唯一', () => {
@@ -73,5 +74,55 @@ describe('任务一致性测试', () => {
     ]
     const actualOrder = taskTemplates.map(t => t.id)
     expect(actualOrder).toEqual(expectedOrder)
+  })
+
+  it('所有任务的 spawn 都在 rooms[0] 房间内（无 blocker）', () => {
+    for (const t of taskTemplates) {
+      const results = checkTaskLayout(t)
+      const bad = results.filter(
+        (r) => !r.passed && ['spawn-inside-room'].includes(String(r.check)),
+      )
+      expect(bad.map((r) => r.message)).toEqual([])
+    }
+  })
+
+  it('所有物体都在其声明的 initialRoom 房间内（无 blocker）', () => {
+    for (const t of taskTemplates) {
+      const results = checkTaskLayout(t)
+      const bad = results.filter(
+        (r) => !r.passed && ['object-inside-room'].includes(String(r.check)),
+      )
+      expect(bad.map((r) => r.message)).toEqual([])
+    }
+  })
+
+  it('所有容器都在其声明的 room 房间内（无 blocker）', () => {
+    for (const t of taskTemplates) {
+      const results = checkTaskLayout(t)
+      const bad = results.filter(
+        (r) => !r.passed && ['container-inside-room'].includes(String(r.check)),
+      )
+      expect(bad.map((r) => r.message)).toEqual([])
+    }
+  })
+
+  it('所有房间内容器无 AABB 重叠（无 major）', () => {
+    for (const t of taskTemplates) {
+      const results = checkTaskLayout(t)
+      const bad = results.filter(
+        (r) => !r.passed && ['container-overlap'].includes(String(r.check)),
+      )
+      expect(bad.map((r) => r.message)).toEqual([])
+    }
+  })
+
+  it('指定 surfaceContainerId 的物体，其 xz 投影都在容器顶面范围内（无 major）', () => {
+    for (const t of taskTemplates) {
+      const results = checkTaskLayout(t)
+      const bad = results.filter(
+        (r) => !r.passed && ['object-on-container'].includes(String(r.check)),
+      )
+      expect(bad.map((r) => r.message)).toEqual([])
+    }
   })
 })
