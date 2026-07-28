@@ -10,37 +10,32 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
   living: [
     {
       id: 'decor-sofa-main',
-      position: { x: 0, y: 0, z: -1.2 },
+      position: { x: 0, y: 0, z: -3.0 },
       size: { x: 2.4, y: 0.9, z: 1.0 },
     },
     {
       id: 'decor-sofa-side',
-      position: { x: -2.0, y: 0, z: -0.5 },
-      size: { x: 1.6, y: 0.85, z: 0.9 },
-    },
-    {
-      id: 'decor-coffee-table',
-      position: { x: -0.5, y: 0, z: -0.3 },
-      size: { x: 1.4, y: 0.45, z: 0.7 },
+      position: { x: -1.5, y: 0, z: 1.5 },
+      size: { x: 1.4, y: 0.85, z: 0.8 },
     },
     {
       id: 'decor-tv-stand',
-      position: { x: 0, y: 0, z: 3.5 },
-      size: { x: 2.2, y: 0.55, z: 0.45 },
+      position: { x: 2.8, y: 0, z: 3.0 },
+      size: { x: 2.0, y: 0.55, z: 0.45 },
     },
     {
       id: 'decor-tv',
-      position: { x: 0, y: 0.8, z: 3.55 },
-      size: { x: 1.8, y: 1.0, z: 0.15 },
+      position: { x: 2.8, y: 0.8, z: 3.0 },
+      size: { x: 1.6, y: 1.0, z: 0.15 },
     },
     {
       id: 'decor-bookshelf',
-      position: { x: 3.4, y: 0, z: -1.5 },
+      position: { x: 3.5, y: 0, z: -2.5 },
       size: { x: 0.8, y: 1.8, z: 0.35 },
     },
     {
       id: 'decor-shelf',
-      position: { x: 3.4, y: 0, z: 1.0 },
+      position: { x: -2.8, y: 0, z: 3.8 },
       size: { x: 0.7, y: 1.2, z: 0.2 },
     },
     {
@@ -55,32 +50,32 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
     },
     {
       id: 'decor-floor-lamp-1',
-      position: { x: 3.0, y: 0, z: -2.0 },
+      position: { x: 3.5, y: 0, z: -3.5 },
       size: { x: 0.4, y: 1.8, z: 0.4 },
     },
     {
       id: 'decor-floor-lamp-2',
-      position: { x: -3.0, y: 0, z: 0.5 },
+      position: { x: -0.3, y: 0, z: 1.5 },
       size: { x: 0.35, y: 1.6, z: 0.35 },
     },
     {
       id: 'decor-plant-1',
-      position: { x: -3.4, y: 0, z: -2.0 },
+      position: { x: -3.5, y: 0, z: -3.5 },
       size: { x: 0.5, y: 1.2, z: 0.5 },
     },
     {
       id: 'decor-plant-2',
-      position: { x: 3.4, y: 0, z: 2.0 },
+      position: { x: 3.6, y: 0, z: 2.0 },
       size: { x: 0.35, y: 0.8, z: 0.35 },
     },
     {
       id: 'decor-chair',
-      position: { x: 1.5, y: 0, z: 1.0 },
+      position: { x: 3.0, y: 0, z: -1.5 },
       size: { x: 0.5, y: 0.7, z: 0.5 },
     },
     {
       id: 'decor-side-table',
-      position: { x: 1.8, y: 0, z: 0.8 },
+      position: { x: -1.5, y: 0, z: 2.6 },
       size: { x: 0.6, y: 0.35, z: 0.6 },
     },
   ],
@@ -89,11 +84,6 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       id: 'decor-bed',
       position: { x: -8, y: 0, z: -0.8 },
       size: { x: 2.0, y: 1.0, z: 2.4 },
-    },
-    {
-      id: 'decor-nightstand-right',
-      position: { x: -6.5, y: 0, z: -1.5 },
-      size: { x: 0.55, y: 0.55, z: 0.45 },
     },
     {
       id: 'decor-nightstand-left',
@@ -228,21 +218,6 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       id: 'decor-hook',
       position: { x: 2.7, y: 1.5, z: 0 },
       size: { x: 1.0, y: 0.3, z: 0.05 },
-    },
-    {
-      id: 'decor-entray',
-      position: { x: -1.4, y: 0, z: -2.3 },
-      size: { x: 0.5, y: 0.1, z: 0.35 },
-    },
-    {
-      id: 'decor-umbrella-red',
-      position: { x: 0.8, y: 0.4, z: -2.3 },
-      size: { x: 0.1, y: 1.0, z: 0.1 },
-    },
-    {
-      id: 'decor-umbrella-blue',
-      position: { x: 0.5, y: 0.4, z: -2.3 },
-      size: { x: 0.1, y: 1.0, z: 0.1 },
     },
     {
       id: 'decor-painting',

@@ -2,8 +2,32 @@
 // 目标：在袜子幽灵的捣乱下完成衣物分类，小心篮子位置被交换！
 // 记忆类型：时间记忆 + 计数记忆 + 重复动作记忆 + 空间记忆
 
-import type { TaskConfig } from '../../types/task'
-import type { EntityStateSnapshot } from '../../types/task'
+import type { EntityStateSnapshot, StageContext, TaskConfig } from '../../types/task'
+
+const STAGE_ID_OBSERVE_CLOTHES = 'stage-observe-clothes'
+const STAGE_ID_SORT_WHITE_DARK = 'stage-sort-white-dark'
+const STAGE_ID_UPDATE_TOWEL_AFTER_GHOST = 'stage-update-towel-after-ghost'
+const STAGE_ID_FINALIZE_LAUNDRY = 'stage-finalize-laundry'
+
+function entityPlacedIn(entities: EntityStateSnapshot[], configId: string, containerId: string): boolean {
+  const e = entities.find((x) => x.configId === configId)
+  return !!e && e.placedIn === containerId && e.status === 'placed'
+}
+
+function whiteAllPlaced(ctx: StageContext): boolean {
+  const whiteIds = ['obj-white-shirt', 'obj-white-socks', 'obj-white-towel-small', 'obj-mystery-shirt']
+  return whiteIds.every((id) => entityPlacedIn(ctx.entities, id, 'cnt-white-basket'))
+}
+
+function darkAllPlaced(ctx: StageContext): boolean {
+  const darkIds = ['obj-black-tshirt', 'obj-jeans', 'obj-dark-socks']
+  return darkIds.every((id) => entityPlacedIn(ctx.entities, id, 'cnt-dark-basket'))
+}
+
+function towelAllPlaced(ctx: StageContext): boolean {
+  const towelIds = ['obj-towel-large', 'obj-towel-small']
+  return towelIds.every((id) => entityPlacedIn(ctx.entities, id, 'cnt-towel-basket'))
+}
 
 export const laundrySortTask: TaskConfig = {
   id: 'task-laundry-sort',
@@ -17,6 +41,48 @@ export const laundrySortTask: TaskConfig = {
   timeLimit: 120,
   spawnPosition: { x: 0, z: 2.0 },
   spawnRotation: Math.PI,
+  initialStageId: STAGE_ID_OBSERVE_CLOTHES,
+
+  stages: [
+    {
+      id: STAGE_ID_OBSERVE_CLOTHES,
+      playerObjective: '按 E 记录白色衣物位置，准备分类。',
+      entryCondition: () => true,
+      completionCondition: (ctx: StageContext) => ctx.memorySlots.some((s) => s !== null) || ctx.stepCount >= 3,
+      nextStage: STAGE_ID_SORT_WHITE_DARK,
+    },
+    {
+      id: STAGE_ID_SORT_WHITE_DARK,
+      playerObjective: '把白色衣物放入白篮、深色放入深篮。',
+      entryCondition: (ctx: StageContext) => ctx.memorySlots.some((s) => s !== null) || ctx.stepCount >= 3,
+      completionCondition: (ctx: StageContext) => whiteAllPlaced(ctx) && darkAllPlaced(ctx),
+      nextStage: STAGE_ID_UPDATE_TOWEL_AFTER_GHOST,
+    },
+    {
+      id: STAGE_ID_UPDATE_TOWEL_AFTER_GHOST,
+      playerObjective: '袜子幽灵移动了毛巾！确认新位置后分类。',
+      entryCondition: (ctx: StageContext) =>
+        ctx.triggeredEvents.has('se-cat-moves-towel') ||
+        (whiteAllPlaced(ctx) && darkAllPlaced(ctx) && !towelAllPlaced(ctx)),
+      completionCondition: (ctx: StageContext) => towelAllPlaced(ctx),
+      nextStage: STAGE_ID_FINALIZE_LAUNDRY,
+    },
+    {
+      id: STAGE_ID_FINALIZE_LAUNDRY,
+      playerObjective: '确认所有衣物进了正确的篮子。',
+      entryCondition: (ctx: StageContext) =>
+        ctx.achievedGoalIds.has('g-white-sorted') &&
+        ctx.achievedGoalIds.has('g-dark-sorted') &&
+        ctx.achievedGoalIds.has('g-towel-sorted'),
+      completionCondition: (ctx: StageContext) =>
+        ctx.achievedGoalIds.has('g-white-sorted') &&
+        ctx.achievedGoalIds.has('g-dark-sorted') &&
+        ctx.achievedGoalIds.has('g-towel-sorted') &&
+        ctx.achievedGoalIds.has('g-mystery-item'),
+      nextStage: null,
+    },
+  ],
+
   briefing: `👻 下午 3:00 · 洗衣房异动
 
 主人的便签：「这批衣服分三类，白/深/毛巾，放错会染色——拜托了小橡！」
@@ -103,7 +169,7 @@ export const laundrySortTask: TaskConfig = {
       name: '彩色条纹衬衫',
       category: 'white-clothes',
       initialRoom: 'laundry',
-      initialPosition: { x: 1.5, y: 0.05, z: 1.4 },
+      initialPosition: { x: -2.7, y: 0.05, z: 1.4 },
       size: { x: 0.4, y: 0.05, z: 0.5 },
       color: '#ec4899',
       stateProperties: { mystery: true, specialItem: true },
@@ -141,7 +207,7 @@ export const laundrySortTask: TaskConfig = {
       id: 'cnt-towel-basket',
       name: '毛巾篮',
       room: 'laundry',
-      position: { x: 2.5, y: 0.25, z: -2.0 },
+      position: { x: 3.0, y: 0.25, z: -2.0 },
       size: { x: 0.8, y: 0.5, z: 0.6 },
       surfaceHeight: 0.55,
       color: '#fcd34d',
@@ -214,7 +280,7 @@ export const laundrySortTask: TaskConfig = {
       trigger: (step) => step === 5,
       type: 'move-entity',
       targetId: 'obj-white-socks',
-      targetPosition: { room: 'laundry', x: 2.5, y: 0.05, z: 1.4 },
+      targetPosition: { room: 'laundry', x: 2.7, y: 0.05, z: 1.4 },
       message: '👻 嗖——白袜子不见了！（袜子幽灵：嘿嘿，找不到了吧~）\n💡 提示：白袜子跑到毛巾篮附近了！',
       description: '袜子幽灵把白袜子移到了毛巾篮附近',
       memoryType: 'spatial',

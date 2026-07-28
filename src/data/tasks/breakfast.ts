@@ -2,8 +2,55 @@
 // 目标：在时间循环中完成早餐准备与归位，小心强迫症的早餐闹钟！
 // 记忆类型：procedural（流程） + spatial（空间） + object（物体状态） + temporal（时序） + container（容器状态）
 
-import type { TaskConfig } from '../../types/task'
-import type { EntityStateSnapshot } from '../../types/task'
+import type { EntityStateSnapshot, StageContext, TaskConfig } from '../../types/task'
+
+const STAGE_ID_PREPARE_FRIDGE_CABINET = 'stage-prepare-fridge-cabinet'
+const STAGE_ID_SERVE_BREAKFAST = 'stage-serve-breakfast'
+const STAGE_ID_RETURN_MILK_CEREAL = 'stage-return-milk-cereal'
+const STAGE_ID_FINALIZE_KITCHEN = 'stage-finalize-kitchen'
+
+function entityPlacedIn(entities: EntityStateSnapshot[], configId: string, containerId: string): boolean {
+  const e = entities.find((x) => x.configId === configId)
+  return !!e && e.placedIn === containerId && e.status === 'placed'
+}
+
+function entityTakenOut(ctx: StageContext, configId: string): boolean {
+  const e = ctx.entities.find((x) => x.configId === configId)
+  return !!e && (e.status === 'free' || e.status === 'held')
+}
+
+function allFourTakenOut(ctx: StageContext): boolean {
+  const ids = ['obj-milk', 'obj-cereal', 'obj-cup', 'obj-bowl']
+  return ids.every((id) => entityTakenOut(ctx, id))
+}
+
+function allFourOnTable(ctx: StageContext): boolean {
+  const ids = ['obj-milk', 'obj-cereal', 'obj-cup', 'obj-bowl']
+  return ids.every((id) => entityPlacedIn(ctx.entities, id, 'cnt-dining-table'))
+}
+
+function milkReturned(ctx: StageContext): boolean {
+  const milk = ctx.entities.find((e) => e.configId === 'obj-milk')
+  return !!milk && (milk.placedIn === 'cnt-fridge' || milk.status === 'hidden')
+}
+
+function cerealReturned(ctx: StageContext): boolean {
+  const cereal = ctx.entities.find((e) => e.configId === 'obj-cereal')
+  return (
+    !!cereal &&
+    (cereal.placedIn === 'cnt-cabinet-upper' ||
+      cereal.placedIn === 'cnt-cabinet-lower' ||
+      cereal.status === 'hidden')
+  )
+}
+
+function cupBowlInDishwasherOrSink(ctx: StageContext): boolean {
+  const cup = ctx.entities.find((e) => e.configId === 'obj-cup')
+  const bowl = ctx.entities.find((e) => e.configId === 'obj-bowl')
+  const cupOk = !!cup && (cup.placedIn === 'cnt-dishwasher' || cup.placedIn === 'cnt-sink')
+  const bowlOk = !!bowl && (bowl.placedIn === 'cnt-dishwasher' || bowl.placedIn === 'cnt-sink')
+  return cupOk && bowlOk
+}
 
 export const breakfastTask: TaskConfig = {
   id: 'task-breakfast',
@@ -17,6 +64,49 @@ export const breakfastTask: TaskConfig = {
   timeLimit: 120,
   spawnPosition: { x: 0, z: -1.5 },
   spawnRotation: Math.PI,
+  initialStageId: STAGE_ID_PREPARE_FRIDGE_CABINET,
+
+  stages: [
+    {
+      id: STAGE_ID_PREPARE_FRIDGE_CABINET,
+      playerObjective: '打开冰箱和下层橱柜，取出食材。',
+      entryCondition: () => true,
+      completionCondition: (ctx: StageContext) => allFourTakenOut(ctx),
+      nextStage: STAGE_ID_SERVE_BREAKFAST,
+    },
+    {
+      id: STAGE_ID_SERVE_BREAKFAST,
+      playerObjective: '按顺序把牛奶、麦片、碗、杯子放到餐桌。',
+      entryCondition: (ctx: StageContext) => allFourTakenOut(ctx),
+      completionCondition: (ctx: StageContext) => allFourOnTable(ctx),
+      nextStage: STAGE_ID_RETURN_MILK_CEREAL,
+    },
+    {
+      id: STAGE_ID_RETURN_MILK_CEREAL,
+      playerObjective: '麦片跑上层橱柜了！把牛奶回冰箱、麦片回橱柜。',
+      entryCondition: (ctx: StageContext) => allFourOnTable(ctx),
+      completionCondition: (ctx: StageContext) => milkReturned(ctx) && cerealReturned(ctx),
+      nextStage: STAGE_ID_FINALIZE_KITCHEN,
+    },
+    {
+      id: STAGE_ID_FINALIZE_KITCHEN,
+      playerObjective: '杯碗放洗碗机，冰箱和橱柜全部关好。',
+      entryCondition: (ctx: StageContext) => milkReturned(ctx) && cerealReturned(ctx),
+      completionCondition: (ctx: StageContext) => {
+        const milk = ctx.entities.find((e) => e.configId === 'obj-milk')
+        const cereal = ctx.entities.find((e) => e.configId === 'obj-cereal')
+        return (
+          cupBowlInDishwasherOrSink(ctx) &&
+          !!milk &&
+          milk.status === 'hidden' &&
+          !!cereal &&
+          cereal.status === 'hidden'
+        )
+      },
+      nextStage: null,
+    },
+  ],
+
   briefing: `⏰ 深夜 11:00 · 厨房闹钟响了
 
 冰箱上贴着主人的流程图：「第一阶段—上桌顺序：牛奶→麦片→碗→杯子。第二阶段—归位：所有物品放回原位，容器全部关好。」

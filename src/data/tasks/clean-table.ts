@@ -3,8 +3,16 @@
 // 记忆类型：空间记忆入门
 // 难度：新手教学
 
-import type { TaskConfig } from '../../types/task'
-import type { EntityStateSnapshot } from '../../types/task'
+import type { EntityStateSnapshot, StageContext, TaskConfig } from '../../types/task'
+
+const STAGE_ID_OBSERVE_TABLE = 'stage-observe-table'
+const STAGE_ID_SORT_CUP_TISSUE = 'stage-sort-cup-tissue'
+const STAGE_ID_FINALIZE_FORK = 'stage-finalize-fork'
+
+function entityPlacedIn(entities: EntityStateSnapshot[], configId: string, containerId: string): boolean {
+  const e = entities.find((x) => x.configId === configId)
+  return !!e && e.placedIn === containerId && e.status === 'placed'
+}
 
 export const cleanTableTask: TaskConfig = {
   id: 'task-clean-table',
@@ -18,6 +26,42 @@ export const cleanTableTask: TaskConfig = {
   timeLimit: 180,
   spawnPosition: { x: 0, z: -2.5 },
   spawnRotation: Math.PI,
+  initialStageId: STAGE_ID_OBSERVE_TABLE,
+
+  stages: [
+    {
+      id: STAGE_ID_OBSERVE_TABLE,
+      playerObjective: '靠近餐桌，按 E 记住脏餐具位置。',
+      entryCondition: () => true,
+      completionCondition: (ctx: StageContext) => ctx.memorySlots.some((s) => s !== null),
+      nextStage: STAGE_ID_SORT_CUP_TISSUE,
+    },
+    {
+      id: STAGE_ID_SORT_CUP_TISSUE,
+      playerObjective: '把脏杯子放洗碗机、餐巾纸扔垃圾桶。',
+      entryCondition: (ctx: StageContext) => ctx.memorySlots.some((s) => s !== null) || ctx.stepCount >= 2,
+      completionCondition: (ctx: StageContext) =>
+        entityPlacedIn(ctx.entities, 'obj-dirty-cup', 'cnt-dishwasher') &&
+        entityPlacedIn(ctx.entities, 'obj-tissue', 'cnt-trash-bin'),
+      nextStage: STAGE_ID_FINALIZE_FORK,
+    },
+    {
+      id: STAGE_ID_FINALIZE_FORK,
+      playerObjective: '把叉子放回餐具架，完成第一次整理。',
+      entryCondition: (ctx: StageContext) =>
+        entityPlacedIn(ctx.entities, 'obj-dirty-cup', 'cnt-dishwasher') &&
+        entityPlacedIn(ctx.entities, 'obj-tissue', 'cnt-trash-bin'),
+      completionCondition: (ctx: StageContext) =>
+        entityPlacedIn(ctx.entities, 'obj-dirty-cup', 'cnt-dishwasher') &&
+        entityPlacedIn(ctx.entities, 'obj-tissue', 'cnt-trash-bin') &&
+        entityPlacedIn(ctx.entities, 'obj-fork', 'cnt-utensil-rack') &&
+        ctx.achievedGoalIds.has('g-dirty-cup') &&
+        ctx.achievedGoalIds.has('g-tissue') &&
+        ctx.achievedGoalIds.has('g-fork'),
+      nextStage: null,
+    },
+  ],
+
   briefing: `🍽️ 记忆宅邸 · 第一天
 
 MEM-07：「你好，我是 MEM-07。我的记忆模块出了故障，只能同时记住 3 件物品的位置。」

@@ -3,8 +3,40 @@
 // 记忆类型：空间记忆 + 时间记忆
 // 特色：视野受限（黑暗）、巡逻全部房间、随机夜间事件（电器异响、窗户晃动）
 
-import type { TaskConfig } from '../../types/task'
-import type { EntityStateSnapshot } from '../../types/task'
+import type { EntityStateSnapshot, StageContext, TaskConfig } from '../../types/task'
+
+const STAGE_ID_PATROL_FIRST_TWO = 'stage-patrol-first-two'
+const STAGE_ID_UPDATE_UMBRELLA_AFTER_WIND = 'stage-update-umbrella-after-wind'
+const STAGE_ID_FINALIZE_PATROL = 'stage-finalize-patrol'
+
+function entityPlacedIn(entities: EntityStateSnapshot[], configId: string, containerId: string): boolean {
+  const e = entities.find((x) => x.configId === configId)
+  return !!e && e.placedIn === containerId && e.status === 'placed'
+}
+
+function remotePhonePlaced(ctx: StageContext): boolean {
+  return (
+    entityPlacedIn(ctx.entities, 'obj-remote', 'cnt-patrol-coffee-table') &&
+    entityPlacedIn(ctx.entities, 'obj-phone', 'cnt-patrol-nightstand')
+  )
+}
+
+function umbrellaSavedOrPlaced(ctx: StageContext): boolean {
+  const saved = ctx.memorySlots.some(
+    (s) => s !== null && s.entityConfigId === 'obj-umbrella',
+  )
+  const placed = entityPlacedIn(ctx.entities, 'obj-umbrella', 'cnt-patrol-umbrella-stand')
+  return saved || placed
+}
+
+function allFourPlaced(ctx: StageContext): boolean {
+  return (
+    entityPlacedIn(ctx.entities, 'obj-remote', 'cnt-patrol-coffee-table') &&
+    entityPlacedIn(ctx.entities, 'obj-phone', 'cnt-patrol-nightstand') &&
+    entityPlacedIn(ctx.entities, 'obj-bowl', 'cnt-patrol-kitchen-counter') &&
+    entityPlacedIn(ctx.entities, 'obj-umbrella', 'cnt-patrol-umbrella-stand')
+  )
+}
 
 export const nightPatrolTask: TaskConfig = {
   id: 'task-night-patrol',
@@ -18,6 +50,40 @@ export const nightPatrolTask: TaskConfig = {
   timeLimit: 300,
   spawnPosition: { x: 0, z: -1.5 },
   spawnRotation: Math.PI,
+  initialStageId: STAGE_ID_PATROL_FIRST_TWO,
+
+  stages: [
+    {
+      id: STAGE_ID_PATROL_FIRST_TWO,
+      playerObjective: '巡查客厅与卧室，找到遥控器和手机归位。',
+      entryCondition: () => true,
+      completionCondition: (ctx: StageContext) => remotePhonePlaced(ctx),
+      nextStage: STAGE_ID_UPDATE_UMBRELLA_AFTER_WIND,
+    },
+    {
+      id: STAGE_ID_UPDATE_UMBRELLA_AFTER_WIND,
+      playerObjective: '窗户晃动震飞了雨伞！在客厅找到它的新位置。',
+      entryCondition: (ctx: StageContext) =>
+        ctx.triggeredEvents.has('se-window-rattle') ||
+        (remotePhonePlaced(ctx) &&
+          !entityPlacedIn(ctx.entities, 'obj-umbrella', 'cnt-patrol-umbrella-stand')),
+      completionCondition: (ctx: StageContext) => umbrellaSavedOrPlaced(ctx),
+      nextStage: STAGE_ID_FINALIZE_PATROL,
+    },
+    {
+      id: STAGE_ID_FINALIZE_PATROL,
+      playerObjective: '找到碗和雨伞，确认 4/4 物品全部归位。',
+      entryCondition: (ctx: StageContext) => remotePhonePlaced(ctx),
+      completionCondition: (ctx: StageContext) =>
+        allFourPlaced(ctx) &&
+        ctx.achievedGoalIds.has('g-confirm-remote') &&
+        ctx.achievedGoalIds.has('g-confirm-phone') &&
+        ctx.achievedGoalIds.has('g-confirm-bowl') &&
+        ctx.achievedGoalIds.has('g-confirm-umbrella'),
+      nextStage: null,
+    },
+  ],
+
   briefing: `🌙 深夜 2:00 · 主人已熟睡 · 夜间巡逻模式启动
 
 MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被气流或电器震动移位。」
@@ -41,7 +107,7 @@ MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被
       name: '遥控器',
       category: 'remote',
       initialRoom: 'bedroom',
-      initialPosition: { x: 1.5, y: 0, z: -1.0 },
+      initialPosition: { x: -1.5, y: 0, z: -1.0 },
       size: { x: 0.18, y: 0.05, z: 0.05 },
       color: '#1f2937',
       stateProperties: { displaced: true, homeRoom: 'living' },
@@ -61,7 +127,7 @@ MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被
       name: '碗',
       category: 'bowl',
       initialRoom: 'dining',
-      initialPosition: { x: 2.0, y: 0, z: -1.5 },
+      initialPosition: { x: -2.0, y: 0, z: -1.5 },
       size: { x: 0.15, y: 0.08, z: 0.15 },
       color: '#fbbf24',
       stateProperties: { displaced: true, homeRoom: 'kitchen' },
@@ -71,7 +137,7 @@ MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被
       name: '雨伞',
       category: 'umbrella',
       initialRoom: 'living',
-      initialPosition: { x: 2.5, y: 0, z: -2.0 },
+      initialPosition: { x: -2.5, y: 0, z: -2.0 },
       size: { x: 0.1, y: 1.0, z: 0.1 },
       color: '#ef4444',
       stateProperties: { displaced: true, homeRoom: 'entrance' },
@@ -96,7 +162,7 @@ MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被
       id: 'cnt-patrol-nightstand',
       name: '卧室床头柜',
       room: 'bedroom',
-      position: { x: 1.5, y: 0.3, z: -1.5 },
+      position: { x: -1.5, y: 0.3, z: -1.5 },
       size: { x: 0.55, y: 0.55, z: 0.45 },
       surfaceHeight: 0.55,
       color: '#a16207',
@@ -109,7 +175,7 @@ MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被
       id: 'cnt-patrol-kitchen-counter',
       name: '厨房台面',
       room: 'kitchen',
-      position: { x: 2.5, y: 0.45, z: -2.0 },
+      position: { x: -2.5, y: 0.45, z: -2.0 },
       size: { x: 1.5, y: 0.7, z: 0.6 },
       surfaceHeight: 0.7,
       color: '#94a3b8',
@@ -122,7 +188,7 @@ MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被
       id: 'cnt-patrol-umbrella-stand',
       name: '玄关伞架',
       room: 'entrance',
-      position: { x: 0.8, y: 0.3, z: -2.3 },
+      position: { x: -0.8, y: 0.3, z: -2.3 },
       size: { x: 0.3, y: 0.6, z: 0.3 },
       surfaceHeight: 0.6,
       color: '#475569',
