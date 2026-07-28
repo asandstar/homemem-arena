@@ -1,10 +1,30 @@
-import { useRef, useMemo, Component } from 'react'
+import { useRef, useMemo, Component, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MODEL_REGISTRY, getModelConfig } from './ModelRegistry'
 import { MATERIAL_CONFIG, PALETTE } from '../colors'
+
+const MODEL_TEXTURE_CACHE = new Map<string, Promise<any>>()
+
+function loadGLTF(path: string): Promise<any> {
+  if (MODEL_TEXTURE_CACHE.has(path)) return MODEL_TEXTURE_CACHE.get(path)!
+  const manager = new THREE.LoadingManager()
+  manager.setURLModifier((url) => {
+    const u = String(url || '')
+    if (/Textures\/colormap\.png/i.test(u)) {
+      return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgYAAAAAMAASsBacYAAAAASUVORK5CYII='
+    }
+    return url
+  })
+  const loader = new GLTFLoader(manager)
+  const promise = new Promise<any>((resolve, reject) => {
+    loader.load(path, resolve, undefined, reject)
+  })
+  MODEL_TEXTURE_CACHE.set(path, promise)
+  return promise
+}
 
 interface ModelAssetProps {
   modelId: string
@@ -202,13 +222,31 @@ function ModelContent({
   const timeRef = useRef(0)
 
   const fallbackComponent = config?.fallback || MODEL_REGISTRY.key.fallback
+  const modelPath = config?.path || MODEL_REGISTRY.key.path
 
-  const { scene } = useGLTF(config?.path || MODEL_REGISTRY.key.path)
+  const [gltf, setGltf] = useState<any>(null)
+  const [loadError, setLoadError] = useState<boolean>(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setGltf(null)
+    setLoadError(false)
+    loadGLTF(modelPath)
+      .then((g) => { if (!cancelled) setGltf(g) })
+      .catch((e) => {
+        if (cancelled) return
+        console.warn('[ModelAsset] GLTF load failed, fallback to primitive', modelPath, e)
+        setLoadError(true)
+      })
+    return () => { cancelled = true }
+  }, [modelPath])
+
+  const scene = gltf?.scene
 
   const clonedScene = useMemo(() => {
     if (!scene) return null
     const clone = scene.clone(true)
-    clone.traverse((child) => {
+    clone.traverse((child: THREE.Object3D) => {
       if (child instanceof THREE.Mesh) {
         child.castShadow = config?.castShadow ?? true
         child.receiveShadow = config?.receiveShadow ?? false
@@ -228,6 +266,15 @@ function ModelContent({
                 mat instanceof THREE.MeshPhysicalMaterial) {
               mat.roughness = 0.8
               mat.metalness = 0.1
+            }
+            if (mat.map) {
+              const mapUrl = (mat.map as any)?.source?.data?.src || (mat.map as any)?.image?.src || (mat.map as any)?.url || ''
+              const needsInvalidMap = /Textures\/colormap\.png/i.test(String(mapUrl || ''))
+                || ((mat.map as any)?.isTexture && !(mat.map.image || (mat.map as any).source?.data))
+              if (needsInvalidMap) {
+                mat.map.dispose?.()
+                mat.map = null
+              }
             }
             if (mat.map) {
               mat.map.minFilter = THREE.NearestFilter
@@ -305,7 +352,7 @@ function ModelContent({
     }
 
     if (clonedScene) {
-      clonedScene.traverse((child) => {
+      clonedScene.traverse((child: THREE.Object3D) => {
         if (child instanceof THREE.Mesh) {
           const highlightColor = config?.highlightColor || '#3b82f6'
 
@@ -343,7 +390,7 @@ function ModelContent({
 
   const FallbackComp = fallbackComponent
 
-  if (!clonedScene || !config) {
+  if (!clonedScene || !config || loadError) {
     return (
       <FallbackColorizer modelId={modelId} color={color} hovered={hovered} selected={selected}>
         <FallbackComp />
