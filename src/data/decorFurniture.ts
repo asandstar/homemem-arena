@@ -20,12 +20,12 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
     },
     {
       id: 'decor-tv-stand',
-      position: { x: 2.8, y: 0, z: 3.0 },
+      position: { x: 2.8, y: 0, z: -3.0 },
       size: { x: 2.0, y: 0.55, z: 0.45 },
     },
     {
       id: 'decor-tv',
-      position: { x: 2.8, y: 0.8, z: 3.0 },
+      position: { x: 2.8, y: 0.8, z: -3.0 },
       size: { x: 1.6, y: 1.0, z: 0.15 },
     },
     {
@@ -50,7 +50,7 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
     },
     {
       id: 'decor-floor-lamp-1',
-      position: { x: 3.5, y: 0, z: -3.5 },
+      position: { x: 3.5, y: 0, z: 3.5 },
       size: { x: 0.4, y: 1.8, z: 0.4 },
     },
     {
@@ -70,7 +70,7 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
     },
     {
       id: 'decor-chair',
-      position: { x: 3.0, y: 0, z: -1.5 },
+      position: { x: 3.0, y: 0, z: 1.5 },
       size: { x: 0.5, y: 0.7, z: 0.5 },
     },
     {
