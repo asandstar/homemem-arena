@@ -1,0 +1,870 @@
+{
+  "furniture": [
+    {
+      "id": "MainSofa",
+      "name": "主沙发",
+      "size": {
+        "x": 2.4,
+        "y": 0.9,
+        "z": 1
+      },
+      "center": {
+        "x": 0,
+        "z": -3
+      },
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static"
+    },
+    {
+      "id": "CoffeeTable",
+      "name": "茶几",
+      "size": {
+        "x": 1.4,
+        "y": 0.45,
+        "z": 0.7
+      },
+      "center": {
+        "x": 0,
+        "z": 0.3
+      },
+      "yNote": "y=0.2，Task 容器抬高语义 surfaceHeight=0.45",
+      "owner": "Task Container3D"
+    },
+    {
+      "id": "TVStand",
+      "name": "电视柜",
+      "size": {
+        "x": 2,
+        "y": 0.55,
+        "z": 0.45
+      },
+      "center": {
+        "x": 2.8,
+        "z": 3
+      },
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static"
+    },
+    {
+      "id": "TV",
+      "name": "电视",
+      "size": {
+        "x": 1.6,
+        "y": 1,
+        "z": 0.15
+      },
+      "center": {
+        "x": 2.8,
+        "z": 3
+      },
+      "stackedOn": "TVStand",
+      "yNote": "y=0.8，引擎电视默认悬空高度",
+      "owner": "Room3D static"
+    },
+    {
+      "id": "ArmChair",
+      "name": "扶手椅",
+      "size": {
+        "x": 1.4,
+        "y": 0.8,
+        "z": 0.85
+      },
+      "center": {
+        "x": -1.5,
+        "z": 1.5
+      },
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static"
+    },
+    {
+      "id": "Bookshelf",
+      "name": "书架",
+      "size": {
+        "x": 0.8,
+        "y": 1.8,
+        "z": 0.35
+      },
+      "center": {
+        "x": 3.5,
+        "z": -2.5
+      },
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static"
+    },
+    {
+      "id": "Shelf",
+      "name": "搁架",
+      "size": {
+        "x": 0.7,
+        "y": 1.2,
+        "z": 0.2
+      },
+      "center": {
+        "x": -2.8,
+        "z": 3.8
+      },
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static"
+    },
+    {
+      "id": "FloorLamp1",
+      "name": "落地灯1",
+      "size": {
+        "x": 0.4,
+        "y": 1.8,
+        "z": 0.4
+      },
+      "center": {
+        "x": 3.5,
+        "z": -3.5
+      },
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static"
+    },
+    {
+      "id": "FloorLamp2",
+      "name": "落地灯2",
+      "size": {
+        "x": 0.35,
+        "y": 1.6,
+        "z": 0.35
+      },
+      "center": {
+        "x": -0.3,
+        "z": 1.5
+      },
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static"
+    },
+    {
+      "id": "Plant1",
+      "name": "大植物1",
+      "size": {
+        "x": 0.5,
+        "y": 1.2,
+        "z": 0.5
+      },
+      "center": {
+        "x": -3.5,
+        "z": -3.5
+      },
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static"
+    },
+    {
+      "id": "Plant2",
+      "name": "大植物2",
+      "size": {
+        "x": 0.35,
+        "y": 0.8,
+        "z": 0.35
+      },
+      "center": {
+        "x": 3.6,
+        "z": 2
+      },
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static"
+    },
+    {
+      "id": "LoungeChair",
+      "name": "休闲椅",
+      "size": {
+        "x": 0.5,
+        "y": 0.7,
+        "z": 0.5
+      },
+      "center": {
+        "x": 3,
+        "z": -1.5
+      },
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static"
+    },
+    {
+      "id": "SideTable",
+      "name": "边几",
+      "size": {
+        "x": 0.6,
+        "y": 0.35,
+        "z": 0.6
+      },
+      "center": {
+        "x": -1.5,
+        "z": 2.6
+      },
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static"
+    }
+  ],
+  "activeFurnitureAABBs": [
+    {
+      "id": "MainSofa",
+      "name": "主沙发",
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static",
+      "sizeX": 2.4,
+      "sizeY": 0.9,
+      "sizeZ": 1,
+      "centerX": 0,
+      "centerZ": -3,
+      "halfX": 1.2,
+      "halfZ": 0.5,
+      "xMin": -1.2,
+      "xMax": 1.2,
+      "zMin": -3.5,
+      "zMax": -2.5,
+      "stackedOn": null
+    },
+    {
+      "id": "CoffeeTable",
+      "name": "茶几",
+      "yNote": "y=0.2，Task 容器抬高语义 surfaceHeight=0.45",
+      "owner": "Task Container3D",
+      "sizeX": 1.4,
+      "sizeY": 0.45,
+      "sizeZ": 0.7,
+      "centerX": 0,
+      "centerZ": 0.3,
+      "halfX": 0.7,
+      "halfZ": 0.35,
+      "xMin": -0.7,
+      "xMax": 0.7,
+      "zMin": -0.04999999999999999,
+      "zMax": 0.6499999999999999,
+      "stackedOn": null
+    },
+    {
+      "id": "TVStand",
+      "name": "电视柜",
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static",
+      "sizeX": 2,
+      "sizeY": 0.55,
+      "sizeZ": 0.45,
+      "centerX": 2.8,
+      "centerZ": 3,
+      "halfX": 1,
+      "halfZ": 0.225,
+      "xMin": 1.7999999999999998,
+      "xMax": 3.8,
+      "zMin": 2.775,
+      "zMax": 3.225,
+      "stackedOn": null
+    },
+    {
+      "id": "TV",
+      "name": "电视",
+      "yNote": "y=0.8，引擎电视默认悬空高度",
+      "owner": "Room3D static",
+      "sizeX": 1.6,
+      "sizeY": 1,
+      "sizeZ": 0.15,
+      "centerX": 2.8,
+      "centerZ": 3,
+      "halfX": 0.8,
+      "halfZ": 0.075,
+      "xMin": 1.9999999999999998,
+      "xMax": 3.5999999999999996,
+      "zMin": 2.925,
+      "zMax": 3.075,
+      "stackedOn": "TVStand"
+    },
+    {
+      "id": "ArmChair",
+      "name": "扶手椅",
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static",
+      "sizeX": 1.4,
+      "sizeY": 0.8,
+      "sizeZ": 0.85,
+      "centerX": -1.5,
+      "centerZ": 1.5,
+      "halfX": 0.7,
+      "halfZ": 0.425,
+      "xMin": -2.2,
+      "xMax": -0.8,
+      "zMin": 1.075,
+      "zMax": 1.925,
+      "stackedOn": null
+    },
+    {
+      "id": "Bookshelf",
+      "name": "书架",
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static",
+      "sizeX": 0.8,
+      "sizeY": 1.8,
+      "sizeZ": 0.35,
+      "centerX": 3.5,
+      "centerZ": -2.5,
+      "halfX": 0.4,
+      "halfZ": 0.175,
+      "xMin": 3.1,
+      "xMax": 3.9,
+      "zMin": -2.675,
+      "zMax": -2.325,
+      "stackedOn": null
+    },
+    {
+      "id": "Shelf",
+      "name": "搁架",
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static",
+      "sizeX": 0.7,
+      "sizeY": 1.2,
+      "sizeZ": 0.2,
+      "centerX": -2.8,
+      "centerZ": 3.8,
+      "halfX": 0.35,
+      "halfZ": 0.1,
+      "xMin": -3.15,
+      "xMax": -2.4499999999999997,
+      "zMin": 3.6999999999999997,
+      "zMax": 3.9,
+      "stackedOn": null
+    },
+    {
+      "id": "FloorLamp1",
+      "name": "落地灯1",
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static",
+      "sizeX": 0.4,
+      "sizeY": 1.8,
+      "sizeZ": 0.4,
+      "centerX": 3.5,
+      "centerZ": -3.5,
+      "halfX": 0.2,
+      "halfZ": 0.2,
+      "xMin": 3.3,
+      "xMax": 3.7,
+      "zMin": -3.7,
+      "zMax": -3.3,
+      "stackedOn": null
+    },
+    {
+      "id": "FloorLamp2",
+      "name": "落地灯2",
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static",
+      "sizeX": 0.35,
+      "sizeY": 1.6,
+      "sizeZ": 0.35,
+      "centerX": -0.3,
+      "centerZ": 1.5,
+      "halfX": 0.175,
+      "halfZ": 0.175,
+      "xMin": -0.475,
+      "xMax": -0.125,
+      "zMin": 1.325,
+      "zMax": 1.675,
+      "stackedOn": null
+    },
+    {
+      "id": "Plant1",
+      "name": "大植物1",
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static",
+      "sizeX": 0.5,
+      "sizeY": 1.2,
+      "sizeZ": 0.5,
+      "centerX": -3.5,
+      "centerZ": -3.5,
+      "halfX": 0.25,
+      "halfZ": 0.25,
+      "xMin": -3.75,
+      "xMax": -3.25,
+      "zMin": -3.75,
+      "zMax": -3.25,
+      "stackedOn": null
+    },
+    {
+      "id": "Plant2",
+      "name": "大植物2",
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static",
+      "sizeX": 0.35,
+      "sizeY": 0.8,
+      "sizeZ": 0.35,
+      "centerX": 3.6,
+      "centerZ": 2,
+      "halfX": 0.175,
+      "halfZ": 0.175,
+      "xMin": 3.4250000000000003,
+      "xMax": 3.775,
+      "zMin": 1.825,
+      "zMax": 2.175,
+      "stackedOn": null
+    },
+    {
+      "id": "LoungeChair",
+      "name": "休闲椅",
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static",
+      "sizeX": 0.5,
+      "sizeY": 0.7,
+      "sizeZ": 0.5,
+      "centerX": 3,
+      "centerZ": -1.5,
+      "halfX": 0.25,
+      "halfZ": 0.25,
+      "xMin": 2.75,
+      "xMax": 3.25,
+      "zMin": -1.75,
+      "zMax": -1.25,
+      "stackedOn": null
+    },
+    {
+      "id": "SideTable",
+      "name": "边几",
+      "yNote": "y=0，引擎 floor-base 默认语义",
+      "owner": "Room3D static",
+      "sizeX": 0.6,
+      "sizeY": 0.35,
+      "sizeZ": 0.6,
+      "centerX": -1.5,
+      "centerZ": 2.6,
+      "halfX": 0.3,
+      "halfZ": 0.3,
+      "xMin": -1.8,
+      "xMax": -1.2,
+      "zMin": 2.3000000000000003,
+      "zMax": 2.9,
+      "stackedOn": null
+    }
+  ],
+  "spawn": {
+    "x": 0,
+    "z": -1.5,
+    "yawRad": 3.141592653589793,
+    "yawDeg": 180,
+    "forwardX": 1.2246467991473532e-16,
+    "forwardZ": 1,
+    "sizeX": 0.4,
+    "sizeZ": 0.4,
+    "yNote": "Spawn yaw=Math.PI，通过 getForwardVector 面朝 +z，需 Browser Preview 实际验证"
+  },
+  "initialKey": {
+    "x": 0,
+    "z": 0.3,
+    "surfaceContainerId": "cnt-coffee-table",
+    "approxSizeX": 0.1,
+    "approxSizeY": 0.1,
+    "approxSizeZ": 0.05,
+    "yNote": "InitialKey y 由 surfaceContainerId + surfaceHeight 放置逻辑决定，不硬编码"
+  },
+  "movedKey": {
+    "x": -1,
+    "z": -2,
+    "approxSizeX": 0.1,
+    "approxSizeZ": 0.1,
+    "yNote": "MovedKey y 由引擎物体地面偏移机制自动抬升，不硬编码 0"
+  },
+  "clearances": {
+    "bedroom": {
+      "xMin": -4,
+      "xMax": -2.5,
+      "zMin": -1,
+      "zMax": 1
+    },
+    "kitchen": {
+      "xMin": 2.5,
+      "xMax": 4,
+      "zMin": -1,
+      "zMax": 1
+    },
+    "entrance": {
+      "xMin": -1,
+      "xMax": 1,
+      "zMin": 2.5,
+      "zMax": 4
+    }
+  },
+  "aabbTable": [
+    {
+      "id": "MainSofa",
+      "name": "主沙发",
+      "center": "(0.00, -3.00)",
+      "halfSize": "(1.20, 0.50)",
+      "min": "(-1.20, -3.50)",
+      "max": "(1.20, -2.50)"
+    },
+    {
+      "id": "CoffeeTable",
+      "name": "茶几",
+      "center": "(0.00, 0.30)",
+      "halfSize": "(0.70, 0.35)",
+      "min": "(-0.70, -0.05)",
+      "max": "(0.70, 0.65)"
+    },
+    {
+      "id": "TVStand",
+      "name": "电视柜",
+      "center": "(2.80, 3.00)",
+      "halfSize": "(1.00, 0.23)",
+      "min": "(1.80, 2.77)",
+      "max": "(3.80, 3.23)"
+    },
+    {
+      "id": "TV",
+      "name": "电视",
+      "center": "(2.80, 3.00)",
+      "halfSize": "(0.80, 0.07)",
+      "min": "(2.00, 2.92)",
+      "max": "(3.60, 3.08)"
+    },
+    {
+      "id": "ArmChair",
+      "name": "扶手椅",
+      "center": "(-1.50, 1.50)",
+      "halfSize": "(0.70, 0.42)",
+      "min": "(-2.20, 1.07)",
+      "max": "(-0.80, 1.93)"
+    },
+    {
+      "id": "Bookshelf",
+      "name": "书架",
+      "center": "(3.50, -2.50)",
+      "halfSize": "(0.40, 0.17)",
+      "min": "(3.10, -2.67)",
+      "max": "(3.90, -2.33)"
+    },
+    {
+      "id": "Shelf",
+      "name": "搁架",
+      "center": "(-2.80, 3.80)",
+      "halfSize": "(0.35, 0.10)",
+      "min": "(-3.15, 3.70)",
+      "max": "(-2.45, 3.90)"
+    },
+    {
+      "id": "FloorLamp1",
+      "name": "落地灯1",
+      "center": "(3.50, -3.50)",
+      "halfSize": "(0.20, 0.20)",
+      "min": "(3.30, -3.70)",
+      "max": "(3.70, -3.30)"
+    },
+    {
+      "id": "FloorLamp2",
+      "name": "落地灯2",
+      "center": "(-0.30, 1.50)",
+      "halfSize": "(0.17, 0.17)",
+      "min": "(-0.47, 1.32)",
+      "max": "(-0.13, 1.68)"
+    },
+    {
+      "id": "Plant1",
+      "name": "大植物1",
+      "center": "(-3.50, -3.50)",
+      "halfSize": "(0.25, 0.25)",
+      "min": "(-3.75, -3.75)",
+      "max": "(-3.25, -3.25)"
+    },
+    {
+      "id": "Plant2",
+      "name": "大植物2",
+      "center": "(3.60, 2.00)",
+      "halfSize": "(0.17, 0.17)",
+      "min": "(3.43, 1.82)",
+      "max": "(3.77, 2.17)"
+    },
+    {
+      "id": "LoungeChair",
+      "name": "休闲椅",
+      "center": "(3.00, -1.50)",
+      "halfSize": "(0.25, 0.25)",
+      "min": "(2.75, -1.75)",
+      "max": "(3.25, -1.25)"
+    },
+    {
+      "id": "SideTable",
+      "name": "边几",
+      "center": "(-1.50, 2.60)",
+      "halfSize": "(0.30, 0.30)",
+      "min": "(-1.80, 2.30)",
+      "max": "(-1.20, 2.90)"
+    }
+  ],
+  "totalPairs": 78,
+  "overlapCount": 0,
+  "overlapPairs": [],
+  "disjointExamples": [
+    {
+      "pair": "MainSofa <-> CoffeeTable",
+      "dist": "2.450"
+    },
+    {
+      "pair": "MainSofa <-> TVStand",
+      "dist": "5.309"
+    },
+    {
+      "pair": "MainSofa <-> TV",
+      "dist": "5.484"
+    }
+  ],
+  "clearanceDistances": {
+    "bedroom": {
+      "MainSofa": 1.9849433241279208,
+      "CoffeeTable": 1.8,
+      "TVStand": 4.651948516482099,
+      "TV": 4.894448385671259,
+      "ArmChair": 0.30923292192132434,
+      "Bookshelf": 5.7546177110212975,
+      "Shelf": 2.6999999999999997,
+      "FloorLamp1": 6.239390995922599,
+      "FloorLamp2": 2.0509144301993683,
+      "Plant1": 2.25,
+      "Plant2": 5.982160980782782,
+      "LoungeChair": 5.25594901040716,
+      "SideTable": 1.4764823060233403
+    },
+    "kitchen": {
+      "MainSofa": 1.9849433241279208,
+      "CoffeeTable": 1.8,
+      "TVStand": 1.775,
+      "TV": 1.9249999999999998,
+      "ArmChair": 3.3008521626998077,
+      "Bookshelf": 1.3250000000000002,
+      "Shelf": 5.63848383876375,
+      "FloorLamp1": 2.3,
+      "FloorLamp2": 2.6450425327393132,
+      "Plant1": 6.174544517614234,
+      "Plant2": 0.825,
+      "LoungeChair": 0.25,
+      "SideTable": 3.9217343102255158
+    },
+    "entrance": {
+      "MainSofa": 5,
+      "CoffeeTable": 1.85,
+      "TVStand": 0.7999999999999998,
+      "TV": 0.9999999999999998,
+      "ArmChair": 0.575,
+      "Bookshelf": 5.2621882330452605,
+      "Shelf": 1.4499999999999997,
+      "FloorLamp1": 6.239390995922599,
+      "FloorLamp2": 0.825,
+      "Plant1": 6.174544517614234,
+      "Plant2": 2.4466814259318683,
+      "LoungeChair": 4.138236339311712,
+      "SideTable": 0.19999999999999996
+    }
+  },
+  "clearance3x13": [
+    {
+      "id": "MainSofa",
+      "name": "主沙发",
+      "bedroom": 1.9849433241279208,
+      "kitchen": 1.9849433241279208,
+      "entrance": 5
+    },
+    {
+      "id": "CoffeeTable",
+      "name": "茶几",
+      "bedroom": 1.8,
+      "kitchen": 1.8,
+      "entrance": 1.85
+    },
+    {
+      "id": "TVStand",
+      "name": "电视柜",
+      "bedroom": 4.651948516482099,
+      "kitchen": 1.775,
+      "entrance": 0.7999999999999998
+    },
+    {
+      "id": "TV",
+      "name": "电视",
+      "bedroom": 4.894448385671259,
+      "kitchen": 1.9249999999999998,
+      "entrance": 0.9999999999999998
+    },
+    {
+      "id": "ArmChair",
+      "name": "扶手椅",
+      "bedroom": 0.30923292192132434,
+      "kitchen": 3.3008521626998077,
+      "entrance": 0.575
+    },
+    {
+      "id": "Bookshelf",
+      "name": "书架",
+      "bedroom": 5.7546177110212975,
+      "kitchen": 1.3250000000000002,
+      "entrance": 5.2621882330452605
+    },
+    {
+      "id": "Shelf",
+      "name": "搁架",
+      "bedroom": 2.6999999999999997,
+      "kitchen": 5.63848383876375,
+      "entrance": 1.4499999999999997
+    },
+    {
+      "id": "FloorLamp1",
+      "name": "落地灯1",
+      "bedroom": 6.239390995922599,
+      "kitchen": 2.3,
+      "entrance": 6.239390995922599
+    },
+    {
+      "id": "FloorLamp2",
+      "name": "落地灯2",
+      "bedroom": 2.0509144301993683,
+      "kitchen": 2.6450425327393132,
+      "entrance": 0.825
+    },
+    {
+      "id": "Plant1",
+      "name": "大植物1",
+      "bedroom": 2.25,
+      "kitchen": 6.174544517614234,
+      "entrance": 6.174544517614234
+    },
+    {
+      "id": "Plant2",
+      "name": "大植物2",
+      "bedroom": 5.982160980782782,
+      "kitchen": 0.825,
+      "entrance": 2.4466814259318683
+    },
+    {
+      "id": "LoungeChair",
+      "name": "休闲椅",
+      "bedroom": 5.25594901040716,
+      "kitchen": 0.25,
+      "entrance": 4.138236339311712
+    },
+    {
+      "id": "SideTable",
+      "name": "边几",
+      "bedroom": 1.4764823060233403,
+      "kitchen": 3.9217343102255158,
+      "entrance": 0.19999999999999996
+    }
+  ],
+  "spawnMinDist": 0.8,
+  "spawnMinFurn": "MainSofa",
+  "distKey": 1.8,
+  "viewAngleDeg": 0,
+  "losHits": 0,
+  "V": {
+    "x": 3,
+    "z": -2
+  },
+  "angleDeg": 33.690067525979785,
+  "distBD": 3.605551275463989,
+  "absZMK": 2,
+  "standableHits": 1,
+  "hitDirs": [
+    "270°"
+  ],
+  "dirDetail": [
+    {
+      "dir": "0°",
+      "px": "-0.50",
+      "pz": "-2.00",
+      "hit": "NONE"
+    },
+    {
+      "dir": "45°",
+      "px": "-0.65",
+      "pz": "-1.65",
+      "hit": "NONE"
+    },
+    {
+      "dir": "90°",
+      "px": "-1.00",
+      "pz": "-1.50",
+      "hit": "NONE"
+    },
+    {
+      "dir": "135°",
+      "px": "-1.35",
+      "pz": "-1.65",
+      "hit": "NONE"
+    },
+    {
+      "dir": "180°",
+      "px": "-1.50",
+      "pz": "-2.00",
+      "hit": "NONE"
+    },
+    {
+      "dir": "225°",
+      "px": "-1.35",
+      "pz": "-2.35",
+      "hit": "NONE"
+    },
+    {
+      "dir": "270°",
+      "px": "-1.00",
+      "pz": "-2.50",
+      "hit": "MainSofa"
+    },
+    {
+      "dir": "315°",
+      "px": "-0.65",
+      "pz": "-2.35",
+      "hit": "NONE"
+    }
+  ],
+  "blockedCount": 49,
+  "bfsBD_KT": {
+    "reachable": true,
+    "steps": 19,
+    "len_m": 7.6
+  },
+  "bfsBD_EN": {
+    "reachable": true,
+    "steps": 17,
+    "len_m": 6.8
+  },
+  "S1": 1.6,
+  "S2": 4.4,
+  "S3": 4.4,
+  "S4": 6.4,
+  "total": "16.80",
+  "svgPathPoints": {
+    "S1": "312.0,216.0 312.0,240.0 312.0,264.0 312.0,288.0 312.0,312.0",
+    "S2": "312.0,312.0 312.0,288.0 288.0,288.0 264.0,288.0 240.0,288.0 216.0,288.0 192.0,288.0 168.0,288.0 144.0,288.0 120.0,288.0 96.0,288.0 96.0,312.0",
+    "S3": "96.0,312.0 120.0,312.0 144.0,312.0 144.0,288.0 168.0,288.0 168.0,264.0 192.0,264.0 192.0,240.0 216.0,240.0 216.0,216.0 240.0,216.0 240.0,192.0",
+    "S4": "240.0,192.0 240.0,216.0 240.0,240.0 240.0,264.0 240.0,288.0 240.0,312.0 240.0,336.0 240.0,360.0 264.0,360.0 264.0,384.0 264.0,408.0 264.0,432.0 264.0,456.0 288.0,456.0 288.0,480.0 312.0,480.0 312.0,504.0"
+  },
+  "cells": {
+    "spawnCell": {
+      "ci": 10,
+      "cj": 6
+    },
+    "key0Cell": {
+      "ci": 10,
+      "cj": 10
+    },
+    "bdCell": {
+      "ci": 1,
+      "cj": 10
+    },
+    "ktCell": {
+      "ci": 18,
+      "cj": 10
+    },
+    "enCell": {
+      "ci": 10,
+      "cj": 18
+    },
+    "mkCell": {
+      "ci": 7,
+      "cj": 5
+    }
+  },
+  "allPass": true,
+  "clearanceAllPass": true,
+  "BD_ENTRY": {
+    "x": -4,
+    "z": 0
+  },
+  "MK_V": {
+    "x": 3,
+    "z": -2
+  }
+}

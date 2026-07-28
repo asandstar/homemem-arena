@@ -1,0 +1,627 @@
+{
+  "furniture": [
+    {
+      "id": "MainSofa",
+      "name": "主沙发",
+      "size": {
+        "x": 2.4,
+        "z": 1,
+        "y": 0.9
+      },
+      "center": {
+        "x": 0,
+        "z": -3
+      }
+    },
+    {
+      "id": "CoffeeTable",
+      "name": "茶几",
+      "size": {
+        "x": 1.4,
+        "z": 0.7,
+        "y": 0.45
+      },
+      "center": {
+        "x": 0,
+        "z": 0.3
+      }
+    },
+    {
+      "id": "TVStand",
+      "name": "电视柜",
+      "size": {
+        "x": 2,
+        "z": 0.45,
+        "y": 0.55
+      },
+      "center": {
+        "x": 2.8,
+        "z": 3
+      }
+    },
+    {
+      "id": "TV",
+      "name": "电视",
+      "size": {
+        "x": 1.6,
+        "z": 0.15,
+        "y": 0.9
+      },
+      "center": {
+        "x": 2.8,
+        "z": 3
+      },
+      "stackedOn": "TVStand"
+    },
+    {
+      "id": "SideSofa",
+      "name": "单人沙发",
+      "size": {
+        "x": 1.6,
+        "z": 0.9,
+        "y": 0.85
+      },
+      "center": {
+        "x": -1.5,
+        "z": 1.5
+      }
+    },
+    {
+      "id": "Bookshelf",
+      "name": "书架",
+      "size": {
+        "x": 0.8,
+        "z": 0.35,
+        "y": 1.8
+      },
+      "center": {
+        "x": 3.5,
+        "z": -2.5
+      }
+    },
+    {
+      "id": "Shelf",
+      "name": "搁架",
+      "size": {
+        "x": 0.7,
+        "z": 0.2,
+        "y": 1.2
+      },
+      "center": {
+        "x": -2.8,
+        "z": 3.8
+      }
+    },
+    {
+      "id": "FloorLamp1",
+      "name": "落地灯1",
+      "size": {
+        "x": 0.4,
+        "z": 0.4,
+        "y": 1.8
+      },
+      "center": {
+        "x": 3.5,
+        "z": -3.5
+      }
+    },
+    {
+      "id": "FloorLamp2",
+      "name": "落地灯2",
+      "size": {
+        "x": 0.35,
+        "z": 0.35,
+        "y": 1.6
+      },
+      "center": {
+        "x": -0.3,
+        "z": 1.5
+      }
+    },
+    {
+      "id": "Plant1",
+      "name": "大植物1",
+      "size": {
+        "x": 0.5,
+        "z": 0.5,
+        "y": 1.2
+      },
+      "center": {
+        "x": -3.5,
+        "z": -3.5
+      }
+    },
+    {
+      "id": "Plant2",
+      "name": "大植物2",
+      "size": {
+        "x": 0.35,
+        "z": 0.35,
+        "y": 0.8
+      },
+      "center": {
+        "x": 3.6,
+        "z": 2
+      }
+    },
+    {
+      "id": "LoungeChair",
+      "name": "休闲椅",
+      "size": {
+        "x": 0.5,
+        "z": 0.5,
+        "y": 0.7
+      },
+      "center": {
+        "x": 3,
+        "z": -1.5
+      }
+    },
+    {
+      "id": "SideTable",
+      "name": "边几",
+      "size": {
+        "x": 0.6,
+        "z": 0.6,
+        "y": 0.35
+      },
+      "center": {
+        "x": -1.5,
+        "z": 2.6
+      }
+    },
+    {
+      "id": "TaskCnt",
+      "name": "任务容器(茶几内含)",
+      "size": {
+        "x": 0,
+        "z": 0,
+        "y": 0
+      },
+      "center": {
+        "x": 0,
+        "z": 0.3
+      },
+      "ignore": true
+    }
+  ],
+  "activeFurnitureAABBs": [
+    {
+      "id": "MainSofa",
+      "name": "主沙发",
+      "sizeX": 2.4,
+      "sizeZ": 1,
+      "sizeY": 0.9,
+      "centerX": 0,
+      "centerZ": -3,
+      "halfX": 1.2,
+      "halfZ": 0.5,
+      "xMin": -1.2,
+      "xMax": 1.2,
+      "zMin": -3.5,
+      "zMax": -2.5
+    },
+    {
+      "id": "CoffeeTable",
+      "name": "茶几",
+      "sizeX": 1.4,
+      "sizeZ": 0.7,
+      "sizeY": 0.45,
+      "centerX": 0,
+      "centerZ": 0.3,
+      "halfX": 0.7,
+      "halfZ": 0.35,
+      "xMin": -0.7,
+      "xMax": 0.7,
+      "zMin": -0.04999999999999999,
+      "zMax": 0.6499999999999999
+    },
+    {
+      "id": "TVStand",
+      "name": "电视柜",
+      "sizeX": 2,
+      "sizeZ": 0.45,
+      "sizeY": 0.55,
+      "centerX": 2.8,
+      "centerZ": 3,
+      "halfX": 1,
+      "halfZ": 0.225,
+      "xMin": 1.7999999999999998,
+      "xMax": 3.8,
+      "zMin": 2.775,
+      "zMax": 3.225
+    },
+    {
+      "id": "TV",
+      "name": "电视",
+      "sizeX": 1.6,
+      "sizeZ": 0.15,
+      "sizeY": 0.9,
+      "centerX": 2.8,
+      "centerZ": 3,
+      "halfX": 0.8,
+      "halfZ": 0.075,
+      "xMin": 1.9999999999999998,
+      "xMax": 3.5999999999999996,
+      "zMin": 2.925,
+      "zMax": 3.075
+    },
+    {
+      "id": "SideSofa",
+      "name": "单人沙发",
+      "sizeX": 1.6,
+      "sizeZ": 0.9,
+      "sizeY": 0.85,
+      "centerX": -1.5,
+      "centerZ": 1.5,
+      "halfX": 0.8,
+      "halfZ": 0.45,
+      "xMin": -2.3,
+      "xMax": -0.7,
+      "zMin": 1.05,
+      "zMax": 1.95
+    },
+    {
+      "id": "Bookshelf",
+      "name": "书架",
+      "sizeX": 0.8,
+      "sizeZ": 0.35,
+      "sizeY": 1.8,
+      "centerX": 3.5,
+      "centerZ": -2.5,
+      "halfX": 0.4,
+      "halfZ": 0.175,
+      "xMin": 3.1,
+      "xMax": 3.9,
+      "zMin": -2.675,
+      "zMax": -2.325
+    },
+    {
+      "id": "Shelf",
+      "name": "搁架",
+      "sizeX": 0.7,
+      "sizeZ": 0.2,
+      "sizeY": 1.2,
+      "centerX": -2.8,
+      "centerZ": 3.8,
+      "halfX": 0.35,
+      "halfZ": 0.1,
+      "xMin": -3.15,
+      "xMax": -2.4499999999999997,
+      "zMin": 3.6999999999999997,
+      "zMax": 3.9
+    },
+    {
+      "id": "FloorLamp1",
+      "name": "落地灯1",
+      "sizeX": 0.4,
+      "sizeZ": 0.4,
+      "sizeY": 1.8,
+      "centerX": 3.5,
+      "centerZ": -3.5,
+      "halfX": 0.2,
+      "halfZ": 0.2,
+      "xMin": 3.3,
+      "xMax": 3.7,
+      "zMin": -3.7,
+      "zMax": -3.3
+    },
+    {
+      "id": "FloorLamp2",
+      "name": "落地灯2",
+      "sizeX": 0.35,
+      "sizeZ": 0.35,
+      "sizeY": 1.6,
+      "centerX": -0.3,
+      "centerZ": 1.5,
+      "halfX": 0.175,
+      "halfZ": 0.175,
+      "xMin": -0.475,
+      "xMax": -0.125,
+      "zMin": 1.325,
+      "zMax": 1.675
+    },
+    {
+      "id": "Plant1",
+      "name": "大植物1",
+      "sizeX": 0.5,
+      "sizeZ": 0.5,
+      "sizeY": 1.2,
+      "centerX": -3.5,
+      "centerZ": -3.5,
+      "halfX": 0.25,
+      "halfZ": 0.25,
+      "xMin": -3.75,
+      "xMax": -3.25,
+      "zMin": -3.75,
+      "zMax": -3.25
+    },
+    {
+      "id": "Plant2",
+      "name": "大植物2",
+      "sizeX": 0.35,
+      "sizeZ": 0.35,
+      "sizeY": 0.8,
+      "centerX": 3.6,
+      "centerZ": 2,
+      "halfX": 0.175,
+      "halfZ": 0.175,
+      "xMin": 3.4250000000000003,
+      "xMax": 3.775,
+      "zMin": 1.825,
+      "zMax": 2.175
+    },
+    {
+      "id": "LoungeChair",
+      "name": "休闲椅",
+      "sizeX": 0.5,
+      "sizeZ": 0.5,
+      "sizeY": 0.7,
+      "centerX": 3,
+      "centerZ": -1.5,
+      "halfX": 0.25,
+      "halfZ": 0.25,
+      "xMin": 2.75,
+      "xMax": 3.25,
+      "zMin": -1.75,
+      "zMax": -1.25
+    },
+    {
+      "id": "SideTable",
+      "name": "边几",
+      "sizeX": 0.6,
+      "sizeZ": 0.6,
+      "sizeY": 0.35,
+      "centerX": -1.5,
+      "centerZ": 2.6,
+      "halfX": 0.3,
+      "halfZ": 0.3,
+      "xMin": -1.8,
+      "xMax": -1.2,
+      "zMin": 2.3000000000000003,
+      "zMax": 2.9
+    }
+  ],
+  "spawn": {
+    "x": 0,
+    "z": -1.5,
+    "yawDeg": 90
+  },
+  "initialKey": {
+    "x": 0,
+    "y": 0.65,
+    "z": 0.3,
+    "surfaceContainerId": "CoffeeTable"
+  },
+  "movedKey": {
+    "x": -1,
+    "y": 0,
+    "z": -2
+  },
+  "clearances": {
+    "bedroom": {
+      "xMin": -4,
+      "xMax": -2.5,
+      "zMin": -1,
+      "zMax": 1
+    },
+    "kitchen": {
+      "xMin": 2.5,
+      "xMax": 4,
+      "zMin": -1,
+      "zMax": 1
+    },
+    "entrance": {
+      "xMin": -1,
+      "xMax": 1,
+      "zMin": 2.5,
+      "zMax": 4
+    }
+  },
+  "aabbTable": [
+    {
+      "id": "MainSofa",
+      "name": "主沙发",
+      "center": "(0.00, -3.00)",
+      "halfSize": "(1.20, 0.50)",
+      "min": "(-1.20, -3.50)",
+      "max": "(1.20, -2.50)"
+    },
+    {
+      "id": "CoffeeTable",
+      "name": "茶几",
+      "center": "(0.00, 0.30)",
+      "halfSize": "(0.70, 0.35)",
+      "min": "(-0.70, -0.05)",
+      "max": "(0.70, 0.65)"
+    },
+    {
+      "id": "TVStand",
+      "name": "电视柜",
+      "center": "(2.80, 3.00)",
+      "halfSize": "(1.00, 0.23)",
+      "min": "(1.80, 2.77)",
+      "max": "(3.80, 3.23)"
+    },
+    {
+      "id": "TV",
+      "name": "电视",
+      "center": "(2.80, 3.00)",
+      "halfSize": "(0.80, 0.07)",
+      "min": "(2.00, 2.92)",
+      "max": "(3.60, 3.08)"
+    },
+    {
+      "id": "SideSofa",
+      "name": "单人沙发",
+      "center": "(-1.50, 1.50)",
+      "halfSize": "(0.80, 0.45)",
+      "min": "(-2.30, 1.05)",
+      "max": "(-0.70, 1.95)"
+    },
+    {
+      "id": "Bookshelf",
+      "name": "书架",
+      "center": "(3.50, -2.50)",
+      "halfSize": "(0.40, 0.17)",
+      "min": "(3.10, -2.67)",
+      "max": "(3.90, -2.33)"
+    },
+    {
+      "id": "Shelf",
+      "name": "搁架",
+      "center": "(-2.80, 3.80)",
+      "halfSize": "(0.35, 0.10)",
+      "min": "(-3.15, 3.70)",
+      "max": "(-2.45, 3.90)"
+    },
+    {
+      "id": "FloorLamp1",
+      "name": "落地灯1",
+      "center": "(3.50, -3.50)",
+      "halfSize": "(0.20, 0.20)",
+      "min": "(3.30, -3.70)",
+      "max": "(3.70, -3.30)"
+    },
+    {
+      "id": "FloorLamp2",
+      "name": "落地灯2",
+      "center": "(-0.30, 1.50)",
+      "halfSize": "(0.17, 0.17)",
+      "min": "(-0.47, 1.32)",
+      "max": "(-0.13, 1.68)"
+    },
+    {
+      "id": "Plant1",
+      "name": "大植物1",
+      "center": "(-3.50, -3.50)",
+      "halfSize": "(0.25, 0.25)",
+      "min": "(-3.75, -3.75)",
+      "max": "(-3.25, -3.25)"
+    },
+    {
+      "id": "Plant2",
+      "name": "大植物2",
+      "center": "(3.60, 2.00)",
+      "halfSize": "(0.17, 0.17)",
+      "min": "(3.43, 1.82)",
+      "max": "(3.77, 2.17)"
+    },
+    {
+      "id": "LoungeChair",
+      "name": "休闲椅",
+      "center": "(3.00, -1.50)",
+      "halfSize": "(0.25, 0.25)",
+      "min": "(2.75, -1.75)",
+      "max": "(3.25, -1.25)"
+    },
+    {
+      "id": "SideTable",
+      "name": "边几",
+      "center": "(-1.50, 2.60)",
+      "halfSize": "(0.30, 0.30)",
+      "min": "(-1.80, 2.30)",
+      "max": "(-1.20, 2.90)"
+    }
+  ],
+  "overlapCount": 0,
+  "overlapPairs": [],
+  "disjointExamples": [
+    {
+      "pair": "MainSofa <-> CoffeeTable",
+      "dist": "2.450"
+    },
+    {
+      "pair": "MainSofa <-> TVStand",
+      "dist": "5.309"
+    },
+    {
+      "pair": "MainSofa <-> TV",
+      "dist": "5.484"
+    }
+  ],
+  "clearanceDistances": {
+    "bedroom": {
+      "MainSofa": 1.9849433241279208,
+      "CoffeeTable": 1.8,
+      "TVStand": 4.651948516482099,
+      "TV": 4.894448385671259,
+      "SideSofa": 0.2061552812808832,
+      "Bookshelf": 5.7546177110212975,
+      "Shelf": 2.6999999999999997,
+      "FloorLamp1": 6.239390995922599,
+      "FloorLamp2": 2.0509144301993683,
+      "Plant1": 2.25,
+      "Plant2": 5.982160980782782,
+      "LoungeChair": 5.25594901040716,
+      "SideTable": 1.4764823060233403
+    },
+    "kitchen": {
+      "MainSofa": 1.9849433241279208,
+      "CoffeeTable": 1.8,
+      "TVStand": 1.775,
+      "TV": 1.9249999999999998,
+      "SideSofa": 3.200390601161052,
+      "Bookshelf": 1.3250000000000002,
+      "Shelf": 5.63848383876375,
+      "FloorLamp1": 2.3,
+      "FloorLamp2": 2.6450425327393132,
+      "Plant1": 6.174544517614234,
+      "Plant2": 0.825,
+      "LoungeChair": 0.25,
+      "SideTable": 3.9217343102255158
+    },
+    "entrance": {
+      "MainSofa": 5,
+      "CoffeeTable": 1.85,
+      "TVStand": 0.7999999999999998,
+      "TV": 0.9999999999999998,
+      "SideSofa": 0.55,
+      "Bookshelf": 5.2621882330452605,
+      "Shelf": 1.4499999999999997,
+      "FloorLamp1": 6.239390995922599,
+      "FloorLamp2": 0.825,
+      "Plant1": 6.174544517614234,
+      "Plant2": 2.4466814259318683,
+      "LoungeChair": 4.138236339311712,
+      "SideTable": 0.19999999999999996
+    }
+  },
+  "spawnMinDist": 0.8,
+  "spawnMinFurn": "MainSofa",
+  "distKey": 1.8,
+  "viewAngleDeg": 0,
+  "losHits": 0,
+  "bdx": 3,
+  "bdz": -2,
+  "distBD": 3.605551275463989,
+  "angleBD": 33.690067525979785,
+  "absZ": 2,
+  "standableHits": 1,
+  "hitDirs": [
+    "270°"
+  ],
+  "blockedCount": 49,
+  "bfsBD_KT": {
+    "reachable": true,
+    "steps": 19,
+    "len_m": 7.6
+  },
+  "bfsBD_EN": {
+    "reachable": true,
+    "steps": 17,
+    "len_m": 6.8
+  },
+  "S1": 1.6,
+  "S2": 4.4,
+  "S3": 4.4,
+  "S4": 6.4,
+  "total": "16.80",
+  "svgPathPoints": {
+    "S1": "312.0,216.0 312.0,240.0 312.0,264.0 312.0,288.0 312.0,312.0",
+    "S2": "312.0,312.0 312.0,288.0 288.0,288.0 264.0,288.0 240.0,288.0 216.0,288.0 192.0,288.0 168.0,288.0 144.0,288.0 120.0,288.0 96.0,288.0 96.0,312.0",
+    "S3": "96.0,312.0 120.0,312.0 144.0,312.0 144.0,288.0 168.0,288.0 168.0,264.0 192.0,264.0 192.0,240.0 216.0,240.0 216.0,216.0 240.0,216.0 240.0,192.0",
+    "S4": "240.0,192.0 240.0,216.0 240.0,240.0 240.0,264.0 240.0,288.0 240.0,312.0 240.0,336.0 240.0,360.0 264.0,360.0 264.0,384.0 264.0,408.0 264.0,432.0 264.0,456.0 288.0,456.0 288.0,480.0 312.0,480.0 312.0,504.0"
+  },
+  "allPass": true
+}
