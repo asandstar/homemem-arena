@@ -50,9 +50,9 @@ export const PALETTE = {
   },
 
   target: {
-    primary: '#10b981',
-    secondary: '#059669',
-    highlight: '#34d399',
+    primary: '#a855f7',
+    secondary: '#7e22ce',
+    highlight: '#c084fc',
   },
 
   ambient: {
@@ -64,7 +64,7 @@ export const PALETTE = {
 }
 
 export const MATERIAL_CONFIG: Record<string, { roughness: number; metalness: number; emissive?: string; emissiveIntensity?: number }> = {
-  screen: { roughness: 0.1, metalness: 0.3, emissive: '#10b981', emissiveIntensity: 0.3 },
+  screen: { roughness: 0.1, metalness: 0.3, emissive: '#0f172a', emissiveIntensity: 0.05 },
   metal: { roughness: 0.2, metalness: 0.8, emissive: '#000000', emissiveIntensity: 0 },
   cloth: { roughness: 0.85, metalness: 0.05, emissive: '#000000', emissiveIntensity: 0 },
   plastic: { roughness: 0.4, metalness: 0.1, emissive: '#000000', emissiveIntensity: 0 },

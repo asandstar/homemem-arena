@@ -114,10 +114,10 @@ export function Container3D({
   const inRange = distance < 2.5
 
   const proximityGlow = useMemo(() => {
-    if (distance >= 4.0) return 0
+    if (!inRange) return 0
     if (distance <= 1.5) return 1
-    return (4.0 - distance) / 2.5
-  }, [distance])
+    return (2.5 - distance) / 1.0
+  }, [distance, inRange])
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation()
@@ -130,10 +130,10 @@ export function Container3D({
 
   return (
     <group ref={groupRef} position={worldPos}>
-      {proximityGlow > 0.01 && !spec.isTargetZone && (
+      {inRange && !spec.isTargetZone && (
         <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[spec.size.x * 0.55, spec.size.x * 0.7, 32]} />
-          <meshBasicMaterial color={PALETTE.status.info} transparent opacity={0.1 + proximityGlow * 0.15} />
+          <meshBasicMaterial color={PALETTE.target.primary} transparent opacity={0.2 + proximityGlow * 0.2} />
         </mesh>
       )}
       <group

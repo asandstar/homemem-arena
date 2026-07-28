@@ -3,8 +3,6 @@ import { useGameStore } from '../../store/useGameStore'
 import { useUiStore } from '../../store/useUiStore'
 import { Target, Clock, CheckCircle2, AlertTriangle, Zap, Package, Keyboard, Brain, Lock, Unlock, Trash2, ChevronDown, ChevronUp, Skull, AlertCircle, X, Cat, Smartphone, HelpCircle, Eye, EyeOff, MapPin, Box, History, Play } from 'lucide-react'
 import { Minimap } from './Minimap'
-import { updateRoomAmbient } from '../../audio/sfx'
-import { playBgm } from '../../audio/bgm'
 import type { GoalSpec } from '../../types/task'
 import { HelpPanel } from '../help/HelpPanel'
 import { useSessionStore } from '../../store/useSessionStore'
@@ -266,19 +264,6 @@ export function HUD() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
-  useEffect(() => {
-    if (phase === 'playing' && task) {
-      playBgm(task.id)
-    }
-  }, [phase, task])
-
-  useEffect(() => {
-    if (phase === 'playing') {
-      updateRoomAmbient(currentRoom)
-    }
-  }, [currentRoom, phase])
-
-  
 
   if (hudHidden) {
     return (

@@ -37,7 +37,7 @@ export function FurnitureModel({
   const pulseRef = useRef(0)
   const config = getModelConfig(modelId)
 
-  const highlightColor = config?.highlightColor || PALETTE.status.info
+  const highlightColor = config?.highlightColor || PALETTE.target.primary
   const targetColor = PALETTE.target.primary
   const targetHighlight = PALETTE.target.highlight
 

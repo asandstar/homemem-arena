@@ -81,7 +81,7 @@ export function Door3D({ roomCenter, roomSize, door }: Door3DProps) {
   }, [roomCenter, roomSize, door])
 
   const targetRoomName = sharedRooms[door.connectsTo as keyof typeof sharedRooms]?.name || door.connectsTo
-  const doorFrameColor = '#10b981'
+  const doorFrameColor = '#38bdf8'
 
   useFrame((_, delta) => {
     if (!doorGroupRef.current) return

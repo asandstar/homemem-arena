@@ -89,7 +89,7 @@ export function Object3D({ entity, onClick, isHeld }: Object3DProps) {
   const halfHeight = modelHeight / 2
 
   const isKey = entity.category === 'key' || entity.configId === 'obj-key'
-  const glowColor = isKey ? '#fbbf24' : PALETTE.status.info
+  const glowColor = isKey ? '#fbbf24' : PALETTE.target.primary
 
   const visualPosition = useMemo(() => {
     if (isHeld) return entity.position
@@ -107,10 +107,10 @@ export function Object3D({ entity, onClick, isHeld }: Object3DProps) {
   const inRange = distance < 2.5 && !isMoving
   const proximityGlow = useMemo(() => {
     if (isMoving || isHeld) return 0
-    if (distance >= 3.5) return 0
+    if (!inRange) return 0
     if (distance <= 1.5) return 1
-    return (3.5 - distance) / 2.0
-  }, [distance, isMoving, isHeld])
+    return (2.5 - distance) / 1.0
+  }, [distance, isMoving, isHeld, inRange])
 
   useFrame((_, delta) => {
     if (isShaking) {

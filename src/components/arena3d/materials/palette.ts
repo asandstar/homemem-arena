@@ -63,6 +63,12 @@ export const PALETTE = {
     memory_dark: '#6d28d9',
   },
 
+  target: {
+    primary: '#a855f7',
+    secondary: '#7e22ce',
+    highlight: '#c084fc',
+  },
+
   roomThemes: {
     entrance: {
       wall: '#e8f5e9',

@@ -29,7 +29,7 @@ export function PropModel({
   const breatheRef = useRef(0)
   const config = getModelConfig(modelId)
 
-  const highlightColor = config?.highlightColor || PALETTE.status.info
+  const highlightColor = config?.highlightColor || PALETTE.target.primary
 
   const visualHeight = useMemo(() => size ? size.y : 0.5, [size])
 

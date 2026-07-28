@@ -128,7 +128,7 @@ export function FallbackColorizer({ modelId, color, hovered, selected, children 
     
     if (!groupRef.current) return
     
-    const highlightColor = config?.highlightColor || PALETTE.status.info
+    const highlightColor = config?.highlightColor || PALETTE.target.primary
     const materialType = config?.materialType || 'plastic'
     const matConfig = MATERIAL_CONFIG[materialType] || MATERIAL_CONFIG.plastic
     
@@ -354,7 +354,7 @@ function ModelContent({
     if (clonedScene) {
       clonedScene.traverse((child: THREE.Object3D) => {
         if (child instanceof THREE.Mesh) {
-          const highlightColor = config?.highlightColor || '#3b82f6'
+          const highlightColor = config?.highlightColor || PALETTE.target.primary
 
           if (child.material instanceof THREE.MeshStandardMaterial ||
               child.material instanceof THREE.MeshPhysicalMaterial) {
@@ -410,7 +410,7 @@ function ModelContent({
         <mesh position={[0, -heightOffset + 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.3, 0.4, 32]} />
           <meshBasicMaterial
-            color={config.highlightColor || '#10b981'}
+            color={PALETTE.target.primary}
             transparent
             opacity={0.6 + Math.sin(timeRef.current * 3) * 0.2}
           />
@@ -420,7 +420,7 @@ function ModelContent({
       {target && (
         <pointLight
           position={[0, 0.5, 0]}
-          color={config.highlightColor || '#10b981'}
+          color={PALETTE.target.primary}
           intensity={0.5 + Math.sin(timeRef.current * 2) * 0.2}
           distance={2}
         />
