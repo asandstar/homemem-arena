@@ -413,6 +413,98 @@ function proximityToDoorHeuristic(task: TaskConfig): QaResult[] {
   return results
 }
 
+function checkContainsObjectIdsAndSurfaceHeightBounds(task: TaskConfig): QaResult[] {
+  const results: QaResult[] = []
+  const objIds = new Set(task.objects.map((o) => o.id))
+  for (const cnt of task.containers) {
+    // === 检查 containsObjectIds 引用有效性 ===
+    if (cnt.containsObjectIds && cnt.containsObjectIds.length > 0) {
+      let allOk = true
+      const missing: string[] = []
+      for (const oid of cnt.containsObjectIds) {
+        if (!objIds.has(oid)) {
+          allOk = false
+          missing.push(oid)
+        }
+      }
+      if (allOk) {
+        results.push(
+          pass(
+            CATEGORY,
+            'container-contains-objects-valid',
+            `${task.id}/${cnt.id}: containsObjectIds 全部指向存在的 object (${cnt.containsObjectIds.length} 项)`,
+          ),
+        )
+      } else {
+        results.push(
+          fail(
+            'major',
+            CATEGORY,
+            'container-contains-objects-valid',
+            `${task.id}/${cnt.id}: containsObjectIds 指向未知 object id: [${missing.join(', ')}]`,
+          ),
+        )
+      }
+    }
+    // === 检查 surfaceHeight 上界（显式声明的交互表面，不高于盒子顶 + 0.5m） ===
+    if (typeof cnt.surfaceHeight === 'number') {
+      const boxTop = cnt.position.y + cnt.size.y
+      const maxAllowed = boxTop + 0.5
+      if (cnt.surfaceHeight <= maxAllowed) {
+        results.push(
+          pass(
+            CATEGORY,
+            'surface-height-within-box',
+            `${task.id}/${cnt.id}: surfaceHeight=${cnt.surfaceHeight.toFixed(3)} ≤ boxTop(${boxTop.toFixed(3)}) + 0.5 = ${maxAllowed.toFixed(3)}`,
+          ),
+        )
+      } else {
+        results.push(
+          fail(
+            'minor',
+            CATEGORY,
+            'surface-height-within-box',
+            `${task.id}/${cnt.id}: surfaceHeight=${cnt.surfaceHeight.toFixed(3)} 高于容器盒顶 + 0.5 = ${maxAllowed.toFixed(3)}（物体放上去会悬浮）`,
+          ),
+        )
+      }
+    }
+  }
+  if (task.containers.length === 0) {
+    results.push(pass(CATEGORY, 'container-contains-objects-valid', `${task.id}: 无容器，跳过`))
+    results.push(pass(CATEGORY, 'surface-height-within-box', `${task.id}: 无容器，跳过`))
+  }
+  return results
+}
+
+function checkEachRoomHasInteractable(task: TaskConfig): QaResult[] {
+  const results: QaResult[] = []
+  for (const roomId of task.rooms as RoomId[]) {
+    const containersInRoom = task.containers.filter((c) => c.room === roomId)
+    const objectsInRoom = task.objects.filter((o) => o.initialRoom === roomId)
+    const total = containersInRoom.length + objectsInRoom.length
+    if (total >= 1) {
+      results.push(
+        pass(
+          CATEGORY,
+          'room-has-interactable',
+          `${task.id}/${roomId}: ${containersInRoom.length} 容器 + ${objectsInRoom.length} 物体 = ${total} 项可交互 ✓`,
+        ),
+      )
+    } else {
+      results.push(
+        fail(
+          'blocker',
+          CATEGORY,
+          'room-has-interactable',
+          `${task.id}/${roomId}: 该房间无任何物体/容器，玩家走进来永远 E/F 无反应（疑似误删）`,
+        ),
+      )
+    }
+  }
+  return results
+}
+
 export function checkTaskLayout(task: TaskConfig): QaResult[] {
   const results: QaResult[] = []
   results.push(checkTaskSpawn(task))
@@ -424,6 +516,8 @@ export function checkTaskLayout(task: TaskConfig): QaResult[] {
   results.push(...checkObjectOnContainer(task))
   results.push(...checkScriptedEventTargetPositions(task))
   results.push(...proximityToDoorHeuristic(task))
+  results.push(...checkContainsObjectIdsAndSurfaceHeightBounds(task))
+  results.push(...checkEachRoomHasInteractable(task))
   return results
 }
 
