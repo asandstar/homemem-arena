@@ -37,6 +37,10 @@ export interface E2eTestApi {
   getResetAudioStateCallCount(): number
   wasBgmStopCalled(): boolean
   getBgmStopCount(): number
+  /** 获取指定房间的中心点世界坐标（用于 helpers 内部转换容器局部坐标→世界坐标） */
+  getRoomCenter(roomId: string): { x: number; y: number; z: number } | null
+  /** 获取指定容器的世界坐标（即 roomCenter + container.position），用于 E2E 里 teleport 到容器附近。 */
+  getContainerWorldPosition(containerId: string): { room: string; x: number; y: number; z: number } | null
 
   // === Command-backed 方法（调用真实 command 层）===
   /** 按 configId 查找实体并调用 executeSaveMemory */
@@ -83,6 +87,17 @@ export interface E2eTestApi {
     success: boolean
     history: Array<{ before: string | null; after: string | null }>
     finalStage: string | null
+  }
+  /** 手动触发一次 checkLevelCompletion，返回评估前后的 achievedGoalIds 快照（只读，用于调试 goal 未达成问题） */
+  forceCheckLevelCompletion(): { before: string[]; after: string[] }
+  /** 诊断工具：返回指定 goal 的 isGoalSatisfied 细节（依赖检查、predicate 结果、每个实体快照） */
+  debugGoalPredicate(goalId: string): {
+    found: boolean
+    dependenciesMet: boolean
+    missingDeps: string[]
+    achievedAlready: boolean
+    predicateResult: boolean
+    predicateRelatedPlacedIn: Record<string, string | undefined>
   }
 
   // === Sprint B.1 E2E 辅助方法（仅用于 E2E 稳定化，不影响生产路径）===

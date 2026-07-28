@@ -187,3 +187,139 @@ export async function waitForAudioStopped(
   }
   return false
 }
+
+/**
+ * 通过 Test API 调用任意 Command-backed 方法
+ * 自动处理 "先开始任务" 错误：内部调用 startPlaying 重置 phase 后重试一次
+ */
+export async function callCommand(
+  page: Page,
+  method: string,
+  ...args: unknown[]
+): Promise<{ success: boolean; reason?: string }> {
+  const first = await page.evaluate(
+    ({ method, args }) => {
+      if (!window.__testApi__) throw new Error('testApi not available')
+      const api = window.__testApi__ as unknown as Record<string, (...a: unknown[]) => unknown>
+      return api[method](...args) as { success: boolean; reason?: string }
+    },
+    { method, args },
+  )
+  const reasonStr = String(first?.reason ?? '')
+  if (!first?.success && /先开始任务/.test(reasonStr)) {
+    await page.evaluate(() => {
+      const api = (window as any).__testApi__
+      if (api && typeof api.startPlaying === 'function') return api.startPlaying()
+      return null
+    })
+    await page.waitForTimeout(120)
+    return page.evaluate(
+      ({ method, args }) => {
+        if (!window.__testApi__) throw new Error('testApi not available')
+        const api = window.__testApi__ as unknown as Record<string, (...a: unknown[]) => unknown>
+        return api[method](...args) as { success: boolean; reason?: string }
+      },
+      { method, args },
+    )
+  }
+  return first
+}
+
+/**
+ * 需要"实体附近判定"的命令：saveMemoryByConfigId / pickByConfigId
+ * 流程：readState 读实体 position → setRobotPositionInRoom → 重试最多 4 次（每次 advanceStage + 150ms）
+ */
+export async function callNearbyEntityCommand(
+  page: Page,
+  command: 'saveMemoryByConfigId' | 'pickByConfigId',
+  configId: string,
+  roomFilter?: string,
+): Promise<{ success: boolean; reason?: string }> {
+  const entities = await readState<
+    Array<{ configId?: string; currentRoom?: string; status?: string; position?: { x: number; y: number; z: number } }>
+  >(page, 'getEntities')
+  const ent = entities.find((e) => {
+    if (e.configId !== configId) return false
+    if (roomFilter && e.currentRoom !== roomFilter) return false
+    return true
+  }) ?? entities.find((e) => e.configId === configId)
+  if (ent?.position) {
+    await page.evaluate(
+      (p) => {
+        const api = (window as any).__testApi__
+        return api?.setRobotPositionInRoom?.({ x: p.x, z: p.z })
+      },
+      { x: ent.position.x, z: ent.position.z },
+    )
+  }
+  let lastResult: { success: boolean; reason?: string } = { success: false, reason: 'not attempted' }
+  for (let i = 0; i < 4; i += 1) {
+    await page.evaluate(() => (window as any).__testApi__?.forceEvaluateStageTransitions?.(1))
+    await page.waitForTimeout(150)
+    lastResult = await callCommand(page, command, configId)
+    if (lastResult.success) break
+  }
+  return lastResult
+}
+
+/**
+ * 连续调用 evaluateStageTransitions（调用期间刷新 _moving 标记）
+ */
+export async function advanceStageTransitions(page: Page, iterations = 3): Promise<void> {
+  for (let i = 0; i < iterations; i += 1) {
+    // forceEvaluateStageTransitions 内部已含真实 loop tick：
+    //   triggerScriptedEvents → checkLevelCompletion → evaluateStageTransitions
+    await page.evaluate(() => (window as any).__testApi__?.forceEvaluateStageTransitions?.(1))
+    await page.waitForTimeout(120)
+  }
+}
+
+/**
+ * 从首页导航到指定任务 ID 并开始任务（通用版）
+ */
+export async function navigateToTaskAndStart(page: Page, taskId: string): Promise<void> {
+  await page.goto('/')
+  await page.getByTestId('home-primary-cta').click()
+  await page.waitForURL('**/tasks')
+  await page.getByTestId(`task-start-${taskId}`).click()
+  await page.waitForURL(`**/play/${taskId}`)
+  await page.getByTestId('briefing-modal').waitFor({ state: 'visible' })
+  await page.getByTestId('briefing-start-button').click()
+  await page.getByTestId('arena-hud').waitFor({ state: 'visible' })
+}
+
+export async function teleportToContainer(page: Page, containerId: string): Promise<void> {
+  // 先用只读 API 直接拿到容器的真实世界坐标（room center + container.position）
+  const pos = await page.evaluate((cid) => {
+    return (window as any).__testApi__?.getContainerWorldPosition?.(cid) ?? null
+  }, containerId)
+  if (!pos) return
+  // 先切房间（确保 currentRoom 一致，distance check 能生效）
+  await page.evaluate(
+    (rid) => (window as any).__testApi__?.transitionToRoom?.(rid),
+    pos.room,
+  )
+  await page.waitForTimeout(80)
+  // 传送到容器世界坐标点（距离判定 2.5 内）
+  await page.evaluate(
+    (p) => (window as any).__testApi__?.setRobotPositionInRoom?.(p),
+    { x: pos.x, z: pos.z },
+  )
+  await page.waitForTimeout(80)
+}
+
+export async function placeIntoContainerStable(
+  page: Page,
+  containerId: string,
+): Promise<{ success: boolean; reason?: string }> {
+  await teleportToContainer(page, containerId)
+  await advanceStageTransitions(page, 1)
+  let r = await callCommand(page, 'placeIntoContainer', containerId)
+  if (!r.success) {
+    await teleportToContainer(page, containerId)
+    void (await callCommand(page, 'releaseHeldEntity'))
+    await advanceStageTransitions(page, 2)
+    r = await callCommand(page, 'placeIntoContainer', containerId)
+  }
+  return r
+}

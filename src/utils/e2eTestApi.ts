@@ -21,6 +21,7 @@ import {
   type GameCommandResult,
 } from '../game/commands'
 import { sharedRooms } from '../data/rooms'
+import { isGoalSatisfied, buildStageContext } from '../store/slices/taskSlice'
 import { isBgmPlaying, stopBgmImmediate, resetArenaCleanupFlag } from '../audio/bgm'
 import { hasActiveRoomAmbient, getActiveContinuousSfxCount, stopAllSfx, resetRoomAmbientFlag } from '../audio/sfx'
 import type { RoomId } from '../types/room'
@@ -29,8 +30,53 @@ function toResult(r: GameCommandResult): { success: boolean; reason?: string } {
   return { success: r.success, reason: r.reason }
 }
 
+// E2E 模式判定提前，方便 buildTestApi 内部使用
+export const IS_E2E_MODE =
+  import.meta.env.DEV &&
+  (import.meta.env.MODE === 'e2e' || import.meta.env.VITE_E2E === 'true')
+
+// 只读 / 诊断安全方法：即使在非 E2E 环境下误触也不会改游戏状态
+const SAFE_READ_ONLY_KEYS = new Set([
+  'getPhase',
+  'getRobotPosition',
+  'getRobotRotation',
+  'getViewMode',
+  'getCurrentRoom',
+  'getStepCount',
+  'getElapsedMs',
+  'getChaosValue',
+  'getScore',
+  'getMemorySlots',
+  'getEntities',
+  'getContainerStates',
+  'getAchievedGoalIds',
+  'getTriggeredEvents',
+  'getCurrentStageId',
+  'getCurrentObjective',
+  'getMemoryStats',
+  'getLevelCompleted',
+  'isBgmPlaying',
+  'hasActiveRoomAmbient',
+  'getActiveContinuousSfxCount',
+  'forceCleanupAudio',
+  'resetAudioState',
+  'wasCleanupCalled',
+  'getLastCleanupTime',
+  'getCleanupCallCount',
+  'getResetAudioStateCallCount',
+  'wasBgmStopCalled',
+  'getBgmStopCount',
+  'getStageContextForDebug',
+  'getNearbyEntityConfigId',
+  'forceEvaluateStageTransitions',
+  'getRoomCenter',
+  'getContainerWorldPosition',
+  'forceCheckLevelCompletion',
+  'debugGoalPredicate',
+])
+
 function buildTestApi(): E2eTestApi {
-  return {
+  const api: E2eTestApi = {
     // === 只读方法 ===
     getPhase: () => useGameStore.getState().phase,
     getRobotPosition: () => {
@@ -321,6 +367,19 @@ function buildTestApi(): E2eTestApi {
             ;(st as any).updateMoveAnimations()
           }
         } catch (e) { /* ignore */ }
+        // 模拟真实 loop tick：先触发脚本事件，再评估目标（这两个只在 loop tick 时才触发，goal 评估独立于 stage 推进）
+        try {
+          const st = getState()
+          if (typeof (st as any).triggerScriptedEvents === 'function') {
+            ;(st as any).triggerScriptedEvents()
+          }
+        } catch (e) { /* ignore */ }
+        try {
+          const st = getState()
+          if (typeof (st as any).checkLevelCompletion === 'function') {
+            ;(st as any).checkLevelCompletion()
+          }
+        } catch (e) { /* ignore */ }
         const before = getState().currentStageId ?? null
         const st = getState()
         if (typeof (st as any).evaluateStageTransitions === 'function') {
@@ -331,6 +390,90 @@ function buildTestApi(): E2eTestApi {
         if (before === after) break
       }
       return { success: true, history, finalStage: getState().currentStageId ?? null }
+    },
+    /** 诊断工具：手动触发一次 checkLevelCompletion，返回前后 goal 快照（只读，仅调试用） */
+    forceCheckLevelCompletion: () => {
+      const before = Array.from(useGameStore.getState().achievedGoalIds ?? []) as string[]
+      try {
+        const st = useGameStore.getState()
+        if (typeof (st as any).triggerScriptedEvents === 'function') {
+          ;(st as any).triggerScriptedEvents()
+        }
+      } catch (e) { /* ignore */ }
+      try {
+        const st = useGameStore.getState()
+        if (typeof (st as any).checkLevelCompletion === 'function') {
+          ;(st as any).checkLevelCompletion()
+        }
+      } catch (e) { /* ignore */ }
+      const after = Array.from(useGameStore.getState().achievedGoalIds ?? []) as string[]
+      return { before, after }
+    },
+    /** 诊断工具：指定 goalId，返回 isGoalSatisfied 计算细节（只读） */
+    debugGoalPredicate: (goalId: string) => {
+      const s = useGameStore.getState()
+      const { task, achievedGoalIds: currentGoals, entities } = s
+      const goal = task?.goals?.find((g: any) => g.id === goalId)
+      if (!goal) {
+        return {
+          found: false,
+          dependenciesMet: false,
+          missingDeps: [],
+          achievedAlready: false,
+          predicateResult: false,
+          predicateRelatedPlacedIn: {} as Record<string, string | undefined>,
+        }
+      }
+      const deps: string[] = goal.dependsOnGoalIds ?? []
+      const missingDeps = deps.filter((id) => !currentGoals.has(id))
+      const dependenciesMet = missingDeps.length === 0
+      const achievedAlready = goal.kind === 'milestone' && currentGoals.has(goal.id)
+      const entitySnapshots = entities.map((e: any) => ({
+        configId: e.configId,
+        status: e.status,
+        currentRoom: e.currentRoom,
+        placedIn: e.placedIn,
+        category: e.category,
+        properties: e.properties,
+        position: { x: e.position?.x ?? 0, y: e.position?.y ?? 0, z: e.position?.z ?? 0 },
+      }))
+      const ctx = buildStageContext(useGameStore.getState)
+      const predicateResult = isGoalSatisfied(goal, entitySnapshots, currentGoals, ctx)
+      const placedInMap: Record<string, string | undefined> = {}
+      const relatedIds: string[] = goal.relatedObjectIds ?? []
+      for (const id of relatedIds) {
+        const ent = entitySnapshots.find((e: any) => e.configId === id)
+        placedInMap[id] = ent?.placedIn as string | undefined
+      }
+      return {
+        found: true,
+        dependenciesMet,
+        missingDeps,
+        achievedAlready,
+        predicateResult,
+        predicateRelatedPlacedIn: placedInMap,
+      }
+    },
+    /** 只读：返回指定房间中心点坐标 */
+    getRoomCenter: (roomId: string) => {
+      const r = sharedRooms[roomId as keyof typeof sharedRooms]
+      if (!r) return null
+      return { x: r.center.x, y: r.center.y, z: r.center.z }
+    },
+    /** 只读：返回指定容器的世界坐标（room.center + container.position）和所属房间 */
+    getContainerWorldPosition: (containerId: string) => {
+      const task = useGameStore.getState().task
+      if (!task) return null
+      const c = task.containers.find((x) => x.id === containerId)
+      if (!c) return null
+      const r = sharedRooms[c.room as keyof typeof sharedRooms]
+      if (!r) return null
+      return {
+        room: c.room as string,
+        x: r.center.x + (c.position?.x ?? 0),
+        y: r.center.y + (c.position?.y ?? 0),
+        z: r.center.z + (c.position?.z ?? 0),
+      }
     },
 
     // === Sprint B.1 E2E 辅助方法（仅用于 E2E 稳定化）===
@@ -540,11 +683,29 @@ function buildTestApi(): E2eTestApi {
       }
     },
   }
-}
 
-export const IS_E2E_MODE =
-  import.meta.env.DEV &&
-  (import.meta.env.MODE === 'e2e' || import.meta.env.VITE_E2E === 'true')
+  // ===== 内层安全守卫：非 E2E 环境下所有写操作方法一律拒绝 =====
+  // installE2eTestApi 只在 IS_E2E_MODE 下挂载对象，这里是第二层保险。
+  // 即使将来有人直接 import buildTestApi() 并手动挂到 window，也不能
+  // 触发保存记忆、拾取、直接 set memory、forceLevelCompleted 等写操作。
+  if (!IS_E2E_MODE) {
+    const disabledMsg = 'Test API 写操作仅在 E2E 环境 (VITE_E2E=true / MODE=e2e + DEV) 下可用。'
+    for (const k of Object.keys(api) as Array<keyof E2eTestApi>) {
+      if (SAFE_READ_ONLY_KEYS.has(String(k))) continue
+      const original = (api as any)[k]
+      if (typeof original !== 'function') continue
+      // 替换为拒绝函数，保持相同返回形状
+      ;(api as any)[k] = function disabledReplacement(..._args: any[]): any {
+        const returnsResultObj = typeof original === 'function'
+        if (!returnsResultObj) return undefined
+        // 统一返回 { success: false, reason: ... }
+        return { success: false, reason: disabledMsg }
+      }
+    }
+  }
+
+  return api
+}
 
 /**
  * 在 E2E 环境下挂载 Test API 到 window。
