@@ -1,8 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { setAudioEnabled, stopChaosAmbient, stopAllSfxInstances, stopRoomAmbient, resetRoomAmbientFlag, initAudio as initSfxAudio } from '../audio/sfx'
-import { stopBgmImmediate } from '../audio/bgm'
-import { stopAmbientImmediate } from '../audio/ambient'
+import { setAudioEnabled, resetRoomAmbientFlag, initAudio as initSfxAudio } from '../audio/sfx'
+import { stopAllAudioImmediate, resumeAudioContexts } from '../audio/audioManager'
 
 interface UiState {
   taskPanelOpen: boolean
@@ -65,12 +64,10 @@ export const useUiStore = create<UiState>()(
         if (newValue) {
           initSfxAudio()
           resetRoomAmbientFlag()
+          // 用户手势（点击按钮）下恢复 suspended 的 AC；OFF→ON 后 BGM/Ambient 恢复由 React useEffect（audioEnabled 作为依赖）驱动
+          void resumeAudioContexts()
         } else {
-          stopChaosAmbient()
-          stopRoomAmbient()
-          stopAllSfxInstances()
-          stopBgmImmediate()
-          stopAmbientImmediate()
+          stopAllAudioImmediate()
         }
         return { audioEnabled: newValue }
       }),
@@ -105,11 +102,7 @@ export const useUiStore = create<UiState>()(
             initSfxAudio()
             resetRoomAmbientFlag()
           } else {
-            stopChaosAmbient()
-            stopRoomAmbient()
-            stopAllSfxInstances()
-            stopBgmImmediate()
-            stopAmbientImmediate()
+            stopAllAudioImmediate()
           }
         }
       },

@@ -4,6 +4,32 @@ let audioContext: AudioContext | null = null
 let ambientGain: GainNode | null = null
 let isPlaying = false
 let currentRoomId: string | null = null
+let clearAmbientTimer: ReturnType<typeof setTimeout> | null = null
+
+export function getAmbientContextState(): AudioContextState | 'closed' {
+  if (!audioContext) return 'closed'
+  return audioContext.state
+}
+
+export function getAmbientAudioContext(): AudioContext | null {
+  return audioContext
+}
+
+export function resumeAmbientContext(): Promise<void> {
+  if (!audioContext) {
+    initAudioContext()
+  }
+  if (!audioContext) return Promise.resolve()
+  if (audioContext.state === 'suspended') {
+    return audioContext.resume().catch(() => {})
+  }
+  if (audioContext.state === 'closed') {
+    audioContext = null
+    ambientGain = null
+    initAudioContext()
+  }
+  return Promise.resolve()
+}
 
 interface AmbientConfig {
   frequency: number
@@ -113,6 +139,10 @@ function createPinkNoise(): AudioBuffer {
 }
 
 function clearAmbient(): void {
+  if (clearAmbientTimer) {
+    clearTimeout(clearAmbientTimer)
+    clearAmbientTimer = null
+  }
   for (const osc of oscillators) {
     try {
       osc.stop()
@@ -141,22 +171,21 @@ function clearAmbient(): void {
   }
   
   if (noiseGain) {
-    noiseGain.disconnect()
+    try { noiseGain.disconnect() } catch { /* ignore */ }
     noiseGain = null
   }
 }
 
-export function playRoomAmbient(roomId: string): void {
+export function playRoomAmbient(roomId: string, options: { forceRestart?: boolean } = {}): void {
   if (!isAudioEnabled()) return
   initAudioContext()
   
-  if (currentRoomId === roomId && isPlaying) return
+  if (!options.forceRestart && currentRoomId === roomId && isPlaying) return
   
   stopAmbient()
   
   const config = ROOM_AMBIENT[roomId] || DEFAULT_AMBIENT
   currentRoomId = roomId
-  
   isPlaying = true
   
   const now = audioContext!.currentTime
@@ -233,32 +262,47 @@ export function playRoomAmbient(roomId: string): void {
   }
 }
 
-export function stopAmbient(): void {
+export function stopAmbient(options: { fadeSeconds?: number } = {}): void {
   if (!isPlaying) return
   
   isPlaying = false
   currentRoomId = null
   
   const now = audioContext?.currentTime || 0
+  const fadeSeconds = Math.max(0, options.fadeSeconds ?? 2)
   
   if (ambientGain && audioContext) {
-    ambientGain.gain.linearRampToValueAtTime(0, now + 2)
+    try {
+      ambientGain.gain.cancelScheduledValues(now)
+      const current = ambientGain.gain.value
+      ambientGain.gain.setValueAtTime(current, now)
+      if (fadeSeconds === 0) {
+        ambientGain.gain.setValueAtTime(0, now)
+      } else {
+        ambientGain.gain.linearRampToValueAtTime(0, now + fadeSeconds)
+      }
+    } catch { /* ignore */ }
   }
   
-  setTimeout(() => {
+  if (clearAmbientTimer) {
+    clearTimeout(clearAmbientTimer)
+  }
+  clearAmbientTimer = setTimeout(() => {
     clearAmbient()
-  }, 2000)
+  }, fadeSeconds * 1000)
 }
 
 export function stopAmbientImmediate(): void {
   isPlaying = false
   currentRoomId = null
-  
+
   if (ambientGain && audioContext) {
-    ambientGain.gain.cancelScheduledValues(audioContext.currentTime)
-    ambientGain.gain.setValueAtTime(0, audioContext.currentTime)
+    try {
+      ambientGain.gain.cancelScheduledValues(audioContext.currentTime)
+      ambientGain.gain.setValueAtTime(0, audioContext.currentTime)
+    } catch { /* ignore */ }
   }
-  
+
   clearAmbient()
 }
 

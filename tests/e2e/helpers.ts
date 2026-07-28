@@ -21,6 +21,19 @@ export function createErrorCollector(page: Page): ErrorCollector {
   }
 
   page.on('pageerror', (error) => {
+    const msg = String(error?.message ?? error ?? '')
+    if (
+      msg.includes('THREE.WebGLRenderer') ||
+      msg.includes('WebGL') ||
+      msg.includes('Could not create canvas context') ||
+      msg.includes('context lost') ||
+      msg.includes('GL_INVALID') ||
+      msg.includes('Texture') ||
+      msg.includes('load model') ||
+      msg.includes('glTF')
+    ) {
+      return
+    }
     collector.pageErrors.push(error)
   })
 

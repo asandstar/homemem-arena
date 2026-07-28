@@ -31,6 +31,24 @@ export interface E2eTestApi {
   isBgmPlaying(): boolean
   hasActiveRoomAmbient(): boolean
   getActiveContinuousSfxCount(): number
+  /**
+   * 只读：完整音频生命周期快照（13 项），E2E 专用。
+   * 不得暴露修改能力，生产模式不可见。
+   */
+  getAudioDebugState(): {
+    audioEnabled: boolean
+    sfxContextState: AudioContextState | 'closed'
+    bgmContextState: AudioContextState | 'closed'
+    ambientContextState: AudioContextState | 'closed'
+    activeSfxCount: number
+    activeSfxIds: string[]
+    bgmPlaying: boolean
+    bgmTaskId: string | null
+    ambientPlaying: boolean
+    ambientRoomId: string | null
+    legacyRoomAmbientActive: boolean
+    chaosAmbientActive: boolean
+  }
   wasCleanupCalled(): boolean
   getLastCleanupTime(): number
   getCleanupCallCount(): number
@@ -64,6 +82,10 @@ export interface E2eTestApi {
   setRobotPositionInRoom(position: { x: number; z: number; y?: number }): { success: boolean; reason?: string }
   /** 获取距离当前玩家最近的可交互实体 configId（= StageContext.nearbyEntityConfigId）；null 表示范围内无可交互。 */
   getNearbyEntityConfigId(maxDistance?: number): string | null
+  /** E2E 专用：强制触发合成 SFX（不经过业务事件），用于验证硬停止行为。仅 E2E 可用。 */
+  debugPlaySfx(sfxId: string): { success: boolean; reason?: string }
+  /** E2E 专用：安全地切换 audioEnabled（true/false 自动），不依赖 DOM 按钮。优先通过 store.toggleAudioEnabled。 */
+  debugToggleAudio(): { success: boolean; audioEnabled: boolean; reason?: string }
 
   // ===== 调试 API（仅用于 E2E 诊断阶段推进问题，不用于生产路径）=====
   /** 直接复制 buildStageContext 核心逻辑，返回真实阶段上下文字段（用于调试 completionCondition 不满足的根因） */
@@ -131,6 +153,8 @@ export interface E2eTestApi {
   forceSetPhasePlaying(): { success: boolean; phaseBefore: string; phaseAfter: string }
   /** 强制 levelCompleted=true（绕过 goal 评估，兜底 E2E 用） */
   forceLevelCompleted(): { success: boolean }
+  /** 设置机器人朝向（camera yaw，radians）和俯仰（cameraPitch，radians）。仅 E2E 视觉采集用，不参与任务逻辑。 */
+  _debugSetRobotRotation(yaw: number, pitch?: number): { success: boolean; yaw: number; pitch: number }
 
   // === 音频状态管理方法 ===
   /** 重置音频状态（用于测试前准备） */

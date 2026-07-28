@@ -22,9 +22,11 @@ import {
 } from '../game/commands'
 import { sharedRooms } from '../data/rooms'
 import { isGoalSatisfied, buildStageContext } from '../store/slices/taskSlice'
-import { isBgmPlaying, stopBgmImmediate, resetArenaCleanupFlag } from '../audio/bgm'
-import { hasActiveRoomAmbient, getActiveContinuousSfxCount, stopAllSfx, resetRoomAmbientFlag } from '../audio/sfx'
+import { isBgmPlaying, stopBgmImmediate, resetArenaCleanupFlag, getBgmContextState, getCurrentBgmTaskId } from '../audio/bgm'
+import { hasActiveRoomAmbient, getActiveContinuousSfxCount, stopAllSfx, resetRoomAmbientFlag, getActiveSfxCount, getActiveSfxIds, getSfxContextState, isLegacyRoomAmbientActive, hasActiveChaosAmbient, playSfx } from '../audio/sfx'
+import { getAmbientContextState, isAmbientPlaying, getCurrentRoom } from '../audio/ambient'
 import type { RoomId } from '../types/room'
+import { useUiStore } from '../store/useUiStore'
 
 function toResult(r: GameCommandResult): { success: boolean; reason?: string } {
   return { success: r.success, reason: r.reason }
@@ -58,6 +60,7 @@ const SAFE_READ_ONLY_KEYS = new Set([
   'isBgmPlaying',
   'hasActiveRoomAmbient',
   'getActiveContinuousSfxCount',
+  'getAudioDebugState',
   'forceCleanupAudio',
   'resetAudioState',
   'wasCleanupCalled',
@@ -119,6 +122,20 @@ function buildTestApi(): E2eTestApi {
     isBgmPlaying: () => isBgmPlaying(),
     hasActiveRoomAmbient: () => hasActiveRoomAmbient(),
     getActiveContinuousSfxCount: () => getActiveContinuousSfxCount(),
+    getAudioDebugState: () => ({
+      audioEnabled: !!useUiStore.getState().audioEnabled,
+      sfxContextState: getSfxContextState(),
+      bgmContextState: getBgmContextState(),
+      ambientContextState: getAmbientContextState(),
+      activeSfxCount: getActiveSfxCount(),
+      activeSfxIds: getActiveSfxIds(),
+      bgmPlaying: isBgmPlaying(),
+      bgmTaskId: getCurrentBgmTaskId(),
+      ambientPlaying: isAmbientPlaying(),
+      ambientRoomId: getCurrentRoom(),
+      legacyRoomAmbientActive: isLegacyRoomAmbientActive(),
+      chaosAmbientActive: hasActiveChaosAmbient(),
+    }),
 
     // === 强制清理（仅用于测试诊断）===
     forceCleanupAudio: () => {
@@ -285,6 +302,26 @@ function buildTestApi(): E2eTestApi {
         }
       }
       return nearest
+    },
+
+    debugPlaySfx: (sfxId: string) => {
+      try {
+        playSfx(sfxId as any)
+        return { success: true }
+      } catch (e: any) {
+        return { success: false, reason: String(e?.message ?? e) }
+      }
+    },
+
+    debugToggleAudio: () => {
+      try {
+        const t = useUiStore.getState().toggleAudioEnabled
+        if (typeof t !== 'function') return { success: false, audioEnabled: !!useUiStore.getState().audioEnabled, reason: 'toggleAudioEnabled not available' }
+        t()
+        return { success: true, audioEnabled: !!useUiStore.getState().audioEnabled }
+      } catch (e: any) {
+        return { success: false, audioEnabled: !!useUiStore.getState?.()?.audioEnabled, reason: String(e?.message ?? e) }
+      }
     },
 
     // ===== 调试 API（仅用于 E2E 诊断阶段推进问题，不用于生产路径）=====
@@ -680,6 +717,26 @@ function buildTestApi(): E2eTestApi {
         return { success: !!(useGameStore.getState() as any).levelCompleted }
       } catch (e) {
         return { success: false, reason: String((e as any)?.message ?? e) }
+      }
+    },
+    _debugSetRobotRotation: (yaw, pitch) => {
+      try {
+        const setStateFn = (useGameStore as any).setState as ((patch: any) => void) | undefined
+        const finalPitch = typeof pitch === 'number' ? pitch : 0
+        if (typeof setStateFn === 'function') {
+          setStateFn({
+            robotRotation: yaw,
+            cameraPitch: finalPitch,
+          })
+        } else {
+          const s = useGameStore.getState() as any
+          if (typeof s.set === 'function') {
+            s.set({ robotRotation: yaw, cameraPitch: finalPitch })
+          }
+        }
+        return { success: true, yaw, pitch: finalPitch }
+      } catch (e) {
+        return { success: false, yaw, pitch: typeof pitch === 'number' ? pitch : 0, reason: String((e as any)?.message ?? e) }
       }
     },
   }

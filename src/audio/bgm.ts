@@ -7,6 +7,31 @@ let currentTaskId: string | null = null
 let isArenaCleaningUp = false
 let currentVolume = 0.5
 
+export function getBgmContextState(): AudioContextState | 'closed' {
+  if (!audioContext) return 'closed'
+  return audioContext.state
+}
+
+export function getBgmAudioContext(): AudioContext | null {
+  return audioContext
+}
+
+export function resumeBgmContext(): Promise<void> {
+  if (!audioContext) {
+    initAudioContext()
+  }
+  if (!audioContext) return Promise.resolve()
+  if (audioContext.state === 'suspended') {
+    return audioContext.resume().catch(() => {})
+  }
+  if (audioContext.state === 'closed') {
+    audioContext = null
+    masterGain = null
+    initAudioContext()
+  }
+  return Promise.resolve()
+}
+
 interface TrackConfig {
   notes: number[]
   tempo: number
@@ -282,11 +307,11 @@ function startAllLayers(config: BgmConfig): void {
   })
 }
 
-export function playBgm(taskId: string): void {
+export function playBgm(taskId: string, options: { forceRestart?: boolean } = {}): void {
   if (!isAudioEnabled() || isArenaCleaningUp) return
   initAudioContext()
 
-  if (currentTaskId === taskId && isPlaying) return
+  if (!options.forceRestart && currentTaskId === taskId && isPlaying) return
 
   stopBgm()
 
@@ -309,8 +334,11 @@ export function playBgm(taskId: string): void {
   }
 
   if (masterGain && audioContext) {
-    masterGain.gain.value = 0
-    masterGain.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 3)
+    try {
+      masterGain.gain.cancelScheduledValues(audioContext.currentTime)
+      masterGain.gain.value = 0
+      masterGain.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 3)
+    } catch { /* ignore */ }
   }
 
   if (isArenaCleaningUp) {
@@ -320,6 +348,10 @@ export function playBgm(taskId: string): void {
   }
 
   startAllLayers(config)
+}
+
+export function getCurrentBgmTaskId(): string | null {
+  return currentTaskId
 }
 
 export function updateBgmState(chaosValue: number, progress: number): void {
@@ -338,15 +370,26 @@ export function getIsPlaying(): boolean {
   return isPlaying
 }
 
-export function stopBgm(): void {
+export function stopBgm(options: { fadeSeconds?: number } = {}): void {
   if (!isPlaying) return
 
   isPlaying = false
   currentTaskId = null
   clearAllTracks()
 
+  const fadeSeconds = Math.max(0, options.fadeSeconds ?? 2)
   if (masterGain && audioContext) {
-    masterGain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 2)
+    try {
+      const now = audioContext.currentTime
+      masterGain.gain.cancelScheduledValues(now)
+      const current = masterGain.gain.value
+      masterGain.gain.setValueAtTime(current, now)
+      if (fadeSeconds === 0) {
+        masterGain.gain.setValueAtTime(0, now)
+      } else {
+        masterGain.gain.linearRampToValueAtTime(0, now + fadeSeconds)
+      }
+    } catch { /* ignore */ }
   }
 }
 
@@ -364,11 +407,18 @@ export function stopBgmImmediate(): void {
     masterGain.gain.setValueAtTime(0, audioContext.currentTime)
   }
 
-  if (audioContext) {
-    audioContext.close().then(() => {
-      audioContext = null
-      masterGain = null
-    })
+  if (audioContext && audioContext.state !== 'closed') {
+    const ctx = audioContext
+    const ctxState = ctx.state
+    audioContext = null
+    masterGain = null
+    if (ctxState !== 'closed') {
+      Promise.resolve()
+        .then(() => ctx.close())
+        .catch(() => {
+          // ignore: "Cannot close a closed AudioContext." 幂等需要。
+        })
+    }
   }
 }
 

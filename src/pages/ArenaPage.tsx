@@ -5,11 +5,13 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useGameStore } from '../store/useGameStore'
 import { useSessionStore } from '../store/useSessionStore'
 import { useToastStore } from '../store/useToastStore'
+import { useUiStore } from '../store/useUiStore'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
-import { initAudio, stopAllSfx, resetRoomAmbientFlag } from '../audio/sfx'
-import { stopBgmImmediate, resetArenaCleanupFlag, updateBgmState } from '../audio/bgm'
-import { playRoomAmbient, stopAmbientImmediate } from '../audio/ambient'
+import { initAudio, resetRoomAmbientFlag, updateChaosAmbient as updateChaosAmbientSfx } from '../audio/sfx'
+import { resetArenaCleanupFlag, updateBgmState, playBgm, stopBgm } from '../audio/bgm'
+import { playRoomAmbient, stopAmbient } from '../audio/ambient'
+import { stopAllAudioImmediate, resumeAudioContexts } from '../audio/audioManager'
 import { executeContainerInteraction, executePick } from '../game/commands'
 import { getTaskById } from '../data/tasks'
 import { useDialog } from '../dialog/useDialog'
@@ -25,6 +27,8 @@ export function ArenaPage() {
   const { taskId } = useParams<{ taskId: string }>()
   const navigate = useNavigate()
   const location = useLocation()
+
+  const audioEnabled = useUiStore((s) => s.audioEnabled)
 
   const {
     task,
@@ -71,9 +75,12 @@ export function ArenaPage() {
   useEffect(() => {
     if (phase === 'playing' && !briefingOpen) {
       triggerDialog('roomEnter', currentRoom)
-      playRoomAmbient(currentRoom)
+      if (audioEnabled) {
+        void resumeAudioContexts()
+        playRoomAmbient(currentRoom, { forceRestart: false })
+      }
     }
-  }, [currentRoom, phase, briefingOpen, triggerDialog])
+  }, [currentRoom, phase, briefingOpen, audioEnabled, triggerDialog])
 
   // 监听事件总线触发对话
   useEffect(() => {
@@ -100,8 +107,11 @@ export function ArenaPage() {
       const completedGoals = achievedGoalIds?.size ?? 0
       const progress = completedGoals / totalGoals
       updateBgmState(chaosValue, progress)
+      if (audioEnabled && task) {
+        playBgm(task.id, { forceRestart: false })
+      }
     }
-  }, [chaosValue, phase, task, achievedGoalIds])
+  }, [chaosValue, phase, task, achievedGoalIds, audioEnabled])
 
   // 连击对话触发
   useEffect(() => {
@@ -133,6 +143,8 @@ export function ArenaPage() {
       navigate('/tasks', { replace: true })
       return
     }
+    // 重置/切任务前停止旧音频（保证 ambient 不随相同房间而残留）
+    stopAllAudioImmediate()
     setNarrativeText(null)
     setShowStats(false)
     setBriefingOpen(true)
@@ -149,9 +161,7 @@ export function ArenaPage() {
       ;(window as any).__arenaCleanupCalled = true
       ;(window as any).__lastCleanupTime = Date.now()
       ;(window as any).__cleanupCallCount = ((window as any).__cleanupCallCount || 0) + 1
-      stopBgmImmediate()
-      stopAmbientImmediate()
-      stopAllSfx()
+      stopAllAudioImmediate()
       stopAutoSave()
       saveCurrentGame()
     }
@@ -168,6 +178,15 @@ export function ArenaPage() {
       handleCleanup()
     }
   }, [saveCurrentGame])
+
+  // probing 阶段（任务完成/失败）fade out BGM/Ambient，立即停 chaos 低频
+  useEffect(() => {
+    if (phase === 'probing' || phase === 'analyzing' || phase === 'result' || phase === 'aborted') {
+      try { updateChaosAmbientSfx(0) } catch { /* ignore */ }
+      stopBgm({ fadeSeconds: 0.5 })
+      stopAmbient({ fadeSeconds: 0.3 })
+    }
+  }, [phase])
 
   // 自动保存
   useEffect(() => {
@@ -342,6 +361,7 @@ export function ArenaPage() {
                   data-testid="briefing-start-button"
                   onClick={() => {
                     initAudio()
+                    void resumeAudioContexts()
                     startSession(task.id, task.name, task.briefing)
                     startPlaying()
                     setBriefingOpen(false)
@@ -487,9 +507,9 @@ export function ArenaPage() {
               <Button
                 variant="secondary"
                 className="border border-slate-500 text-slate-300 hover:bg-slate-800"
+                data-testid="result-back-to-tasks"
                 onClick={() => {
-                  stopBgmImmediate()
-                  stopAllSfx()
+                  stopAllAudioImmediate()
                   navigate('/tasks')
                 }}
               >
