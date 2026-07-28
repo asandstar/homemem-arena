@@ -3,6 +3,7 @@ import { sharedRooms } from '../../data/rooms'
 import { useUiStore } from '../../store/useUiStore'
 import type { RoomId } from '../../types/room'
 import type { EntityState } from '../../types/object'
+import type { MemorySlot } from '../../store/gameTypes'
 
 interface MinimapProps {
   currentRoom: RoomId
@@ -15,12 +16,22 @@ interface MinimapProps {
   isMobile?: boolean
   isFullscreen?: boolean
   onToggleFullscreen?: () => void
+  memorySlots?: (MemorySlot | null)[]
 }
 
 const MIN_ZOOM = 0.3
-const MAX_ZOOM = 3.0
+const MAX_ZOOM = 6.0
 const WHEEL_SENSITIVITY = 0.001
 const FOLLOW_LERP = 0.12
+
+const ROOM_SHORT_NAME: Record<string, string> = {
+  living: '客厅',
+  bedroom: '卧室',
+  kitchen: '厨房',
+  entrance: '玄关',
+  laundry: '洗衣房',
+  dining: '餐厅',
+}
 
 export function Minimap({
   currentRoom,
@@ -33,14 +44,19 @@ export function Minimap({
   isMobile = false,
   isFullscreen = false,
   onToggleFullscreen,
+  memorySlots = [],
 }: MinimapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const [dimensions, setDimensions] = useState({ width: 280, height: 280 })
+  const [viewportWidth, setViewportWidth] = useState<number>(
+    typeof window !== 'undefined' ? window.innerWidth : 1920
+  )
+  const [dimensions, setDimensions] = useState({ width: 260, height: 260 })
   const [isDragging, setIsDragging] = useState(false)
   const dragStartRef = useRef({ x: 0, y: 0 })
   const panStartRef = useRef({ x: 0, y: 0 })
   const smoothedPanRef = useRef({ x: 0, y: 0 })
+  const manualZoomRef = useRef(false)
 
   const {
     minimapZoom,
@@ -53,46 +69,55 @@ export function Minimap({
     toggleMinimap,
   } = useUiStore()
 
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  const panelPx: { w: number; h: number } = useMemo(() => {
+    if (isFullscreen) return { w: 0, h: 0 }
+    if (isMobile) return { w: 200, h: 220 }
+    if (viewportWidth >= 1600) return { w: 260, h: 280 }
+    if (viewportWidth >= 1280) return { w: 230, h: 250 }
+    return { w: 200, h: 220 }
+  }, [viewportWidth, isFullscreen, isMobile])
+
   const roomsToShow = useMemo(() => {
     const ids = taskRooms && taskRooms.length > 0 ? taskRooms : (Object.keys(sharedRooms) as RoomId[])
     return ids.map((id) => [id, sharedRooms[id]] as [RoomId, typeof sharedRooms[RoomId]])
   }, [taskRooms])
 
-  const bounds = useMemo(() => {
-    let minX = Infinity
-    let maxX = -Infinity
-    let minZ = Infinity
-    let maxZ = -Infinity
-    roomsToShow.forEach(([_, spec]) => {
-      const halfX = spec.size.x / 2
-      const halfZ = spec.size.z / 2
-      minX = Math.min(minX, spec.center.x - halfX)
-      maxX = Math.max(maxX, spec.center.x + halfX)
-      minZ = Math.min(minZ, spec.center.z - halfZ)
-      maxZ = Math.max(maxZ, spec.center.z + halfZ)
-    })
-    if (!isFinite(minX)) {
-      return { minX: -10, maxX: 10, minZ: -10, maxZ: 10, centerX: 0, centerZ: 0 }
-    }
-    return {
-      minX,
-      maxX,
-      minZ,
-      maxZ,
-      centerX: (minX + maxX) / 2,
-      centerZ: (minZ + maxZ) / 2,
-    }
-  }, [roomsToShow])
+  const currentRoomSpec = sharedRooms[currentRoom]
 
-  const computeFitZoom = useCallback(() => {
+  // 当 currentRoom 变化 或 尺寸变化 → 重新拟合当前房间（占画布 70%~85%）
+  const computeFitZoomCurrentRoom = useCallback((): { zoom: number; pan: { x: number; y: number } } => {
     const { width, height } = dimensions
-    const rangeX = Math.max(bounds.maxX - bounds.minX, 1)
-    const rangeZ = Math.max(bounds.maxZ - bounds.minZ, 1)
-    const paddingFactor = 0.95
-    const scaleX = width / (rangeX * paddingFactor)
-    const scaleY = height / (rangeZ * paddingFactor)
-    return Math.min(scaleX, scaleY)
-  }, [dimensions, bounds])
+    if (!currentRoomSpec || width <= 0 || height <= 0) return { zoom: 1, pan: { x: 0, y: 0 } }
+    const paddingPx = Math.max(20, Math.min(28, Math.floor(Math.min(width, height) * 0.12)))
+    const usableWidth = Math.max(40, width - paddingPx * 2)
+    const usableHeight = Math.max(40, height - paddingPx * 2)
+    const roomX = Math.max(1, currentRoomSpec.size.x)
+    const roomZ = Math.max(1, currentRoomSpec.size.z)
+    const fitScale = Math.min(usableWidth / roomX, usableHeight / roomZ)
+
+    // 在 room-local 坐标系中：room 中心 = currentRoomSpec.center；canvas 中心 = room center 所在位置
+    // pan = -room.center * scale，这样 room.center 正好落在 (width/2, height/2)
+    const panX = -currentRoomSpec.center.x * fitScale
+    const panY = currentRoomSpec.center.z * fitScale
+    return { zoom: fitScale, pan: { x: panX, y: panY } }
+  }, [dimensions, currentRoomSpec])
+
+  // 当 room 或 dimensions 变化时重置（相当于 fit）
+  useEffect(() => {
+    if (!currentRoomSpec) return
+    // 只有当之前不是手动 zoom 才自动 fit（首次 / 切房间强制 reset）
+    const { zoom, pan } = computeFitZoomCurrentRoom()
+    setMinimapZoom(zoom)
+    setMinimapPan(pan)
+    manualZoomRef.current = false
+    smoothedPanRef.current = { ...pan }
+  }, [currentRoom, computeFitZoomCurrentRoom, currentRoomSpec, setMinimapZoom, setMinimapPan])
 
   useEffect(() => {
     const updateSize = () => {
@@ -105,21 +130,7 @@ export function Minimap({
     updateSize()
     window.addEventListener('resize', updateSize)
     return () => window.removeEventListener('resize', updateSize)
-  }, [])
-
-  const prevBoundsRef = useRef(bounds)
-
-  useEffect(() => {
-    if (
-      prevBoundsRef.current.centerX !== bounds.centerX ||
-      prevBoundsRef.current.centerZ !== bounds.centerZ
-    ) {
-      const fitZoom = computeFitZoom()
-      setMinimapZoom(fitZoom)
-      setMinimapPan({ x: 0, y: 0 })
-    }
-    prevBoundsRef.current = bounds
-  }, [bounds, computeFitZoom, setMinimapZoom, setMinimapPan])
+  }, [panelPx, isFullscreen])
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.stopPropagation()
@@ -128,6 +139,7 @@ export function Minimap({
     setMinimapFollowPlayer(false)
     dragStartRef.current = { x: e.clientX, y: e.clientY }
     panStartRef.current = { ...minimapPan }
+    manualZoomRef.current = true
     if (canvasRef.current) {
       canvasRef.current.setPointerCapture(e.pointerId)
     }
@@ -161,27 +173,28 @@ export function Minimap({
     e.preventDefault()
     const delta = e.deltaY * WHEEL_SENSITIVITY
     setMinimapZoom((prev) => {
+      manualZoomRef.current = true
       return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev - delta))
     })
   }, [setMinimapZoom])
 
   const handleReset = useCallback(() => {
-    const fitZoom = computeFitZoom()
-    setMinimapZoom(fitZoom)
-    setMinimapPan({ x: 0, y: 0 })
+    const { zoom, pan } = computeFitZoomCurrentRoom()
+    setMinimapZoom(zoom)
+    setMinimapPan(pan)
     setMinimapFollowPlayer(false)
-  }, [computeFitZoom, setMinimapZoom, setMinimapPan, setMinimapFollowPlayer])
-
-  const handleToggleFollow = useCallback(() => {
-    setMinimapFollowPlayer((prev) => !prev)
-  }, [setMinimapFollowPlayer])
+    manualZoomRef.current = false
+    smoothedPanRef.current = { ...pan }
+  }, [computeFitZoomCurrentRoom, setMinimapZoom, setMinimapPan, setMinimapFollowPlayer])
 
   const handleZoomIn = useCallback(() => {
     setMinimapZoom((prev) => Math.min(MAX_ZOOM, prev * 1.2))
+    manualZoomRef.current = true
   }, [setMinimapZoom])
 
   const handleZoomOut = useCallback(() => {
     setMinimapZoom((prev) => Math.max(MIN_ZOOM, prev / 1.2))
+    manualZoomRef.current = true
   }, [setMinimapZoom])
 
   useEffect(() => {
@@ -195,7 +208,7 @@ export function Minimap({
     canvas.width = width
     canvas.height = height
 
-    ctx.fillStyle = '#1f2937'
+    ctx.fillStyle = '#0f172a'
     ctx.fillRect(0, 0, width, height)
 
     const scale = minimapZoom
@@ -219,92 +232,256 @@ export function Minimap({
       sharedRooms[currentRoom]?.doorways.map((d) => d.connectsTo) ?? []
     )
 
-    roomsToShow.forEach(([roomId, roomSpec]) => {
-      const isVisited = visitedRooms.includes(roomId as RoomId)
-      const isCurrent = currentRoom === roomId
-      const isAdjacent = adjacentRoomIds.has(roomId as RoomId)
+    // 全屏模式下绘制全部房间
+    if (isFullscreen) {
+      roomsToShow.forEach(([roomId, roomSpec]) => {
+        const isVisited = visitedRooms.includes(roomId as RoomId)
+        const isCurrent = currentRoom === roomId
+        const isAdjacent = adjacentRoomIds.has(roomId as RoomId)
 
-      const x = roomSpec.center.x * scale + offsetX
-      const y = -roomSpec.center.z * scale + offsetY
-      const w = roomSpec.size.x * scale
-      const h = roomSpec.size.z * scale
+        const x = roomSpec.center.x * scale + offsetX
+        const y = -roomSpec.center.z * scale + offsetY
+        const w = roomSpec.size.x * scale
+        const h = roomSpec.size.z * scale
 
-      ctx.fillStyle = isCurrent
-        ? 'rgba(245, 158, 11, 0.35)'
-        : isVisited
-        ? 'rgba(96, 165, 250, 0.22)'
-        : 'rgba(75, 85, 99, 0.12)'
-      ctx.strokeStyle = isCurrent ? '#f59e0b' : isAdjacent ? '#22c55e' : isVisited ? '#60a5fa' : '#4b5563'
-      ctx.lineWidth = isCurrent ? 4 : isAdjacent ? 3 : 2
+        ctx.fillStyle = isCurrent
+          ? 'rgba(245, 158, 11, 0.35)'
+          : isVisited
+          ? 'rgba(96, 165, 250, 0.22)'
+          : 'rgba(75, 85, 99, 0.12)'
+        ctx.strokeStyle = isCurrent ? '#f59e0b' : isAdjacent ? '#22c55e' : isVisited ? '#60a5fa' : '#4b5563'
+        ctx.lineWidth = isCurrent ? 4 : isAdjacent ? 3 : 2
 
+        ctx.beginPath()
+        ctx.roundRect(x - w / 2, y - h / 2, w, h, 8)
+        ctx.fill()
+        ctx.stroke()
+
+        ctx.fillStyle = isCurrent ? '#fbbf24' : isVisited ? '#93c5fd' : '#9ca3af'
+        const fontSize = Math.max(10, Math.min(14, scale * 0.9))
+        ctx.font = `bold ${fontSize}px sans-serif`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(roomSpec.name, x, y)
+      })
+    } else {
+      // ============== 默认模式：只高亮当前房间 + 绘制门洞 ==============
+      if (currentRoomSpec) {
+        const room = currentRoomSpec
+        const cx = room.center.x * scale + offsetX
+        const cy = -room.center.z * scale + offsetY
+        const rw = room.size.x * scale
+        const rh = room.size.z * scale
+        const left = cx - rw / 2
+        const top = cy - rh / 2
+        const right = cx + rw / 2
+        const bottom = cy + rh / 2
+        const borderW = Math.max(3, Math.round(scale * 0.35))
+        const gapColor = '#0f172a'
+
+        // Step1: 先填充房间底色
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.22)'
+        ctx.fillRect(left, top, rw, rh)
+
+        // Step2: 计算每个 doorway 墙体缺口（doorways.offset 是 room center 为原点的偏移，门口宽 doorway.width）
+        // 墙体绘制思路：先画完整外框，再用 gapColor 擦除缺口段，最后在缺口处叠加绿色通行细线与房间简称文字
+        const doorways = room.doorways ?? []
+        const gapSegments: Array<{ ax: number; ay: number; bx: number; by: number; side: string; connectsTo: string; width: number; offsetPx: number }> = []
+
+        for (const dw of doorways) {
+          const offX = dw.offset.x * scale
+          const offZ = -dw.offset.z * scale
+          const dwCenterX = cx + offX
+          const dwCenterY = cy + offZ
+          const dwWidthPx = Math.max(12, dw.width * scale)
+          // 判断在哪面墙：offset.x === -size.x/2 -> 西墙；+size.x/2 -> 东墙；offset.z === -size.z/2 -> 北墙；+size.z/2 -> 南墙（注意 z 翻转）
+          const roomHalfX = room.size.x * scale / 2
+          const roomHalfZ = room.size.z * scale / 2
+          const EPS = Math.max(2, scale * 0.1)
+          let side = 'unknown'
+          if (Math.abs(offX + roomHalfX) < EPS) side = 'west'
+          else if (Math.abs(offX - roomHalfX) < EPS) side = 'east'
+          else if (Math.abs(offZ + roomHalfZ) < EPS) side = 'north' // Three.js -z 前进 -> minimap 上侧
+          else if (Math.abs(offZ - roomHalfZ) < EPS) side = 'south'
+
+          let ax = dwCenterX, ay = dwCenterY, bx = dwCenterX, by = dwCenterY
+          if (side === 'west' || side === 'east') {
+            ay = dwCenterY - dwWidthPx / 2
+            by = dwCenterY + dwWidthPx / 2
+          } else {
+            ax = dwCenterX - dwWidthPx / 2
+            bx = dwCenterX + dwWidthPx / 2
+          }
+          gapSegments.push({ ax, ay, bx, by, side, connectsTo: dw.connectsTo, width: dwWidthPx, offsetPx: 0 })
+        }
+
+        // Step3: 画完整墙框
+        ctx.save()
+        ctx.strokeStyle = '#64748b'
+        ctx.lineWidth = borderW
+        ctx.lineJoin = 'round'
+        ctx.strokeRect(left, top, rw, rh)
+        ctx.restore()
+
+        // Step4: 在缺口处用 gapColor 画矩形擦除（把门口涂成底色）
+        ctx.save()
+        ctx.strokeStyle = gapColor
+        ctx.lineWidth = borderW + 2
+        ctx.lineCap = 'butt'
+        for (const g of gapSegments) {
+          ctx.beginPath()
+          ctx.moveTo(g.ax, g.ay)
+          ctx.lineTo(g.bx, g.by)
+          ctx.stroke()
+        }
+        ctx.restore()
+
+        // Step5: 在缺口位置画绿色通行段 + 相邻房间简称
+        ctx.save()
+        ctx.lineCap = 'round'
+        ctx.font = `bold ${Math.max(10, Math.min(12, Math.floor(scale * 0.55)))}px sans-serif`
+        ctx.textBaseline = 'middle'
+        for (const g of gapSegments) {
+          // 绿色门段
+          ctx.strokeStyle = 'rgba(34, 197, 94, 0.95)'
+          ctx.lineWidth = Math.max(4, borderW * 0.9)
+          ctx.beginPath()
+          ctx.moveTo(g.ax, g.ay)
+          ctx.lineTo(g.bx, g.by)
+          ctx.stroke()
+
+          const mx = (g.ax + g.bx) / 2
+          const my = (g.ay + g.by) / 2
+          const shortName = ROOM_SHORT_NAME[g.connectsTo] ?? g.connectsTo
+          const measure = ctx.measureText(shortName)
+          const tw = measure.width + 10
+          const th = 18
+          let bx0 = mx - tw / 2
+          let by0 = my - th / 2
+          let align: CanvasTextAlign = 'center'
+          // 根据墙侧将文字拉到房间外，避免压在门框上
+          if (g.side === 'west') { bx0 = left - tw - 4; by0 = my - th / 2; align = 'left' }
+          else if (g.side === 'east') { bx0 = right + 4; by0 = my - th / 2; align = 'left' }
+          else if (g.side === 'north') { bx0 = mx - tw / 2; by0 = top - th - 4; align = 'center' }
+          else if (g.side === 'south') { bx0 = mx - tw / 2; by0 = bottom + 4; align = 'center' }
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.88)'
+          ctx.fillRect(bx0, by0, tw, th)
+          ctx.strokeStyle = 'rgba(34, 197, 94, 0.85)'
+          ctx.lineWidth = 1
+          ctx.strokeRect(bx0, by0, tw, th)
+          ctx.fillStyle = '#86efac'
+          ctx.textAlign = align
+          const tx = align === 'left' ? bx0 + 5 : (align === 'center' ? bx0 + tw / 2 : bx0 + tw - 5)
+          const ty = by0 + th / 2
+          ctx.fillText(shortName, tx, ty + 1)
+        }
+        ctx.restore()
+      }
+    }
+
+    // ============== 过期记忆空间标记（灰红虚线圆 + ×）= 用旧记忆位置，不泄露新位置 ==============
+    for (let i = 0; i < memorySlots.length; i++) {
+      const slot = memorySlots[i]
+      if (!slot || !slot.outdated || !slot.position) continue
+      const px = slot.position.x * scale + offsetX
+      const py = -slot.position.z * scale + offsetY
+      ctx.save()
+      ctx.setLineDash([4, 3])
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.75)'
+      ctx.fillStyle = 'rgba(127, 29, 29, 0.18)'
+      ctx.lineWidth = 1.5
       ctx.beginPath()
-      ctx.roundRect(x - w / 2, y - h / 2, w, h, 8)
+      ctx.arc(px, py, 11, 0, Math.PI * 2)
       ctx.fill()
       ctx.stroke()
+      ctx.setLineDash([])
+      // ×
+      ctx.strokeStyle = 'rgba(248, 113, 113, 0.95)'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(px - 6, py - 6)
+      ctx.lineTo(px + 6, py + 6)
+      ctx.moveTo(px + 6, py - 6)
+      ctx.lineTo(px - 6, py + 6)
+      ctx.stroke()
+      ctx.restore()
+    }
 
-      if (isCurrent) {
-        ctx.strokeStyle = '#fbbf24'
+    // ============== 观察到的任务物品（小圆点，分层圆环，hidden/held 已在外层过滤）==============
+    const objMap = new Map<string, EntityState[]>()
+    for (const obj of observedObjects) {
+      const key = `${obj.position.x.toFixed(2)}:${obj.position.z.toFixed(2)}`
+      if (!objMap.has(key)) objMap.set(key, [])
+      objMap.get(key)!.push(obj)
+    }
+    for (const list of objMap.values()) {
+      const o0 = list[0]
+      const px = o0.position.x * scale + offsetX
+      const py = -o0.position.z * scale + offsetY
+      ctx.save()
+      // 外层实心
+      ctx.fillStyle = '#22c55e'
+      ctx.beginPath()
+      ctx.arc(px, py, 5, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = '#ecfdf5'
+      ctx.lineWidth = 1.5
+      ctx.stroke()
+      // 多个叠 -> 画内层橘色环表示多物
+      if (list.length > 1) {
+        ctx.strokeStyle = '#f59e0b'
         ctx.lineWidth = 2
-        ctx.setLineDash([4, 2])
         ctx.beginPath()
-        ctx.roundRect(x - w / 2 - 4, y - h / 2 - 4, w + 8, h + 8, 10)
+        ctx.arc(px, py, 2.2, 0, Math.PI * 2)
         ctx.stroke()
-        ctx.setLineDash([])
       }
+      ctx.restore()
+    }
 
-      ctx.fillStyle = isCurrent ? '#fbbf24' : isVisited ? '#93c5fd' : '#9ca3af'
-      const fontSize = Math.max(10, Math.min(14, scale * 0.9))
-      ctx.font = `bold ${fontSize}px sans-serif`
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(roomSpec.name, x, y)
-    })
-
+    // ============== 玩家位置（高对比描边 + 12~14px 方向箭头）==============
     const robotX = robotPosition.x * scale + offsetX
     const robotY = -robotPosition.z * scale + offsetY
 
-    const gradient = ctx.createRadialGradient(robotX, robotY, 0, robotX, robotY, 14)
-    gradient.addColorStop(0, 'rgba(239, 68, 68, 0.5)')
-    gradient.addColorStop(1, 'rgba(239, 68, 68, 0)')
-    ctx.fillStyle = gradient
+    const glow = ctx.createRadialGradient(robotX, robotY, 0, robotX, robotY, 18)
+    glow.addColorStop(0, 'rgba(239, 68, 68, 0.55)')
+    glow.addColorStop(1, 'rgba(239, 68, 68, 0)')
+    ctx.save()
+    ctx.fillStyle = glow
     ctx.beginPath()
-    ctx.arc(robotX, robotY, 14, 0, Math.PI * 2)
+    ctx.arc(robotX, robotY, 18, 0, Math.PI * 2)
     ctx.fill()
 
-    ctx.fillStyle = '#ffffff'
+    ctx.lineWidth = 2.5
+    ctx.strokeStyle = '#ffffff'
+    ctx.fillStyle = '#ef4444'
     ctx.beginPath()
-    ctx.arc(robotX, robotY, 5, 0, Math.PI * 2)
+    ctx.arc(robotX, robotY, 6, 0, Math.PI * 2)
     ctx.fill()
-
-    ctx.strokeStyle = '#ef4444'
-    ctx.lineWidth = 2
-    ctx.beginPath()
-    ctx.arc(robotX, robotY, 5, 0, Math.PI * 2)
     ctx.stroke()
 
-    const arrowLen = 6
-    ctx.strokeStyle = '#ef4444'
-    ctx.lineWidth = 1.5
     ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.strokeStyle = '#ffffff'
+    ctx.fillStyle = '#ef4444'
+    ctx.lineWidth = 2.2
+    const arrowLen = 13
+    const aw = 5.2
+    const fx = robotX + Math.sin(robotRotation) * arrowLen
+    const fy = robotY - Math.cos(robotRotation) * arrowLen
+    // 左/右舷
+    const leftX = robotX + Math.sin(robotRotation - Math.PI / 2) * aw
+    const leftY = robotY - Math.cos(robotRotation - Math.PI / 2) * aw
+    const rightX = robotX + Math.sin(robotRotation + Math.PI / 2) * aw
+    const rightY = robotY - Math.cos(robotRotation + Math.PI / 2) * aw
     ctx.beginPath()
-    ctx.moveTo(robotX, robotY)
-    ctx.lineTo(
-      robotX + Math.sin(robotRotation) * arrowLen,
-      robotY - Math.cos(robotRotation) * arrowLen
-    )
+    ctx.moveTo(fx, fy)
+    ctx.lineTo(leftX, leftY)
+    ctx.lineTo(rightX, rightY)
+    ctx.closePath()
+    ctx.fill()
     ctx.stroke()
-    ctx.lineCap = 'butt'
-
-    observedObjects.forEach((obj) => {
-      const objX = obj.position.x * scale + offsetX
-      const objY = -obj.position.z * scale + offsetY
-
-      ctx.fillStyle = '#22c55e'
-      ctx.beginPath()
-      ctx.arc(objX, objY, 3, 0, Math.PI * 2)
-      ctx.fill()
-    })
-  }, [currentRoom, visitedRooms, robotPosition, robotRotation, observedObjects, dimensions, taskRooms, minimapPan, minimapZoom, roomsToShow, bounds, minimapFollowPlayer])
+    ctx.restore()
+  }, [currentRoom, visitedRooms, robotPosition, robotRotation, observedObjects, dimensions, taskRooms, minimapPan, minimapZoom, roomsToShow, currentRoomSpec, minimapFollowPlayer, memorySlots, isFullscreen])
 
   if (!isVisible) return null
 
@@ -321,15 +498,22 @@ export function Minimap({
     )
   }
 
+  // 外层宽度：由 panelPx.w 决定（<1280 可折叠意味着：<1280 下 minimapOpen=false 才折叠；打开时仍然显示 panel 最小宽度）
+  const outerW = isFullscreen ? 'auto' : panelPx.w > 0 ? `${panelPx.w}px` : '260px'
+  const outerAspect = isFullscreen ? '16 / 10' : '1 / 1'
+  const outerMinH = panelPx.h > 0 ? `${panelPx.h}px` : '260px'
+
   return (
     <div
       ref={containerRef}
       className={`minimap-container ${isFullscreen ? 'fixed inset-4 z-50' : ''}`}
       style={{
         touchAction: 'none',
-        width: isFullscreen ? 'auto' : '100%',
-        height: isFullscreen ? 'auto' : 'auto',
-        aspectRatio: isFullscreen ? '16 / 10' : '1 / 1',
+        width: outerW,
+        minWidth: isFullscreen ? undefined : '200px',
+        minHeight: isFullscreen ? undefined : outerMinH,
+        aspectRatio: outerAspect,
+        height: isFullscreen ? 'auto' : undefined,
         position: isFullscreen ? 'fixed' : 'relative',
         backgroundColor: isFullscreen ? 'rgba(17, 24, 39, 0.95)' : 'transparent',
         borderRadius: isFullscreen ? '16px' : '8px',
@@ -343,6 +527,7 @@ export function Minimap({
           onClick={handleZoomIn}
           className={`flex items-center justify-center bg-slate-800/90 hover:bg-slate-700 text-white text-xs rounded border border-slate-600/50 pointer-events-auto ${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`}
           aria-label="放大"
+          title="放大"
         >
           +
         </button>
@@ -350,6 +535,7 @@ export function Minimap({
           onClick={handleZoomOut}
           className={`flex items-center justify-center bg-slate-800/90 hover:bg-slate-700 text-white text-xs rounded border border-slate-600/50 pointer-events-auto ${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`}
           aria-label="缩小"
+          title="缩小"
         >
           −
         </button>
@@ -357,24 +543,10 @@ export function Minimap({
           <button
             onClick={handleReset}
             className="w-6 h-6 flex items-center justify-center bg-slate-800/90 hover:bg-slate-700 text-white text-xs rounded border border-slate-600/50 pointer-events-auto"
-            aria-label="重置视图"
-            title="重置视图"
+            aria-label="重新居中（当前房间）"
+            title="重新居中（当前房间）"
           >
             ⟳
-          </button>
-        )}
-        {!isMobile && (
-          <button
-            onClick={handleToggleFollow}
-            className={`w-6 h-6 flex items-center justify-center text-xs rounded border pointer-events-auto ${
-              minimapFollowPlayer
-                ? 'bg-amber-600/90 hover:bg-amber-500 text-white border-amber-400/50'
-                : 'bg-slate-800/90 hover:bg-slate-700 text-white border-slate-600/50'
-            }`}
-            aria-label={minimapFollowPlayer ? '取消跟随' : '跟随玩家'}
-            title={minimapFollowPlayer ? '取消跟随' : '跟随玩家'}
-          >
-            ⌖
           </button>
         )}
         {onToggleFullscreen && (
@@ -415,6 +587,7 @@ export function Minimap({
           borderRadius: '8px',
           border: '2px solid #374151',
           cursor: isDragging ? 'grabbing' : minimapFollowPlayer ? 'default' : 'grab',
+          backgroundColor: '#0f172a',
         }}
       />
     </div>

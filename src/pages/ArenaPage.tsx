@@ -286,21 +286,6 @@ export function ArenaPage() {
         </Suspense>
       )}
 
-      {/* 游戏中返回任务列表按钮 - 移到左上角 */}
-      {!briefingOpen && task && phase === 'playing' && (
-        <button
-          data-testid="back-to-tasks"
-          onClick={() => {
-            stopBgmImmediate()
-            stopAllSfx()
-            navigate('/tasks')
-          }}
-          className="absolute top-4 left-4 z-30 pointer-events-auto bg-slate-900/70 backdrop-blur-sm rounded-lg px-3 py-1.5 text-xs text-slate-400 hover:text-white transition-colors shadow-lg border border-slate-700/50"
-        >
-          ← 返回任务列表
-        </button>
-      )}
-
       {/* 任务简报浮层 - 主人便签风格 */}
       {briefingOpen && task && (
         <div className="absolute inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-40" data-testid="briefing-modal">

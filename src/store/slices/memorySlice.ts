@@ -58,6 +58,7 @@ export const createMemorySlice = (set: any, get: any): MemorySliceState => ({
       entityConfigId: entity.configId,
       priority,
       memoryType,
+      position: { x: entity.position.x, y: entity.position.y, z: entity.position.z },
     }
 
     if (isUpdate) {

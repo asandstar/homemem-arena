@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <style>
+      .bg { fill: #0f172a; }
+      .frame { fill: #1e293b; stroke: #475569; stroke-width: 2; rx: 8; }
+      .frame-accent { stroke: #a855f7; stroke-width: 3; }
+      .label { font-family: sans-serif; font-size: 14px; fill: #94a3b8; }
+      .label-bold { font-weight: bold; fill: #e2e8f0; font-size: 16px; }
+      .label-title { font-weight: bold; fill: #f8fafc; font-size: 20px; }
+      .line { stroke: #64748b; stroke-width: 1; stroke-dasharray: 4 4; }
+      .zone-outline { fill: rgba(168,85,247,0.08); stroke: rgba(168,85,247,0.6); stroke-width: 2; }
+      .comment-arrow { fill: none; stroke: #f59e0b; stroke-width: 2; marker-end: url(#arrow); }
+      .wire-hud-text { fill: #fbbf24; font-weight: bold; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+  </defs>
+
+  <!-- 背景：3D 游戏画面（示意） -->
+  <rect class="bg" width="1920" height="1080"/>
+  <rect x="0" y="0" width="1920" height="1080" fill="url(#vignette)"/>
+  <!-- 3D 场景示意：客厅地板网格 -->
+  <g opacity="0.3">
+    <line x1="0" y1="700" x2="1920" y2="700" stroke="#334155" stroke-width="1"/>
+    <line x1="960" y1="400" x2="600" y2="1080" stroke="#334155" stroke-width="1"/>
+    <line x1="960" y1="400" x2="1320" y2="1080" stroke="#334155" stroke-width="1"/>
+    <line x1="300" y1="550" x2="1620" y2="550" stroke="#334155" stroke-width="1"/>
+  </g>
+  <text x="960" y="90" text-anchor="middle" class="label" font-size="18">3D Scene3D Scene Area (1920×1080)</text>
+
+  <!-- ========== 顶部栏 ========== -->
+
+  <!-- 左上：任务名 + Step x/5 + 一行目标 -->
+  <g>
+    <rect x="16" y="16" width="360" height="80" rx="12" class="frame zone-outline"/>
+    <rect x="16" y="16" width="360" height="80" rx="12" class="frame frame-accent" fill="rgba(30,41,59,0.92)"/>
+    <text x="36" y="46" class="label-title">🎯 出门大作战</text>
+    <text x="300" y="46" text-anchor="end" class="label-bold" fill="#22d3ee">Step 1/5</text>
+    <line x1="36" y1="60" x2="340" y2="60" class="line" opacity="0.3"/>
+    <text x="36" y="82" class="label-bold" fill="#e2e8f0" font-size="14">靠近钥匙，按 E 记录它的位置</text>
+    <text x="385" y="50" text-anchor="start" class="wire-hud-text" font-size="11">①</text>
+    <path d="M 400 56 Q 500 56 540 96" class="comment-arrow"/>
+    <text x="550" y="106" class="label" font-size="12">360×80px | persistent | z=20 | 仅保留：任务名 + 步骤 单行当前目标（最多2行截断）</text>
+  </g>
+
+  <!-- 顶部中间：计时器 -->
+  <g>
+    <rect x="810" y="16" width="300" height="56" rx="12" class="frame" fill="rgba(30,41,59,0.92)"/>
+    <text x="860" y="50" class="label-bold" fill="#67e8f9" font-size="22">⏱ 03:00</text>
+    <circle cx="910" cy="44" r="3" fill="#22d3ee"/>
+    <text x="1000" y="50" text-anchor="end" class="label" font-size="12">混乱 12%</text>
+    <text x="1125" y="40" text-anchor="start" class="wire-hud-text" font-size="11">②</text>
+    <path d="M 1120 44 L 1170 44 L 1186 80" class="comment-arrow"/>
+    <text x="1195" y="92" class="label" font-size="12">300×56px | persistent | z=10 | 只显示：时间 + 混乱值条（无得分/评级/位置得分）</text>
+  </g>
+
+  <!-- 右上：160~190px 当前房间小地图 -->
+  <g>
+    <rect x="1920-16-180" y="16" width="180" height="200" rx="12" class="frame zone-outline"/>
+    <rect x="1920-16-180" y="16" width="180" height="200" rx="12" class="frame frame-accent" fill="rgba(30,41,59,0.92)"/>
+    <!-- 小地图内：房间方块 + 玩家箭头 -->
+    <rect x="1920-16-180+20" y="16+40" width="140" height="140" rx="6" fill="#0f172a" stroke="#475569"/>
+    <rect x="1920-16-180+40" y="16+60" width="100" height="100" rx="4" fill="rgba(245,158,11,0.25)" stroke="#f59e0b" stroke-width="2"/>
+    <text x="1920-16-180+90" y="16+118" text-anchor="middle" class="label-bold" fill="#fbbf24">客厅</text>
+    <!-- 玩家箭头 -->
+    <polygon points="1920-16-180+90,16+96 1920-16-180+84,16+110 1920-16-180+96,16+110" fill="#ef4444" stroke="#fff"/>
+    <!-- 房门标记 -->
+    <rect x="1920-16-180+85" y="16+155" width="10" height="5" fill="#22c55e"/>
+    <rect x="1920-16-180+35" y="16+105" width="5" height="10" fill="#22c55e"/>
+    <rect x="1920-16-180+140" y="16+105" width="5" height="10" fill="#22c55e"/>
+    <text x="1920-16-180+90" y="16+30" text-anchor="middle" class="label-bold" font-size="12">🗺️ 小地图</text>
+    <text x="1920-16-180+90" y="16+190" text-anchor="middle" class="label" font-size="10">点击展开全屏</text>
+    <text x="1920-16-180-6" y="46" text-anchor="end" class="wire-hud-text" font-size="11">③</text>
+    <path d="M 1920-16-180-10 50 Q 1920-16-180-80 80 1920-16-180-100 110" class="comment-arrow"/>
+    <text x="1920-16-180-250" y="126" text-anchor="end" class="label" font-size="12">180×200px 默认显示当前房间；可点击展开全屏看全住宅</text>
+  </g>
+
+  <!-- ========== 侧边：折叠的 3 个记忆槽 ========== -->
+  <g>
+    <!-- 折叠按钮（默认收起，仅显示3个小图标+标签） -->
+    <rect x="16" y="1080-16-280" width="56" height="260" rx="12" class="frame" fill="rgba(30,41,59,0.92)"/>
+    <text x="44" y="1080-16-280+30" text-anchor="middle" class="label-bold" font-size="12" transform="rotate(-90 44 1080-16-280+160)">🧠 记忆槽 (3)</text>
+    <!-- 3 个 slot -->
+    <g transform="translate(12,1080-16-280+52)">
+      <rect x="0" y="0" width="32" height="60" rx="6" fill="none" stroke="#a855f7" stroke-width="2"/>
+      <text x="16" y="34" text-anchor="middle" font-size="18">🔑</text>
+      <rect x="0" y="0" width="32" height="8" rx="3" fill="none" stroke="#22c55e"/>
+    </g>
+    <g transform="translate(12,1080-16-280+124)">
+      <rect x="0" y="0" width="32" height="60" rx="6" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="4 2"/>
+      <text x="16" y="34" text-anchor="middle" class="label" font-size="10">空</text>
+    </g>
+    <g transform="translate(12,1080-16-280+196)">
+      <rect x="0" y="0" width="32" height="60" rx="6" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="4 2"/>
+      <text x="16" y="34" text-anchor="middle" class="label" font-size="10">空</text>
+    </g>
+    <text x="85" y="1080-16-140" class="wire-hud-text" font-size="11">④</text>
+    <path d="M 80 1080-16-140 L 130 1080-16-140 L 160 1080-16-110" class="comment-arrow"/>
+    <text x="170" y="1080-16-100" class="label" font-size="12">56×260px | 默认折叠（左侧边栏）；hover/按 M 展开详情；3个 slot 仅显示图标+过期警示</text>
+  </g>
+
+  <!-- ========== 底部中间：情境 E/F 提示 ========== -->
+  <g>
+    <rect x="1920/2-240" y="1080-16-80" width="480" height="64" rx="16" class="frame zone-outline"/>
+    <rect x="1920/2-240" y="1080-16-80" width="480" height="64" rx="16" class="frame frame-accent" fill="rgba(15,23,42,0.9)"/>
+    <!-- E 提示 -->
+    <rect x="1920/2-240+24" y="1080-16-80+16" width="210" height="32" rx="8" fill="rgba(168,85,247,0.15)" stroke="rgba(168,85,247,0.6)"/>
+    <rect x="1920/2-240+36" y="1080-16-80+22" width="24" height="20" rx="4" fill="#a855f7"/>
+    <text x="1920/2-240+48" y="1080-16-80+38" text-anchor="middle" class="label-bold" fill="#fff" font-size="12">E</text>
+    <text x="1920/2-240+72" y="1080-16-80+38" class="label-bold" fill="#e9d5ff" font-size="13">记录钥匙位置</text>
+    <!-- F 提示 -->
+    <rect x="1920/2-240+260" y="1080-16-80+16" width="196" height="32" rx="8" fill="rgba(34,211,238,0.12)" stroke="rgba(34,211,238,0.6)"/>
+    <rect x="1920/2-240+272" y="1080-16-80+22" width="24" height="20" rx="4" fill="#22d3ee"/>
+    <text x="1920/2-240+284" y="1080-16-80+38" text-anchor="middle" class="label-bold" fill="#fff" font-size="12">F</text>
+    <text x="1920/2-240+308" y="1080-16-80+38" class="label-bold" fill="#a5f3fc" font-size="13">拾取钥匙（先记录）</text>
+    <text x="1920/2-240-6" y="1080-16-58" text-anchor="end" class="wire-hud-text" font-size="11">⑤</text>
+    <path d="M 1920/2-240-10 1080-16-50 L 1920/2-240-80 1080-16-50 L 1920/2-240-100 1080-16-90" class="comment-arrow"/>
+    <text x="1920/2-240-240" y="1080-16-82" text-anchor="end" class="label" font-size="12">480×64px | contextual | 仅在有可交互对象时显示；E/F 并排，禁用时灰化+原因</text>
+  </g>
+
+  <!-- ========== Toast：短暂显示，自动消失 ========== -->
+  <g transform="translate(1920/2-180, 140)">
+    <rect x="0" y="0" width="360" height="56" rx="12" fill="rgba(120,53,15,0.9)" stroke="rgba(245,158,11,0.6)" stroke-width="2"/>
+    <text x="24" y="34" font-size="22">🐱</text>
+    <text x="60" y="26" class="label-bold" fill="#fed7aa" font-size="13">异常事件</text>
+    <text x="60" y="46" class="label-bold" fill="#fff" font-size="14">什么东西碰了一下钥匙…物品位置似乎变了！</text>
+    <text x="-10" y="26" text-anchor="end" class="wire-hud-text" font-size="11">⑥</text>
+    <path d="M -14 30 L -80 30 L -110 66" class="comment-arrow"/>
+    <text x="-270" y="78" text-anchor="end" class="label" font-size="12">360×56px 顶部滑入 | 3~5 秒自动消失；不打断操作；事件/成就/警告 3 种样式</text>
+  </g>
+
+  <!-- 右下：手持物状态（极简） -->
+  <g transform="translate(1920-16-160, 1080-16-56)">
+    <rect x="0" y="0" width="144" height="40" rx="10" fill="rgba(30,41,59,0.85)" stroke="#475569"/>
+    <text x="16" y="26" font-size="18">📦</text>
+    <text x="44" y="26" class="label-bold" font-size="13">持有：空</text>
+  </g>
+
+  <!-- 图例 Legend -->
+  <g transform="translate(80, 1080-160)">
+    <rect x="0" y="0" width="520" height="140" rx="12" fill="rgba(15,23,42,0.95)" stroke="#334155"/>
+    <text x="20" y="30" class="label-title">推荐 HUD 信息架构（Leave-Home 场景 · 1920×1080）</text>
+    <text x="20" y="54" class="label">① 左上任务面板（缩减版）：任务名 + Step x/5 + 当前目标一行</text>
+    <text x="20" y="76" class="label">② 顶中计时器：时间+混乱值条（移除得分/评级/位置，放结算页）</text>
+    <text x="20" y="98" class="label">③ 右上 180×200px 房间级小地图（可展开全屏看全住宅）</text>
+    <text x="20" y="120" class="label">④ 左侧 56×260px 折叠记忆槽（按 M 展开详情）</text>
+  </g>
+</svg>

@@ -11,6 +11,8 @@ export interface MemorySlotData {
   entityConfigId: string
   priority?: 'high' | 'medium' | 'low'
   memoryType?: 'spatial' | 'object' | 'temporal' | 'procedural'
+  /** 记忆记录时物体的世界坐标（Minimap 过期位置标记使用） */
+  position?: { x: number; y: number; z: number }
 }
 
 export type MemorySlot = MemorySlotData | null

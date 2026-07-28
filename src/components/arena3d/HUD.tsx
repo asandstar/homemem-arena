@@ -89,12 +89,15 @@ export function HUD() {
   const [chaosTooltipOpen, setChaosTooltipOpen] = useState(false)
   const [isCompact, setIsCompact] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [viewportWidth, setViewportWidth] = useState(1920)
   const [minimapFullscreen, setMinimapFullscreen] = useState(false)
 
   useEffect(() => {
     const checkCompact = () => {
-      setIsCompact(window.innerWidth < 1280)
-      setIsMobile(window.innerWidth < 768)
+      const w = window.innerWidth
+      setViewportWidth(w)
+      setIsCompact(w < 1280)
+      setIsMobile(w < 768)
     }
     checkCompact()
     window.addEventListener('resize', checkCompact)
@@ -520,7 +523,7 @@ export function HUD() {
         </div>
       </div>
 
-      <div className="absolute top-4 right-4 pointer-events-auto z-20" data-testid="minimap" style={{ width: isMobile ? '200px' : isCompact ? '300px' : '360px' }}>
+      <div className="absolute top-4 right-4 pointer-events-auto z-20" data-testid="minimap" style={{ width: minimapFullscreen ? 'auto' : isMobile ? '216px' : viewportWidth >= 1600 ? '276px' : viewportWidth >= 1280 ? '246px' : '216px' }}>
         <div className={`bg-slate-900/90 backdrop-blur-md rounded-xl shadow-xl border border-slate-700/50 ${isMobile ? 'p-2' : 'p-3'}`}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-slate-400">小地图</span>
@@ -539,7 +542,6 @@ export function HUD() {
               robotPosition={robotPosition}
               robotRotation={robotRotation}
               observedObjects={entities.filter((e) => {
-                // Sprint B.1: 关二 stage-key-outdated 期间，隐藏新钥匙位置，避免泄露答案
                 if (isLeaveHome && currentStageId === 'stage-key-outdated' && e.configId === 'obj-key') return false
                 return e.currentRoom === currentRoom && e.status !== 'hidden' && e.status !== 'held'
               })}
@@ -547,6 +549,7 @@ export function HUD() {
               isMobile={isMobile}
               isFullscreen={minimapFullscreen}
               onToggleFullscreen={() => setMinimapFullscreen(!minimapFullscreen)}
+              memorySlots={memorySlots}
             />
           )}
           {heldEntity && !minimapOpen && (

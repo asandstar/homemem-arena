@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <style>
+      .bg { fill: transparent; }
+      .annot-box-red { fill: none; stroke: #ef4444; stroke-width: 3; stroke-dasharray: 8 4; rx: 8; }
+      .annot-box-amber { fill: none; stroke: #f59e0b; stroke-width: 3; stroke-dasharray: 8 4; rx: 8; }
+      .annot-box-purple { fill: none; stroke: #a855f7; stroke-width: 3; stroke-dasharray: 8 4; rx: 8; }
+      .annot-box-cyan { fill: none; stroke: #22d3ee; stroke-width: 3; stroke-dasharray: 8 4; rx: 8; }
+      .annot-box-green { fill: none; stroke: #22c55e; stroke-width: 3; stroke-dasharray: 8 4; rx: 8; }
+      .label-bg { fill: rgba(15,23,42,0.92); rx: 6; ry: 6; }
+      .label-text { font-family: sans-serif; font-size: 13px; fill: #f8fafc; font-weight: bold; }
+      .comment-text { font-family: sans-serif; font-size: 12px; fill: #cbd5e1; }
+      .problem { fill: #fecaca; stroke: #ef4444; stroke-width: 1; }
+      .id-text { fill: #fef08a; font-weight: bold; font-family: sans-serif; font-size: 14px; }
+    </style>
+  </defs>
+
+  <!-- 占位：真实游戏截图会在浏览器中作为背景叠加 -->
+  <rect class="bg" width="1920" height="1080"/>
+  <text x="960" y="540" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#64748b">
+    [将 leave-home-stage-1-entry__1920x1080.png 作为底图叠加在浏览器中查看]
+  </text>
+
+  <!-- ① 左上任务面板（目标 + 目标列表） -->
+  <g>
+    <rect x="16" y="46" width="374" height="410" class="annot-box-red"/>
+    <rect x="12" y="30" width="200" height="28" rx="6" fill="rgba(239,68,68,0.9)"/>
+    <text x="24" y="50" class="id-text">① 任务目标面板</text>
+    <rect x="400" y="80" width="520" height="160" rx="8" class="label-bg"/>
+    <text x="416" y="104" class="label-text">❌ 信息过载：max-w-[360px] 高度可达 25vh</text>
+    <text x="416" y="126" class="comment-text">· 含任务名 + 当前目标 + 7 条完整目标列表 + 折叠按钮</text>
+    <text x="416" y="146" class="comment-text">· 展开后面积 = 360×450px ≈ 屏幕 8%</text>
+    <text x="416" y="166" class="comment-text">· 仅 "当前目标 + Step x/5" 对当下阶段必要</text>
+    <text x="416" y="186" class="comment-text">· 完整目标清单 → 按 Tab 切换（已实现，但默认展开占屏）</text>
+    <text x="416" y="208" class="comment-text" fill="#fca5a5">⚠️ 遮挡：客厅主沙发茶几（玩家视线正前方）</text>
+    <text x="416" y="228" class="comment-text" fill="#fca5a5">⚠️ 重叠：与顶中状态卡片在 1280px 以下屏幕可能横向重叠</text>
+  </g>
+
+  <!-- ② 顶部中间：状态大卡片（得分/评级/时间/位置/混乱/进度） -->
+  <g>
+    <rect x="760" y="46" width="400" height="152" class="annot-box-amber"/>
+    <rect x="756" y="30" width="260" height="28" rx="6" fill="rgba(245,158,11,0.92)"/>
+    <text x="768" y="50" class="id-text" fill="#0f172a">② 顶部中央状态卡片</text>
+    <rect x="1170" y="80" width="560" height="180" rx="8" class="label-bg"/>
+    <text x="1186" y="104" class="label-text">⚠️ 得分评级在进行中无意义</text>
+    <text x="1186" y="126" class="comment-text">· 400×152px 大卡片永久显示 z-10</text>
+    <text x="1186" y="146" class="comment-text">· 含：得分+评级+时间+位置+混乱条+目标进度条 6 项</text>
+    <text x="1186" y="166" class="comment-text">· 得分 / 评级 → 应仅在结算 ResultPage 显示</text>
+    <text x="1186" y="186" class="comment-text">· "位置"文字 (currentRoom) → 小地图中已高亮 属冗余</text>
+    <text x="1186" y="206" class="comment-text">· 混乱条 5% 时 95% 空的视觉浪费</text>
+    <text x="1186" y="228" class="comment-text" fill="#fcd34d">✂️ 可裁剪：保留时间 + 混乱 缩至 300×56px</text>
+    <text x="1186" y="248" class="comment-text" fill="#fca5a5">⚠️ 遮挡：游戏正中央上半部（正前方视线关键区）</text>
+  </g>
+
+  <!-- ③ 右上小地图 -->
+  <g>
+    <rect x="1548" y="46" width="356" height="360" class="annot-box-purple"/>
+    <rect x="1544" y="30" width="180" height="28" rx="6" fill="rgba(168,85,247,0.92)"/>
+    <text x="1556" y="50" class="id-text">③ 右上 Minimap 面板</text>
+    <rect x="1060" y="260" width="460" height="220" rx="8" class="label-bg"/>
+    <text x="1076" y="284" class="label-text">⚠️ 尺寸过大：360×360px (默认) / 300px (1280px)</text>
+    <text x="1076" y="306" class="comment-text">· 360×360 + 标题+房间状态 = 约 360×540px</text>
+    <text x="1076" y="326" class="comment-text">· 含 +/-/重置/跟随/全屏/关闭 6 个操作按钮</text>
+    <text x="1076" y="346" class="comment-text">· 实际 B2 家具（电视柜/沙发/茶几）→ 未在小地图显示</text>
+    <text x="1076" y="366" class="comment-text">· 仅玩家+房间名+房门+可见物体 4 类信息</text>
+    <text x="1076" y="386" class="comment-text" fill="#d8b4fe">✅ 优点：玩家箭头方向正确（robotRotation 映射）</text>
+    <text x="1076" y="406" class="comment-text" fill="#d8b4fe">✅ 优点：stage-key-outdated 阶段隐藏新钥匙位置（不泄露）</text>
+    <text x="1076" y="426" class="comment-text" fill="#fcd34d">✂️ 可裁剪至 180×200px 房间级</text>
+    <text x="1076" y="446" class="comment-text" fill="#fca5a5">⚠️ 遮挡：挡住电视机/电视柜/南墙（玄关入口视野）</text>
+    <text x="1076" y="466" class="comment-text" fill="#fca5a5">⚠️ 与 ② 顶中卡片仅距 180px 顶部视觉压重</text>
+  </g>
+
+  <!-- ④ 左下：操作提示 / 事件日志 -->
+  <g>
+    <rect x="16" y="930" width="260" height="134" class="annot-box-green"/>
+    <rect x="12" y="914" width="200" height="28" rx="6" fill="rgba(34,197,94,0.92)"/>
+    <text x="24" y="934" class="id-text" fill="#0f172a">④ 操作提示 + 事件日志</text>
+    <rect x="290" y="830" width="440" height="150" rx="8" class="label-bg"/>
+    <text x="306" y="854" class="label-text">⚠️ 常驻左下角 controls 提示</text>
+    <text x="306" y="876" class="comment-text">· 9 键 × 3 列 kbd 栅格（WASD/拖动/V/Tab/E/F/H/R/ESC）</text>
+    <text x="306" y="896" class="comment-text">· 学习成本：前 3 分钟必要；熟练后永久遮挡</text>
+    <text x="306" y="916" class="comment-text">· 事件日志 (按 R) 默认关闭 → OK</text>
+    <text x="306" y="936" class="comment-text" fill="#86efac">✅ 可接受：按 ? 或首次通关后自动隐藏</text>
+    <text x="306" y="956" class="comment-text" fill="#fcd34d">✂️ 建议：仅首 3 关显示，之后按 H 或 ? 调出</text>
+  </g>
+
+  <!-- ⑤ 底部中间：记忆槽（展开时） -->
+  <g>
+    <rect x="620" y="900" width="680" height="164" class="annot-box-cyan"/>
+    <rect x="616" y="884" width="220" height="28" rx="6" fill="rgba(34,211,238,0.92)"/>
+    <text x="628" y="904" class="id-text" fill="#0f172a">⑤ 记忆槽（展开 memoryBarOpen=true）</text>
+    <rect x="80" y="660" width="520" height="200" rx="8" class="label-bg"/>
+    <text x="96" y="684" class="label-text">⚠️ 680×164px 底部居中常驻（展开时）</text>
+    <text x="96" y="706" class="comment-text">· 3 slot × (108×64px) = 展开后大面积</text>
+    <text x="96" y="726" class="comment-text">· 含锁定/丢弃按钮 每 slot 2 个 × 3 = 6 按钮</text>
+    <text x="96" y="746" class="comment-text">· 含物体名/房间名/置信度条 3 层信息</text>
+    <text x="96" y="766" class="comment-text" fill="#67e8f9">✅ 过期红色 glitch 视觉提示正确</text>
+    <text x="96" y="786" class="comment-text" fill="#fcd34d">✂️ 可折叠：左侧 56px 竖条 按 M 展开</text>
+    <text x="96" y="806" class="comment-text" fill="#fca5a5">⚠️ 遮挡：正前方地面物品/脚印（拾取关键）</text>
+    <text x="96" y="826" class="comment-text" fill="#fca5a5">⚠️ 重叠：与 ⑦ E/F 提示 横排可能叠</text>
+  </g>
+
+  <!-- ⑥ 右下 E/F 提示 + 首次教学 -->
+  <g>
+    <rect x="1340" y="760" width="560" height="240" class="annot-box-red"/>
+    <rect x="1336" y="744" width="240" height="28" rx="6" fill="rgba(239,68,68,0.9)"/>
+    <text x="1348" y="764" class="id-text">⑥ E/F 情境交互提示区</text>
+    <rect x="700" y="560" width="600" height="200" rx="8" class="label-bg"/>
+    <text x="716" y="584" class="label-text">⚠️ 右下角堆叠 3 层 contextual UI</text>
+    <text x="716" y="606" class="comment-text">· F 拾取/打开/放入（上方 cyan）</text>
+    <text x="716" y="626" class="comment-text">· E 记忆动作（下方 purple）</text>
+    <text x="716" y="646" class="comment-text">· 首次靠近钥匙教学 Popup（最大块 260px）</text>
+    <text x="716" y="666" class="comment-text" fill="#fca5a5">⚠️ 过期记忆更新 Popup 叠加第 4 层</text>
+    <text x="716" y="686" class="comment-text" fill="#fca5a5">⚠️ 手持状态 heldEntity 偶尔 5 层</text>
+    <text x="716" y="706" class="comment-text" fill="#fcd34d">✂️ 改到底部居中 480×64px E/F 并排 单层</text>
+    <text x="716" y="726" class="comment-text" fill="#fcd34d">✂️ 教学首次前 3 次出现后关闭</text>
+  </g>
+
+  <!-- ⑦ 全屏覆盖：混乱 vignette + 过期 pulse -->
+  <g>
+    <rect x="0" y="0" width="1920" height="1080" class="annot-box-amber"/>
+    <rect x="1400" y="450" width="480" height="100" rx="8" class="label-bg"/>
+    <text x="1416" y="474" class="label-text">⚠️ 全屏特效层（z-10~z-30）</text>
+    <text x="1416" y="494" class="comment-text">· chaos>20%: 径向红 vignette</text>
+    <text x="1416" y="512" class="comment-text">· chaos>50%: + 噪音叠层 + 扫描线 + overlay</text>
+    <text x="1416" y="530" class="comment-text">· outdated: 全屏红色脉冲 + memory slot glitch</text>
+    <text x="1416" y="548" class="comment-text" fill="#fca5a5">⚠️ 20% 即开始叠加，chaos 早期过度视觉压迫</text>
+  </g>
+
+  <!-- ⑧ 顶部中央 Toast 事件消息 -->
+  <g>
+    <rect x="760" y="280" width="400" height="80" class="annot-box-purple"/>
+    <rect x="756" y="264" width="80" height="28" rx="6" fill="rgba(168,85,247,0.9)"/>
+    <text x="768" y="284" class="id-text">⑧ Toast</text>
+  </g>
+
+  <!-- 关键问题标注 -->
+  <g>
+    <rect x="20" y="500" width="480" height="250" rx="12" fill="rgba(127,29,29,0.9)" stroke="#ef4444" stroke-width="2"/>
+    <text x="40" y="530" font-family="sans-serif" font-size="18" fill="#fecaca" font-weight="bold">🚩 3 个最严重 UX 问题</text>
+    <text x="40" y="560" class="comment-text" fill="#fecaca">1. 顶部三角压迫感：①②③ 合计约占据</text>
+    <text x="40" y="578" class="comment-text" fill="#fecaca">   屏幕 ≈ 18% 面积 × 全部在 y<250</text>
+    <text x="40" y="598" class="comment-text" fill="#fecaca">2. 视觉层级不清晰：z-index 20(z-10)/</text>
+    <text x="40" y="616" class="comment-text" fill="#fecaca">   10(z-20)/30 交错 共 6 层常驻叠层</text>
+    <text x="40" y="636" class="comment-text" fill="#fecaca">3. 底部双 UI 重叠：⑤+⑥可能重叠</text>
+    <text x="40" y="656" class="comment-text" fill="#fecaca">   占满 y=760~1080 水平 2/3 区域</text>
+    <text x="40" y="676" class="comment-text" fill="#fecaca">   关键 3D 拾取区被完全遮蔽</text>
+    <text x="40" y="700" class="comment-text" fill="#fef3c7">💡 见推荐线框：6 层缩至 4 层 × 边侧化</text>
+    <text x="40" y="720" class="comment-text" fill="#fef3c7">   顶中/底中/右左/侧边 4 区非重叠</text>
+  </g>
+</svg>

@@ -26,6 +26,8 @@ export interface MemorySlot {
   memoryType?: string
   /** 记忆优先级：high=任务关键（不易被覆盖），medium=普通，low=最易被覆盖 */
   priority?: MemoryPriority
+  /** 记忆记录时物体的世界坐标（Minimap 过期位置标记使用） */
+  position?: { x: number; y: number; z: number }
 }
 
 export type FloatingTextType = 'score' | 'combo' | 'error' | 'memory' | 'info'
