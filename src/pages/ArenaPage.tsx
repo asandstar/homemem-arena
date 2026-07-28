@@ -1,7 +1,7 @@
 // 3D Arena 页面 - 整合 3D 场景 + HUD + 操作面板
 
 import { useEffect, useCallback, useState, lazy, Suspense } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useGameStore } from '../store/useGameStore'
 import { useSessionStore } from '../store/useSessionStore'
 import { useToastStore } from '../store/useToastStore'
@@ -24,6 +24,7 @@ const ItemHintIndicator = lazy(() => import('../components/arena3d/ItemHintIndic
 export function ArenaPage() {
   const { taskId } = useParams<{ taskId: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const {
     task,
@@ -126,16 +127,18 @@ export function ArenaPage() {
     }
   }, [activeFlowHint, task, briefingOpen, phase, triggerDialog])
 
-  // 初始化任务
+  // 初始化任务（每次进入，无论是 taskId 改变还是 location.key 改变 —— 例如从 ResultPage 重新开始相同 taskId）
   useEffect(() => {
     if (!taskId || !getTaskById(taskId)) {
       navigate('/tasks', { replace: true })
       return
     }
     setNarrativeText(null)
-    initializeTask(taskId)
+    setShowStats(false)
     setBriefingOpen(true)
-  }, [taskId, initializeTask, navigate])
+    if (closeDialog) closeDialog()
+    initializeTask(taskId)
+  }, [taskId, location.key, initializeTask, navigate, closeDialog])
 
   // 离开 ArenaPage 时停止所有音频，避免浏览器后退后继续播放
   useEffect(() => {
@@ -197,7 +200,7 @@ export function ArenaPage() {
 
   // 关卡完成或失败后进入记忆测试，最终分析在 Probe 完成后执行
   useEffect(() => {
-    if (levelCompleted || levelFailed) {
+    if (!briefingOpen && phase !== 'briefing' && (levelCompleted || levelFailed)) {
       if (levelCompleted && task?.completionText) {
         setNarrativeText(task.completionText)
       } else if (levelFailed && task?.failureText) {
@@ -210,7 +213,7 @@ export function ArenaPage() {
 
       return () => clearTimeout(timer)
     }
-  }, [levelCompleted, levelFailed, task])
+  }, [levelCompleted, levelFailed, task, briefingOpen, phase])
 
   // 处理点击物体
   const handleEntityClick = useCallback(
@@ -375,7 +378,7 @@ export function ArenaPage() {
       )}
 
       {/* 叙事弹窗 - 关卡完成/失败 */}
-      {narrativeText && !showStats && (
+      {!briefingOpen && phase !== 'briefing' && narrativeText && !showStats && (
         <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 pointer-events-none">
           <div className={`max-w-md mx-4 p-6 rounded-2xl shadow-2xl border ${
             levelCompleted
@@ -399,7 +402,7 @@ export function ArenaPage() {
       )}
 
       {/* 结算统计弹窗 */}
-      {showStats && (
+      {!briefingOpen && phase !== 'briefing' && showStats && (
         <div className="absolute inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-50 pointer-events-auto">
           <div className={`max-w-md mx-4 p-6 rounded-2xl shadow-2xl border ${
             levelCompleted

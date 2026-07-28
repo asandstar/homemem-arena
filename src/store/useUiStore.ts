@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { setAudioEnabled, stopChaosAmbient } from '../audio/sfx'
+import { setAudioEnabled, stopChaosAmbient, stopAllSfxInstances, stopRoomAmbient, resetRoomAmbientFlag, initAudio as initSfxAudio } from '../audio/sfx'
+import { stopBgmImmediate } from '../audio/bgm'
+import { stopAmbientImmediate } from '../audio/ambient'
 
 interface UiState {
   taskPanelOpen: boolean
@@ -60,8 +62,15 @@ export const useUiStore = create<UiState>()(
       toggleAudioEnabled: () => set((state) => {
         const newValue = !state.audioEnabled
         setAudioEnabled(newValue)
-        if (!newValue) {
+        if (newValue) {
+          initSfxAudio()
+          resetRoomAmbientFlag()
+        } else {
           stopChaosAmbient()
+          stopRoomAmbient()
+          stopAllSfxInstances()
+          stopBgmImmediate()
+          stopAmbientImmediate()
         }
         return { audioEnabled: newValue }
       }),
@@ -69,21 +78,41 @@ export const useUiStore = create<UiState>()(
       setMinimapPan: (pan) => set({ minimapPan: pan }),
       setMinimapFollowPlayer: (follow) => set((state) => ({ minimapFollowPlayer: typeof follow === 'function' ? follow(state.minimapFollowPlayer) : follow })),
       resetMinimapView: () => set({ minimapZoom: 1, minimapPan: { x: 0, y: 0 }, minimapFollowPlayer: false }),
-      resetUi: () => set({
-        taskPanelOpen: true,
-        eventLogOpen: false,
-        minimapOpen: true,
-        controlsOpen: true,
-        memoryBarOpen: true,
-        hudHidden: false,
-        audioEnabled: true,
-        minimapZoom: 1,
-        minimapPan: { x: 0, y: 0 },
-        minimapFollowPlayer: false,
-      }),
+      resetUi: () => {
+        setAudioEnabled(true)
+        initSfxAudio()
+        resetRoomAmbientFlag()
+        set({
+          taskPanelOpen: true,
+          eventLogOpen: false,
+          minimapOpen: true,
+          controlsOpen: true,
+          memoryBarOpen: true,
+          hudHidden: false,
+          audioEnabled: true,
+          minimapZoom: 1,
+          minimapPan: { x: 0, y: 0 },
+          minimapFollowPlayer: false,
+        })
+      },
     }),
     {
       name: 'home-mem-ui-state',
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          setAudioEnabled(state.audioEnabled)
+          if (state.audioEnabled) {
+            initSfxAudio()
+            resetRoomAmbientFlag()
+          } else {
+            stopChaosAmbient()
+            stopRoomAmbient()
+            stopAllSfxInstances()
+            stopBgmImmediate()
+            stopAmbientImmediate()
+          }
+        }
+      },
     }
   )
 )

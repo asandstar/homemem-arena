@@ -49,7 +49,7 @@ export function isGoalSatisfied(
   return goal.predicate(entities, entities, ctx)
 }
 
-function buildStageContext(get: any): StageContext {
+export function buildStageContext(get: any): StageContext {
   const s = get()
   const heldEntity = s.heldEntityId ? s.entities.find((e: EntityState) => e.id === s.heldEntityId) : null
   const playerPosition = { x: s.robotPosition.x, z: s.robotPosition.z, y: s.robotPosition.y ?? 0 }
