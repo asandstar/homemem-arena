@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState } from 'react'
 import { useGameStore } from '../../store/useGameStore'
 import { useUiStore } from '../../store/useUiStore'
-import { Target, Clock, CheckCircle2, AlertTriangle, Zap, Package, Keyboard, Brain, Lock, Unlock, Trash2, ChevronDown, ChevronUp, Skull, AlertCircle, X, Cat, Smartphone, HelpCircle, Eye, EyeOff, MapPin, Box, History, Play } from 'lucide-react'
+import { Target, Clock, CheckCircle2, AlertTriangle, Zap, Package, Keyboard, Brain, Lock, Unlock, Trash2, ChevronDown, ChevronUp, Skull, AlertCircle, X, Cat, Smartphone, HelpCircle, Eye, EyeOff, MapPin, Box, History, Play, Volume2, VolumeX } from 'lucide-react'
 import { Minimap } from './Minimap'
 import type { GoalSpec } from '../../types/task'
 import { HelpPanel } from '../help/HelpPanel'
@@ -70,11 +70,13 @@ export function HUD() {
     controlsOpen,
     memoryBarOpen,
     hudHidden,
+    audioEnabled,
     toggleTaskPanel,
     toggleEventLog,
     toggleMinimap,
     toggleControls,
     toggleHudHidden,
+    toggleAudioEnabled,
   } = useUiStore()
 
   const heldEntity = heldEntityId ? entities.find(e => e.id === heldEntityId) : null
@@ -451,15 +453,29 @@ export function HUD() {
                 </>
               )}
             </div>
-            {combo > 0 && (
-              <div
-                key={combo}
-                className="flex items-center gap-1 bg-yellow-500/20 px-3 py-1.5 rounded-full animate-combo-pop"
+            <div className="flex items-center gap-2">
+              {combo > 0 && (
+                <div
+                  key={combo}
+                  className="flex items-center gap-1 bg-yellow-500/20 px-3 py-1.5 rounded-full animate-combo-pop"
+                >
+                  <Zap size={14} className="text-yellow-400" />
+                  <span className="text-yellow-400 font-bold text-sm">{combo} COMBO!</span>
+                </div>
+              )}
+              <button
+                onClick={toggleAudioEnabled}
+                title={audioEnabled ? '关闭所有音频' : '开启音频'}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  audioEnabled
+                    ? 'bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 hover:text-emerald-200 border border-emerald-400/30'
+                    : 'bg-slate-800/70 text-slate-400 hover:bg-slate-700/80 hover:text-slate-200 border border-slate-600/50'
+                }`}
+                data-testid="audio-toggle-btn"
               >
-                <Zap size={14} className="text-yellow-400" />
-                <span className="text-yellow-400 font-bold text-sm">{combo} COMBO!</span>
-              </div>
-            )}
+                {audioEnabled ? <Volume2 size={isMobile ? 14 : 16} /> : <VolumeX size={isMobile ? 14 : 16} />}
+              </button>
+            </div>
           </div>
           <div
             className="flex items-center justify-between mb-2 cursor-help relative"

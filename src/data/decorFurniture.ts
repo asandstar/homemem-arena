@@ -15,7 +15,7 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
     },
     {
       id: 'decor-sofa-side',
-      position: { x: -1.5, y: 0, z: 1.5 },
+      position: { x: -1.5, y: 0, z: 0.0 },
       size: { x: 1.4, y: 0.85, z: 0.8 },
     },
     {
@@ -35,7 +35,7 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
     },
     {
       id: 'decor-shelf',
-      position: { x: -2.8, y: 0, z: 3.8 },
+      position: { x: -3.8, y: 0, z: 1.5 },
       size: { x: 0.7, y: 1.2, z: 0.2 },
     },
     {
@@ -50,12 +50,12 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
     },
     {
       id: 'decor-floor-lamp-1',
-      position: { x: 3.5, y: 0, z: 3.5 },
+      position: { x: 3.2, y: 0, z: 2.0 },
       size: { x: 0.4, y: 1.8, z: 0.4 },
     },
     {
       id: 'decor-floor-lamp-2',
-      position: { x: -0.3, y: 0, z: 1.5 },
+      position: { x: 3.5, y: 0, z: 1.5 },
       size: { x: 0.35, y: 1.6, z: 0.35 },
     },
     {
@@ -75,7 +75,7 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
     },
     {
       id: 'decor-side-table',
-      position: { x: -1.5, y: 0, z: 2.6 },
+      position: { x: 3.8, y: 0, z: -2.0 },
       size: { x: 0.6, y: 0.35, z: 0.6 },
     },
   ],

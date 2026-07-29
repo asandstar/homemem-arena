@@ -397,7 +397,13 @@ function playSfxInternal(sfxId: SfxId, options: PlaySfxOptions = {}): void {
 }
 
 export function playSfx(sfxId: SfxId, options: PlaySfxOptions = {}): void {
-  playSfxInternal(sfxId, options)
+  if (!isEnabled) return
+  try { initAudio() } catch { /* ignore */ }
+  resumeSfxContext()
+    .then(() => {
+      try { playSfxInternal(sfxId, options) } catch { /* ignore */ }
+    })
+    .catch(() => {})
 }
 
 /**
@@ -470,7 +476,9 @@ export function playCharacterSpeak(speaker: string): void {
 }
 
 export function playChord(frequencies: number[], duration: number, volume: number = 0.2): void {
-  if (!isEnabled || !audioContext) return
+  if (!isEnabled) return
+  try { initAudio() } catch { /* ignore */ }
+  if (!audioContext) return
 
   const now = audioContext.currentTime
   const oscillators: OscillatorNode[] = []
@@ -535,7 +543,9 @@ let ambientLfo: OscillatorNode | null = null
 let ambientLfoGain: GainNode | null = null
 
 export function updateChaosAmbient(chaosValue: number): void {
-  if (!isEnabled || !audioContext) return
+  if (!isEnabled) return
+  try { initAudio() } catch { /* ignore */ }
+  if (!audioContext) return
 
   const normalizedChaos = Math.min(1, Math.max(0, chaosValue / 100))
 
@@ -640,7 +650,9 @@ let lastFootstepTime = 0
 const FOOTSTEP_INTERVAL = 350
 
 export function playFootstep(speed: number): void {
-  if (!isEnabled || !audioContext) return
+  if (!isEnabled) return
+  try { initAudio() } catch { /* ignore */ }
+  if (!audioContext) return
   const now = Date.now()
   const adjustedInterval = FOOTSTEP_INTERVAL / (speed / 3)
   if (now - lastFootstepTime < adjustedInterval) return
@@ -671,7 +683,9 @@ const ROOM_AMBIENT_CONFIG: Record<string, { freq: number; volume: number; type: 
  */
 export function updateRoomAmbient(roomId: string): void {
   if (isRoomAmbientStopped) return
-  if (!isEnabled || !audioContext) return
+  if (!isEnabled) return
+  try { initAudio() } catch { /* ignore */ }
+  if (!audioContext) return
   if (currentRoomType === roomId) return
 
   const config = ROOM_AMBIENT_CONFIG[roomId] || ROOM_AMBIENT_CONFIG.living

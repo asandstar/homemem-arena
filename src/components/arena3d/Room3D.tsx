@@ -268,13 +268,13 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
       </FallbackColorizer>
 
       <FallbackColorizer modelId="cabinet" color="#4a4a4a">
-        <group position={[center.x, 0, center.z + size.z / 2 - 0.5]} castShadow receiveShadow>
+        <group position={[center.x + size.x / 2 - 1.1, 0, center.z - 1.0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
           <TVStandModel size={{ x: 2.2, y: 0.55, z: 0.45 }} />
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="tv" color="#1f2937">
-        <group position={[center.x, 0.8, center.z + size.z / 2 - 0.45]} castShadow receiveShadow>
+        <group position={[center.x + size.x / 2 - 1.0, 0.8, center.z - 1.0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
           <TVFallback size={{ x: 1.8, y: 1.0, z: 0.15 }} />
         </group>
       </FallbackColorizer>

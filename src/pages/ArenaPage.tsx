@@ -505,10 +505,11 @@ export function ArenaPage() {
               <Button
                 className="flex-1 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold"
                 onClick={() => {
+                  // 公开版本：跳过做题，直接进入结果分析页（ProbePage 会自动完成答卷并跳转）
                   navigate(`/probe/${taskId}`)
                 }}
               >
-                继续
+                查看分析结果
               </Button>
               <Button
                 variant="secondary"
@@ -519,7 +520,7 @@ export function ArenaPage() {
                   navigate('/tasks')
                 }}
               >
-                返回
+                返回任务列表
               </Button>
             </div>
           </div>
