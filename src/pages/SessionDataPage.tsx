@@ -7,17 +7,22 @@ import { JsonPreview } from '../components/data/JsonPreview'
 import { DownloadButton } from '../components/data/DownloadButton'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
+import { isHiddenTaskId } from '../data/tasks'
 
 export function SessionDataPage() {
-  useParams<{ taskId: string }>() // 路由参数当前不需要直接使用
+  const { taskId } = useParams<{ taskId: string }>()
   const navigate = useNavigate()
   const { currentSession } = useSessionStore()
 
   useEffect(() => {
+    if (taskId && import.meta.env.PROD && isHiddenTaskId(taskId)) {
+      navigate('/tasks', { replace: true })
+      return
+    }
     if (!currentSession) {
       navigate('/tasks')
     }
-  }, [currentSession, navigate])
+  }, [taskId, currentSession, navigate])
 
   const json = useMemo(() => {
     if (!currentSession) return ''

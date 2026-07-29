@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useSessionStore } from '../store/useSessionStore'
 import { useGameStore, type GameStats } from '../store/useGameStore'
 import { useUiStore } from '../store/useUiStore'
-import { Download, RotateCcw, Home, Trophy, Zap, Clock, AlertCircle, Lightbulb, Star, Bot, Brain, AlertTriangle, RefreshCw, Volume2, VolumeX, MapPin, Box, History, Play, BarChart3 } from 'lucide-react'
+import { Download, RotateCcw, Home, Trophy, Zap, Clock, AlertCircle, Lightbulb, Star, Bot, Brain, AlertTriangle, RefreshCw, Volume2, VolumeX, MapPin, Box, History, Play, BarChart3, ArrowRight, CheckCircle2 } from 'lucide-react'
 import { getRank, getTitle } from '../game/scoring'
+import { getNextPublicTaskId, getTaskById, isPublicTaskId, isHiddenTaskId } from '../data/tasks'
 
 function StarIcon({ filled, index }: { filled: boolean; index: number }) {
   return (
@@ -120,10 +121,14 @@ export function ResultPage() {
   const diagnosis = generateDiagnosis(gameStats)
 
   useEffect(() => {
+    if (taskId && import.meta.env.PROD && isHiddenTaskId(taskId)) {
+      navigate('/tasks', { replace: true })
+      return
+    }
     if (!currentSession && gameStats.taskName === null) {
       navigate('/tasks', { replace: true })
     }
-  }, [currentSession, gameStats.taskName, navigate])
+  }, [taskId, currentSession, gameStats.taskName, navigate])
 
   if (!currentSession && gameStats.taskName === null) {
     return (
@@ -353,6 +358,33 @@ export function ResultPage() {
             )}
           </div>
         </div>
+
+        {taskId && isPublicTaskId(taskId) && gameStats.levelCompleted && (() => {
+          const nextTaskId = getNextPublicTaskId(taskId)
+          const nextTask = nextTaskId ? getTaskById(nextTaskId) : null
+          if (nextTaskId && nextTask) {
+            return (
+              <div className="flex justify-center mb-2">
+                <button
+                  onClick={() => navigate(`/play/${nextTaskId}`)}
+                  data-testid="next-level-button"
+                  className="px-6 py-3 bg-gradient-to-r from-violet-600 to-pink-600 text-white font-bold rounded-lg hover:from-violet-500 hover:to-pink-500 transition-all shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2"
+                >
+                  <span>进入下一关：{nextTask.name}</span>
+                  <ArrowRight size={20} />
+                </button>
+              </div>
+            )
+          }
+          return (
+            <div className="flex justify-center mb-2">
+              <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border border-emerald-500/30 rounded-xl">
+                <CheckCircle2 size={22} className="text-emerald-400" />
+                <span className="text-emerald-300 font-semibold">已完成当前版本的全部挑战</span>
+              </div>
+            </div>
+          )
+        })()}
 
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <button

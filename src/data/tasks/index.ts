@@ -6,6 +6,32 @@ import { laundrySortTask } from './laundry-sort'
 import { breakfastTask } from './breakfast'
 import { nightPatrolTask } from './night-patrol'
 
+export const PUBLIC_LEVEL_ORDER = [
+  'task-clean-table',
+  'task-leave-home',
+  'task-laundry-sort',
+] as const
+
+export type PublicTaskId = typeof PUBLIC_LEVEL_ORDER[number]
+export const HIDDEN_TASK_IDS = ['task-breakfast', 'task-night-patrol'] as const
+export type HiddenTaskId = typeof HIDDEN_TASK_IDS[number]
+
+export function isPublicTaskId(id: string): id is PublicTaskId {
+  return (PUBLIC_LEVEL_ORDER as readonly string[]).includes(id)
+}
+
+export function isHiddenTaskId(id: string): id is HiddenTaskId {
+  return (HIDDEN_TASK_IDS as readonly string[]).includes(id)
+}
+
+export function getNextPublicTaskId(currentTaskId: string): PublicTaskId | null {
+  const currentIndex = PUBLIC_LEVEL_ORDER.findIndex((id) => id === currentTaskId)
+  if (currentIndex === -1 || currentIndex >= PUBLIC_LEVEL_ORDER.length - 1) {
+    return null
+  }
+  return PUBLIC_LEVEL_ORDER[currentIndex + 1]
+}
+
 export const taskTemplates: TaskConfig[] = [
   cleanTableTask,
   leaveHomeTask,

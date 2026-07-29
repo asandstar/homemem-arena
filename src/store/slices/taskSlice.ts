@@ -5,7 +5,7 @@ import type { ContainerSpec, ObjectSpec } from '../../types/object'
 import type { RoomSpec } from '../../types/room'
 import { useSessionStore } from '../useSessionStore'
 import { useUiStore } from '../useUiStore'
-import { getTaskById } from '../../data/tasks'
+import { getTaskById, PUBLIC_LEVEL_ORDER } from '../../data/tasks'
 import { sharedRooms } from '../../data/rooms'
 import { generateId } from '../../utils/format'
 import { DEFAULT_LEVEL_BALANCE } from '../../data/levelBalance'
@@ -313,10 +313,9 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
 
         get().completeLevel(task.id, score, elapsedMs)
 
-        const taskIds = ['task-clean-table', 'task-leave-home', 'task-laundry-sort', 'task-breakfast', 'task-night-patrol']
-        const currentIndex = taskIds.indexOf(task.id)
-        if (currentIndex >= 0 && currentIndex < taskIds.length - 1) {
-          get().unlockLevel(taskIds[currentIndex + 1])
+        const currentIndex = PUBLIC_LEVEL_ORDER.findIndex((id) => id === task.id)
+        if (currentIndex >= 0 && currentIndex < PUBLIC_LEVEL_ORDER.length - 1) {
+          get().unlockLevel(PUBLIC_LEVEL_ORDER[currentIndex + 1])
         }
       }
     },
