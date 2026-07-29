@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MODEL_REGISTRY, getModelConfig } from './ModelRegistry'
 import { MATERIAL_CONFIG, PALETTE } from '../colors'
+import { resolveAssetUrl } from './resolveAssetUrl'
 
 const MODEL_TEXTURE_CACHE = new Map<string, Promise<any>>()
 
@@ -222,7 +223,8 @@ function ModelContent({
   const timeRef = useRef(0)
 
   const fallbackComponent = config?.fallback || MODEL_REGISTRY.key.fallback
-  const modelPath = config?.path || MODEL_REGISTRY.key.path
+  const rawModelPath = config?.path || MODEL_REGISTRY.key.path
+  const modelPath = resolveAssetUrl(rawModelPath)
 
   const [gltf, setGltf] = useState<any>(null)
   const [loadError, setLoadError] = useState<boolean>(false)
