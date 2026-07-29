@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Sun, Coffee, CloudMoon, Moon, Volume2, VolumeX, Sparkles, Play } from 'lucide-react'
-import { taskTemplates } from '../data/tasks'
+import { ArrowLeft, Sun, Coffee, CloudMoon, Volume2, VolumeX, Sparkles, Play } from 'lucide-react'
+import { PUBLIC_LEVEL_ORDER, getTaskById } from '../data/tasks'
 import { TaskCard } from '../components/tasks/TaskCard'
 import { useUiStore } from '../store/useUiStore'
 import { getSaveList, loadGame } from '../save/saveSystem'
@@ -11,9 +11,19 @@ const timeSlots = [
   { icon: Sun, label: '清晨 07:30', color: 'text-yellow-400', emoji: '🌅' },
   { icon: Coffee, label: '上午 08:00', color: 'text-orange-400', emoji: '☕' },
   { icon: CloudMoon, label: '下午 15:00', color: 'text-purple-400', emoji: '🌆' },
-  { icon: Moon, label: '深夜 23:00', color: 'text-blue-400', emoji: '🌙' },
-  { icon: Moon, label: '凌晨 02:00', color: 'text-indigo-400', emoji: '🌌' },
 ]
+
+const PUBLIC_LEVEL_CAPTION: Record<string, string> = {
+  'task-clean-table': '基础教学 · 保存与使用记忆',
+  'task-leave-home': '核心挑战 · 识别并更新过期记忆',
+  'task-laundry-sort': '进阶挑战 · 有限记忆与多目标管理',
+}
+
+function getPublicTaskTemplates() {
+  return PUBLIC_LEVEL_ORDER
+    .map((id) => getTaskById(id))
+    .filter((t): t is NonNullable<typeof t> => Boolean(t))
+}
 
 export function TaskSelectPage() {
   const navigate = useNavigate()
@@ -21,9 +31,10 @@ export function TaskSelectPage() {
   const { loadFromSave, initializeTask, initializeProgress, getLevelProgress, isLevelUnlocked, levelProgress } = useGameStore()
 
   const saveList = getSaveList()
+  const publicTaskTemplates = getPublicTaskTemplates()
 
   useEffect(() => {
-    initializeProgress(taskTemplates.map(t => t.id))
+    initializeProgress([...PUBLIC_LEVEL_ORDER])
   }, [initializeProgress])
 
   const handleStart = (taskId: string) => {
@@ -44,16 +55,16 @@ export function TaskSelectPage() {
   }
 
   const getNextUnlockedTaskIndex = () => {
-    for (let i = 0; i < taskTemplates.length; i++) {
-      const progress = levelProgress[taskTemplates[i].id]
+    for (let i = 0; i < PUBLIC_LEVEL_ORDER.length; i++) {
+      const progress = levelProgress[PUBLIC_LEVEL_ORDER[i]]
       if (!progress?.completed) {
         return i
       }
     }
-    return taskTemplates.length - 1
+    return PUBLIC_LEVEL_ORDER.length - 1
   }
 
-  const completedCount = taskTemplates.filter(t => levelProgress[t.id]?.completed).length
+  const completedCount = PUBLIC_LEVEL_ORDER.filter(id => levelProgress[id]?.completed).length
   const nextIndex = getNextUnlockedTaskIndex()
 
   return (
@@ -97,34 +108,35 @@ export function TaskSelectPage() {
             <span className="text-4xl">{timeSlots[0].emoji}</span>
             <span className="text-4xl animate-pulse">{timeSlots[1].emoji}</span>
             <span className="text-4xl">{timeSlots[2].emoji}</span>
-            <span className="text-4xl animate-pulse">{timeSlots[3].emoji}</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             <span className="bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-              小橡的一天
+              三个递进关卡
             </span>
           </h1>
-          <p className="text-slate-400 text-lg mb-4">从清晨到深夜，五段记忆挑战在等你~</p>
+          <p className="text-slate-400 text-lg mb-4">从基础教学到进阶挑战，一步步锻炼记忆能力~</p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-full text-xs text-violet-300">
               <Sparkles size={12} />
-              按时间顺序玩，故事更连贯
+              按顺序解锁，体验能力递进
             </div>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-slate-800/60 border border-slate-700/50 rounded-full text-xs text-slate-400">
-              <span className="text-green-400">{completedCount}</span> / {taskTemplates.length} 已完成
+              <span className="text-green-400">{completedCount}</span> / {PUBLIC_LEVEL_ORDER.length} 已完成
             </div>
           </div>
         </div>
 
         <div className="relative max-w-4xl w-full">
-          <div className="absolute left-8 md:left-1/2 top-8 bottom-8 w-1 bg-gradient-to-b from-yellow-500/30 via-orange-500/30 via-purple-500/30 via-blue-500/30 to-indigo-500/30" />
+          <div className="absolute left-8 md:left-1/2 top-8 bottom-8 w-1 bg-gradient-to-b from-yellow-500/30 via-orange-500/30 to-purple-500/30" />
 
           <div className="space-y-6">
-            {taskTemplates.map((task, index) => {
+            {publicTaskTemplates.map((task, index) => {
               const progress = getLevelProgress(task.id)
-              const unlocked = isLevelUnlocked(task.id, taskTemplates.map(t => t.id))
+              const unlocked = isLevelUnlocked(task.id, [...PUBLIC_LEVEL_ORDER])
               const isNext = index === nextIndex && unlocked && !progress.completed
               const isCompleted = progress.completed
+              const caption = PUBLIC_LEVEL_CAPTION[task.id] || task.description
+              const displayTask = { ...task, description: caption }
 
               return (
                 <div key={task.id} className="relative">
@@ -155,7 +167,7 @@ export function TaskSelectPage() {
                       w-full md:w-[calc(50%-2rem)] ${index % 2 === 0 ? 'md:pr-8' : 'md:pl-8'}
                     `}>
                       <TaskCard
-                        task={task}
+                        task={displayTask}
                         levelNumber={index + 1}
                         onStart={handleStart}
                         timeLabel={timeSlots[index].label}
@@ -169,7 +181,7 @@ export function TaskSelectPage() {
                     </div>
                   </div>
 
-                  {index < taskTemplates.length - 1 && (
+                  {index < PUBLIC_LEVEL_ORDER.length - 1 && (
                     <div className="absolute left-6 md:left-1/2 top-16 -translate-x-1/2 z-10">
                       <div className={`
                         w-0.5 h-8

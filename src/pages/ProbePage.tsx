@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getTaskById } from '../data/tasks'
+import { getTaskById, isHiddenTaskId } from '../data/tasks'
 import type { TaskConfig } from '../types/task'
 import type { ProbeAnswer } from '../types/session'
 import { useSessionStore } from '../store/useSessionStore'
@@ -27,6 +27,10 @@ export function ProbePage() {
   useEffect(() => {
     if (!taskId) {
       navigate('/tasks')
+      return
+    }
+    if (import.meta.env.PROD && isHiddenTaskId(taskId)) {
+      navigate('/tasks', { replace: true })
       return
     }
     const config = getTaskById(taskId)

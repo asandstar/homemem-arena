@@ -2,7 +2,13 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowRight, Brain, AlertTriangle, Trophy, Volume2, VolumeX, MapPin, Box, History, Play } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { useUiStore } from '../store/useUiStore'
-import { taskTemplates, taskPresentationById } from '../data/tasks'
+import { taskPresentationById, PUBLIC_LEVEL_ORDER, getTaskById } from '../data/tasks'
+
+function getPublicTaskTemplates() {
+  return PUBLIC_LEVEL_ORDER
+    .map((id) => getTaskById(id))
+    .filter((t): t is NonNullable<typeof t> => Boolean(t))
+}
 
 export function HomePage() {
   const navigate = useNavigate()
@@ -89,8 +95,8 @@ export function HomePage() {
               <div className="text-xs text-slate-400">记忆槽上限</div>
             </div>
             <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-xl p-4 text-center">
-              <div className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent mb-1">{taskTemplates.length}</div>
-              <div className="text-xs text-slate-400">关卡设计</div>
+              <div className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent mb-1">{PUBLIC_LEVEL_ORDER.length}</div>
+              <div className="text-xs text-slate-400">递进关卡</div>
             </div>
             <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-xl p-4 text-center">
               <div className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent mb-1">5+</div>
@@ -103,8 +109,8 @@ export function HomePage() {
           </div>
 
           {/* 关卡一览 */}
-          <div className="grid grid-cols-2 gap-3 mb-8">
-            {taskTemplates.map((task) => {
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
+            {getPublicTaskTemplates().map((task) => {
               const presentation = taskPresentationById[task.id]
               return (
                 <div key={task.id} className="bg-slate-800/40 rounded-xl p-3 border border-slate-700/30 hover:border-pink-500/30 hover:-translate-y-1 transition-all duration-300">

@@ -13,7 +13,7 @@ import { resetArenaCleanupFlag, updateBgmState, playBgm, stopBgm } from '../audi
 import { playRoomAmbient, stopAmbient } from '../audio/ambient'
 import { stopAllAudioImmediate, resumeAudioContexts } from '../audio/audioManager'
 import { executeContainerInteraction, executePick } from '../game/commands'
-import { getTaskById } from '../data/tasks'
+import { getTaskById, isHiddenTaskId } from '../data/tasks'
 import { useDialog } from '../dialog/useDialog'
 import { startAutoSave, stopAutoSave } from '../save/saveSystem'
 import { subscribeEvent } from '../engine/eventBus'
@@ -63,6 +63,12 @@ export function ArenaPage() {
     handleChoice,
     handleNext,
   } = useDialog()
+
+  useEffect(() => {
+    if (taskId && import.meta.env.PROD && isHiddenTaskId(taskId)) {
+      navigate('/tasks', { replace: true })
+    }
+  }, [taskId, navigate])
 
   useEffect(() => {
     // briefingOpen 守卫：ArenaPage 重新挂载时 Zustand store 中 phase 可能仍为上一局的 'playing'，
