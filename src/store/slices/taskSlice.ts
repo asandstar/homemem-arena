@@ -282,8 +282,9 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
     },
 
     setLevelFailed: (reason?: string) => {
+      // BUG-P1-2：终局统一用 phase=result，避免残留 probing 导致过渡闪烁
       set({
-        phase: 'probing',
+        phase: 'result',
         levelFailed: true,
         failureReason: reason || '未知原因',
         combo: 0,
@@ -292,7 +293,8 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
 
     setLevelCompleted: () => {
       const { task, score, elapsedMs } = get()
-      set({ phase: 'probing', levelCompleted: true })
+      // BUG-P1-2：终局统一用 phase=result；BUG-P2-1：完成时 chaos 清零
+      set({ phase: 'result', levelCompleted: true, chaosValue: 0 })
       if (isAudioEnabled()) {
         playSfx('level_complete')
       }

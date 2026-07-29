@@ -240,7 +240,8 @@ describe('useGameStore - 核心状态流转测试', () => {
       expect(state.elapsedMs).toBe(timeLimitMs)
       expect(state.levelFailed).toBe(true)
       expect(state.failureReason).toBe('任务超时')
-      expect(state.phase).toBe('probing')
+      // BUG-P1-2：终局 phase 统一为 result
+      expect(state.phase).toBe('result')
     })
 
     it('setLevelCompleted 标记完成', () => {
@@ -369,7 +370,8 @@ describe('useGameStore - 核心状态流转测试', () => {
       useGameStore.getState().checkLevelCompletion()
 
       expect(useGameStore.getState().levelCompleted).toBe(true)
-      expect(useGameStore.getState().phase).toBe('probing')
+      // BUG-P1-2：终局 phase 统一为 result
+      expect(useGameStore.getState().phase).toBe('result')
       expect(useGameStore.getState().achievedGoalIds.has('g-close-containers')).toBe(true)
     })
 

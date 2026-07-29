@@ -108,28 +108,53 @@ export const createEntitySlice = (set: any, get: any): EntitySlice => ({
     )
     if (dist > 2.5) return { success: false, reason: '距离容器太远' }
 
-    if (containerSpec.acceptedCategories.length > 0 && !containerSpec.acceptedCategories.includes(heldEntity.category as never)) {
+    // ========== 类别接受判断（修复 BUG-P0-1：空 acceptedCategories 不再放行所有） ==========
+    const acceptAny = containerSpec.acceptAny === true
+    const hasEmptyList = !containerSpec.acceptedCategories || containerSpec.acceptedCategories.length === 0
+    const isTargetZone = containerSpec.isTargetZone === true
+    let isAccepted: boolean
+    if (acceptAny) {
+      isAccepted = true
+    } else if (hasEmptyList) {
+      // 空类别列表：只有显式 isTargetZone 才接受任何，否则视为不接受（避免餐桌=万能抽屉）
+      isAccepted = isTargetZone
+    } else {
+      isAccepted = containerSpec.acceptedCategories.includes(heldEntity.category as never)
+    }
+
+    if (!isAccepted) {
+      // BUG-P1-1 友好化文案 + BUG-P0-1 错放要惩罚
       get().addScore(-DEFAULT_LEVEL_BALANCE.wrongPlacePenalty)
       get().incrementChaos(DEFAULT_LEVEL_BALANCE.wrongPlacementChaos)
       get().incrementWrongPlace()
       get().breakCombo()
+      get().recordMistake()
       get().triggerEntityShake(heldEntityId)
       get().addFloatingText(`-${DEFAULT_LEVEL_BALANCE.wrongPlacePenalty}`, 'error', containerPos.x, containerPos.y + 1)
+      const friendlyMsg = `${heldEntity.name ?? heldEntity.category}不属于${containerSpec.name ?? '这里'}～再想想应该放哪里？`
       get().showFeedback({
         type: 'error',
-        message: `容器不接受 ${heldEntity.category} 类别的物体`,
+        message: friendlyMsg,
       })
       playSfx('place_error')
-      return { success: false, reason: `容器不接受 ${heldEntity.category} 类别的物体` }
+      return { success: false, reason: friendlyMsg }
     }
 
+    // ========== 正确放置分支 ==========
     const scoreGain = calcCorrectPlaceScore(get().combo, DEFAULT_LEVEL_BALANCE)
     get().addScore(scoreGain)
     get().addCombo()
+    get().recordSuccess()
+    // BUG-P1-3：正确放置降低混乱值（给予玩家控制感）
+    get().decreaseChaos(DEFAULT_LEVEL_BALANCE.correctPlaceChaosDecrease)
+
     get().addFloatingText(`+${scoreGain}`, 'score', containerPos.x, containerPos.y + 1.2)
+    const successMsg = isTargetZone && containerSpec.targetLabel
+      ? `${heldEntity.name ?? '物品'}已归位到${containerSpec.targetLabel} ✅`
+      : '放置成功！'
     get().showFeedback({
       type: 'success',
-      message: '放置成功！',
+      message: successMsg,
     })
     playSfx('place_success')
     playPlaceEffect(containerPos)

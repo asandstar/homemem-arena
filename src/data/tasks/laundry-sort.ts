@@ -38,7 +38,7 @@ export const laundrySortTask: TaskConfig = {
   rooms: ['laundry'],
   iconKey: 'shirt',
   tags: ['限时挑战', '袜子幽灵', '位置交换', '分类大师'],
-  timeLimit: 120,
+  timeLimit: 240,
   spawnPosition: { x: 0, z: 2.0 },
   spawnRotation: Math.PI,
   initialStageId: STAGE_ID_OBSERVE_CLOTHES,

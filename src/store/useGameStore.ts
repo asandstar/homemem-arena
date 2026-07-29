@@ -140,7 +140,11 @@ interface GameStore extends GameState, ProgressState {
   clearMemorySlot: (slotIndex: number) => void
   setFlashingSlotIndex: (index: number | null) => void
   incrementChaos: (amount: number) => void
+  modifyChaos: (amount: number) => void
+  decreaseChaos: (amount: number) => void
   resetChaos: () => void
+  recordMistake: () => void
+  recordSuccess: () => void
   addScore: (points: number) => void
   resetScore: () => void
   addCombo: () => void

@@ -2,6 +2,7 @@ export interface LevelBalanceConfig {
   timeLimit: number
   chaosGrowthPerSecond: number
   wrongPlacementChaos: number
+  correctPlaceChaosDecrease: number
   repeatSearchChaos: number
   outdatedMemoryChaos: number
   eventChaos: number
@@ -29,6 +30,7 @@ export const DEFAULT_LEVEL_BALANCE: LevelBalanceConfig = {
   timeLimit: 180,
   chaosGrowthPerSecond: 0.3,
   wrongPlacementChaos: 12,
+  correctPlaceChaosDecrease: 15,
   repeatSearchChaos: 4,
   outdatedMemoryChaos: 10,
   eventChaos: 8,

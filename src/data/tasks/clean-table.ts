@@ -124,6 +124,7 @@ MEM-07：「你好，我是 MEM-07。我的记忆模块出了故障，只能同�
       color: '#92400e',
       initialOpen: true,
       acceptedCategories: [],
+      acceptAny: false,
     },
     {
       id: 'cnt-dishwasher',

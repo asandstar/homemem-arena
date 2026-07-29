@@ -11,6 +11,7 @@ export interface ChaosSlice {
 
   incrementChaos: (amount: number) => void
   modifyChaos: (amount: number) => void
+  decreaseChaos: (amount: number) => void
   resetChaos: () => void
   triggerChaosEffect: () => void
   recordMistake: () => void
@@ -54,6 +55,11 @@ export const createChaosSlice = (set: any, get: any): ChaosSlice => ({
     if (newChaos >= 80 && currentChaos < 80) {
       playChaosWarning()
     }
+  },
+
+  // 语义化别名：按绝对值降低混乱值
+  decreaseChaos: (amount: number) => {
+    get().modifyChaos(-Math.abs(amount))
   },
 
   resetChaos: () => {

@@ -76,6 +76,12 @@ export interface ContainerSpec {
   surfaceHeight?: number
   /** 是否为抽屉式容器 */
   isDrawer?: boolean
+  /**
+   * 显式声明"本容器接受任何类别物体"。
+   * - 当为 true（默认 false）时，即便 acceptedCategories 为空也会放行所有类别。
+   * - 当为 false 且 acceptedCategories 为空时，配合 isTargetZone 决定是否判为错放惩罚（BUG-P0-1 的通用修复方案）。
+   */
+  acceptAny?: boolean
 }
 
 /** 物体运行时状态 */
