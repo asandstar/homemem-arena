@@ -44,11 +44,11 @@ export function HomePage() {
             </span>
           </h1>
           <p className="text-lg md:text-xl text-slate-300 mb-6">
-            一款让你在玩游戏时顺便练记忆的 3D 网页小游戏
+            在一栋会捣乱的宅邸里，当一名只能记住 3 件事的失忆管家 —— 3D 家务闯关小游戏
           </p>
           <div className="inline-flex items-center gap-2 px-5 py-2 bg-purple-500/20 border border-purple-500/30 rounded-full text-sm text-violet-300">
             <span>🎮</span>
-            <span>生活娱乐赛道 · 记忆训练 · 休闲闯关</span>
+            <span>生活娱乐赛道 · 3D 家务冒险 · 休闲闯关</span>
           </div>
         </div>
 
