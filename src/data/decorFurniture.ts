@@ -1,9 +1,42 @@
 import type { RoomId, Vec3 } from '../types/room'
 
+/**
+ * 背景装饰家具语义标签（用于承担视觉背景的纯装饰性家具）。
+ * 所有新增字段均为可选，确保向后兼容。
+ */
+export type DecorCollisionMode = 'self' | 'none'
+export type DecorVisualOwner = 'room' | 'decor' | 'task-container'
+
 export interface DecorFurnitureSpec {
   id: string
   position: Vec3
   size: Vec3
+  /**
+   * 语义 key，用于跨 TC / DF / Room3D 三方对齐"同一语义家具"做去重检查。
+   * 如 'sofa_main' / 'coffee_table_left' 等。
+   * 可选；未设置时视为 legacy 数据，不参与去重。
+   */
+  semanticKey?: string
+  /**
+   * Y 轴旋转（弧度）。用于 rotation-aware 碰撞系统旋转 footprint。
+   * 可选；缺失时默认为 0。
+   */
+  rotationY?: number
+  /**
+   * 本家具是否产生 XZ 碰撞的模式。
+   * - 'self'：自身承担碰撞（默认，向后兼容）
+   * - 'none'：跳过碰撞（如墙上挂件、柜顶托盘装饰物）
+   * 缺失时视为 'self'。
+   */
+  collisionMode?: DecorCollisionMode
+  /**
+   * 本家具的视觉由谁承担。
+   * - 'room'：Room3D 硬编码渲染
+   * - 'decor'：由 DF 渲染组件承担（未来）
+   * - 'task-container'：由对应任务容器 TC 承担（如伞架、茶几上的托盘）
+   * 缺失时视为 legacy 未迁移数据，不改变当前渲染行为。
+   */
+  visualOwner?: DecorVisualOwner
 }
 
 export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
