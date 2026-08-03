@@ -5,17 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>回声屋 · 记忆宅邸 | HomeMem Arena</title>
   <script>
-    // GitHub Pages SPA 404 重定向方案
-    // 把 404 路径保存到 sessionStorage，然后跳回首页，
-    // index.html 加载后再从 sessionStorage 读取并恢复路由。
+    // GitHub Pages SPA 404 重定向方案（极简无循环版）
+    // 行为约定：
+    //   1. 把当前命中的「basename 之后的 path + search + hash」规范化后存到 sessionStorage['spa-redirect']
+    //   2. 用 window.location.replace(basename_root) 跳回应用根（保证下一次命中一定被服务器 serve 为 index.html）
+    //   3. 不会做任何 once/consumed/redirect 循环判断——只要进了 404.html 就执行这两步。
+    //      这样做原因：App.tsx 在收到 sessionStorage['spa-redirect'] 时，不再用 window.location.replace 再跳深路径（会二次 404），
+    //      而是用 React Router 的 useNavigate(stored, {replace:true}) 做浏览器 history replaceState
+    //      （soft replace，不会再发 HTTP 请求，也就不会再触发 404.html），
+    //      从根本上规避「深路径硬导航 → 再次 404 → once 命中却没法渲染 App」的死循环。
     (function () {
       var base = '/homemem-arena/';
-      var location = window.location;
-      var path = location.pathname.substring(base.length) || '';
-      var search = location.search;
-      var hash = location.hash;
-      sessionStorage.setItem('spa-redirect', path + search + hash);
-      window.location.replace(base + (hash ? hash : ''));
+      var loc = window.location;
+      var rawPath = loc.pathname.substring(base.length);
+      var normalizedPath = !rawPath ? '/' : (rawPath.charAt(0) !== '/' ? '/' + rawPath : rawPath);
+      var stored = normalizedPath + loc.search + loc.hash;
+      try { window.sessionStorage.setItem('spa-redirect', stored); } catch (e) { /* ignore */ }
+      // 替换历史栈的当前条：不会在浏览器历史里留下 404 页，用户按「后退」不会再回到 404
+      window.location.replace(base);
     })();
   </script>
 </head>
