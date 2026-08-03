@@ -764,7 +764,28 @@ export function HUD() {
         </div>
       )}
 
-      {phase === 'playing' && (itemActionLabel || memoryActionLabel || nearbyEntity) && (
+            {phase === 'playing' && heldEntity && (
+        <div
+          data-testid="held-item-banner"
+          className="absolute bottom-24 right-4 pointer-events-none z-10 animate-held-item-pop"
+        >
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-br from-purple-900/90 to-indigo-900/90 backdrop-blur-md border-2 border-purple-400/60 shadow-2xl shadow-purple-500/20">
+            <div className="p-2 rounded-lg bg-purple-500/30 flex items-center justify-center">
+              <Package size={22} className="text-purple-300" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase tracking-wider text-purple-300/80 font-semibold">手持物品</span>
+              <span className="text-lg font-bold text-white leading-tight">{heldEntity.name}</span>
+            </div>
+            <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-slate-900/60 border border-slate-600/50">
+              <kbd className="text-[10px] font-mono text-cyan-300">F</kbd>
+              <span className="text-[10px] text-slate-400">放置</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+{phase === 'playing' && (itemActionLabel || memoryActionLabel || nearbyEntity) && (
         <div className="absolute bottom-4 right-4 pointer-events-none flex flex-col items-end gap-1 z-10">
           {/* Sprint B.1: F 交互动作（拾取/打开/放置）按阶段定制，含禁用原因 */}
           {itemActionLabel && (
@@ -1009,6 +1030,22 @@ export function HUD() {
         @keyframes scanline-move {
           0% { transform: translateY(0); }
           100% { transform: translateY(100px); }
+        }
+        @keyframes held-item-pop {
+          0% { opacity: 0; transform: translateX(20px) scale(0.9); }
+          50% { transform: translateX(-4px) scale(1.02); }
+          100% { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        .animate-held-item-pop {
+          animation: held-item-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        @keyframes objective-pop {
+          0% { opacity: 0; transform: translateY(-8px) scale(0.96); }
+          60% { transform: translateY(2px) scale(1.01); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .animate-objective-pop {
+          animation: objective-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
       `}</style>
     </div>
