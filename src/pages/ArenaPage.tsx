@@ -323,7 +323,7 @@ export function ArenaPage() {
   )
 
   return (
-    <div className="flex-1 relative h-full overflow-hidden" style={{ background: '#0f172a' }}>
+    <div className="flex-1 relative h-full min-h-screen w-full overflow-hidden" style={{ background: '#0f172a' }} data-testid="arena-page-root">
       {/* 3D 场景：始终渲染，briefing 阶段也提供背景画面，避免"后面白屏/透明"被误认为模型加载失败 */}
       <Suspense fallback={
         <div className="absolute inset-0 flex items-center justify-center" style={{ background: '#0f172a' }}>

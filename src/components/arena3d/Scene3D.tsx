@@ -367,7 +367,10 @@ function SceneContents({ onEntityClick, onContainerClick }: Scene3DProps) {
 
 export function Scene3D(props: Scene3DProps) {
   return (
-    <div style={{ width: '100%', height: '100%', minHeight: 0, position: 'relative' }}>
+    <div
+      style={{ width: '100%', height: '100%', minHeight: '100vh', position: 'relative' }}
+      data-testid="scene3d-root"
+    >
       <Canvas
         id="arena-canvas"
         shadows={{ type: THREE.PCFShadowMap }}

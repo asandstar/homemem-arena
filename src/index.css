@@ -106,8 +106,24 @@
   box-sizing: border-box;
 }
 
+/*
+ * 全屏高度级联 — 修复 Pages 生产环境下 Arena/Scene3D canvas 被压扁成一条线
+ * ---------------------------------------------------
+ * 浏览器 spec：元素设置 height: 100% 时，必须依赖父级显式的 height 属性，
+ * 父级只有 min-height（没有 height 显式值）时百分比高度会解析为 0。
+ *
+ * 层级链：
+ *   html(100%) → body(100% + min-h=100vh 保险) → #root(100% flex-col + min-h=100vh)
+ *     → Layout(h-full + min-h-screen) → main(flex-1 min-h-0)
+ *       → ArenaPage(flex-1 h-screen 兜底) → Scene3D(h-full + min-h-screen)
+ */
+html {
+  height: 100%;
+}
+
 body {
   margin: 0;
+  height: 100%;
   min-height: 100vh;
   /* 默认深色背景，避免页面加载瞬间出现白屏闪烁；浅色页面自行覆盖 */
   background-color: #0f172a;
@@ -118,6 +134,7 @@ body {
 }
 
 #root {
+  height: 100%;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
