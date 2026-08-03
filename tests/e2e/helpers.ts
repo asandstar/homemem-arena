@@ -11,6 +11,74 @@ export interface ErrorCollector {
 }
 
 /**
+ * 精确匹配的 pageerror 良性消息白名单（每条都必须是 Playwright/Vite 关闭/握手阶段
+ * 已知、可复现、不影响游戏运行的消息。禁止宽泛 substring，禁止遮蔽真实连接错误）。
+ *
+ * 注：若未来新增条目，必须在此处附理由 + 能复现的场景。
+ */
+const BENIGN_PAGEERROR_MESSAGES: ReadonlyArray<string | RegExp> = [
+  // dev:e2e:stable 启动/关闭握手阶段 Vite 发送的已知良性 WS 关闭事件
+  // （消息文本精确为 'WebSocket closed without opened.'，不包含任何 URL/statusCode）
+  /^WebSocket closed without opened\.?$/i,
+]
+
+/**
+ * 精确匹配的 console.error 良性消息白名单（§二 第 4 条：console.error 分支不复制
+ * pageerror 的整条宽泛白名单。仅保留 E2E 实测中精确出现过的、由 Vite 客户端 HMR/WS 握手
+ * 失败打印的同一类良性消息。所有条目必须严格锚定首末、不得用宽泛 substring。
+ * 其它任何 [vite] / webSocket / hmr 错误（Internal server error / 404 /
+ * transform failed / net::ERR_*）一律不得忽略。
+ */
+const BENIGN_CONSOLE_ERROR_MESSAGES: ReadonlyArray<RegExp> = [
+  // Vite 客户端：HMR 端点 (ws://127.0.0.1:4173 或 5173) 握手返回非 101（如 token 过期/重复连接导致 400）
+  // 消息形如（token 含 [A-Za-z0-9_-]；实测有下划线、短横线）：
+  //   WebSocket connection to 'ws://127.0.0.1:4173/?token=Kv8P5i8ZbR_u' failed: Error during WebSocket handshake: Unexpected response code: 400
+  // （Playwright msg.text() 末尾可能附加空格；用 \s* 允许末尾空白）
+  /^WebSocket connection to 'ws:\/\/127\.0\.0\.1:(4173|5173)\/\?token=[A-Za-z0-9_-]+' failed: Error during WebSocket handshake: Unexpected response code: 400\s*\.?\s*$/i,
+  // Vite 客户端：随后紧接着打印的外层失败摘要
+  //   [vite] failed to connect to websocket (Error: WebSocket closed without opened.).
+  // （实测 Playwright 输出末尾有一个额外空格）
+  /^\[vite\] failed to connect to websocket \(Error: WebSocket closed without opened\.\)\s*\.?\s*$/i,
+]
+
+/**
+ * 判断 pageerror 是否为已知良性消息（供反向验证测试使用）。
+ * @internal
+ */
+export function _isBenignPageErrorMsg(raw: unknown): boolean {
+  const msg = String(raw ?? '')
+  for (const pattern of BENIGN_PAGEERROR_MESSAGES) {
+    if (typeof pattern === 'string') {
+      if (msg === pattern) return true
+    } else if (pattern.test(msg)) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
+ * 判断 console.error 是否为已知良性消息（供反向验证测试使用）。
+ * @internal
+ */
+export function _isBenignConsoleErrorMsg(raw: unknown): boolean {
+  const msg = String(raw ?? '')
+  for (const pattern of BENIGN_CONSOLE_ERROR_MESSAGES) {
+    if (pattern.test(msg)) return true
+  }
+  return false
+}
+
+/**
+ * 原始（非 WebGL/Three 资产加载）的 pageerror 是否为良性消息。
+ * 与 _isBenignPageErrorMsg 分开：WebGL/Three 过滤保留历史逻辑且只在
+ * pageerror 分支内生效（§二 第 3 条）。
+ */
+function isNonRenderBenignPageError(raw: unknown): boolean {
+  return _isBenignPageErrorMsg(raw)
+}
+
+/**
  * 创建错误收集器，监听 pageerror、console.error 和失败请求
  */
 export function createErrorCollector(page: Page): ErrorCollector {
@@ -22,6 +90,8 @@ export function createErrorCollector(page: Page): ErrorCollector {
 
   page.on('pageerror', (error) => {
     const msg = String(error?.message ?? error ?? '')
+    // 只在 pageerror 分支过滤：WebGL/Three/gltf/纹理资产加载相关良性警告
+    // + 精确匹配的 Vite/Playwright 握手阶段 WS 关闭消息（§二 3）
     if (
       msg.includes('THREE.WebGLRenderer') ||
       msg.includes('WebGL') ||
@@ -30,7 +100,8 @@ export function createErrorCollector(page: Page): ErrorCollector {
       msg.includes('GL_INVALID') ||
       msg.includes('Texture') ||
       msg.includes('load model') ||
-      msg.includes('glTF')
+      msg.includes('glTF') ||
+      isNonRenderBenignPageError(msg)
     ) {
       return
     }
@@ -39,19 +110,25 @@ export function createErrorCollector(page: Page): ErrorCollector {
 
   page.on('console', (msg: ConsoleMessage) => {
     if (msg.type() === 'error') {
-      // 忽略已知的良性警告（WebGL context、THREE.js 纹理/模型加载等）
+      // §二 第 4 条：console.error 分支不复制宽泛的 [vite]/hmr/WebSocket 白名单。
+      // 仅保留：
+      //   A. 历史已接受的、与 Three/WebGL 资产加载直接相关的良性条目；
+      //   B. 严格首末锚定的 Vite WS 握手失败良性消息（BENIGN_CONSOLE_ERROR_MESSAGES）。
       const text = msg.text()
       if (
         text.includes('THREE.WebGLRenderer') ||
         text.includes('perf') ||
         text.includes('THREE.GLTFLoader') ||
-        text.includes("Couldn't load texture")
+        text.includes("Couldn't load texture") ||
+        _isBenignConsoleErrorMsg(text)
       ) return
       collector.consoleErrors.push(text)
     }
   })
 
   page.on('requestfailed', (request) => {
+    // §二 明确：404 / 500 / ERR_CONNECTION_REFUSED / ERR_FAILED / Failed to fetch
+    // 一律不得忽略。这里不做任何过滤，全部记录。
     collector.failedRequests.push(request)
   })
 
