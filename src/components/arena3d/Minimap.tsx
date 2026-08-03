@@ -58,16 +58,15 @@ export function Minimap({
   const smoothedPanRef = useRef({ x: 0, y: 0 })
   const manualZoomRef = useRef(false)
 
-  const {
-    minimapZoom,
-    minimapPan,
-    minimapFollowPlayer,
-    minimapOpen,
-    setMinimapZoom,
-    setMinimapPan,
-    setMinimapFollowPlayer,
-    toggleMinimap,
-  } = useUiStore()
+  // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
+  const minimapZoom = useUiStore((s) => s.minimapZoom)
+  const minimapPan = useUiStore((s) => s.minimapPan)
+  const minimapFollowPlayer = useUiStore((s) => s.minimapFollowPlayer)
+  const minimapOpen = useUiStore((s) => s.minimapOpen)
+  const setMinimapZoom = useUiStore((s) => s.setMinimapZoom)
+  const setMinimapPan = useUiStore((s) => s.setMinimapPan)
+  const setMinimapFollowPlayer = useUiStore((s) => s.setMinimapFollowPlayer)
+  const toggleMinimap = useUiStore((s) => s.toggleMinimap)
 
   useEffect(() => {
     const onResize = () => setViewportWidth(window.innerWidth)
@@ -111,20 +110,23 @@ export function Minimap({
   // 当 room 或 dimensions 变化时重置（相当于 fit）
   useEffect(() => {
     if (!currentRoomSpec) return
-    // 只有当之前不是手动 zoom 才自动 fit（首次 / 切房间强制 reset）
     const { zoom, pan } = computeFitZoomCurrentRoom()
+    console.log('[MINIMAP EFFECT FIT] zoom=', zoom.toFixed(3), 'pan=(' + pan.x.toFixed(1) + ',' + pan.y.toFixed(1) + ') manualZoom=', manualZoomRef.current, 'dim=(' + dimensions.width.toFixed(0) + ',' + dimensions.height.toFixed(0) + ') currentRoom=', currentRoom)
     setMinimapZoom(zoom)
     setMinimapPan(pan)
     manualZoomRef.current = false
     smoothedPanRef.current = { ...pan }
-  }, [currentRoom, computeFitZoomCurrentRoom, currentRoomSpec, setMinimapZoom, setMinimapPan])
+  }, [currentRoom, computeFitZoomCurrentRoom, currentRoomSpec, setMinimapZoom, setMinimapPan, dimensions])
 
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect()
         const dpr = Math.min(window.devicePixelRatio || 1, 2)
-        setDimensions({ width: rect.width * dpr, height: rect.height * dpr })
+        const newW = rect.width * dpr
+        const newH = rect.height * dpr
+        console.log('[MINIMAP EFFECT SIZE] updateSize: rect=', Math.round(rect.width),'x',Math.round(rect.height), '→ newDim=', newW.toFixed(0),'x',newH.toFixed(0), 'panelPx=', panelPx.w, 'x', panelPx.h, 'isFullscreen=', isFullscreen)
+        setDimensions({ width: newW, height: newH })
       }
     }
     updateSize()

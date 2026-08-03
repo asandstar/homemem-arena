@@ -581,3 +581,50 @@ export const modelCategories = {
     'lamp', 'plant', 'rug', 'pillow', 'shoes', 'hook',
   ],
 }
+
+// === A2 开发期注册表自检：只在 DEV 下做一次，发现不合法打 warn ===
+;// noop 防止 ASI 把上一个对象字面量解析成 IIFE 的被调方
+;(function DEV_MODEL_REGISTRY_SELF_CHECK() {
+  try {
+    const _env = (import.meta as any)?.env
+    if (!_env?.DEV) return
+    const warnedAt = new Map<string, number>()
+    const warn = (k: string, msg: string) => {
+      const key = `ModelRegistry|${k}|${msg}`
+      const now = Date.now()
+      if (now - (warnedAt.get(key) || 0) < 5000) return
+      warnedAt.set(key, now)
+      console.warn(`[ModelRegistry:DEV] ${msg} (modelId=${k})`)
+    }
+
+    for (const [id, cfg] of Object.entries(MODEL_REGISTRY)) {
+      if (cfg.assetAvailable === false) {
+        if (cfg.path) {
+          warn(id, `assetAvailable=false 但 path 非空，建议置空以免误导`)
+        }
+      } else {
+        if (!cfg.path) {
+          warn(id, `assetAvailable !== false 但 path 为空，会被 ModelAsset 跳过加载`)
+        } else if (!String(cfg.path).startsWith('/assets/models/')) {
+          warn(id, `path 不以 '/assets/models/' 开头：${cfg.path}`)
+        }
+      }
+      if (!cfg.fallback || typeof cfg.fallback !== 'function') {
+        warn(id, `fallback 缺失 / 非法`)
+      }
+    }
+
+    const allListed = [
+      ...modelCategories.props,
+      ...modelCategories.furniture,
+      ...modelCategories.decor,
+    ]
+    allListed.forEach((id) => {
+      if (!MODEL_REGISTRY[id]) {
+        warn(id, `modelCategories 列出但 MODEL_REGISTRY 未注册`)
+      }
+    })
+  } catch {
+    /* 任何自检异常都不影响运行 */
+  }
+})()

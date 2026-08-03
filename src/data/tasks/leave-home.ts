@@ -156,6 +156,8 @@ export const leaveHomeTask: TaskConfig = {
       color: '#8b5a2b',
       initialOpen: true,
       acceptedCategories: [],
+      // 台面是"表面"语义，拿起东西后可以临时放回台面换手
+      acceptAny: true,
     },
     {
       id: 'cnt-nightstand',
@@ -169,6 +171,8 @@ export const leaveHomeTask: TaskConfig = {
       acceptedCategories: [],
       isDrawer: true,
       containsObjectIds: ['obj-phone'],
+      // 床头柜表面也是临时放物点
+      acceptAny: true,
     },
     {
       id: 'cnt-umbrella-stand',
@@ -180,6 +184,8 @@ export const leaveHomeTask: TaskConfig = {
       color: '#6b7280',
       initialOpen: true,
       acceptedCategories: [],
+      // 伞架表面可以临时放回（拿起后嫌远想换手）
+      acceptAny: true,
     },
     {
       id: 'cnt-entrance-tray',

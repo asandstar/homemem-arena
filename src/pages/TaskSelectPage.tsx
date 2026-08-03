@@ -27,8 +27,15 @@ function getPublicTaskTemplates() {
 
 export function TaskSelectPage() {
   const navigate = useNavigate()
-  const { audioEnabled, toggleAudioEnabled } = useUiStore()
-  const { loadFromSave, initializeTask, initializeProgress, getLevelProgress, isLevelUnlocked, levelProgress } = useGameStore()
+  // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
+  const audioEnabled = useUiStore((s) => s.audioEnabled)
+  const toggleAudioEnabled = useUiStore((s) => s.toggleAudioEnabled)
+  const loadFromSave = useGameStore((s) => s.loadFromSave)
+  const initializeTask = useGameStore((s) => s.initializeTask)
+  const initializeProgress = useGameStore((s) => s.initializeProgress)
+  const getLevelProgress = useGameStore((s) => s.getLevelProgress)
+  const isLevelUnlocked = useGameStore((s) => s.isLevelUnlocked)
+  const levelProgress = useGameStore((s) => s.levelProgress)
 
   const saveList = getSaveList()
   const publicTaskTemplates = getPublicTaskTemplates()
@@ -42,11 +49,23 @@ export function TaskSelectPage() {
   }
 
   const handleContinue = (saveId: string) => {
-    const saveData = loadGame(saveId)
-    if (saveData) {
-      initializeTask(saveData.taskId)
-      loadFromSave(saveData)
-      navigate(`/play/${saveData.taskId}`)
+    const saveInfo = saveList.find(s => s.id === saveId)
+    const fallbackTaskId = saveInfo?.taskId
+    try {
+      const saveData = loadGame(saveId)
+      if (saveData) {
+        initializeTask(saveData.taskId)
+        loadFromSave(saveData)
+        navigate(`/play/${saveData.taskId}`)
+        return
+      }
+    } catch (e) {
+      console.warn('[TaskSelectPage] handleContinue: loadGame failed for saveId=', saveId, e)
+    }
+    // 存档加载失败时 fallback：直接开始对应任务（相当于重新开始）
+    if (fallbackTaskId) {
+      console.warn('[TaskSelectPage] handleContinue: fallback to handleStart for taskId=', fallbackTaskId)
+      handleStart(fallbackTaskId)
     }
   }
 

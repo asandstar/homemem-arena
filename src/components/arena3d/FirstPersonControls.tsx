@@ -55,16 +55,16 @@ export function FirstPersonControls() {
   const targetMoveDirRef = useRef(new THREE.Vector3(0, 0, -1))
   const cameraFovRef = useRef(75)
 
-  const {
-    phase,
-    robotPosition,
-    task,
-    entities,
-    setFlashingSlotIndex,
-    heldEntityId,
-    containerStates,
-  } = useGameStore()
-  const { addToast } = useToastStore()
+  // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
+  const phase = useGameStore((s) => s.phase)
+  const robotPosition = useGameStore((s) => s.robotPosition)
+  const task = useGameStore((s) => s.task)
+  const entities = useGameStore((s) => s.entities)
+  const setFlashingSlotIndex = useGameStore((s) => s.setFlashingSlotIndex)
+  const heldEntityId = useGameStore((s) => s.heldEntityId)
+  const containerStates = useGameStore((s) => s.containerStates)
+  const addToast = useToastStore((s) => s.addToast)
+  const lastSavedCleanTableFlagRef = useRef(false)
 
   const lastPosRef = useRef({ x: robotPosition.x, z: robotPosition.z })
   const doorCooldownRef = useRef(0)
@@ -118,11 +118,34 @@ export function FirstPersonControls() {
         case 'KeyE': {
           const nearbyEntityForMemory = findNearbyEntity()
           if (nearbyEntityForMemory) {
+            const stateBefore = useGameStore.getState()
+            const placedContainerName = nearbyEntityForMemory.placedIn
+              ? stateBefore.task?.containers?.find((c) => c.id === nearbyEntityForMemory.placedIn)?.name
+              : null
+            const roomName = stateBefore.currentRoom
             const result = executeSaveMemory(nearbyEntityForMemory.id)
             if (result.success && result.slotIndex !== undefined) {
-              addToast('success', `已保存记忆：${nearbyEntityForMemory.name}`)
+              // §三 限制全局 Toast：
+              //  - 仅 task-clean-table 使用详细"已记住：<物体> 在 <位置>"位置 Toast；
+              //  - 其他任务保持原有简洁 Toast 行为（已保存记忆 / 已更新记忆）。
+              if (task?.id === 'task-clean-table') {
+                const locStr = placedContainerName ? `${placedContainerName}（${roomName}）` : roomName
+                addToast('success', `已记住：${nearbyEntityForMemory.name} 在 ${locStr}`)
+              } else if (result.isUpdate) {
+                addToast('success', `已更新记忆：${nearbyEntityForMemory.name}`)
+              } else {
+                addToast('success', `已保存记忆：${nearbyEntityForMemory.name}`)
+              }
               setFlashingSlotIndex(result.slotIndex)
-              setTimeout(() => setFlashingSlotIndex(null), 1000)
+              setTimeout(() => setFlashingSlotIndex(null), 1200)
+              // §三 限制全局 Toast："现在按 F 拾取物品"仅 task-clean-table 首次保存触发；
+              // 其他任务绝不输出这条教学提示。
+              if (task?.id === 'task-clean-table' && !lastSavedCleanTableFlagRef.current) {
+                lastSavedCleanTableFlagRef.current = true
+                setTimeout(() => addToast('info', '现在按 F 拾取物品'), 600)
+              }
+            } else if (result.reason) {
+              addToast('error', result.reason)
             } else {
               addToast('error', '记忆槽已满且全部锁定')
             }
@@ -367,18 +390,22 @@ export function FirstPersonControls() {
 
   useFrame((_, delta) => {
     const state = useGameStore.getState()
-    const { robotPosition, currentRoom, viewMode } = state
+    const { robotPosition, currentRoom, viewMode, phase: gamePhase } = state
+
+    // ⚠️ briefing 阶段完全禁用任何回写 store，避免浮点插值抖动 → store setState → 无限重渲染循环
+    const isPlaying = gamePhase === 'playing'
 
     const storeYaw = state.robotRotation
     const storePitch = state.cameraPitch
-
-    if (Math.abs(storeYaw - lastSyncedYawRef.current) > ROTATION_SYNC_THRESHOLD) {
-      targetYawRef.current = storeYaw
-      lastSyncedYawRef.current = storeYaw
-    }
-    if (Math.abs(storePitch - lastSyncedPitchRef.current) > ROTATION_SYNC_THRESHOLD) {
-      targetPitchRef.current = storePitch
-      lastSyncedPitchRef.current = storePitch
+    if (isPlaying) {
+      if (Math.abs(storeYaw - lastSyncedYawRef.current) > ROTATION_SYNC_THRESHOLD) {
+        targetYawRef.current = storeYaw
+        lastSyncedYawRef.current = storeYaw
+      }
+      if (Math.abs(storePitch - lastSyncedPitchRef.current) > ROTATION_SYNC_THRESHOLD) {
+        targetPitchRef.current = storePitch
+        lastSyncedPitchRef.current = storePitch
+      }
     }
 
     const posLerp = Math.min(1, delta * 12)
@@ -414,18 +441,20 @@ export function FirstPersonControls() {
     }
     camera.updateProjectionMatrix()
 
-    const yawDiff = Math.abs(targetYawRef.current - lastSyncedYawRef.current)
-    const pitchDiff = Math.abs(targetPitchRef.current - lastSyncedPitchRef.current)
-    if (yawDiff > ROTATION_SYNC_THRESHOLD || pitchDiff > ROTATION_SYNC_THRESHOLD) {
-      useGameStore.setState({
-        robotRotation: targetYawRef.current,
-        cameraPitch: targetPitchRef.current,
-      })
-      lastSyncedYawRef.current = targetYawRef.current
-      lastSyncedPitchRef.current = targetPitchRef.current
+    if (isPlaying) {
+      const yawDiff = Math.abs(targetYawRef.current - lastSyncedYawRef.current)
+      const pitchDiff = Math.abs(targetPitchRef.current - lastSyncedPitchRef.current)
+      if (yawDiff > ROTATION_SYNC_THRESHOLD || pitchDiff > ROTATION_SYNC_THRESHOLD) {
+        useGameStore.setState({
+          robotRotation: targetYawRef.current,
+          cameraPitch: targetPitchRef.current,
+        })
+        lastSyncedYawRef.current = targetYawRef.current
+        lastSyncedPitchRef.current = targetPitchRef.current
+      }
     }
 
-    if (state.phase !== 'playing') return
+    if (!isPlaying) return
 
     const speed = viewMode === 'top-down' ? TOP_DOWN_SPEED : PLAYER_SPEED
     let moveDx = 0

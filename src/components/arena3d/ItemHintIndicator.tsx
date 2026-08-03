@@ -14,7 +14,14 @@ interface UncollectedItem {
 }
 
 export function ItemHintIndicator() {
-  const { task, entities, achievedGoalIds, robotPosition, robotRotation, stepCount, phase } = useGameStore()
+  // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
+  const task = useGameStore((s) => s.task)
+  const entities = useGameStore((s) => s.entities)
+  const achievedGoalIds = useGameStore((s) => s.achievedGoalIds)
+  const robotPosition = useGameStore((s) => s.robotPosition)
+  const robotRotation = useGameStore((s) => s.robotRotation)
+  const stepCount = useGameStore((s) => s.stepCount)
+  const phase = useGameStore((s) => s.phase)
 
   const uncollectedItems = useMemo<UncollectedItem[]>(() => {
     if (!task || phase !== 'playing' || stepCount < 3) return []

@@ -88,9 +88,11 @@ function generateDiagnosis(stats: GameStats): string {
 export function ResultPage() {
   const { taskId } = useParams<{ taskId: string }>()
   const navigate = useNavigate()
-  const { currentSession } = useSessionStore()
-  const { getGameStats } = useGameStore()
-  const { audioEnabled, toggleAudioEnabled } = useUiStore()
+  // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
+  const currentSession = useSessionStore((s) => s.currentSession)
+  const getGameStats = useGameStore((s) => s.getGameStats)
+  const audioEnabled = useUiStore((s) => s.audioEnabled)
+  const toggleAudioEnabled = useUiStore((s) => s.toggleAudioEnabled)
   const gameStats = getGameStats()
 
   const handleDownloadJson = () => {

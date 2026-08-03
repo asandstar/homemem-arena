@@ -125,6 +125,7 @@ function OpenableFurniture({
   color,
   hovered,
   isOpen,
+  isTarget,
 }: {
   modelId: string
   color?: string
@@ -133,6 +134,21 @@ function OpenableFurniture({
   isTarget?: boolean
 }) {
   const FallbackComp = OPENABLE_MODELS[modelId]
+
+  // A3：关着时优先显示 GLB（ModelAsset 自动 fallback），打开时才用程序化 Fallback 做开门动画。
+  // 原因：GLB 没有可动画的门/抽屉；但「关着」状态才是视觉主流（99% 时间）。
+  if (!isOpen) {
+    return (
+      <ModelAsset
+        modelId={modelId}
+        color={color}
+        hovered={hovered}
+        selected={false}
+        interactable
+        target={isTarget}
+      />
+    )
+  }
 
   return (
     <FallbackColorizer modelId={modelId} color={color} hovered={hovered}>

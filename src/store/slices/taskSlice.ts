@@ -147,114 +147,131 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
     currentObjective: null,
 
     initializeTask: (taskId: string) => {
-      useUiStore.getState().resetUi()
-      const task = getTaskById(taskId)
-      if (!task) return
+      const t0 = Date.now()
+      try {
+        useUiStore.getState().resetUi()
+        const task = getTaskById(taskId)
+        if (!task) {
+          console.warn('[initializeTask] ABORT: task not found for taskId=', taskId)
+          return
+        }
+        console.log('[initializeTask] START taskId=', taskId, 'name=', task.name, 'objects=', task.objects.length, 'containers=', task.containers.length)
 
-      const entities: EntityState[] = []
+        const entities: EntityState[] = []
 
-      task.objects.forEach((obj: ObjectSpec) => {
-        const status: EntityState['status'] = obj.hiddenInContainer ? 'hidden' : 'free'
-        const worldPos: Vec3 = getFreeObjectInitialPosition(obj, task)
-        entities.push({
-          id: generateId('ent'),
-          configId: obj.id,
-          type: 'object',
-          name: obj.name,
-          category: obj.category,
-          currentRoom: obj.initialRoom,
-          position: worldPos,
-          size: obj.size,
-          color: obj.color,
-          rotation: 0,
-          status,
-          properties: { ...(obj.stateProperties ?? {}) },
+        task.objects.forEach((obj: ObjectSpec) => {
+          const status: EntityState['status'] = obj.hiddenInContainer ? 'hidden' : 'free'
+          const worldPos: Vec3 = getFreeObjectInitialPosition(obj, task)
+          entities.push({
+            id: generateId('ent'),
+            configId: obj.id,
+            type: 'object',
+            name: obj.name,
+            category: obj.category,
+            currentRoom: obj.initialRoom,
+            position: worldPos,
+            size: obj.size,
+            color: obj.color,
+            rotation: 0,
+            status,
+            properties: { ...(obj.stateProperties ?? {}) },
+          })
         })
-      })
 
-      const containerStates: Record<string, { open: boolean; containedIds: string[] }> = {}
-      task.containers.forEach((cnt: ContainerSpec) => {
-        containerStates[cnt.id] = {
-          open: cnt.initialOpen,
-          containedIds: cnt.containsObjectIds ? [...cnt.containsObjectIds] : [],
-        }
-      })
+        const containerStates: Record<string, { open: boolean; containedIds: string[] }> = {}
+        task.containers.forEach((cnt: ContainerSpec) => {
+          containerStates[cnt.id] = {
+            open: cnt.initialOpen,
+            containedIds: cnt.containsObjectIds ? [...cnt.containsObjectIds] : [],
+          }
+        })
 
-      const firstRoom = task.rooms[0]
-      const firstRoomCenter = roomCenter(firstRoom)
-      const startPos = task.spawnPosition
-        ? { x: firstRoomCenter.x + task.spawnPosition.x, y: 0, z: firstRoomCenter.z + task.spawnPosition.z }
-        : firstRoomCenter
-      const startRotation = task.spawnRotation ?? 0
-      const initialSnapshots = toEntitySnapshots(entities)
-      const initiallyAchieved = new Set<string>()
-      for (const goal of task.goals) {
-        const dependenciesMet = (goal.dependsOnGoalIds ?? []).every((id) => initiallyAchieved.has(id))
-        if (dependenciesMet && goal.predicate(initialSnapshots)) {
-          initiallyAchieved.add(goal.id)
+        const firstRoom = task.rooms[0]
+        const firstRoomCenter = roomCenter(firstRoom)
+        const startPos = task.spawnPosition
+          ? { x: firstRoomCenter.x + task.spawnPosition.x, y: 0, z: firstRoomCenter.z + task.spawnPosition.z }
+          : firstRoomCenter
+        const startRotation = task.spawnRotation ?? 0
+        const initialSnapshots = toEntitySnapshots(entities)
+        const initiallyAchieved = new Set<string>()
+        for (const goal of task.goals) {
+          const dependenciesMet = (goal.dependsOnGoalIds ?? []).every((id) => initiallyAchieved.has(id))
+          if (dependenciesMet && goal.predicate(initialSnapshots)) {
+            initiallyAchieved.add(goal.id)
+          }
         }
+
+        const initialProceduralProgress: Record<string, ProceduralProgress> = {}
+        task.goals.forEach((goal: GoalSpec) => {
+          if (goal.requiredSequence && goal.requiredSequence.length > 0) {
+            initialProceduralProgress[goal.id] = initProceduralProgress()
+          }
+        })
+
+        set({
+          phase: 'briefing',
+          task,
+          robotPosition: startPos,
+          robotRotation: startRotation,
+          cameraPitch: 0,
+          currentRoom: firstRoom,
+          entities,
+          containerStates,
+          heldEntityId: null,
+          stepCount: 0,
+          elapsedMs: 0,
+          startTime: null,
+          visitedRooms: new Set([firstRoom]),
+          lastObservedIds: new Set(),
+          viewMode: 'first-person' as const,
+          memorySlots: new Array(DEFAULT_LEVEL_BALANCE.memorySlotCount).fill(null),
+          flashingSlotIndex: null,
+          chaosValue: 0,
+          chaosPeak: 0,
+          score: 0,
+          combo: 0,
+          maxCombo: 0,
+          levelFailed: false,
+          levelCompleted: false,
+          failureReason: null,
+          triggeredEvents: new Set<string>(),
+          achievedGoalIds: initiallyAchieved,
+          wrongPlaceCount: 0,
+          repeatSearchCount: 0,
+          memoryUsedCount: 0,
+          outdatedMemoryCount: 0,
+          memoryUpdateCount: 0,
+          feedback: null,
+          shakingEntityId: null,
+          savingMemorySlotIndex: null,
+          chaosEffectActive: false,
+          floatingTexts: [],
+          eventToasts: [],
+          activeEventEffects: [],
+          moveAnimations: [],
+          lastMoveAnimation: null,
+          lastGoalProgressMs: 0,
+          longestProgressStallMs: 0,
+          flowHintLevel: 0,
+          flowInterventionCount: 0,
+          activeFlowHint: null,
+          proceduralProgress: initialProceduralProgress,
+          currentStageId: task.stages?.length ? (task.initialStageId ?? task.stages[0].id) : null,
+          currentObjective: task.stages?.length
+            ? (task.stages.find((s) => s.id === (task.initialStageId ?? task.stages![0].id))?.playerObjective ?? null)
+            : null,
+        })
+
+        // 验证 state.task 真的设置成功（Zustand 在某些 strict mode 下可能出现问题）
+        const verify = get().task
+        if (!verify || verify.id !== taskId) {
+          console.error('[initializeTask] FATAL: state.task NOT SET after set() call. Expected=', taskId, 'Got=', verify?.id ?? 'null')
+        } else {
+          console.log('[initializeTask] SUCCESS: state.task ready in', Date.now() - t0, 'ms, entities=', entities.length, 'phase=', get().phase)
+        }
+      } catch (e) {
+        console.error('[initializeTask] FATAL exception during task init for taskId=', taskId, e)
       }
-
-      const initialProceduralProgress: Record<string, ProceduralProgress> = {}
-      task.goals.forEach((goal: GoalSpec) => {
-        if (goal.requiredSequence && goal.requiredSequence.length > 0) {
-          initialProceduralProgress[goal.id] = initProceduralProgress()
-        }
-      })
-
-      set({
-        phase: 'briefing',
-        task,
-        robotPosition: startPos,
-        robotRotation: startRotation,
-        cameraPitch: 0,
-        currentRoom: firstRoom,
-        entities,
-        containerStates,
-        heldEntityId: null,
-        stepCount: 0,
-        elapsedMs: 0,
-        startTime: null,
-        visitedRooms: new Set([firstRoom]),
-        lastObservedIds: new Set(),
-        viewMode: 'first-person' as const,
-        memorySlots: new Array(DEFAULT_LEVEL_BALANCE.memorySlotCount).fill(null),
-        flashingSlotIndex: null,
-        chaosValue: 0,
-        chaosPeak: 0,
-        score: 0,
-        combo: 0,
-        maxCombo: 0,
-        levelFailed: false,
-        levelCompleted: false,
-        failureReason: null,
-        triggeredEvents: new Set<string>(),
-        achievedGoalIds: initiallyAchieved,
-        wrongPlaceCount: 0,
-        repeatSearchCount: 0,
-        memoryUsedCount: 0,
-        outdatedMemoryCount: 0,
-        memoryUpdateCount: 0,
-        feedback: null,
-        shakingEntityId: null,
-        savingMemorySlotIndex: null,
-        chaosEffectActive: false,
-        floatingTexts: [],
-        eventToasts: [],
-        activeEventEffects: [],
-        moveAnimations: [],
-        lastMoveAnimation: null,
-        lastGoalProgressMs: 0,
-        longestProgressStallMs: 0,
-        flowHintLevel: 0,
-        flowInterventionCount: 0,
-        activeFlowHint: null,
-        proceduralProgress: initialProceduralProgress,
-        currentStageId: task.stages?.length ? (task.initialStageId ?? task.stages[0].id) : null,
-        currentObjective: task.stages?.length
-          ? (task.stages.find((s) => s.id === (task.initialStageId ?? task.stages![0].id))?.playerObjective ?? null)
-          : null,
-      })
     },
 
     resetTask: () => {

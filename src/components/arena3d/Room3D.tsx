@@ -3,7 +3,7 @@ import { Text, Billboard } from '@react-three/drei'
 import type { RoomSpec } from '../../types/room'
 import { MATERIAL_CONFIG } from './colors'
 import { Door3D } from './Door3D'
-import { FallbackColorizer } from './models/ModelAsset'
+import { FallbackColorizer, RoomDecorPiece } from './models/ModelAsset'
 import {
   ShoeCabinetModel,
   TowelRackModel,
@@ -46,23 +46,23 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
 
   const renderEntrance = () => (
     <group>
-      <FallbackColorizer modelId="rug" color="#8b7355">
+      <RoomDecorPiece modelId="rug" color="#8b7355">
         <group position={[center.x, 0, center.z + size.z / 2 - 0.8]} receiveShadow>
           <RugFallback size={{ x: 2.0, y: 0.04, z: 1.2 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="cabinet" color="#8b5a2b">
+      <RoomDecorPiece modelId="cabinet" color="#8b5a2b">
         <group position={[center.x - size.x / 2 + 0.6, 0, center.z - 0.5]} castShadow receiveShadow>
           <ShoeCabinetModel size={{ x: 1.2, y: 1.1, z: 0.4 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="shoes" color="#4a4a4a">
+      <RoomDecorPiece modelId="shoes" color="#4a4a4a">
         <group position={[center.x - size.x / 2 + 0.6, 0, center.z + 0.3]} receiveShadow>
           <ShoesFallback size={{ x: 0.35, y: 0.15, z: 0.45 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <group position={[center.x - size.x / 2 + 0.9, 0.15, center.z + 0.2]} receiveShadow>
         <mesh position={[0, 0, 0]}>
@@ -92,11 +92,11 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </mesh>
       </group>
 
-      <FallbackColorizer modelId="hook" color="#4a4a4a">
+      <RoomDecorPiece modelId="hook" color="#4a4a4a">
         <group position={[center.x + size.x / 2 - 0.3, 1.5, center.z]} receiveShadow>
           <HookFallback size={{ x: 1.0, y: 0.3, z: 0.05 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <FallbackColorizer modelId="entray" color="#d4a574">
         <group position={[center.x - 0.4, 0, center.z - size.z / 2 + 0.7]} receiveShadow>
@@ -104,7 +104,7 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </FallbackColorizer>
 
-      <FallbackColorizer modelId="umbrella" color="#ef4444">
+      <RoomDecorPiece modelId="umbrella" color="#ef4444">
         <group position={[center.x + 0.8, 0.4, center.z - size.z / 2 + 0.7]} castShadow receiveShadow>
           <mesh position={[0, 0.25, 0]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[0.012, 0.012, 0.5, 8]} />
@@ -115,9 +115,9 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
             <meshStandardMaterial color="#ef4444" />
           </mesh>
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="umbrella" color="#3b82f6">
+      <RoomDecorPiece modelId="umbrella" color="#3b82f6">
         <group position={[center.x + 0.5, 0.4, center.z - size.z / 2 + 0.7]} castShadow receiveShadow>
           <mesh position={[0, 0.25, 0]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[0.012, 0.012, 0.45, 8]} />
@@ -128,7 +128,7 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
             <meshStandardMaterial color="#3b82f6" />
           </mesh>
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <FallbackColorizer modelId="painting" color="#8b5a2b">
         <group position={[center.x, 1.0, center.z + size.z / 2 - 0.3]} rotation={[0, Math.PI, 0]} receiveShadow>
@@ -142,17 +142,17 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </FallbackColorizer>
 
-      <FallbackColorizer modelId="plant" color="#22c55e">
+      <RoomDecorPiece modelId="plant" color="#22c55e">
         <group position={[center.x - size.x / 2 + 1.0, 0, center.z + 0.8]} receiveShadow>
           <PlantFallback size={{ x: 0.3, y: 0.7, z: 0.3 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="plant" color="#15803d">
+      <RoomDecorPiece modelId="plant" color="#15803d">
         <group position={[center.x + size.x / 2 - 1.0, 0, center.z - 0.5]} receiveShadow>
           <PlantFallback size={{ x: 0.25, y: 0.6, z: 0.25 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <FallbackColorizer modelId="shelf" color="#9ca3af">
         <group position={[center.x + size.x / 2 - 0.5, 0, center.z + 1.5]} castShadow receiveShadow>
@@ -164,45 +164,45 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
 
   const renderLiving = () => (
     <group>
-      <FallbackColorizer modelId="rug" color="#a0522d">
+      <RoomDecorPiece modelId="rug" color="#a0522d">
         <group position={[center.x, 0, center.z - 0.5]} receiveShadow>
           <RugFallback size={{ x: 4.0, y: 0.04, z: 3.0 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="sofa" color="#8b5a2b">
+      <RoomDecorPiece modelId="sofa" color="#8b5a2b">
         <group position={[center.x, 0, center.z - 1.2]} castShadow receiveShadow>
           <SofaModel size={{ x: 2.4, y: 0.9, z: 1.0 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="pillow" color="#ff6b6b">
+      <RoomDecorPiece modelId="pillow" color="#ff6b6b">
         <group position={[center.x - 0.9, 0.45, center.z - 1.3]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.3 }} />
         </group>
-      </FallbackColorizer>
-      <FallbackColorizer modelId="pillow" color="#4ecdc4">
+      </RoomDecorPiece>
+      <RoomDecorPiece modelId="pillow" color="#4ecdc4">
         <group position={[center.x, 0.45, center.z - 1.35]} rotation={[0, -Math.PI / 8, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.3 }} />
         </group>
-      </FallbackColorizer>
-      <FallbackColorizer modelId="pillow" color="#ffe66d">
+      </RoomDecorPiece>
+      <RoomDecorPiece modelId="pillow" color="#ffe66d">
         <group position={[center.x + 0.9, 0.45, center.z - 1.3]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.3 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="sofa" color="#6b4e3d">
+      <RoomDecorPiece modelId="sofa" color="#6b4e3d">
         <group position={[center.x - 2.0, 0, center.z - 0.5]} castShadow receiveShadow rotation={[0, Math.PI / 2, 0]}>
           <SofaModel size={{ x: 1.6, y: 0.85, z: 0.9 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="coffee_table" color="#8b7355">
+      <RoomDecorPiece modelId="coffee_table" color="#8b7355">
         <group position={[center.x - 0.5, 0, center.z - 0.3]} castShadow receiveShadow>
           <CoffeeTableModel size={{ x: 1.4, y: 0.45, z: 0.7 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <group position={[center.x - 0.8, 0.48, center.z - 0.5]} receiveShadow>
         <mesh position={[0, 0, 0]}>
@@ -267,11 +267,11 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </FallbackColorizer>
 
-      <FallbackColorizer modelId="cabinet" color="#4a4a4a">
+      <RoomDecorPiece modelId="cabinet" color="#4a4a4a">
         <group position={[center.x + size.x / 2 - 1.1, 0, center.z - 1.0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
           <TVStandModel size={{ x: 2.2, y: 0.55, z: 0.45 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <FallbackColorizer modelId="tv" color="#1f2937">
         <group position={[center.x + size.x / 2 - 1.0, 0.8, center.z - 1.0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
@@ -303,35 +303,35 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </FallbackColorizer>
 
-      <FallbackColorizer modelId="lamp" color="#f5d49a">
+      <RoomDecorPiece modelId="lamp" color="#f5d49a">
         <group position={[center.x + size.x / 2 - 1.0, 0, center.z - 2.0]} receiveShadow>
           <LampFallback size={{ x: 0.4, y: 1.8, z: 0.4 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="lamp" color="#e8d5b7">
+      <RoomDecorPiece modelId="lamp" color="#e8d5b7">
         <group position={[center.x - size.x / 2 + 1.0, 0, center.z + 0.5]} receiveShadow>
           <LampFallback size={{ x: 0.35, y: 1.6, z: 0.35 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="plant" color="#16a34a">
+      <RoomDecorPiece modelId="plant" color="#16a34a">
         <group position={[center.x - size.x / 2 + 0.6, 0, center.z - 2.0]} receiveShadow>
           <PlantFallback size={{ x: 0.5, y: 1.2, z: 0.5 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="plant" color="#22c55e">
+      <RoomDecorPiece modelId="plant" color="#22c55e">
         <group position={[center.x + size.x / 2 - 0.6, 0, center.z + 2.0]} receiveShadow>
           <PlantFallback size={{ x: 0.35, y: 0.8, z: 0.35 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="plant" color="#15803d">
+      <RoomDecorPiece modelId="plant" color="#15803d">
         <group position={[center.x + 1.5, 0, center.z - 2.0]} receiveShadow>
           <PlantFallback size={{ x: 0.4, y: 1.0, z: 0.4 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <FallbackColorizer modelId="chair" color="#8b7355">
         <group position={[center.x + 1.5, 0, center.z + 1.0]} castShadow receiveShadow>
@@ -339,59 +339,59 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </FallbackColorizer>
 
-      <FallbackColorizer modelId="coffee_table" color="#6b4e3d">
+      <RoomDecorPiece modelId="coffee_table" color="#6b4e3d">
         <group position={[center.x + 1.8, 0, center.z + 0.8]} castShadow receiveShadow>
           <CoffeeTableModel size={{ x: 0.6, y: 0.35, z: 0.6 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
     </group>
   )
 
   const renderKitchen = () => (
     <group>
-      <FallbackColorizer modelId="rug" color="#7a7a7a">
+      <RoomDecorPiece modelId="rug" color="#7a7a7a">
         <group position={[center.x, 0, center.z - 0.5]} receiveShadow>
           <RugFallback size={{ x: 3.0, y: 0.04, z: 2.0 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="cabinet" color="#6b7280">
+      <RoomDecorPiece modelId="cabinet" color="#6b7280">
         <group position={[center.x - size.x / 2 + 0.5, 0, center.z - size.z / 2 + 0.6]} castShadow receiveShadow>
           <CoffeeTableModel size={{ x: 0.8, y: 0.9, z: 0.6 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="cabinet" color="#6b7280">
+      <RoomDecorPiece modelId="cabinet" color="#6b7280">
         <group position={[center.x - size.x / 2 + 0.5, 0, center.z + 0.5]} castShadow receiveShadow>
           <CoffeeTableModel size={{ x: 0.8, y: 0.9, z: 0.6 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="cabinet" color="#6b7280">
+      <RoomDecorPiece modelId="cabinet" color="#6b7280">
         <group position={[center.x - size.x / 2 + 0.5, 0, center.z + size.z / 2 - 0.6]} castShadow receiveShadow>
           <CoffeeTableModel size={{ x: 0.8, y: 0.9, z: 0.6 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="cabinet" color="#6b7280">
+      <RoomDecorPiece modelId="cabinet" color="#6b7280">
         <group position={[center.x, 0, center.z + size.z / 2 - 0.5]} castShadow receiveShadow>
           <CoffeeTableModel size={{ x: 1.6, y: 0.9, z: 0.6 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="cabinet" color="#6b7280">
+      <RoomDecorPiece modelId="cabinet" color="#6b7280">
         <group position={[center.x + size.x / 2 - 0.5, 0, center.z + size.z / 2 - 0.6]} castShadow receiveShadow>
           <CoffeeTableModel size={{ x: 0.8, y: 0.9, z: 0.6 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="cabinet" color="#6b7280">
+      <RoomDecorPiece modelId="cabinet" color="#6b7280">
         <group position={[center.x + size.x / 2 - 0.5, 0, center.z + 0.5]} castShadow receiveShadow>
           <CoffeeTableModel size={{ x: 0.8, y: 0.9, z: 0.6 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="fridge" color="#f9fafb">
+      <RoomDecorPiece modelId="fridge" color="#f9fafb">
         <group position={[center.x + size.x / 2 - 0.6, 0, center.z - size.z / 2 + 0.8]} castShadow receiveShadow>
           <mesh position={[0, 1.0, 0]}>
             <boxGeometry args={[0.7, 2.0, 0.6]} />
@@ -410,9 +410,9 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
             <meshStandardMaterial color="#22c55e" />
           </mesh>
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="sink" color="#9ca3af">
+      <RoomDecorPiece modelId="sink" color="#9ca3af">
         <group position={[center.x - 0.5, 0.85, center.z + size.z / 2 - 0.5]} castShadow receiveShadow>
           <mesh position={[0, 0.15, 0]}>
             <boxGeometry args={[0.6, 0.3, 0.4]} />
@@ -431,7 +431,7 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
             <meshStandardMaterial color="#6b7280" metalness={0.3} />
           </mesh>
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <FallbackColorizer modelId="stove" color="#374151">
         <group position={[center.x + 0.5, 0.85, center.z + size.z / 2 - 0.5]} castShadow receiveShadow>
@@ -475,17 +475,17 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </FallbackColorizer>
 
-      <FallbackColorizer modelId="plant" color="#22c55e">
+      <RoomDecorPiece modelId="plant" color="#22c55e">
         <group position={[center.x - 0.8, 0, center.z + size.z / 2 - 0.5]} receiveShadow>
           <PlantFallback size={{ x: 0.25, y: 0.45, z: 0.25 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="trash" color="#374151">
+      <RoomDecorPiece modelId="trash" color="#374151">
         <group position={[center.x + size.x / 2 - 0.6, 0, center.z - 1.0]} receiveShadow>
           <TrashFallback size={{ x: 0.35, y: 0.45, z: 0.35 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <FallbackColorizer modelId="shelf" color="#9ca3af">
         <group position={[center.x + size.x / 2 - 0.6, 0, center.z + 2.0]} castShadow receiveShadow>
@@ -512,69 +512,69 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
 
   const renderBedroom = () => (
     <group>
-      <FallbackColorizer modelId="rug" color="#9e7a7a">
+      <RoomDecorPiece modelId="rug" color="#9e7a7a">
         <group position={[center.x, 0, center.z - 0.3]} receiveShadow>
           <RugFallback size={{ x: 3.0, y: 0.04, z: 2.2 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="bed" color="#d4c5b0">
+      <RoomDecorPiece modelId="bed" color="#d4c5b0">
         <group position={[center.x, 0, center.z - 0.8]} castShadow receiveShadow>
           <BedModel size={{ x: 2.0, y: 1.0, z: 2.4 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="pillow" color="#fec8d8">
+      <RoomDecorPiece modelId="pillow" color="#fec8d8">
         <group position={[-0.6, 0.65, center.z - 1.5]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.4, y: 0.18, z: 0.3 }} />
         </group>
-      </FallbackColorizer>
-      <FallbackColorizer modelId="pillow" color="#e0bbe4">
+      </RoomDecorPiece>
+      <RoomDecorPiece modelId="pillow" color="#e0bbe4">
         <group position={[0.6, 0.65, center.z - 1.5]} rotation={[0, -Math.PI / 6, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.4, y: 0.18, z: 0.3 }} />
         </group>
-      </FallbackColorizer>
-      <FallbackColorizer modelId="pillow" color="#fef3c7">
+      </RoomDecorPiece>
+      <RoomDecorPiece modelId="pillow" color="#fef3c7">
         <group position={[0, 0.62, center.z - 1.4]} rotation={[0, Math.PI / 8, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.28 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="cabinet" color="#8b7355">
+      <RoomDecorPiece modelId="cabinet" color="#8b7355">
         <group position={[center.x + 1.5, 0, center.z - 1.5]} castShadow receiveShadow>
           <NightstandModel size={{ x: 0.55, y: 0.55, z: 0.45 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="lamp" color="#f5d49a">
+      <RoomDecorPiece modelId="lamp" color="#f5d49a">
         <group position={[center.x + 1.5, 0.55, center.z - 1.5]} receiveShadow>
           <LampFallback size={{ x: 0.22, y: 0.45, z: 0.22 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="cabinet" color="#8b7355">
+      <RoomDecorPiece modelId="cabinet" color="#8b7355">
         <group position={[center.x - size.x / 2 + 0.85, 0, center.z - 1.5]} castShadow receiveShadow>
           <NightstandModel size={{ x: 0.55, y: 0.55, z: 0.45 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="lamp" color="#e8d5b7">
+      <RoomDecorPiece modelId="lamp" color="#e8d5b7">
         <group position={[center.x - size.x / 2 + 0.85, 0.55, center.z - 1.5]} receiveShadow>
           <LampFallback size={{ x: 0.22, y: 0.45, z: 0.22 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="desk" color="#8b7355">
+      <RoomDecorPiece modelId="desk" color="#8b7355">
         <group position={[center.x + 1.6, 0, center.z + 1.0]} castShadow receiveShadow>
           <DeskModel size={{ x: 1.3, y: 0.75, z: 0.65 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="lamp" color="#f5d49a">
+      <RoomDecorPiece modelId="lamp" color="#f5d49a">
         <group position={[center.x + 1.2, 0.75, center.z + 0.9]} receiveShadow>
           <LampFallback size={{ x: 0.18, y: 0.4, z: 0.18 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <FallbackColorizer modelId="chair" color="#6b4e3d">
         <group position={[center.x + 2.5, 0, center.z + 1.0]} castShadow receiveShadow rotation={[0, Math.PI, 0]}>
@@ -582,11 +582,11 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </FallbackColorizer>
 
-      <FallbackColorizer modelId="cabinet" color="#d4c5b0">
+      <RoomDecorPiece modelId="cabinet" color="#d4c5b0">
         <group position={[center.x - size.x / 2 + 0.85, 0, center.z + 0.6]} castShadow receiveShadow>
           <WardrobeModel size={{ x: 1.8, y: 2.1, z: 0.65 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <FallbackColorizer modelId="dresser" color="#c4a7a7">
         <group position={[center.x - 1.5, 0, center.z + 1.5]} castShadow receiveShadow>
@@ -612,28 +612,28 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </FallbackColorizer>
 
-      <FallbackColorizer modelId="towel" color="#ff6b6b">
+      <RoomDecorPiece modelId="towel" color="#ff6b6b">
         <group position={[center.x + 0.8, 0, center.z + 1.6]} rotation={[Math.PI / 12, Math.PI / 6, Math.PI / 8]} receiveShadow>
           <TowelFallback size={{ x: 0.5, y: 0.1, z: 0.4 }} />
         </group>
-      </FallbackColorizer>
-      <FallbackColorizer modelId="towel" color="#4ecdc4">
+      </RoomDecorPiece>
+      <RoomDecorPiece modelId="towel" color="#4ecdc4">
         <group position={[center.x + 1.1, 0, center.z + 1.4]} rotation={[-Math.PI / 10, -Math.PI / 8, Math.PI / 12]} receiveShadow>
           <TowelFallback size={{ x: 0.45, y: 0.08, z: 0.4 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="plant" color="#22c55e">
+      <RoomDecorPiece modelId="plant" color="#22c55e">
         <group position={[center.x - size.x / 2 + 1.2, 0, center.z + 2.0]} receiveShadow>
           <PlantFallback size={{ x: 0.4, y: 0.9, z: 0.4 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="plant" color="#15803d">
+      <RoomDecorPiece modelId="plant" color="#15803d">
         <group position={[center.x + 1.0, 0, center.z + 2.5]} receiveShadow>
           <PlantFallback size={{ x: 0.35, y: 0.75, z: 0.35 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
     </group>
   )
 
@@ -649,23 +649,23 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         <meshStandardMaterial color="#f3f4f6" />
       </mesh>
 
-      <FallbackColorizer modelId="cabinet" color="#6b7280">
+      <RoomDecorPiece modelId="cabinet" color="#6b7280">
         <group position={[center.x - size.x / 2 + 0.5, 0, center.z - size.z / 2 + 0.6]} castShadow receiveShadow>
           <CoffeeTableModel size={{ x: 0.6, y: 0.9, z: 0.5 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="cabinet" color="#6b7280">
+      <RoomDecorPiece modelId="cabinet" color="#6b7280">
         <group position={[center.x - size.x / 2 + 0.5, 0, center.z + 0.5]} castShadow receiveShadow>
           <CoffeeTableModel size={{ x: 0.6, y: 0.9, z: 0.5 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="cabinet" color="#6b7280">
+      <RoomDecorPiece modelId="cabinet" color="#6b7280">
         <group position={[center.x - size.x / 2 + 0.5, 0, center.z + size.z / 2 - 0.6]} castShadow receiveShadow>
           <CoffeeTableModel size={{ x: 0.6, y: 0.9, z: 0.5 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <FallbackColorizer modelId="shelf" color="#9ca3af">
         <group position={[center.x + size.x / 2 - 0.5, 0, center.z + 1.5]} castShadow receiveShadow>
@@ -673,45 +673,45 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </FallbackColorizer>
 
-      <FallbackColorizer modelId="laundry_basket" color="#ef4444">
+      <RoomDecorPiece modelId="laundry_basket" color="#ef4444">
         <group position={[center.x - 1.0, 0.25, center.z - 0.3]} castShadow receiveShadow>
           <LaundryBasketModel size={{ x: 0.45, y: 0.5, z: 0.45 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="laundry_basket" color="#3b82f6">
+      <RoomDecorPiece modelId="laundry_basket" color="#3b82f6">
         <group position={[center.x, 0.25, center.z - 0.3]} castShadow receiveShadow>
           <LaundryBasketModel size={{ x: 0.45, y: 0.5, z: 0.45 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="laundry_basket" color="#22c55e">
+      <RoomDecorPiece modelId="laundry_basket" color="#22c55e">
         <group position={[center.x + 1.0, 0.25, center.z - 0.3]} castShadow receiveShadow>
           <LaundryBasketModel size={{ x: 0.45, y: 0.5, z: 0.45 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="cabinet" color="#6b7280">
+      <RoomDecorPiece modelId="cabinet" color="#6b7280">
         <group position={[center.x + size.x / 2 - 0.4, 0.8, center.z]} castShadow receiveShadow>
           <TowelRackModel size={{ x: 1.0, y: 1.5, z: 0.05 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="towel" color="#fbbf24">
+      <RoomDecorPiece modelId="towel" color="#fbbf24">
         <group position={[center.x + size.x / 2 - 0.35, 0.9, center.z + 0.1]} receiveShadow>
           <TowelFallback size={{ x: 0.25, y: 0.5, z: 0.08 }} />
         </group>
-      </FallbackColorizer>
-      <FallbackColorizer modelId="towel" color="#a855f7">
+      </RoomDecorPiece>
+      <RoomDecorPiece modelId="towel" color="#a855f7">
         <group position={[center.x + size.x / 2 - 0.35, 0.9, center.z - 0.2]} receiveShadow>
           <TowelFallback size={{ x: 0.25, y: 0.5, z: 0.08 }} />
         </group>
-      </FallbackColorizer>
-      <FallbackColorizer modelId="towel" color="#ec4899">
+      </RoomDecorPiece>
+      <RoomDecorPiece modelId="towel" color="#ec4899">
         <group position={[center.x + size.x / 2 - 0.35, 0.9, center.z + 0.4]} receiveShadow>
           <TowelFallback size={{ x: 0.25, y: 0.5, z: 0.08 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <mesh position={[center.x - 0.3, 1.225, center.z - size.z / 2 + 1.2]} castShadow receiveShadow>
         <boxGeometry args={[0.12, 0.25, 0.08]} />
@@ -722,33 +722,33 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         <meshStandardMaterial color="#1e40af" />
       </mesh>
 
-      <FallbackColorizer modelId="towel" color="#fbbf24">
+      <RoomDecorPiece modelId="towel" color="#fbbf24">
         <group position={[center.x - 0.6, 0.1, center.z + 1.2]} rotation={[Math.PI / 8, Math.PI / 6, Math.PI / 10]} receiveShadow>
           <TowelFallback size={{ x: 0.45, y: 0.08, z: 0.35 }} />
         </group>
-      </FallbackColorizer>
-      <FallbackColorizer modelId="towel" color="#a855f7">
+      </RoomDecorPiece>
+      <RoomDecorPiece modelId="towel" color="#a855f7">
         <group position={[center.x + 0.4, 0.08, center.z + 1.5]} rotation={[-Math.PI / 10, -Math.PI / 8, -Math.PI / 12]} receiveShadow>
           <TowelFallback size={{ x: 0.4, y: 0.07, z: 0.3 }} />
         </group>
-      </FallbackColorizer>
-      <FallbackColorizer modelId="towel" color="#ec4899">
+      </RoomDecorPiece>
+      <RoomDecorPiece modelId="towel" color="#ec4899">
         <group position={[center.x - 0.1, 0.06, center.z + 1.8]} rotation={[Math.PI / 12, -Math.PI / 6, Math.PI / 8]} receiveShadow>
           <TowelFallback size={{ x: 0.5, y: 0.09, z: 0.4 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="plant" color="#22c55e">
+      <RoomDecorPiece modelId="plant" color="#22c55e">
         <group position={[center.x + size.x / 2 - 0.8, 0, center.z - 0.5]} receiveShadow>
           <PlantFallback size={{ x: 0.25, y: 0.6, z: 0.25 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="trash" color="#374151">
+      <RoomDecorPiece modelId="trash" color="#374151">
         <group position={[center.x - size.x / 2 + 0.6, 0, center.z - 1.0]} receiveShadow>
           <TrashFallback size={{ x: 0.3, y: 0.4, z: 0.3 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <mesh position={[center.x + 0.5, 1.2, center.z - 0.8]} castShadow receiveShadow>
         <boxGeometry args={[0.1, 0.15, 0.15]} />
@@ -764,17 +764,17 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
 
   const renderDining = () => (
     <group>
-      <FallbackColorizer modelId="rug" color="#8b7355">
+      <RoomDecorPiece modelId="rug" color="#8b7355">
         <group position={[center.x, 0, center.z]} receiveShadow>
           <RugFallback size={{ x: 4.0, y: 0.04, z: 3.0 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="cabinet" color="#6b4e3d">
+      <RoomDecorPiece modelId="cabinet" color="#6b4e3d">
         <group position={[center.x + size.x / 2 - 0.6, 0, center.z]} castShadow receiveShadow>
           <CoffeeTableModel size={{ x: 1.2, y: 0.85, z: 0.5 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <FallbackColorizer modelId="shelf" color="#9ca3af">
         <group position={[center.x + size.x / 2 - 0.5, 0, center.z + 1.5]} castShadow receiveShadow>
@@ -816,11 +816,11 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         <meshStandardMaterial color="#ef4444" />
       </mesh>
 
-      <FallbackColorizer modelId="lamp" color="#f5d49a">
+      <RoomDecorPiece modelId="lamp" color="#f5d49a">
         <group position={[center.x, 2.7, center.z]} castShadow receiveShadow>
           <ChandelierModel size={{ x: 0.6, y: 0.5, z: 0.6 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <FallbackColorizer modelId="painting" color="#8b5a2b">
         <group position={[center.x - size.x / 2 + 0.3, 1.2, center.z + 1.0]} rotation={[0, Math.PI, 0]} receiveShadow>
@@ -834,17 +834,17 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </FallbackColorizer>
 
-      <FallbackColorizer modelId="plant" color="#22c55e">
+      <RoomDecorPiece modelId="plant" color="#22c55e">
         <group position={[center.x - size.x / 2 + 0.8, 0, center.z - size.z / 2 + 0.8]} receiveShadow>
           <PlantFallback size={{ x: 0.35, y: 0.8, z: 0.35 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
-      <FallbackColorizer modelId="plant" color="#15803d">
+      <RoomDecorPiece modelId="plant" color="#15803d">
         <group position={[center.x - size.x / 2 + 0.8, 0, center.z + size.z / 2 - 0.8]} receiveShadow>
           <PlantFallback size={{ x: 0.3, y: 0.7, z: 0.3 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <FallbackColorizer modelId="chair" color="#6b4e3d">
         <group position={[center.x + 2.0, 0, center.z - 0.8]} castShadow receiveShadow rotation={[0, -Math.PI / 2, 0]}>

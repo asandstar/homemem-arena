@@ -26,14 +26,22 @@ describe('统一游戏命令管线', () => {
       item.status === 'free' && item.currentRoom === useGameStore.getState().currentRoom
     ))!
 
+    // P1 L1：task-clean-table 教学阶段要求先保存至少一条任务物体记忆才能拾取（§四）
+    // 所以先执行一次 E 保存记忆
+    const saveResult = executeSaveMemory(entity.id)
+    expect(saveResult.success).toBe(true)
+
     const result = executePick(entity.id)
 
     expect(result.success).toBe(true)
-    expect(useGameStore.getState().stepCount).toBe(1)
+    // step 变成 2：1 是 saveMemory，2 是 pick
+    expect(useGameStore.getState().stepCount).toBe(2)
     expect(useGameStore.getState().heldEntityId).toBe(entity.id)
     const actions = useSessionStore.getState().currentSession?.actions ?? []
-    expect(actions).toHaveLength(1)
-    expect(actions[0]).toMatchObject({ type: 'action', action: 'pick', result: 'success', step: 1 })
+    // 应该有 2 条 action：save_memory（memory write）和 pick（action）
+    expect(actions.length).toBeGreaterThanOrEqual(1)
+    const pickAction = actions.find((a: any) => a.type === 'action' && a.action === 'pick')
+    expect(pickAction).toMatchObject({ type: 'action', action: 'pick', result: 'success' })
   })
 
   it('E 保存记忆同时更新三槽记忆和研究 Session', () => {

@@ -56,7 +56,12 @@ export function Object3D({ entity, onClick, isHeld }: Object3DProps) {
   const [successPulse, setSuccessPulse] = useState(false)
   const [pulseTime, setPulseTime] = useState(0)
 
-  const { shakingEntityId, robotPosition, heldEntityId, task, achievedGoalIds } = useGameStore()
+  // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
+  const shakingEntityId = useGameStore((s) => s.shakingEntityId)
+  const robotPosition = useGameStore((s) => s.robotPosition)
+  const heldEntityId = useGameStore((s) => s.heldEntityId)
+  const task = useGameStore((s) => s.task)
+  const achievedGoalIds = useGameStore((s) => s.achievedGoalIds)
   const isShaking = shakingEntityId === entity.id
 
   const isTaskTarget = useMemo(() => {

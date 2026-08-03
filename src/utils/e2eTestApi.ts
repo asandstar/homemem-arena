@@ -27,6 +27,7 @@ import { hasActiveRoomAmbient, getActiveContinuousSfxCount, stopAllSfx, resetRoo
 import { getAmbientContextState, isAmbientPlaying, getCurrentRoom } from '../audio/ambient'
 import type { RoomId } from '../types/room'
 import { useUiStore } from '../store/useUiStore'
+import { useSessionStore } from '../store/useSessionStore'
 
 function toResult(r: GameCommandResult): { success: boolean; reason?: string } {
   return { success: r.success, reason: r.reason }
@@ -57,6 +58,9 @@ const SAFE_READ_ONLY_KEYS = new Set([
   'getCurrentObjective',
   'getMemoryStats',
   'getLevelCompleted',
+  'getHeldEntityId',
+  'getSessionActionCount',
+  'getSessionFailedPickCount',
   'isBgmPlaying',
   'hasActiveRoomAmbient',
   'getActiveContinuousSfxCount',
@@ -119,6 +123,19 @@ function buildTestApi(): E2eTestApi {
       }
     },
     getLevelCompleted: () => useGameStore.getState().levelCompleted,
+    /** P1 L1 验收专用：读取当前持有实体 id（仅读 store，不改任何状态） */
+    getHeldEntityId: () => (useGameStore.getState() as any).heldEntityId ?? null,
+    /** P1 L1 验收专用：读取 Session 中 actions 数组长度（仅读 store，不改任何状态） */
+    getSessionActionCount: () => {
+      const actions = (useSessionStore.getState()?.currentSession as any)?.actions ?? []
+      return Array.isArray(actions) ? actions.length : 0
+    },
+    /** P1 L1 验收专用：Session 中 action='pick' 且 result='fail' 的条数（用于验证"不记为失败操作"） */
+    getSessionFailedPickCount: () => {
+      const actions = (useSessionStore.getState()?.currentSession as any)?.actions ?? []
+      if (!Array.isArray(actions)) return 0
+      return actions.filter((a: any) => a?.action === 'pick' && a?.result === 'fail').length
+    },
     isBgmPlaying: () => isBgmPlaying(),
     hasActiveRoomAmbient: () => hasActiveRoomAmbient(),
     getActiveContinuousSfxCount: () => getActiveContinuousSfxCount(),

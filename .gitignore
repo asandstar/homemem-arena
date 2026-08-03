@@ -20,6 +20,12 @@ qa-artifacts/e2e/*.png
 # 自动生成 QA 报告（由 qa:report 生成，不提交）
 QA_REPORT.md
 
+# Vite 预编译缓存 & TypeScript build info
+node_modules/.vite/
+node_modules/.vite-temp/
+node_modules/.tmp/
+*.tsbuildinfo
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -30,3 +36,5 @@ QA_REPORT.md
 *.njsproj
 *.sln
 *.sw?
+
+_patches/

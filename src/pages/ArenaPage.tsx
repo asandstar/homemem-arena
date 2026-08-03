@@ -1,4 +1,7 @@
 // 3D Arena 页面 - 整合 3D 场景 + HUD + 操作面板
+// ⚠️ 重要：useGameStore 的 selector **绝对不能**每次返回新对象。
+// Zustand 通过 useSyncExternalStore 订阅，getSnapshot 引用每帧变化 → React 报 "Maximum update depth exceeded"。
+// 解决方式：1) 单字段调用；2) 或把 selector 定义在组件外 + 用 useMemo 固定引用。
 
 import { useEffect, useCallback, useState, lazy, Suspense } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
@@ -30,26 +33,27 @@ export function ArenaPage() {
 
   const audioEnabled = useUiStore((s) => s.audioEnabled)
 
-  const {
-    task,
-    phase,
-    currentRoom,
-    chaosValue,
-    achievedGoalIds,
-    combo,
-    wrongPlaceCount,
-    activeFlowHint,
-    initializeTask,
-    startPlaying,
-    levelCompleted,
-    levelFailed,
-    saveCurrentGame,
-    getGameStats,
-    memorySlots,
-  } = useGameStore()
+  // 所有状态都用「单字段 selector」，绝对不要每次创建新对象。
+  const task = useGameStore((s) => s.task)
+  const phase = useGameStore((s) => s.phase)
+  const currentRoom = useGameStore((s) => s.currentRoom)
+  const chaosValue = useGameStore((s) => s.chaosValue)
+  const achievedGoalIds = useGameStore((s) => s.achievedGoalIds)
+  const combo = useGameStore((s) => s.combo)
+  const wrongPlaceCount = useGameStore((s) => s.wrongPlaceCount)
+  const activeFlowHint = useGameStore((s) => s.activeFlowHint)
+  const memorySlots = useGameStore((s) => s.memorySlots)
+  const levelCompleted = useGameStore((s) => s.levelCompleted)
+  const levelFailed = useGameStore((s) => s.levelFailed)
+  // 函数引用：Zustand 中 action 函数引用是稳定的（set/get 绑定在 slice 创建时），直接安全解构
+  const initializeTask = useGameStore((s) => s.initializeTask)
+  const startPlaying = useGameStore((s) => s.startPlaying)
+  const saveCurrentGame = useGameStore((s) => s.saveCurrentGame)
+  const getGameStats = useGameStore((s) => s.getGameStats)
 
-  const { startSession } = useSessionStore()
-  const { addToast } = useToastStore()
+  // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
+  const startSession = useSessionStore((s) => s.startSession)
+  const addToast = useToastStore((s) => s.addToast)
 
   const [briefingOpen, setBriefingOpen] = useState(true)
   const [narrativeText, setNarrativeText] = useState<string | null>(null)
@@ -145,6 +149,7 @@ export function ArenaPage() {
 
   // 初始化任务（每次进入，无论是 taskId 改变还是 location.key 改变 —— 例如从 ResultPage 重新开始相同 taskId）
   useEffect(() => {
+    console.log('[ARENA EFFECT #1 INIT] taskId=', taskId, 'locKey=', location.key?.slice(0,6))
     if (!taskId || !getTaskById(taskId)) {
       navigate('/tasks', { replace: true })
       return
@@ -205,6 +210,44 @@ export function ArenaPage() {
       stopAutoSave()
     }
   }, [phase, saveCurrentGame])
+
+  // FIX-3 兜底：简报已关闭（或跳过）但 phase 还在 briefing 时，强制进入 playing
+  // 避免 E2E/自动化/特殊入口下，简报按钮没点导致所有指令被 ensurePlaying 拦截
+  useEffect(() => {
+    if (!briefingOpen && phase === 'briefing' && task) {
+      console.warn('[FIX-3] briefing 已关闭但 phase=briefing，兜底补 startPlaying() 调用')
+      startPlaying()
+    }
+  }, [briefingOpen, phase, task, startPlaying])
+
+  // AUTO-1：阶段机主动 tick（100ms 间隔）。解决"玩家站着不动/pure E2E 脚本下，
+  // evaluateStageTransitions/triggerScriptedEvents 只在玩家动作时跑，导致条件满足但阶段不切、事件不触发"的问题
+  useEffect(() => {
+    if (phase !== 'playing') return
+    const s = useGameStore.getState()
+    // 函数可用性校验：只在全部存在时启动，避免老版本 store 崩溃
+    const hasAll = typeof s.evaluateStageTransitions === 'function'
+      && typeof s.triggerScriptedEvents === 'function'
+      && typeof s.checkLevelCompletion === 'function'
+      && typeof s.updateMoveAnimations === 'function'
+    if (!hasAll) return
+
+    const tick = () => {
+      const st = useGameStore.getState()
+      // updateMoveAnimations 100ms 足够驱动袜子幽灵等缓慢动画
+      try { if (typeof st.updateMoveAnimations === 'function') st.updateMoveAnimations() } catch { /* ignore */ }
+      // 触发事件（钥匙猫推、手机响）先跑，产生的状态变化再喂给阶段机
+      try { if (typeof st.triggerScriptedEvents === 'function') st.triggerScriptedEvents() } catch { /* ignore */ }
+      // 阶段机判定：根据实体/容器/记忆状态做阶段切换
+      try { if (typeof st.evaluateStageTransitions === 'function') st.evaluateStageTransitions() } catch { /* ignore */ }
+      // 终局判定：所有目标 achieved + completionCondition 通过 → levelCompleted=true
+      try { if (typeof st.checkLevelCompletion === 'function') st.checkLevelCompletion() } catch { /* ignore */ }
+    }
+    const id = window.setInterval(tick, 100)
+    // 启动时立刻跑一次，避免首帧等待 100ms
+    tick()
+    return () => window.clearInterval(id)
+  }, [phase])
 
   const getMemoryStrategyComment = () => {
     const stats = getGameStats()
@@ -279,93 +322,126 @@ export function ArenaPage() {
     [addToast]
   )
 
-  if (!task) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <p className="text-text-muted">加载中...</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="flex-1 relative h-full overflow-hidden">
-      {/* 3D 场景 */}
-      <div className="absolute inset-0">
-        <Suspense fallback={null}>
-          <Scene3D
-            onEntityClick={handleEntityClick}
-            onContainerClick={handleContainerClick}
-          />
-        </Suspense>
-      </div>
-
-      {/* HUD 覆盖层 */}
-      <Suspense fallback={null}>
-        <HUD />
+    <div className="flex-1 relative h-full overflow-hidden" style={{ background: '#0f172a' }}>
+      {/* 3D 场景：始终渲染，briefing 阶段也提供背景画面，避免"后面白屏/透明"被误认为模型加载失败 */}
+      <Suspense fallback={
+        <div className="absolute inset-0 flex items-center justify-center" style={{ background: '#0f172a' }}>
+          <div className="text-center text-slate-400 text-sm">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
+            <div>3D 场景加载中...</div>
+          </div>
+        </div>
+      }>
+        <Scene3D onEntityClick={handleEntityClick} onContainerClick={handleContainerClick} />
       </Suspense>
 
-      {/* 寻物方向指示器 */}
-      {!briefingOpen && phase === 'playing' && (
+      {/* HUD 覆盖层：只有 task ready + briefing 关闭后 再渲染，避免 briefing 阶段 HUD/Minimap 内部更新 UiStore → 循环
+          TODO: 修复 Minimap/UiStore 循环后改为：phase !== 'ended' && task */}
+      {task && !briefingOpen && (
+        <Suspense fallback={null}>
+          <HUD />
+        </Suspense>
+      )}
+
+      {/* 寻物方向指示器：task ready + briefing closed + playing 时才显示 */}
+      {task && !briefingOpen && phase === 'playing' && (
         <Suspense fallback={null}>
           <ItemHintIndicator />
         </Suspense>
       )}
 
-      {/* 任务简报浮层 - 主人便签风格 */}
-      {briefingOpen && task && (
+      {/* 任务简报浮层 - 主人便签风格：
+          briefingOpen 时始终渲染（即使 task 还没 ready），task 空时显示骨架卡片。
+          这样用户任何时刻都能看到"开始任务"按钮（或禁用状态的骨架按钮），
+          彻底杜绝之前 L282 提前 return 导致的 "根本看不到开始任务按钮" 问题。 */}
+      {briefingOpen && (
         <div className="absolute inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-40" data-testid="briefing-modal">
           <div className="max-w-lg mx-4 w-full">
-            {/* MEM-07 系统提示 */}
-            {task.systemPrompt && (
+            {/* MEM-07 系统提示（task 未 ready 时灰掉占位，不消失） */}
+            {task?.systemPrompt ? (
               <div className="bg-slate-950/90 border border-cyan-500/30 rounded-lg p-3 mb-3 font-mono text-xs text-cyan-400">
                 <span className="text-cyan-600">{'>'}</span> {task.systemPrompt}
               </div>
+            ) : (
+              <div className="bg-slate-950/70 border border-slate-700/50 rounded-lg p-3 mb-3 font-mono text-xs text-slate-500 animate-pulse">
+                <span className="text-slate-600">{'>'}</span> MEM-07 系统初始化中...
+              </div>
             )}
 
-            {/* 主人便签 */}
+            {/* 主人便签（task 未 ready 时显示骨架卡片 + 转圈按钮，但仍保持便签样式） */}
             <div className="bg-yellow-100/95 rounded-lg p-6 shadow-2xl transform -rotate-1 border border-yellow-300/50">
-              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-yellow-300/50">
-                <Badge className="bg-yellow-200 text-yellow-800 border-yellow-300">
-                  {task.memoryTypes.join(' + ')}
-                </Badge>
-                <h2 className="text-xl font-bold text-yellow-900">{task.name}</h2>
-              </div>
+              {task ? (
+                <>
+                  <div className="flex items-center gap-2 mb-3 pb-2 border-b border-yellow-300/50">
+                    <Badge className="bg-yellow-200 text-yellow-800 border-yellow-300">
+                      {task.memoryTypes.join(' + ')}
+                    </Badge>
+                    <h2 className="text-xl font-bold text-yellow-900">{task.name}</h2>
+                  </div>
 
-              <div className="text-yellow-900 text-sm leading-relaxed whitespace-pre-line mb-4">
-                {task.briefing}
-              </div>
+                  <div className="text-yellow-900 text-sm leading-relaxed whitespace-pre-line mb-4">
+                    {task.briefing}
+                  </div>
 
-              {/* 操作提示 */}
-              <div className="bg-yellow-200/50 rounded-lg p-3 mb-4">
-                <h4 className="text-xs font-semibold text-yellow-800 mb-2 flex items-center gap-1">
-                  <span>🎮</span> 操作提示
-                </h4>
-                <ul className="text-xs text-yellow-800 space-y-1">
-                  <li className="flex items-center gap-2">
-                    <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">WASD</kbd>
-                    <span>移动</span>
-                    <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">拖动鼠标</kbd>
-                    <span>转视角</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">V</kbd>
-                    <span>切换视角</span>
-                    <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">E</kbd>
-                    <span>保存记忆</span>
-                    <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">F</kbd>
-                    <span>交互</span>
-                  </li>
-                  <li className="text-yellow-700 text-[11px] mt-1">
-                    💡 有些物品藏在抽屉里，靠近后按 F 打开抽屉，再按 F 拿取物品
-                  </li>
-                </ul>
-              </div>
+                  {/* 操作提示 */}
+                  <div className="bg-yellow-200/50 rounded-lg p-3 mb-4">
+                    <h4 className="text-xs font-semibold text-yellow-800 mb-2 flex items-center gap-1">
+                      <span>🎮</span> 操作提示
+                    </h4>
+                    <ul className="text-xs text-yellow-800 space-y-1">
+                      <li className="flex items-center gap-2">
+                        <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">WASD</kbd>
+                        <span>移动</span>
+                        <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">拖动鼠标</kbd>
+                        <span>转视角</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">V</kbd>
+                        <span>切换视角</span>
+                        <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">E</kbd>
+                        <span>保存记忆</span>
+                        <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">F</kbd>
+                        <span>交互</span>
+                      </li>
+                      <li className="text-yellow-700 text-[11px] mt-1">
+                        💡 有些物品藏在抽屉里，靠近后按 F 打开抽屉，再按 F 拿取物品
+                      </li>
+                    </ul>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* !task 骨架：保持相同布局，避免 layout shift */}
+                  <div className="flex items-center gap-2 mb-3 pb-2 border-b border-yellow-300/50">
+                    <div className="h-5 w-20 bg-yellow-200/60 rounded animate-pulse" />
+                    <div className="flex-1 h-6 bg-yellow-300/50 rounded animate-pulse" />
+                  </div>
+                  <div className="space-y-2 mb-4">
+                    <div className="h-3 w-full bg-yellow-200/60 rounded animate-pulse" />
+                    <div className="h-3 w-11/12 bg-yellow-200/50 rounded animate-pulse" />
+                    <div className="h-3 w-10/12 bg-yellow-200/40 rounded animate-pulse" />
+                    <div className="h-3 w-9/12 bg-yellow-200/30 rounded animate-pulse" />
+                  </div>
+                  <div className="bg-yellow-200/50 rounded-lg p-3 mb-4 opacity-60">
+                    <div className="h-3 w-20 bg-yellow-300/60 rounded mb-2 animate-pulse" />
+                    <div className="h-2 w-full bg-yellow-300/40 rounded mb-1 animate-pulse" />
+                    <div className="h-2 w-10/12 bg-yellow-300/40 rounded animate-pulse" />
+                  </div>
+                </>
+              )}
 
               <div className="flex gap-3">
                 <Button
-                  className="flex-1 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold"
+                  className={
+                    task
+                      ? 'flex-1 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold'
+                      : 'flex-1 bg-gradient-to-r from-slate-400 to-slate-500 text-white font-bold cursor-not-allowed opacity-80'
+                  }
                   data-testid="briefing-start-button"
+                  disabled={!task}
                   onClick={() => {
+                    if (!task) return
                     initAudio()
                     void resumeAudioContexts()
                     startSession(task.id, task.name, task.briefing)
@@ -373,7 +449,14 @@ export function ArenaPage() {
                     setBriefingOpen(false)
                   }}
                 >
-                  开始任务
+                  {task ? (
+                    '开始任务'
+                  ) : (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      开始任务（准备中...）
+                    </span>
+                  )}
                 </Button>
                 <Button
                   className="border border-yellow-400 text-yellow-800 hover:bg-yellow-200/70 bg-yellow-100/60"
@@ -527,8 +610,8 @@ export function ArenaPage() {
         </div>
       )}
 
-      {/* 对话弹窗 */}
-      {dialogState.isOpen && currentNode && (
+      {/* 对话弹窗：仅 briefing 关闭后才允许弹出，避免挡住 briefing 开始任务按钮 */}
+      {dialogState.isOpen && currentNode && !briefingOpen && (
         <Suspense fallback={null}>
           <DialogBox
             node={currentNode}

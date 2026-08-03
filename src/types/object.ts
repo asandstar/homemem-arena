@@ -51,6 +51,12 @@ export interface ObjectSpec {
   stateProperties?: Record<string, string | number | boolean>
 }
 
+/** 容器碰撞承担模式 */
+export type ContainerCollisionMode = 'self' | 'static-furniture' | 'none'
+
+/** 容器视觉承担方 */
+export type ContainerVisualOwner = 'room' | 'task-container'
+
 /** 容器规格 */
 export interface ContainerSpec {
   id: string
@@ -82,6 +88,27 @@ export interface ContainerSpec {
    * - 当为 false 且 acceptedCategories 为空时，配合 isTargetZone 决定是否判为错放惩罚（BUG-P0-1 的通用修复方案）。
    */
   acceptAny?: boolean
+  /**
+   * 语义 key，用于跨 TC / DF / Room3D 三方对齐"同一语义家具"做去重检查。
+   * 如 'nightstand_right' / 'entrance_tray' 等。
+   * 可选；未设置时视为 legacy 数据，不参与去重。
+   */
+  semanticKey?: string
+  /**
+   * 本容器是否承担 XZ 碰撞的模式。
+   * - 'self'：自身承担碰撞（默认，向后兼容）
+   * - 'static-furniture'：由对应 DF（静态家具）承担碰撞，TC 自身跳过（如柜顶托盘，DF 鞋柜已经挡住地面 XZ）
+   * - 'none'：完全不参与 XZ 碰撞（如墙上挂件，空中托盘）
+   * 缺失时视为 'self'。
+   */
+  collisionMode?: ContainerCollisionMode
+  /**
+   * 本容器的视觉由谁承担。
+   * - 'room'：Room3D 硬编码渲染
+   * - 'task-container'：Container3D 承担（默认）
+   * 缺失时视为 legacy 未迁移数据，保持当前 Container3D 渲染行为。
+   */
+  visualOwner?: ContainerVisualOwner
 }
 
 /** 物体运行时状态 */

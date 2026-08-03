@@ -28,6 +28,12 @@ export interface E2eTestApi {
     outdatedMemoryCount: number
   }
   getLevelCompleted(): boolean
+  /** P1 L1 验收专用：读取当前持有实体的 id（L1 未保存记忆时尝试拾取断言该值始终为 null） */
+  getHeldEntityId(): string | null
+  /** P1 L1 验收专用：读取 useSessionStore.currentSession.actions 长度（检查被拒绝拾取不增加 action event 数量） */
+  getSessionActionCount(): number
+  /** P1 L1 验收专用：Session 中 action 类型='pick' 且 result='fail' 的条数（检查未保存记忆拾取时不能登记为 failed action） */
+  getSessionFailedPickCount(): number
   isBgmPlaying(): boolean
   hasActiveRoomAmbient(): boolean
   getActiveContinuousSfxCount(): number

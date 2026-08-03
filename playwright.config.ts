@@ -70,9 +70,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev:e2e -- --host 127.0.0.1 --port 4173',
+    command: 'npm run dev:e2e:stable',
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: !process.env.CI,
-    timeout: 30_000,
+    timeout: 120_000,
   },
 })

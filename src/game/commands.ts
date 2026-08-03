@@ -110,6 +110,24 @@ export function executePick(entityId: string): GameCommandResult {
     }
   }
 
+  // P1 L1：task-clean-table 教学阶段，未保存任务物体记忆前，禁止拾取三个任务物体（obj-dirty-cup/obj-tissue/obj-fork）
+  // 避免形成长期锁定：只要当前阶段已经不是 stage-observe-table（即至少曾经保存过任何任务记忆）就永久放行
+  if (before.task?.id === 'task-clean-table' && before.currentStageId === 'stage-observe-table') {
+    const taskObjectIds = ['obj-dirty-cup', 'obj-tissue', 'obj-fork']
+    if (taskObjectIds.includes(entity.configId)) {
+      const anyTaskMemorySaved = before.memorySlots.some(
+        (s) => s !== null && taskObjectIds.includes(s.entityConfigId),
+      )
+      if (!anyTaskMemorySaved) {
+        return {
+          success: false,
+          reason: '先按 E 记住它的位置，再按 F 拾取。',
+          action: 'pick',
+        }
+      }
+    }
+  }
+
   const result = before.pickEntity(entityId)
   const step = advanceStep()
   recordAction('pick', entity.configId, result, before.currentRoom, step)

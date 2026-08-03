@@ -17,8 +17,10 @@ export function useDialog() {
   const [currentSequence, setCurrentSequence] = useState<DialogSequence | null>(null)
   const autoContinueTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   
-  const { addScore, incrementChaos } = useGameStore()
-  const { addToast: addUiToast } = useToastStore()
+  // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
+  const addScore = useGameStore((s) => s.addScore)
+  const incrementChaos = useGameStore((s) => s.incrementChaos)
+  const addUiToast = useToastStore((s) => s.addToast)
 
   const currentNode = currentSequence?.nodes[dialogState.currentNodeIndex] ?? null
 

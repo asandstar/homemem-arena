@@ -2,7 +2,9 @@ import { useToastStore } from '../../store/useToastStore'
 import { CheckCircle, XCircle, Info, X } from 'lucide-react'
 
 export function Toast() {
-  const { toasts, removeToast } = useToastStore()
+  // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
+  const toasts = useToastStore((s) => s.toasts)
+  const removeToast = useToastStore((s) => s.removeToast)
 
   if (toasts.length === 0) return null
 
