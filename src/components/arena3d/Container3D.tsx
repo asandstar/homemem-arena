@@ -24,6 +24,7 @@ interface Container3DProps {
 
 const CONTAINER_TO_MODEL_ID: Record<string, string> = {
   fridge: 'fridge',
+  refrigerator: 'fridge',
   cabinet: 'cabinet',
   'upper-cabinet': 'cabinet',
   'lower-cabinet': 'cabinet',
@@ -33,7 +34,10 @@ const CONTAINER_TO_MODEL_ID: Record<string, string> = {
   dishwasher: 'dishwasher',
   'trash-bin': 'laundry_basket',
   'trash_bin': 'laundry_basket',
+  trashcan: 'laundry_basket',
+  trash_can: 'laundry_basket',
   sofa: 'sofa',
+  couch: 'sofa',
   'coffee-table': 'coffee_table',
   'coffee_table': 'coffee_table',
   bed: 'bed',
@@ -44,6 +48,7 @@ const CONTAINER_TO_MODEL_ID: Record<string, string> = {
   'entrance-tray': 'entrance_tray',
   'entrance_tray': 'entrance_tray',
   tray: 'entrance_tray',
+  entray: 'entrance_tray',
   'shoe-cabinet': 'cabinet',
   wardrobe: 'cabinet',
   nightstand: 'cabinet',
@@ -56,9 +61,12 @@ const CONTAINER_TO_MODEL_ID: Record<string, string> = {
   counter: 'cabinet',
   'kitchen-counter': 'cabinet',
   'kitchen_counter': 'cabinet',
+  // ⚠️ A2：dining_table.glb 不存在（MODEL_REGISTRY 未注册），
+  // 映射到已有的 coffee_table，避免渲染出钥匙大小的方块。
   table: 'coffee_table',
-  'dining-table': 'dining_table',
-  'dining_table': 'dining_table',
+  'dining-table': 'coffee_table',
+  'dining_table': 'coffee_table',
+  diningtable: 'coffee_table',
   stand: 'cabinet',
   'umbrella-stand': 'cabinet',
   'umbrella_stand': 'cabinet',
@@ -85,7 +93,9 @@ export function Container3D({
   const [pulseTime, setPulseTime] = useState(0)
   const [openProgress, setOpenProgress] = useState(isOpen ? 1 : 0)
 
-  const { robotPosition, heldEntityId } = useGameStore()
+  // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
+  const robotPosition = useGameStore((s) => s.robotPosition)
+  const heldEntityId = useGameStore((s) => s.heldEntityId)
 
   useFrame((_, delta) => {
     setPulseTime((prev) => prev + delta)

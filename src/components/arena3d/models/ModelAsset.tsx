@@ -7,7 +7,98 @@ import { MODEL_REGISTRY, getModelConfig } from './ModelRegistry'
 import { MATERIAL_CONFIG, PALETTE } from '../colors'
 import { resolveAssetUrl } from './resolveAssetUrl'
 
-const MODEL_TEXTURE_CACHE = new Map<string, Promise<any>>();
+// === 缓存（B2：缓存治理，key 包含 BASE_URL，避免 basename 污染；FIFO 限制 <=50 条目） ===
+const CACHE_KEY_PREFIX: string = (() => {
+  try {
+    const base = String((import.meta as any).env?.BASE_URL || '/')
+    return `cache::${base}::`
+  } catch {
+    return 'cache::/::'
+  }
+})()
+
+const MODEL_TEXTURE_CACHE = new Map<string, Promise<any>>()
+const MODEL_CACHE_FIFO_KEYS: string[] = []
+const MODEL_CACHE_MAX_ENTRIES = 50
+const MODEL_CACHE_PRUNE_COUNT = 20
+
+function evictCacheIfNeeded() {
+  if (MODEL_TEXTURE_CACHE.size <= MODEL_CACHE_MAX_ENTRIES) return
+  let pruned = 0
+  while (MODEL_CACHE_FIFO_KEYS.length > 0 && pruned < MODEL_CACHE_PRUNE_COUNT) {
+    const oldestKey = MODEL_CACHE_FIFO_KEYS.shift()
+    if (!oldestKey) break
+    if (MODEL_TEXTURE_CACHE.has(oldestKey)) {
+      MODEL_TEXTURE_CACHE.delete(oldestKey)
+      pruned++
+    }
+  }
+}
+
+// === 失败可观测（A1：防抖 30s，只在 DEV 打 warn；PROD 不污染用户控制台） ===
+const WARN_COOLDOWN_MS = 30_000
+const lastWarnAtByPath = new Map<string, number>()
+const IS_DEV = !!(import.meta as any).env?.DEV
+
+function _rateLimitedWarn(modelId: string, path: string, message: string, err?: unknown) {
+  const now = Date.now()
+  const last = lastWarnAtByPath.get(path) || 0
+  if (now - last < WARN_COOLDOWN_MS) return
+  lastWarnAtByPath.set(path, now)
+  if (!IS_DEV) return // PROD 静默 fallback，不在控制台打 warn
+  const msg = err instanceof Error ? err.message : String(err || '')
+  console.warn(
+    `[ModelAsset] loadGLTF failed → falling back to procedural geometry`,
+    `modelId=${modelId}`,
+    `path=${path}`,
+    `reason=${message}`,
+    msg ? `detail=${msg}` : '',
+  )
+}
+
+// === 加载进度计数器（B1：全局单例 + 简易发布订阅；Scene3D 可订阅显示 N/M） ===
+export interface ModelLoadStats {
+  total: number
+  loaded: number
+  failed: number
+  inflight: number
+  /** 失败的 modelId 列表（仅开发期辅助，PROD 可能为空） */
+  failedIds: string[]
+}
+type ModelLoadSubscriber = (s: Readonly<ModelLoadStats>) => void
+const loadSubscribers = new Set<ModelLoadSubscriber>()
+let loadStats: ModelLoadStats = { total: 0, loaded: 0, failed: 0, inflight: 0, failedIds: [] }
+
+function cloneStats(): Readonly<ModelLoadStats> {
+  return { ...loadStats, failedIds: loadStats.failedIds.slice() }
+}
+function publishStats() {
+  const snap = cloneStats()
+  loadSubscribers.forEach((fn) => {
+    try { fn(snap) } catch { /* ignore subscriber errors */ }
+  })
+}
+export function getModelLoadStats(): Readonly<ModelLoadStats> { return cloneStats() }
+export function subscribeModelLoad(fn: ModelLoadSubscriber): () => void {
+  loadSubscribers.add(fn)
+  try { fn(cloneStats()) } catch { /* ignore */ }
+  return () => { loadSubscribers.delete(fn) }
+}
+function statsIncLoadStart() {
+  loadStats.total++
+  loadStats.inflight++
+  publishStats()
+}
+function statsIncLoadDone(ok: boolean, modelId: string) {
+  if (ok) loadStats.loaded++
+  else { loadStats.failed++; loadStats.failedIds.push(modelId) }
+  loadStats.inflight = Math.max(0, loadStats.inflight - 1)
+  publishStats()
+}
+export function resetModelLoadStats() {
+  loadStats = { total: 0, loaded: 0, failed: 0, inflight: 0, failedIds: [] }
+  publishStats()
+}
 
 /**
  * 全局静默 GLTFLoader 纹理加载错误。
@@ -92,22 +183,15 @@ function shouldStubTextureUrl(url: string) {
 /**
  * 加载 GLTF / GLB：先用 fetch 拿到 ArrayBuffer，再交给 GLTFLoader.parse。
  *
- * 纹理错误三重防御：
- *  GLTFLoader 在解析内部纹理引用（Textures/colormap.png 等）时，会走 ImageLoader
- *  发起请求，失败后 onError 里 console.error 打出
- *  "THREE.GLTFLoader: Couldn't load texture XXXX"。大量并发的错误日志 + 失败请求
- *  会让浏览器判定 WebGL 上下文风险，触发 Context Lost info。
- *
- *  三层防御协同：
- *   ① parse 期间临时 patch console.error，吞掉 GLTFLoader 纹理相关的
- *     error 日志（其它 error 正常输出，不影响排查真实 bug）。
- *   ② LoadingManager.setURLModifier 拦截所有相对纹理 URL → 1x1 base64，
- *     对于走 LoadingManager 的 loader 路径直接返回像素。
- *   ③ parse 回调里立刻对 scene 调用 stripAllTextures，把所有材质上的
- *     texture map 置 null 并 dispose，保证视觉上不依赖任何外部纹理。
+ * 缓存策略（B2）：
+ *  - key = CACHE_KEY_PREFIX + path（按 BASE_URL 隔离）
+ *  - FIFO，>50 条清理最旧 20 条
+ *  - set/delete 收敛在一处 finally，不会分散 3 处
+ *  - 失败自动清理缓存，成功不删（热更新后若 GLB 替换，请刷新浏览器）
  */
 function loadGLTF(path: string): Promise<any> {
-  if (MODEL_TEXTURE_CACHE.has(path)) return MODEL_TEXTURE_CACHE.get(path)!
+  const cacheKey = CACHE_KEY_PREFIX + path
+  if (MODEL_TEXTURE_CACHE.has(cacheKey)) return MODEL_TEXTURE_CACHE.get(cacheKey)!
   const PIXEL_1x1 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgYAAAAAMAASsBacYAAAAASUVORK5CYII='
 
   const manager = new THREE.LoadingManager()
@@ -118,6 +202,7 @@ function loadGLTF(path: string): Promise<any> {
   })
   const loader = new GLTFLoader(manager)
 
+  let settled = false
   const promise = Promise.resolve().then(async () => {
     let buffer: ArrayBuffer
     try {
@@ -134,13 +219,11 @@ function loadGLTF(path: string): Promise<any> {
       }
       buffer = await res.arrayBuffer()
     } catch (e) {
-      MODEL_TEXTURE_CACHE.delete(path)
       throw e
     }
     return new Promise<any>((resolve, reject) => {
       try {
         loader.parse(buffer as any, '', (gltf: any) => {
-          // 立刻剥离材质纹理引用，确保渲染不依赖外部纹理
           try { if (gltf && gltf.scene) stripAllTextures(gltf.scene) } catch { /* ignore */ }
           resolve(gltf)
         }, reject)
@@ -148,9 +231,29 @@ function loadGLTF(path: string): Promise<any> {
         reject(e)
       }
     })
+  }).finally(() => {
+    settled = true
   })
-  MODEL_TEXTURE_CACHE.set(path, promise)
-  promise.catch(() => { MODEL_TEXTURE_CACHE.delete(path) })
+
+  // 收敛 set/delete：失败才删，成功保留；避免 3 处重复逻辑
+  promise.then(
+    () => { /* success: 保留缓存 */ },
+    () => { MODEL_TEXTURE_CACHE.delete(cacheKey); const idx = MODEL_CACHE_FIFO_KEYS.indexOf(cacheKey); if (idx >= 0) MODEL_CACHE_FIFO_KEYS.splice(idx, 1) },
+  )
+
+  MODEL_TEXTURE_CACHE.set(cacheKey, promise)
+  MODEL_CACHE_FIFO_KEYS.push(cacheKey)
+  evictCacheIfNeeded()
+
+  // 防悬挂：极端情况下（fetch 被中止且 promise 永不 settle），5 分钟后重试
+  setTimeout(() => {
+    if (!settled && MODEL_TEXTURE_CACHE.get(cacheKey) === promise) {
+      MODEL_TEXTURE_CACHE.delete(cacheKey)
+      const idx = MODEL_CACHE_FIFO_KEYS.indexOf(cacheKey)
+      if (idx >= 0) MODEL_CACHE_FIFO_KEYS.splice(idx, 1)
+    }
+  }, 5 * 60_000).unref?.()
+
   return promise
 }
 
@@ -261,64 +364,86 @@ export function FallbackColorizer({ modelId, color, hovered, selected, children 
     const matConfig = MATERIAL_CONFIG[materialType] ?? MATERIAL_CONFIG.plastic
 
     let meshIndex = 0
-    let needsColorize = false
+    // 默认开启着色兜底：只要有任何一个 mesh 没被标记为已着色，就强制过一遍着色流程。
+    // 即便下面遍历因 material 异常抛错，外层 catch 也会保留 needsColorize=true，
+    // 避免因个别 fallback 漏写 material 导致整组 mesh 永久全透明。
+    let needsColorize = true
 
     try {
       groupRef.current.traverse((child) => {
         if (child instanceof THREE.Mesh) {
-          const isStandard = child.material instanceof THREE.MeshStandardMaterial
+          const hasMaterial = !!child.material && (
+            child.material instanceof THREE.MeshStandardMaterial ||
+            Array.isArray(child.material)
+          )
+          const isStandard = hasMaterial && child.material instanceof THREE.MeshStandardMaterial
+          const alreadyColored = isStandard && !!(child.material as any)._fallbackColored
 
-          if (!isStandard || !(child.material as any)._fallbackColored) {
+          // 只要有一个 mesh 缺材质或尚未上色，就标记为需要着色。
+          if (!hasMaterial || !isStandard || !alreadyColored) {
             needsColorize = true
           }
           meshIndex++
         }
       })
     } catch {
-      needsColorize = false
+      // 遍历时的任何异常都保留 needsColorize=true，走下段兜底着色。
+      needsColorize = true
     }
 
     if (needsColorize) {
       meshIndex = 0
       try {
         groupRef.current.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            child.castShadow = config?.castShadow ?? true
-            child.receiveShadow = config?.receiveShadow ?? false
+          if (!(child instanceof THREE.Mesh)) return
 
-            let meshColor: string
-            if (color) {
-              meshColor = color
-            } else {
-              const colorOptions = [colors.primary, colors.secondary, colors.accent]
-              meshColor = colorOptions[meshIndex % colorOptions.length]
-            }
+          child.castShadow = config?.castShadow ?? true
+          child.receiveShadow = config?.receiveShadow ?? false
 
-            if (child.material instanceof THREE.MeshStandardMaterial) {
-              child.material.color.set(meshColor)
-              child.material.roughness = matConfig.roughness
-              child.material.metalness = matConfig.metalness
-              if (matConfig.emissive) {
-                try { child.material.emissive.set(matConfig.emissive) } catch { /* ignore */ }
-                child.material.emissiveIntensity = matConfig.emissiveIntensity || 0
-              }
-              ;(child.material as any)._fallbackColored = true
-            } else {
-              const newMat = new THREE.MeshStandardMaterial({
-                color: meshColor,
-                roughness: matConfig.roughness,
-                metalness: matConfig.metalness,
-              })
-              if (matConfig.emissive) {
-                try { newMat.emissive.set(matConfig.emissive) } catch { /* ignore */ }
-                newMat.emissiveIntensity = matConfig.emissiveIntensity || 0
-              }
-              ;(newMat as any)._fallbackColored = true
-              child.material = newMat
-            }
-
-            meshIndex++
+          let meshColor: string
+          if (color) {
+            meshColor = color
+          } else {
+            const colorOptions = [colors.primary, colors.secondary, colors.accent]
+            meshColor = colorOptions[meshIndex % colorOptions.length]
           }
+
+          const hasStandard = child.material instanceof THREE.MeshStandardMaterial
+
+          if (hasStandard) {
+            const mat = child.material as THREE.MeshStandardMaterial
+            try { mat.color.set(meshColor) } catch { /* ignore */ }
+            mat.roughness = matConfig.roughness
+            mat.metalness = matConfig.metalness
+            if (matConfig.emissive) {
+              try { mat.emissive.set(matConfig.emissive) } catch { /* ignore */ }
+              mat.emissiveIntensity = matConfig.emissiveIntensity || 0
+            }
+            ;(mat as any)._fallbackColored = true
+          } else {
+            // 不管 child.material 是 null、其它材质类型、还是数组，
+            // 一律创建一个标准的 MeshStandardMaterial 赋值上去，保证可见。
+            const newMat = new THREE.MeshStandardMaterial({
+              color: meshColor,
+              roughness: matConfig.roughness,
+              metalness: matConfig.metalness,
+              flatShading: true,
+            })
+            if (matConfig.emissive) {
+              try { newMat.emissive.set(matConfig.emissive) } catch { /* ignore */ }
+              newMat.emissiveIntensity = matConfig.emissiveIntensity || 0
+            }
+            ;(newMat as any)._fallbackColored = true
+            // 丢弃旧材质（若有）避免显存泄漏
+            try {
+              const old = child.material as any
+              if (Array.isArray(old)) old.forEach((m: any) => m?.dispose?.())
+              else old?.dispose?.()
+            } catch { /* ignore */ }
+            child.material = newMat
+          }
+
+          meshIndex++
         })
       } catch {
         /* ignore traverse / material errors to avoid WebGL crash */
@@ -371,26 +496,53 @@ function ModelContent({
 
   useEffect(() => {
     let cancelled = false
+    let statsCounted = false
+    let accountedDone = false
     setGltf(null)
-    // 失败时不 setLoadError，避免成百上千个 state 变更引发 WebGL 雪崩式 Context Lost；
-    // 只要 gltf === null，!clonedScene 就会自动 fallback 到程序化模型。
-    // 无可用资源时直接跳过，避免发起无意义 HTTP 请求。
     if (!assetAvailable) {
       return () => { cancelled = true }
     }
 
+    statsIncLoadStart()
+    statsCounted = true
+
+    let settled = false
+    const markDone = (ok: boolean) => {
+      if (accountedDone) return
+      accountedDone = true
+      statsIncLoadDone(ok, modelId)
+    }
+
     loadGLTF(modelPath)
       .then((g) => {
-        if (!cancelled) setGltf(g)
-      })
-      .catch(() => {
         if (cancelled) return
-        // 不 setLoadError，也不 console.error / warn：
-        // 在 vite preview / electron 浏览器沙箱中大量并发 fetch 可能被 ABORT，
-        // 这是预期行为，静默 fallback 即可。
+        setGltf(g)
+        settled = true
+        markDone(true)
       })
-    return () => { cancelled = true }
-  }, [modelPath, assetAvailable])
+      .catch((err) => {
+        if (cancelled) return
+        settled = true
+        markDone(false)
+        const msg =
+          err instanceof Error ? err.message :
+          typeof err === 'string' ? err :
+          'unknown'
+        _rateLimitedWarn(modelId, modelPath, msg, err)
+      })
+
+    // 保险：30s 未 settle 按超时计入失败（不中止 fetch，避免 double-count）
+    const to = setTimeout(() => {
+      if (cancelled || settled || !statsCounted) return
+      markDone(false)
+      _rateLimitedWarn(modelId, modelPath, 'timeout(>30s)', new Error('ModelAsset loading timeout'))
+    }, 30_000)
+
+    return () => {
+      cancelled = true
+      clearTimeout(to)
+    }
+  }, [modelPath, assetAvailable, modelId])
 
   const scene = gltf?.scene
 
@@ -624,4 +776,97 @@ export function ModelAsset(props: ModelAssetProps) {
       <ModelContent {...props} />
     </ModelErrorBoundary>
   )
+}
+
+/**
+ * C1：房间装饰用「GLB 优先 + 自定义 children fallback」容器。
+ *
+ * 语义：
+ *  - 若 modelId 有可加载 GLB（assetAvailable !== false 且 path 非空）：
+ *    先尝试 ModelAsset → GLB 渲染；
+ *    GLB 成功时：渲染 GLB，children 隐藏（仅用于 hook 稳定 / 可选 keepChildrenAlways 叠加）；
+ *    GLB 失败时（或加载超时触发 fallback）：自动走 children fallback，视觉与未改造前保持一致。
+ *  - 若 modelId 本身被标 assetAvailable=false 或未注册：直接走 children fallback，不发起网络请求。
+ *
+ * 风险控制：GLB 加载失败不会抛到父级（ModelErrorBoundary + loadGLTF fallback 都兜住），
+ * 最差情况是"视觉退回改造前"，不会白屏或丢 WebGL 上下文。
+ */
+interface RoomDecorPieceProps {
+  modelId: string
+  color?: string
+  /** GLB 不可用/加载失败时展示的 children；传空数组也行（= 完全依赖 ModelAsset 的 registry fallback） */
+  children?: ReactNode
+  /** true = GLB 成功加载时也继续渲染 children（默认 false） */
+  keepChildrenAlways?: boolean
+}
+
+export function RoomDecorPiece({
+  modelId,
+  color,
+  children,
+  keepChildrenAlways = false,
+}: RoomDecorPieceProps) {
+  const config = getModelConfig(modelId)
+  const RegistryFallback = (config?.fallback || MODEL_REGISTRY.key.fallback) as React.ComponentType<any>
+
+  // 1) 明确没 GLB → 直接 fallback children
+  if (!config || config.assetAvailable === false || !config.path) {
+    if (children) {
+      return <FallbackColorizer modelId={modelId} color={color}>{children}</FallbackColorizer>
+    }
+    return (
+      <FallbackColorizer modelId={modelId} color={color}>
+        <RegistryFallback />
+      </FallbackColorizer>
+    )
+  }
+
+  // 2) 有 GLB → 渲染 ModelAsset + 隐藏 children；ModelAsset 内的 catch + ErrorBoundary
+  //    会在失败时退回到 registryFallback（兜底），这里我们通过额外嵌套一层
+  //    DecorErrorBoundary 把 registryFallback 再替换成自定义 children fallback。
+  return (
+    <DecorErrorBoundary
+      modelId={modelId}
+      color={color}
+      customFallbackChildren={children}
+    >
+      <ModelAsset modelId={modelId} color={color}>
+        {!keepChildrenAlways && children ? <group visible={false}>{children}</group> : null}
+        {keepChildrenAlways ? children : null}
+      </ModelAsset>
+    </DecorErrorBoundary>
+  )
+}
+
+class DecorErrorBoundary extends Component<
+  {
+    modelId: string
+    color?: string
+    customFallbackChildren?: ReactNode
+    children: ReactNode
+  },
+  ErrorBoundaryState
+> {
+  constructor(props: any) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError(_: Error): ErrorBoundaryState {
+    return { hasError: true }
+  }
+  componentDidCatch(_error: Error) { /* A1 里已打 warn，这里不重复 */ }
+  render() {
+    if (this.state.hasError) {
+      const { modelId, color, customFallbackChildren } = this.props
+      if (customFallbackChildren) {
+        return (
+          <FallbackColorizer modelId={modelId} color={color}>
+            {customFallbackChildren}
+          </FallbackColorizer>
+        )
+      }
+      return this.props.children
+    }
+    return this.props.children
+  }
 }

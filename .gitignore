@@ -36,3 +36,5 @@ node_modules/.tmp/
 *.njsproj
 *.sln
 *.sw?
+
+_patches/
