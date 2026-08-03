@@ -4,6 +4,12 @@ let audioContext: AudioContext | null = null
 let ambientGain: GainNode | null = null
 let isPlaying = false
 let currentRoomId: string | null = null
+/**
+ * 快照：currentRoomId 被 stop/timers 清理 null 化之前的最后一个有效值。
+ * 用于 hidden → visible 或 OFF→ON 点按钮场景下，重新调用 playRoomAmbient 恢复 scheduler，
+ * 否则 Ambient 永久死亡（AC resume 了但没有 osc 重新 schedule）。
+ */
+let lastRoomIdSnapshot: string | null = null
 let clearAmbientTimer: ReturnType<typeof setTimeout> | null = null
 
 export function getAmbientContextState(): AudioContextState | 'closed' {
@@ -13,6 +19,21 @@ export function getAmbientContextState(): AudioContextState | 'closed' {
 
 export function getAmbientAudioContext(): AudioContext | null {
   return audioContext
+}
+
+export function getCurrentAmbientRoomId(): string | null {
+  return currentRoomId
+}
+
+export function getLastAmbientRoomIdSnapshot(): string | null {
+  return lastRoomIdSnapshot
+}
+
+export function getActiveAmbientTimerCount(): number {
+  // Ambient 只有 1 个 clearAmbientTimer（fade 后 clearAmbient 的 setTimeout）；当前 scheduler 由 oscillators.start() 自身驱动，
+  // 不额外用 setTimeout 循环，所以用 clearAmbientTimer!=null + isPlaying 综合：有 clearAmbientTimer 或 osc>0 就算“有活跃 timer/scheduler”。
+  if (clearAmbientTimer != null) return 1
+  return isPlaying ? 1 : 0
 }
 
 export function resumeAmbientContext(): Promise<void> {
@@ -186,6 +207,8 @@ export function playRoomAmbient(roomId: string, options: { forceRestart?: boolea
   
   const config = ROOM_AMBIENT[roomId] || DEFAULT_AMBIENT
   currentRoomId = roomId
+  // 记录 snapshot：每次决定播放某个 roomId 后快照，用于 hidden→visible 或 OFF→ON 恢复
+  lastRoomIdSnapshot = roomId
   isPlaying = true
   
   const now = audioContext!.currentTime
@@ -265,6 +288,8 @@ export function playRoomAmbient(roomId: string, options: { forceRestart?: boolea
 export function stopAmbient(options: { fadeSeconds?: number } = {}): void {
   if (!isPlaying) return
   
+  // snapshot：null 化之前记录
+  if (currentRoomId) lastRoomIdSnapshot = currentRoomId
   isPlaying = false
   currentRoomId = null
   
@@ -293,6 +318,8 @@ export function stopAmbient(options: { fadeSeconds?: number } = {}): void {
 }
 
 export function stopAmbientImmediate(): void {
+  // snapshot：null 化之前记录
+  if (currentRoomId) lastRoomIdSnapshot = currentRoomId
   isPlaying = false
   currentRoomId = null
 
@@ -312,4 +339,63 @@ export function isAmbientPlaying(): boolean {
 
 export function getCurrentRoom(): string | null {
   return currentRoomId
+}
+
+/**
+ * 同步立刻挂起 Ambient AudioContext（同步 1ms 内完成，beforeunload/pagehide 窗口最稳）。
+ */
+export function suspendAmbientContextImmediate(): void {
+  if (!audioContext) return
+  if (audioContext.state === 'running') {
+    try { audioContext.suspend() } catch { /* ignore */ }
+  }
+}
+
+/**
+ * 立刻停止 Ambient 的所有 setTimeout 调度器 + ambientGain 拉 0 + isPlaying=false。
+ */
+export function stopAmbientTimers(): void {
+  if (clearAmbientTimer) {
+    clearTimeout(clearAmbientTimer)
+    clearAmbientTimer = null
+  }
+  // snapshot：null 化之前记录
+  if (currentRoomId) lastRoomIdSnapshot = currentRoomId
+  isPlaying = false
+  currentRoomId = null
+  if (ambientGain && audioContext) {
+    try {
+      ambientGain.gain.cancelScheduledValues(audioContext.currentTime)
+      ambientGain.gain.setValueAtTime(0, audioContext.currentTime)
+    } catch { /* ignore */ }
+  }
+  clearAmbient()
+}
+
+/**
+ * 如果存在 lastRoomIdSnapshot，用它重新调用 playRoomAmbient(forceRestart=true) 恢复 Ambient scheduler。
+ * 用于：visibilitychange.visible 或 用户 OFF→ON 点按钮 后恢复（只 resume AC 不够，得真的 schedule osc 节点）。
+ */
+export function restartAmbientWithLastRoomIdIfNeeded(): void {
+  if (!isAudioEnabled()) return
+  if (!lastRoomIdSnapshot) return
+  if (isPlaying && currentRoomId === lastRoomIdSnapshot) return
+  try {
+    playRoomAmbient(lastRoomIdSnapshot, { forceRestart: true })
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * 尽力关闭 Ambient AudioContext（异步 close 不 await；用于真正离开或用户关闭音效）。
+ */
+export function closeAmbientContextBestEffort(): void {
+  stopAmbientTimers()
+  if (audioContext && audioContext.state !== 'closed') {
+    const ctx = audioContext
+    audioContext = null
+    ambientGain = null
+    Promise.resolve().then(() => ctx.close()).catch(() => {})
+  }
 }

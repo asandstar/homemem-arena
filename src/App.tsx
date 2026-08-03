@@ -1,6 +1,14 @@
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
+import { useEffect } from 'react'
 import { Layout } from './components/layout/Layout'
 import { router as _originalRouter } from './routes'
+import {
+  ensureGlobalPageLifecycleAudioHookOnce,
+  getAudioLifecycleDiagnostics,
+  getAudioContextStates,
+  getStopAllAudioCallCount,
+} from './audio/audioManager'
+import { useUiStore } from './store/useUiStore'
 
 const _basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
 
@@ -34,7 +42,36 @@ try {
   /* ignore */
 }
 
+/**
+ * Section 四：E2E 只读诊断（MODE==='e2e' 守卫，生产安全）。
+ * 只暴露 readonly 访问：audioEnabled / 3 context states / active node count / 2 timer counts / BGM taskId / Ambient roomId
+ *           stopAll call count。
+ * 不提供任何"强制创建/绕过 UI 或写操作。
+ */
+function ensureE2eAudioDiagnosticsOnce(): void {
+  if (typeof window === 'undefined') return
+  if (import.meta.env.MODE !== 'e2e') return
+  const w = window as any
+  if (w.__AUD_DIAG__) return
+  w.__AUD_DIAG__ = Object.freeze({
+    snapshot: () => getAudioLifecycleDiagnostics(),
+    contextStates: () => getAudioContextStates(),
+    stopAllCallCount: () => getStopAllAudioCallCount(),
+    storeAudioEnabled: () => useUiStore.getState().audioEnabled,
+  })
+}
+
 function App() {
+  // 全局一次性注册：visibilitychange + pagehide + beforeunload 音频生命周期钩子
+  // → 返回 cleanup：React StrictMode/HMR/测试 组件卸载时安全 removeEventListener 避免 listener 泄漏
+  useEffect(() => {
+    ensureE2eAudioDiagnosticsOnce()
+    const cleanup = ensureGlobalPageLifecycleAudioHookOnce()
+    return () => {
+      cleanup()
+    }
+  }, [])
+
   return <RouterProvider router={router} />
 }
 

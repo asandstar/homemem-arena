@@ -4,6 +4,12 @@ let audioContext: AudioContext | null = null
 let masterGain: GainNode | null = null
 let isPlaying = false
 let currentTaskId: string | null = null
+/**
+ * 快照：currentTaskId 在被 stop/cleanup 设 null 之前的最后一个有效值。
+ * 用于 "切后台 stopAllTimers → 切回前台 resume" 场景下，重新建立 BGM 调度器，否则 BGM 永久死亡。
+ * 同时用于 "用户 OFF → ON 点按钮" 恢复 BGM。
+ */
+let lastTaskIdSnapshot: string | null = null
 let isArenaCleaningUp = false
 let currentVolume = 0.5
 
@@ -14,6 +20,26 @@ export function getBgmContextState(): AudioContextState | 'closed' {
 
 export function getBgmAudioContext(): AudioContext | null {
   return audioContext
+}
+
+export function getCurrentBgmTaskId(): string | null {
+  return currentTaskId
+}
+
+export function getLastBgmTaskIdSnapshot(): string | null {
+  return lastTaskIdSnapshot
+}
+
+/**
+ * 当前登记的 BGM track timer 数量（=trackStates.filter(t=>t.timer!=null).length）
+ * 用于 E2E 诊断 bgmTimerCount。
+ */
+export function getActiveBgmTimerCount(): number {
+  let count = 0
+  for (const s of trackStates) {
+    if (s.timer != null) count++
+  }
+  return count
 }
 
 export function resumeBgmContext(): Promise<void> {
@@ -319,6 +345,8 @@ export function playBgm(taskId: string, options: { forceRestart?: boolean } = {}
 
   const config = BGM_CONFIG[taskId] || DEFAULT_BGM
   currentTaskId = taskId
+  // 记录 snapshot（每次成功选定任务后），用于 hidden→visible 或 OFF→ON 时恢复调度器
+  lastTaskIdSnapshot = taskId
 
   if (isArenaCleaningUp) {
     currentTaskId = null
@@ -350,29 +378,11 @@ export function playBgm(taskId: string, options: { forceRestart?: boolean } = {}
   startAllLayers(config)
 }
 
-export function getCurrentBgmTaskId(): string | null {
-  return currentTaskId
-}
-
-export function updateBgmState(chaosValue: number, progress: number): void {
-  currentChaosValue = chaosValue
-
-  if (!audioContext || !masterGain || !isPlaying) return
-
-  const chaosFactor = Math.min(chaosValue / 100, 1)
-  const progressFactor = Math.min(progress, 1)
-
-  const targetVolume = 0.5 + chaosFactor * 0.2 - progressFactor * 0.1
-  masterGain.gain.linearRampToValueAtTime(targetVolume, audioContext.currentTime + 1)
-}
-
-export function getIsPlaying(): boolean {
-  return isPlaying
-}
-
 export function stopBgm(options: { fadeSeconds?: number } = {}): void {
   if (!isPlaying) return
 
+  // snapshot 记录：在 null 化之前保存
+  if (currentTaskId) lastTaskIdSnapshot = currentTaskId
   isPlaying = false
   currentTaskId = null
   clearAllTracks()
@@ -393,18 +403,34 @@ export function stopBgm(options: { fadeSeconds?: number } = {}): void {
   }
 }
 
+export function updateBgmState(chaosValue: number, progress: number): void {
+  currentChaosValue = chaosValue
+
+  if (!audioContext || !masterGain || !isPlaying) return
+
+  const chaosFactor = Math.min(chaosValue / 100, 1)
+  const progressFactor = Math.min(progress, 1)
+
+  const targetVolume = 0.5 + chaosFactor * 0.2 - progressFactor * 0.1
+  masterGain.gain.linearRampToValueAtTime(targetVolume, audioContext.currentTime + 1)
+}
+
+export function getIsPlaying(): boolean {
+  return isPlaying
+}
+
 export function stopBgmImmediate(): void {
-  ;(window as any).__bgmStopCalled = true
-  ;(window as any).__bgmStopTime = Date.now()
-  ;(window as any).__bgmStopCount = ((window as any).__bgmStopCount || 0) + 1
-  
+  // snapshot 记录：在 null 化之前保存
+  if (currentTaskId) lastTaskIdSnapshot = currentTaskId
   isPlaying = false
   currentTaskId = null
   clearAllTracks()
 
   if (masterGain && audioContext) {
-    masterGain.gain.cancelScheduledValues(audioContext.currentTime)
-    masterGain.gain.setValueAtTime(0, audioContext.currentTime)
+    try {
+      masterGain.gain.cancelScheduledValues(audioContext.currentTime)
+      masterGain.gain.setValueAtTime(0, audioContext.currentTime)
+    } catch { /* ignore */ }
   }
 
   if (audioContext && audioContext.state !== 'closed') {
@@ -442,4 +468,64 @@ export function getBgmVolume(): number {
 
 export function isBgmPlaying(): boolean {
   return isPlaying
+}
+
+/**
+ * 同步立刻挂起 BGM 的 AudioContext（≈1ms 内完成，能在 beforeunload/pagehide 极短时间窗口内生效）。
+ * vs close()：close() 是异步 Promise，关闭 tab 时浏览器会 kill；suspend() 同步立即生效最可靠。
+ */
+export function suspendBgmContext(): void {
+  if (!audioContext) return
+  if (audioContext.state === 'running') {
+    try { audioContext.suspend() } catch { /* ignore */ }
+  }
+}
+
+/**
+ * 立刻停止 BGM 的所有 setInterval/setTimeout 调度器，并把 isPlaying=false。
+ * 保证切后台后下一次 setTimeout 回调触发时，playTrack 一进来就 return（不会再创建新 osc）。
+ */
+export function stopBgmTimers(): void {
+  // snapshot：在 null 化之前记录 lastTaskIdSnapshot
+  if (currentTaskId) lastTaskIdSnapshot = currentTaskId
+  clearAllTracks()
+  isPlaying = false
+  currentTaskId = null
+}
+
+/**
+ * 如果存在 lastTaskIdSnapshot，则用它重新启动 BGM（forceRestart 保证清旧的再启动）。
+ * 用于：visibilitychange.visible、用户 OFF→ON 点按钮 之后恢复调度器。
+ * （只恢复是不够的：必须真的 playBgm 把 trackStates 和定时器重新建起来）
+ */
+export function restartBgmWithLastTaskIdIfNeeded(): void {
+  if (!isAudioEnabled()) return
+  if (!lastTaskIdSnapshot) return
+  if (isPlaying && currentTaskId === lastTaskIdSnapshot) return
+  try {
+    playBgm(lastTaskIdSnapshot, { forceRestart: true })
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * 尽力关闭 BGM AudioContext（异步 Promise 不等待；用于页面真正离开或用户主动关闭音效时）。
+ */
+export function closeBgmContextBestEffort(): void {
+  // snapshot：在 null 化之前记录
+  if (currentTaskId) lastTaskIdSnapshot = currentTaskId
+  stopBgmTimers()
+  if (masterGain && audioContext) {
+    try {
+      masterGain.gain.cancelScheduledValues(audioContext.currentTime)
+      masterGain.gain.setValueAtTime(0, audioContext.currentTime)
+    } catch { /* ignore */ }
+  }
+  if (audioContext && audioContext.state !== 'closed') {
+    const ctx = audioContext
+    audioContext = null
+    masterGain = null
+    Promise.resolve().then(() => ctx.close()).catch(() => {})
+  }
 }

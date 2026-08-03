@@ -807,3 +807,36 @@ export function getActiveContinuousSfxCount(): number {
   if (ambientOscillator) count++
   return count
 }
+
+/**
+ * 同步立刻挂起 SFX AudioContext（同步 1ms 内完成，beforeunload/pagehide/visibilitychange 窗口最稳）。
+ */
+export function suspendSfxContextImmediate(): void {
+  if (!audioContext) return
+  if (audioContext.state === 'running') {
+    try { audioContext.suspend() } catch { /* ignore */ }
+  }
+}
+
+/**
+ * 立刻停止 SFX 的所有定时器（roomAmbientTimer）+ 所有登记的 SFX 实例 + 持续音源。
+ */
+export function stopSfxTimers(): void {
+  if (roomAmbientTimer) {
+    clearTimeout(roomAmbientTimer)
+    roomAmbientTimer = null
+  }
+  stopAllSfx()
+}
+
+/**
+ * 尽力关闭 SFX AudioContext（异步 close 不 await；用于真正离开或用户关闭音效）。
+ */
+export function closeSfxContextBestEffort(): void {
+  stopSfxTimers()
+  if (audioContext && audioContext.state !== 'closed') {
+    const ctx = audioContext
+    audioContext = null
+    Promise.resolve().then(() => ctx.close()).catch(() => {})
+  }
+}
