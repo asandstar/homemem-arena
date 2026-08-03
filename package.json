@@ -21,7 +21,15 @@
     "dev:e2e": "vite --mode e2e",
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
-    "e2e:debug": "playwright test --debug"
+    "e2e:debug": "playwright test --debug",
+    "vite:clean": "node -e \"require('fs').rmSync(require('path').join(process.cwd(), 'node_modules/.vite'), { recursive: true, force: true })\"",
+    "tsbuildinfo:clean": "node -e \"require('fs').rmSync(require('path').join(process.cwd(), 'node_modules/.tmp'), { recursive: true, force: true })\"",
+    "cache:clean": "npm run vite:clean && npm run tsbuildinfo:clean",
+    "dev:clean": "npm run cache:clean && vite",
+    "dev:e2e:clean": "npm run cache:clean && vite --mode e2e --host 127.0.0.1 --strictPort --port 4173",
+    "dev:stable": "vite --host 127.0.0.1 --strictPort --port 5173",
+    "dev:e2e:stable": "vite --mode e2e --host 127.0.0.1 --strictPort --port 4173",
+    "qa:static:scripts": "tsc -p tsconfig.scripts.json --noEmit"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
