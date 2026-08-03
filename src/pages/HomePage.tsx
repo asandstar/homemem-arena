@@ -12,7 +12,9 @@ function getPublicTaskTemplates() {
 
 export function HomePage() {
   const navigate = useNavigate()
-  const { audioEnabled, toggleAudioEnabled } = useUiStore()
+  // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
+  const audioEnabled = useUiStore((s) => s.audioEnabled)
+  const toggleAudioEnabled = useUiStore((s) => s.toggleAudioEnabled)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col relative overflow-hidden">

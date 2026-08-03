@@ -109,7 +109,8 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: var(--color-bg);
+  /* 默认深色背景，避免页面加载瞬间出现白屏闪烁；浅色页面自行覆盖 */
+  background-color: #0f172a;
   color: var(--color-text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;

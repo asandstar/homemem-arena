@@ -14,7 +14,12 @@ import {
 export function ProbePage() {
   const { taskId } = useParams<{ taskId: string }>()
   const navigate = useNavigate()
-  const { addEvent, recordProbeAnswers, currentSession, setAiSummary, finalizeSession } = useSessionStore()
+  // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
+  const addEvent = useSessionStore((s) => s.addEvent)
+  const recordProbeAnswers = useSessionStore((s) => s.recordProbeAnswers)
+  const currentSession = useSessionStore((s) => s.currentSession)
+  const setAiSummary = useSessionStore((s) => s.setAiSummary)
+  const finalizeSession = useSessionStore((s) => s.finalizeSession)
 
   useEffect(() => {
     if (!taskId) {

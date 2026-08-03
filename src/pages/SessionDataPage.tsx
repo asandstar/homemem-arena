@@ -12,7 +12,8 @@ import { isHiddenTaskId } from '../data/tasks'
 export function SessionDataPage() {
   const { taskId } = useParams<{ taskId: string }>()
   const navigate = useNavigate()
-  const { currentSession } = useSessionStore()
+  // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
+  const currentSession = useSessionStore((s) => s.currentSession)
 
   useEffect(() => {
     if (taskId && import.meta.env.PROD && isHiddenTaskId(taskId)) {

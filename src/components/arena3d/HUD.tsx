@@ -32,52 +32,50 @@ function getMemoryTypeIcon(memoryType?: string) {
 
 
 export function HUD() {
-  const {
-    task,
-    phase,
-    currentRoom,
-    chaosValue,
-    score,
-    combo,
-    memorySlots,
-    heldEntityId,
-    entities,
-    containerStates,
-    feedback,
-    hideFeedback,
-    lockMemorySlot,
-    clearMemorySlot,
-    visitedRooms,
-    robotPosition,
-    robotRotation,
-    savingMemorySlotIndex,
-    flashingSlotIndex,
-    elapsedMs,
-    floatingTexts,
-    eventToasts,
-    isGoalAchieved,
-    achievedGoalIds,
-    activeFlowHint,
-    currentStageId,
-    currentObjective,
-  } = useGameStore()
-  const { currentSession } = useSessionStore()
+  // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
+  const task = useGameStore((s) => s.task)
+  const phase = useGameStore((s) => s.phase)
+  const currentRoom = useGameStore((s) => s.currentRoom)
+  const chaosValue = useGameStore((s) => s.chaosValue)
+  const score = useGameStore((s) => s.score)
+  const combo = useGameStore((s) => s.combo)
+  const memorySlots = useGameStore((s) => s.memorySlots)
+  const heldEntityId = useGameStore((s) => s.heldEntityId)
+  const entities = useGameStore((s) => s.entities)
+  const containerStates = useGameStore((s) => s.containerStates)
+  const feedback = useGameStore((s) => s.feedback)
+  const hideFeedback = useGameStore((s) => s.hideFeedback)
+  const lockMemorySlot = useGameStore((s) => s.lockMemorySlot)
+  const clearMemorySlot = useGameStore((s) => s.clearMemorySlot)
+  const visitedRooms = useGameStore((s) => s.visitedRooms)
+  const robotPosition = useGameStore((s) => s.robotPosition)
+  const robotRotation = useGameStore((s) => s.robotRotation)
+  const savingMemorySlotIndex = useGameStore((s) => s.savingMemorySlotIndex)
+  const flashingSlotIndex = useGameStore((s) => s.flashingSlotIndex)
+  const elapsedMs = useGameStore((s) => s.elapsedMs)
+  const floatingTexts = useGameStore((s) => s.floatingTexts)
+  const eventToasts = useGameStore((s) => s.eventToasts)
+  const isGoalAchieved = useGameStore((s) => s.isGoalAchieved)
+  const achievedGoalIds = useGameStore((s) => s.achievedGoalIds)
+  const activeFlowHint = useGameStore((s) => s.activeFlowHint)
+  const currentStageId = useGameStore((s) => s.currentStageId)
+  const currentObjective = useGameStore((s) => s.currentObjective)
+  const currentSession = useSessionStore((s) => s.currentSession)
 
-  const {
-    taskPanelOpen,
-    eventLogOpen,
-    minimapOpen,
-    controlsOpen,
-    memoryBarOpen,
-    hudHidden,
-    audioEnabled,
-    toggleTaskPanel,
-    toggleEventLog,
-    toggleMinimap,
-    toggleControls,
-    toggleHudHidden,
-    toggleAudioEnabled,
-  } = useUiStore()
+  // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
+  const taskPanelOpen = useUiStore((s) => s.taskPanelOpen)
+  const eventLogOpen = useUiStore((s) => s.eventLogOpen)
+  const minimapOpen = useUiStore((s) => s.minimapOpen)
+  const controlsOpen = useUiStore((s) => s.controlsOpen)
+  const memoryBarOpen = useUiStore((s) => s.memoryBarOpen)
+  const hudHidden = useUiStore((s) => s.hudHidden)
+  const audioEnabled = useUiStore((s) => s.audioEnabled)
+  const toggleTaskPanel = useUiStore((s) => s.toggleTaskPanel)
+  const toggleEventLog = useUiStore((s) => s.toggleEventLog)
+  const toggleMinimap = useUiStore((s) => s.toggleMinimap)
+  const toggleControls = useUiStore((s) => s.toggleControls)
+  const toggleHudHidden = useUiStore((s) => s.toggleHudHidden)
+  const toggleAudioEnabled = useUiStore((s) => s.toggleAudioEnabled)
 
   const heldEntity = heldEntityId ? entities.find(e => e.id === heldEntityId) : null
   const nearbyEntity = findNearestInteractableEntity(entities, robotPosition, currentRoom)
@@ -161,10 +159,23 @@ export function HUD() {
   const stageFinalize = isLeaveHome && currentStageId === 'stage-finalize'
   const nearKey = nearbyEntity?.configId === 'obj-key'
 
+  // P1 L1 教学：task-clean-table 规则（§五 定制 E/F 提示：不同时显示 E 和 F 教学；先突出 E 再突出 F）
+  const isCleanTable = task?.id === 'task-clean-table'
+  const taskObjectIdsCleanTable = ['obj-dirty-cup', 'obj-tissue', 'obj-fork']
+  const anyTaskMemorySavedCleanTable = memorySlots.some(
+    (s) => s !== null && taskObjectIdsCleanTable.includes(s.entityConfigId),
+  )
+  // L1 阶段 1（observe-table）：玩家尚未保存任务物体记忆时，只显示 E 不显示 F 拾取教学
+  const cleanTableStage1 = isCleanTable && currentStageId === 'stage-observe-table' && !anyTaskMemorySavedCleanTable
+  // L1 阶段 2+：已经至少保存了一条任务记忆 → 不显示 E 教学，只显示 F 拾取/放置（自然过渡）
+  const cleanTableStage2 = isCleanTable && (currentStageId !== 'stage-observe-table' || anyTaskMemorySavedCleanTable)
+
   // [E] 记忆动作文案 + 原因
   let memoryActionLabel: string | null = null
   let memoryActionDisabledReason: string | null = null
-  if (nearbyEntity) {
+  // P1 L1：L1 阶段 2+（已至少保存 1 条任务记忆）→ 隐藏 E 教学提示（不展示 E）
+  const cleanTableShouldHideMemoryHint = cleanTableStage2
+  if (!cleanTableShouldHideMemoryHint && nearbyEntity) {
     if (stageObserveKey && nearKey) {
       memoryActionLabel = '记录钥匙位置'
     } else if (stageUpdateKey && nearKey) {
@@ -178,20 +189,27 @@ export function HUD() {
   // [F] 交互动作文案 + 原因
   let itemActionLabel: string | null = null
   let itemActionDisabledReason: string | null = null
-  if (heldEntity && nearbyContainer) {
-    itemActionLabel = `放入 ${nearbyContainer.name}`
-  } else if (!heldEntity && nearbyEntity) {
-    if (stageObserveKey && nearKey) {
-      itemActionLabel = '拾取钥匙'
-      itemActionDisabledReason = '先记录钥匙位置'
-    } else if (stageUpdateKey && nearKey) {
-      itemActionLabel = '拾取钥匙'
-      itemActionDisabledReason = '先更新钥匙记忆再拾取'
-    } else {
-      itemActionLabel = `拾取 ${nearbyEntity.name}`
+  // P1 L1：L1 阶段 1（尚未保存任何任务记忆）→ 隐藏 F 拾取教学提示，避免 E 和 F 同时出现
+  const cleanTableShouldHideInteractHint = cleanTableStage1
+  if (!cleanTableShouldHideInteractHint) {
+    if (heldEntity && nearbyContainer) {
+      itemActionLabel = `放入 ${nearbyContainer.name}`
+    } else if (!heldEntity && nearbyEntity) {
+      if (stageObserveKey && nearKey) {
+        itemActionLabel = '拾取钥匙'
+        itemActionDisabledReason = '先记录钥匙位置'
+      } else if (stageUpdateKey && nearKey) {
+        itemActionLabel = '拾取钥匙'
+        itemActionDisabledReason = '先更新钥匙记忆再拾取'
+      } else if (isCleanTable && currentStageId === 'stage-observe-table' && !anyTaskMemorySavedCleanTable && taskObjectIdsCleanTable.includes(nearbyEntity.configId)) {
+        itemActionLabel = `拾取 ${nearbyEntity.name}`
+        itemActionDisabledReason = '先按 E 记住它的位置'
+      } else {
+        itemActionLabel = `拾取 ${nearbyEntity.name}`
+      }
+    } else if (!heldEntity && nearbyContainer) {
+      itemActionLabel = `${containerStates[nearbyContainer.id]?.open ? '关闭' : '打开'} ${nearbyContainer.name}`
     }
-  } else if (!heldEntity && nearbyContainer) {
-    itemActionLabel = `${containerStates[nearbyContainer.id]?.open ? '关闭' : '打开'} ${nearbyContainer.name}`
   }
   if (stageFinalize && heldEntity && !nearbyContainer) {
     itemActionLabel = '放入玄关托盘'
@@ -764,7 +782,7 @@ export function HUD() {
         </div>
       )}
 
-            {phase === 'playing' && heldEntity && (
+      {phase === 'playing' && heldEntity && (
         <div
           data-testid="held-item-banner"
           className="absolute bottom-24 right-4 pointer-events-none z-10 animate-held-item-pop"
@@ -785,7 +803,7 @@ export function HUD() {
         </div>
       )}
 
-{phase === 'playing' && (itemActionLabel || memoryActionLabel || nearbyEntity) && (
+      {phase === 'playing' && (itemActionLabel || memoryActionLabel || nearbyEntity) && (
         <div className="absolute bottom-4 right-4 pointer-events-none flex flex-col items-end gap-1 z-10">
           {/* Sprint B.1: F 交互动作（拾取/打开/放置）按阶段定制，含禁用原因 */}
           {itemActionLabel && (
