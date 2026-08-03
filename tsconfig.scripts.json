@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "checkJs": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "strict": false,
+    "jsx": "react-jsx",
+    "types": ["node"]
+  },
+  "include": [
+    "scripts/**/*.cjs",
+    "scripts/**/*.mjs",
+    "playwright.config.ts"
+  ]
+}
