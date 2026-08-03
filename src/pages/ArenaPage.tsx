@@ -205,6 +205,44 @@ export function ArenaPage() {
       stopAutoSave()
     }
   }, [phase, saveCurrentGame])
+  // FIX-3 兜底：简报已关闭（或跳过）但 phase 还在 briefing 时，强制进入 playing
+  // 避免 E2E/自动化/特殊入口下，简报按钮没点导致所有指令被 ensurePlaying 拦截
+  useEffect(() => {
+    if (!briefingOpen && phase === 'briefing' && task) {
+      console.warn('[FIX-3] briefing 已关闭但 phase=briefing，兜底补 startPlaying() 调用')
+      startPlaying()
+    }
+  }, [briefingOpen, phase, task, startPlaying])
+
+  // AUTO-1：阶段机主动 tick（100ms 间隔）。解决"玩家站着不动/pure E2E 脚本下，
+  // evaluateStageTransitions/triggerScriptedEvents 只在玩家动作时跑，导致条件满足但阶段不切、事件不触发"的问题
+  useEffect(() => {
+    if (phase !== 'playing') return
+    const s = useGameStore.getState()
+    // 函数可用性校验：只在全部存在时启动，避免老版本 store 崩溃
+    const hasAll = typeof s.evaluateStageTransitions === 'function'
+      && typeof s.triggerScriptedEvents === 'function'
+      && typeof s.checkLevelCompletion === 'function'
+      && typeof s.updateMoveAnimations === 'function'
+    if (!hasAll) return
+
+    const tick = () => {
+      const st = useGameStore.getState()
+      // updateMoveAnimations 100ms 足够驱动袜子幽灵等缓慢动画
+      try { if (typeof st.updateMoveAnimations === 'function') st.updateMoveAnimations() } catch { /* ignore */ }
+      // 触发事件（钥匙猫推、手机响）先跑，产生的状态变化再喂给阶段机
+      try { if (typeof st.triggerScriptedEvents === 'function') st.triggerScriptedEvents() } catch { /* ignore */ }
+      // 阶段机判定：根据实体/容器/记忆状态做阶段切换
+      try { if (typeof st.evaluateStageTransitions === 'function') st.evaluateStageTransitions() } catch { /* ignore */ }
+      // 终局判定：所有目标 achieved + completionCondition 通过 → levelCompleted=true
+      try { if (typeof st.checkLevelCompletion === 'function') st.checkLevelCompletion() } catch { /* ignore */ }
+    }
+    const id = window.setInterval(tick, 100)
+    // 启动时立刻跑一次，避免首帧等待 100ms
+    tick()
+    return () => window.clearInterval(id)
+  }, [phase])
+
 
   const getMemoryStrategyComment = () => {
     const stats = getGameStats()
