@@ -17,7 +17,6 @@ export function ProbePage() {
   // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
   const addEvent = useSessionStore((s) => s.addEvent)
   const recordProbeAnswers = useSessionStore((s) => s.recordProbeAnswers)
-  const currentSession = useSessionStore((s) => s.currentSession)
   const setAiSummary = useSessionStore((s) => s.setAiSummary)
   const finalizeSession = useSessionStore((s) => s.finalizeSession)
 
@@ -26,7 +25,10 @@ export function ProbePage() {
       navigate('/tasks')
       return
     }
-    if (import.meta.env.PROD && isHiddenTaskId(taskId)) {
+    // 加 try/catch 守卫：避免 SyntaxError: Cannot use 'import.meta' outside a module
+    let isProd = false
+    try { isProd = !!(import.meta as any)?.env?.PROD } catch { /* ignore */ }
+    if (isProd && isHiddenTaskId(taskId)) {
       navigate('/tasks', { replace: true })
       return
     }
@@ -36,12 +38,16 @@ export function ProbePage() {
       return
     }
 
+    // ⚠️ 用 getState() 取一次快照，不订阅 currentSession 变化。
+    // 否则下面 setState 更新 currentSession → effect 重新执行 → 又 setState →
+    // React 抛 Maximum update depth exceeded。
+    const currentSession = useSessionStore.getState().currentSession
     if (!currentSession) {
       navigate('/tasks', { replace: true })
       return
     }
 
-    if (currentSession && currentSession.probe_questions.length === 0) {
+    if (currentSession.probe_questions.length === 0) {
       useSessionStore.setState({
         currentSession: {
           ...currentSession,
@@ -118,7 +124,9 @@ export function ProbePage() {
       const to = `/result/${taskId}`
       setTimeout(() => navigate(to, { replace: true }), 0)
     }
-  }, [taskId, navigate, currentSession])
+    // ⚠️ 依赖只列 taskId/navigate：effect 内部用 getState() 读 currentSession，
+    // 不订阅其变化，避免 setState → 重新执行 → 又 setState 的无限循环。
+  }, [taskId, navigate])
 
   return (
     <div className="flex items-center justify-center h-full">
