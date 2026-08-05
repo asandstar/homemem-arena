@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react'
+import { useEffect, useCallback, useState, useMemo } from 'react'
 import { useGameStore } from '../../store/useGameStore'
 import { useUiStore } from '../../store/useUiStore'
 import { Target, Clock, CheckCircle2, AlertTriangle, Zap, Package, Keyboard, Brain, Lock, Unlock, Trash2, ChevronDown, ChevronUp, Skull, AlertCircle, X, Cat, Smartphone, HelpCircle, Eye, EyeOff, MapPin, Box, History, Play, Volume2, VolumeX } from 'lucide-react'
@@ -11,12 +11,40 @@ import {
   findNearestInteractableEntity,
 } from '../../game/interactionTargets'
 import { findActiveGoal } from '../../game/flow'
+import type { ContainerSpec } from '../../types/object'
 
-function formatDuration(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+/**
+ * ⚠️ 时间显示独立组件。
+ * store 中 elapsedMs 每帧（60fps）setState，若 HUD 直接订阅会导致 HUD 每帧重渲染。
+ * 这里改成 250ms 轮询 getState()，仅在秒数变化时 setState，重渲染频率降到 4fps。
+ * 间接降低 WebGL Context Lost 风险。
+ */
+function TimeDisplay({ isMobile }: { isMobile: boolean }) {
+  const [displaySeconds, setDisplaySeconds] = useState(0)
+  useEffect(() => {
+    const TICK_MS = 250
+    let last = -1
+    const id = window.setInterval(() => {
+      const st = useGameStore.getState()
+      const rawMs = st.task?.timeLimit
+        ? Math.max(0, st.task.timeLimit * 1000 - st.elapsedMs)
+        : st.elapsedMs
+      const s = Math.floor(rawMs / 1000)
+      if (s !== last) {
+        last = s
+        setDisplaySeconds(s)
+      }
+    }, TICK_MS)
+    return () => window.clearInterval(id)
+  }, [])
+  const m = Math.floor(displaySeconds / 60)
+  const s = displaySeconds % 60
+  return (
+    <div className={`font-bold text-slate-200 flex items-center gap-1 ${isMobile ? 'text-sm' : 'text-lg'}`}>
+      <Clock size={isMobile ? 10 : 12} className="text-cyan-400" />
+      {`${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`}
+    </div>
+  )
 }
 
 function getMemoryTypeIcon(memoryType?: string) {
@@ -28,8 +56,6 @@ function getMemoryTypeIcon(memoryType?: string) {
     default: return null
   }
 }
-
-
 
 export function HUD() {
   // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
@@ -52,7 +78,8 @@ export function HUD() {
   const robotRotation = useGameStore((s) => s.robotRotation)
   const savingMemorySlotIndex = useGameStore((s) => s.savingMemorySlotIndex)
   const flashingSlotIndex = useGameStore((s) => s.flashingSlotIndex)
-  const elapsedMs = useGameStore((s) => s.elapsedMs)
+  // ⚠️ 不订阅 elapsedMs：store 每帧 60fps 更新 elapsedMs，订阅会导致 HUD 每帧重渲染。
+  // 时间显示由 <TimeDisplay/> 独立轮询 4fps，见 TimeDisplay 组件注释。
   const floatingTexts = useGameStore((s) => s.floatingTexts)
   const eventToasts = useGameStore((s) => s.eventToasts)
   const isGoalAchieved = useGameStore((s) => s.isGoalAchieved)
@@ -89,6 +116,29 @@ export function HUD() {
   const [isMobile, setIsMobile] = useState(false)
   const [viewportWidth, setViewportWidth] = useState(1920)
   const [minimapFullscreen, setMinimapFullscreen] = useState(false)
+
+  // ---------- E 子包：DEV-only 模型模式指示（不改生产行为） ----------
+  const modelModeLabel = useMemo<{ active: boolean; label: string; hint: string } | null>(() => {
+    try {
+      const env = (import.meta as any)?.env
+      if (!env?.DEV) return null
+      const flag = String(env.VITE_USE_KENNEY_LIVING_ASSETS ?? '')
+      const kenney = flag === 'true' || flag === '1'
+      return {
+        active: kenney,
+        label: kenney ? '🎨 GLB 模式' : '🧊 程序化模式',
+        hint: kenney ? 'Kenney 模型已启用' : '默认程序化家具；启动时加 VITE_USE_KENNEY_LIVING_ASSETS=true 启用 GLB',
+      }
+    } catch {
+      return null
+    }
+  }, [])
+
+  // ---------- F 子包：当前房间容器（不改坐标，仅筛选透传） ----------
+  const roomContainersForMinimap: ContainerSpec[] = useMemo(() => {
+    if (!task?.containers) return []
+    return task.containers.filter((c: ContainerSpec) => c.room === currentRoom)
+  }, [task?.containers, currentRoom])
 
   useEffect(() => {
     const checkCompact = () => {
@@ -236,10 +286,8 @@ export function HUD() {
     })),
     achievedGoalIds,
   )
-  const displayTimeMs = task?.timeLimit
-    ? Math.max(0, task.timeLimit * 1000 - elapsedMs)
-    : elapsedMs
-
+  // ⚠️ elapsedMs 不再通过订阅获取，时间显示由 <TimeDisplay/> 独立轮询。
+  // 此处仅保留 chaosColor 等与时间无关的派生计算。
   const chaosColor = chaosValue < 30 ? 'from-green-500 to-emerald-500' : chaosValue < 60 ? 'from-yellow-500 to-orange-500' : 'from-red-500 to-pink-500'
 
   const getRating = (score: number): string => {
@@ -456,10 +504,7 @@ export function HUD() {
               <div className={`w-px bg-slate-700 ${isMobile ? 'h-6' : 'h-8'}`} />
               <div className="text-center">
                 <div className={`${isMobile ? 'text-[8px]' : 'text-[10px]'} text-slate-400`}>时间</div>
-                <div className={`font-bold text-slate-200 flex items-center gap-1 ${isMobile ? 'text-sm' : 'text-lg'}`}>
-                  <Clock size={isMobile ? 10 : 12} className="text-cyan-400" />
-                  {formatDuration(displayTimeMs)}
-                </div>
+                <TimeDisplay isMobile={isMobile} />
               </div>
               {!isMobile && (
                 <>
@@ -569,6 +614,7 @@ export function HUD() {
               isFullscreen={minimapFullscreen}
               onToggleFullscreen={() => setMinimapFullscreen(!minimapFullscreen)}
               memorySlots={memorySlots}
+              roomContainers={roomContainersForMinimap}
             />
           )}
           {heldEntity && !minimapOpen && (
@@ -589,6 +635,16 @@ export function HUD() {
               </span>
             )}
           </div>
+          {modelModeLabel && (
+            <div className="mt-2 pt-2 border-t border-slate-700 flex items-center justify-between" title={modelModeLabel.hint}>
+              <span className={`text-[10px] font-semibold ${modelModeLabel.active ? 'text-amber-300' : 'text-slate-400'}`}>
+                {modelModeLabel.label}
+              </span>
+              {!modelModeLabel.active && (
+                <span className="text-[9px] text-slate-500">DEV only</span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
