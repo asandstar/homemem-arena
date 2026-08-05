@@ -176,7 +176,7 @@ test.describe('第二关 Leave-Home Deterministic Core Memory Loop（Semifinal S
     await expect(progressEl).toBeVisible()
     await expect(progressEl).toContainText('1/5')
 
-    // ====== B1-断言 0.5：stage-observe-key 靠近钥匙时，HUD E/F 提示正确（E=记录，F=禁用+原因）
+    // ====== B1-断言 0.5：stage-observe-fetch 靠近钥匙时，HUD E/F 提示正确（E=记录，F=禁用+原因）
     try {
       // E 提示：context-memory-action 显示 "记录钥匙位置"
       if (await contextMemoryEl.isVisible({ timeout: 1500 })) {
@@ -280,7 +280,7 @@ test.describe('第二关 Leave-Home Deterministic Core Memory Loop（Semifinal S
     } catch (uiErr2) {
       console.log('⚠️ B1-断言 2.5 UI 未渲染（非致命）:', (uiErr2 as any)?.message ?? String(uiErr2))
     }
-    // 保存后，真实 F 拾取钥匙必须成功（不再被 stage-observe-key 禁止）
+    // 保存后，真实 F 拾取钥匙必须成功（不再被 stage-observe-fetch 禁止）
     const pickAfterSaveFinal = await callNearbyEntityCommand(page, 'pickByConfigId', 'obj-key', 'living')
     if (pickAfterSaveFinal.success) {
       // pick 成功了，先把钥匙释放回 free（放入当前房间），避免拿着钥匙导致后面手机/雨伞 pick 失败
@@ -364,17 +364,16 @@ test.describe('第二关 Leave-Home Deterministic Core Memory Loop（Semifinal S
       stageAfterPhone = await readState<string | null>(page, 'getCurrentStageId')
       console.log(`🔎 assert-6 retry#${retry}: stageAfterPhone=`, stageAfterPhone)
     }
-    // 允许自然推进到 stage-update-key-memory 也通过：只要不回到 stage-fetch-phone 就符合"手机拿到后至少到了 key-outdated 之后阶段"
+    // 允许自然推进到 stage-key-outdated 也通过：只要不回到 stage-fetch-phone 就符合"手机拿到后至少到了 key-outdated 之后阶段"
     const outdatedOrLater =
       stageAfterPhone === 'stage-key-outdated' ||
-      stageAfterPhone === 'stage-update-key-memory' ||
       stageAfterPhone === 'stage-finalize'
     expect(outdatedOrLater).toBe(true)
     const objOutdated = await readState<string | null>(page, 'getCurrentObjective')
     if (stageAfterPhone === 'stage-key-outdated') {
       expect(objOutdated).toContain('重新搜索确认')
       await expect(objectiveEl).toContainText('重新搜索确认')
-    } else if (stageAfterPhone === 'stage-update-key-memory') {
+    } else if (stageAfterPhone === 'stage-key-outdated') {
       expect(objOutdated).toContain('更新钥匙')
       await expect(objectiveEl).toContainText('更新钥匙')
     }
@@ -409,11 +408,11 @@ test.describe('第二关 Leave-Home Deterministic Core Memory Loop（Semifinal S
     expect(setFar.success).toBe(true)
     // B1-断言 7：仅记录状态；阶段推进根据钥匙着陆位置可能有不同，只要后续近/远断言通过即可。
     const curStageAfterFar = setFar.curStage
-    const advancedDirectlyToUpdateKey = curStageAfterFar === 'stage-update-key-memory'
+    const advancedDirectlyToUpdateKey = curStageAfterFar === 'stage-key-outdated'
     const stageFar = await readState<string | null>(page, 'getCurrentStageId')
     console.log('🎯 放置远位置后阶段（readState）:', stageFar, ' / 内部评估后:', curStageAfterFar)
 
-    // ===== B1-断言 8：靠近新位置钥匙 → 阶段变成 stage-update-key-memory（E 按钮提示"更新钥匙记忆"）
+    // ===== B1-断言 8：靠近新位置钥匙 → 阶段变成 stage-key-outdated（E 按钮提示"更新钥匙记忆"）
     // 重新获取 entities 确保数据是最新的（包含 position）
     const keyEntitiesFresh = await readState<Array<{ configId?: string; currentRoom?: string; status?: string; id: string; position?: { x: number; y: number; z: number } }>>(page, 'getEntities')
     const keyEntityFresh = keyEntitiesFresh.find((e) => e.configId === 'obj-key' && e.currentRoom === 'living' && e.status === 'free')
@@ -555,9 +554,9 @@ test.describe('第二关 Leave-Home Deterministic Core Memory Loop（Semifinal S
     }) as any
     console.log('🔬 STAGE DEBUG:', JSON.stringify(stageDebug, null, 2))
     // Sprint B.1 修正：leave-home 的 completionCondition 现在接受两种 closeToKey 判定：ctx.nearbyEntityConfigId 或 距离<0.5
-    // 所以阶段只要已经推进到 stage-update-key-memory，就视为断言成功；不再强依赖 ctx.nearbyEntityConfigId。
+    // 所以阶段只要已经推进到 stage-key-outdated，就视为断言成功；不再强依赖 ctx.nearbyEntityConfigId。
     let stageFinal = stageDebug.stageAfterApi
-    if (stageFinal !== 'stage-update-key-memory' && stageDebug.finalStage === 'stage-update-key-memory') {
+    if (stageFinal !== 'stage-key-outdated' && stageDebug.finalStage === 'stage-key-outdated') {
       stageFinal = stageDebug.finalStage
     }
     if (stageFinal === 'stage-key-outdated') {
@@ -567,7 +566,7 @@ test.describe('第二关 Leave-Home Deterministic Core Memory Loop（Semifinal S
       stageFinal = (await readState<string | null>(page, 'getCurrentStageId')) ?? stageFinal
     }
     // 注意：此处不使用 useGameStore.setState 兜底；若条件均满足但阶段未推进，expect 失败直接 fail
-    expect(stageFinal).toBe('stage-update-key-memory')
+    expect(stageFinal).toBe('stage-key-outdated')
     const stageNearKey = stageFinal
     const objUpdate = await readState<string | null>(page, 'getCurrentObjective')
     expect(objUpdate).toContain('更新钥匙')
@@ -596,7 +595,7 @@ test.describe('第二关 Leave-Home Deterministic Core Memory Loop（Semifinal S
     void advancedDirectlyToUpdateKey
     void stageNearKey
 
-    // ===== B1-断言 5：未更新钥匙记忆时，stage-update-key-memory 中拾取钥匙失败（F 被禁止：需要先 E 更新）
+    // ===== B1-断言 5：未更新钥匙记忆时，stage-key-outdated 中拾取钥匙失败（F 被禁止：需要先 E 更新）
     // 不调用 forceSetPhasePlaying，通过附近命令直接尝试 pick
     const pickBeforeUpdate = await callNearbyEntityCommand(page, 'pickByConfigId', 'obj-key', 'living')
     expect(pickBeforeUpdate.success).toBe(false)
@@ -608,7 +607,7 @@ test.describe('第二关 Leave-Home Deterministic Core Memory Loop（Semifinal S
     expect(_chaosB).toBeLessThanOrEqual(chaosAfterBlocked + 220)
     void _stepB
 
-    // ===== 在 stage-update-key-memory 直接按 E 更新钥匙记忆
+    // ===== 在 stage-key-outdated 直接按 E 更新钥匙记忆
     // 不调用 manualSetKeyMemoryFreshAndFinalize，改用真实的 saveMemoryByConfigId + 阶段推进
     const entsBeforeUpdate = await readState<Array<{ configId?: string; currentRoom?: string; status?: string; id: string; position?: { x: number; y: number; z: number } }>>(page, 'getEntities')
     const keyBeforeUpdate = entsBeforeUpdate.find((e) => e.configId === 'obj-key')

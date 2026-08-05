@@ -80,8 +80,8 @@ export function executePick(entityId: string): GameCommandResult {
 
   // Sprint B.1: 出门大作战特定阶段禁止拾取钥匙
   if (before.task?.id === 'task-leave-home' && entity.configId === 'obj-key') {
-    // 阶段一 (observe-key)：保存钥匙记忆前，禁止拾取钥匙
-    if (before.currentStageId === 'stage-observe-key') {
+    // 阶段一 (observe-fetch)：保存钥匙记忆前，禁止拾取钥匙
+    if (before.currentStageId === 'stage-observe-fetch') {
       const keySaved = before.memorySlots.some(
         (s) => s !== null && s.entityConfigId === 'obj-key',
       )
@@ -93,8 +93,8 @@ export function executePick(entityId: string): GameCommandResult {
         }
       }
     }
-    // 阶段四 (update-key-memory)：更新钥匙记忆前，禁止拾取钥匙
-    if (before.currentStageId === 'stage-update-key-memory') {
+    // 阶段四 (key-outdated)：更新钥匙记忆前，禁止拾取钥匙
+    if (before.currentStageId === 'stage-key-outdated') {
       const catFired = before.triggeredEvents.has('se-cat-pushes-key')
       const keyFresh = before.memorySlots.some(
         (s) => s !== null && s.entityConfigId === 'obj-key' && !s.outdated,

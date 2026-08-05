@@ -87,18 +87,13 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       size: { x: 0.4, y: 1.8, z: 0.4 },
     },
     {
-      id: 'decor-floor-lamp-2',
-      position: { x: 3.5, y: 0, z: 1.5 },
-      size: { x: 0.35, y: 1.6, z: 0.35 },
-    },
-    {
       id: 'decor-plant-1',
       position: { x: -3.5, y: 0, z: -3.5 },
       size: { x: 0.5, y: 1.2, z: 0.5 },
     },
     {
       id: 'decor-plant-2',
-      position: { x: 3.6, y: 0, z: 2.0 },
+      position: { x: -3.5, y: 0, z: 2.5 },
       size: { x: 0.35, y: 0.8, z: 0.35 },
     },
     {
@@ -288,21 +283,6 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       id: 'decor-washer-right',
       position: { x: 24.5, y: 0.55, z: -1.8 },
       size: { x: 0.6, y: 1.1, z: 0.6 },
-    },
-    {
-      id: 'decor-basket-red',
-      position: { x: 23.0, y: 0.25, z: -0.3 },
-      size: { x: 0.45, y: 0.5, z: 0.45 },
-    },
-    {
-      id: 'decor-basket-blue',
-      position: { x: 24.0, y: 0.25, z: -0.3 },
-      size: { x: 0.45, y: 0.5, z: 0.45 },
-    },
-    {
-      id: 'decor-basket-green',
-      position: { x: 25.0, y: 0.25, z: -0.3 },
-      size: { x: 0.45, y: 0.5, z: 0.45 },
     },
     {
       id: 'decor-towel-rack',

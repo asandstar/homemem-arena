@@ -204,8 +204,8 @@ export function HUD() {
   const catFired = eventToasts.some(t => t.type === 'cat')
   // Sprint B.1: 仅 task-leave-home 阶段规则生效，避免影响其他关卡
   const isLeaveHome = task?.id === 'task-leave-home'
-  const stageObserveKey = isLeaveHome && currentStageId === 'stage-observe-key'
-  const stageUpdateKey = isLeaveHome && currentStageId === 'stage-update-key-memory'
+  const stageObserveKey = isLeaveHome && currentStageId === 'stage-observe-fetch'
+  const stageUpdateKey = isLeaveHome && currentStageId === 'stage-key-outdated'
   const stageFinalize = isLeaveHome && currentStageId === 'stage-finalize'
   const nearKey = nearbyEntity?.configId === 'obj-key'
 
