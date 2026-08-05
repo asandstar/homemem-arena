@@ -427,9 +427,44 @@ export function HUD() {
           {task?.goals && task.goals.length > 0 && (
             <div className="space-y-1 overflow-y-auto pr-1" style={{ maxHeight: isMobile ? '10vh' : isCompact ? '15vh' : '25vh' }}>
               <div className="flex items-center justify-between px-2 py-1">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-purple-300/80">目标进度</span>
-                <span className="text-[10px] font-bold text-purple-300">{achievedGoals}/{totalGoals}</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-purple-300/80 flex items-center gap-1">
+                  <Target size={10} />
+                  任务进度
+                </span>
+                <span className={`text-[10px] font-bold ${achievedGoals === totalGoals ? 'text-green-400' : 'text-purple-300'}`}>
+                  {achievedGoals}/{totalGoals}
+                  {totalGoals > 0 && (
+                    <span className="ml-1 inline-block w-12 h-1.5 bg-slate-700 rounded-full overflow-hidden align-middle">
+                      <span
+                        className="block h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </span>
+                  )}
+                </span>
               </div>
+              {/* Always-visible: show current active goal or next unchecked goal */}
+              {!taskPanelOpen && (() => {
+                const nextGoal = task.goals.find((g: GoalSpec) => !isGoalAchieved(g))
+                if (!nextGoal) {
+                  return (
+                    <div className="px-2 py-1.5 rounded-lg bg-green-500/20 border border-green-500/40 text-xs font-semibold text-green-300 flex items-center gap-2">
+                      <CheckCircle2 size={14} />
+                      所有任务已完成！
+                    </div>
+                  )
+                }
+                return (
+                  <div className="px-2 py-1.5 rounded-lg bg-slate-800/60 border border-slate-600/40">
+                    <div className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">
+                      下一个目标
+                    </div>
+                    <div className="text-xs text-white leading-snug line-clamp-1">
+                      {nextGoal.description}
+                    </div>
+                  </div>
+                )
+              })()}
               {taskPanelOpen && (
                 <>
                   {activeGoal && !currentObjective && (
@@ -974,7 +1009,7 @@ export function HUD() {
         {floatingTexts.map((ft) => (
           <div
             key={ft.id}
-            className={`absolute animate-float-up font-bold text-lg ${
+            className={`absolute animate-float-up font-bold text-base flex items-center gap-1 ${
               ft.type === 'score'
                 ? 'text-green-400'
                 : ft.type === 'error'
@@ -983,14 +1018,18 @@ export function HUD() {
                     ? 'text-yellow-400'
                     : ft.type === 'memory'
                       ? 'text-purple-400'
-                      : 'text-white'
+                      : 'text-cyan-300'
             }`}
             style={{
               left: `${50 + (ft.x % 20 - 10)}%`,
               top: `${40 + (ft.y % 10)}%`,
-              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+              textShadow: '0 2px 4px rgba(0,0,0,0.8)',
             }}
           >
+            {ft.type === 'score' && <span className="text-sm">✨</span>}
+            {ft.type === 'error' && <span className="text-sm">❌</span>}
+            {ft.type === 'combo' && <span className="text-sm">🔥</span>}
+            {ft.type === 'memory' && <span className="text-sm">🧠</span>}
             {ft.text}
           </div>
         ))}

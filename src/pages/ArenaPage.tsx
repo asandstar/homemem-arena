@@ -26,6 +26,7 @@ const HUD = lazy(() => import('../components/arena3d/HUD').then((m) => ({ defaul
 const DialogBox = lazy(() => import('../components/dialog/DialogBox').then((m) => ({ default: m.DialogBox })))
 const ItemHintIndicator = lazy(() => import('../components/arena3d/ItemHintIndicator').then((m) => ({ default: m.ItemHintIndicator })))
 const PauseMenu = lazy(() => import('../components/arena3d/PauseMenu').then((m) => ({ default: m.PauseMenu })))
+const TutorialOverlay = lazy(() => import('../components/arena3d/TutorialOverlay').then((m) => ({ default: m.TutorialOverlay })))
 
 /**
  * 模块级安全 env 访问：import.meta 在非模块上下文（ErrorBoundary、HMR 损坏 chunk、
@@ -81,6 +82,7 @@ export function ArenaPage() {
   const [briefingOpen, setBriefingOpen] = useState(true)
   const [narrativeText, setNarrativeText] = useState<string | null>(null)
   const [showStats, setShowStats] = useState(false)
+  const [showTutorial, setShowTutorial] = useState(false)
 
   // [DEV ONLY · WP0A CALIBRATION HELPER] 计算一次即可，非 state 避免 re-render 抖动
   const isCalibrationMode: boolean = (() => {
@@ -607,6 +609,7 @@ export function ArenaPage() {
                     startSession(task.id, task.name, task.briefing)
                     startPlaying()
                     setBriefingOpen(false)
+                    setShowTutorial(true)
                   }}
                 >
                   {task ? (
@@ -629,6 +632,17 @@ export function ArenaPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 新手引导浮层 - 开始任务后显示，首次进入关卡时 */}
+      {!briefingOpen && phase === 'playing' && showTutorial && task && !isCalibrationMode && (
+        <Suspense fallback={null}>
+          <TutorialOverlay
+            taskName={task.name}
+            taskGoal={task.goals?.[0]?.description ?? '完成所有任务目标'}
+            onClose={() => setShowTutorial(false)}
+          />
+        </Suspense>
       )}
 
       {/* 叙事弹窗 - 关卡完成/失败 */}

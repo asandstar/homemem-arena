@@ -1,0 +1,114 @@
+import { useEffect, useState } from 'react'
+import { X, Target, Keyboard, Brain, Sparkles, AlertCircle } from 'lucide-react'
+
+interface TutorialOverlayProps {
+  taskName: string
+  taskGoal: string
+  onClose: () => void
+}
+
+export function TutorialOverlay({ taskName, taskGoal, onClose }: TutorialOverlayProps) {
+  const [visible, setVisible] = useState(false)
+  const [fadeOut, setFadeOut] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setVisible(true), 100)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const handleClose = () => {
+    setFadeOut(true)
+    setTimeout(onClose, 300)
+  }
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+        handleClose()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
+  if (!visible) return null
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
+    >
+      <div
+        className={`relative max-w-lg w-[90%] bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl border border-purple-500/40 p-6 transition-all duration-300 ${fadeOut ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}`}
+      >
+        <button
+          onClick={handleClose}
+          className="absolute top-3 right-3 p-1.5 rounded-full bg-slate-700/50 text-slate-400 hover:text-white hover:bg-slate-600/50 transition-colors"
+        >
+          <X size={18} />
+        </button>
+
+        <div className="flex items-center gap-2 mb-1">
+          <Sparkles size={20} className="text-purple-400" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-purple-400">新手指引</span>
+        </div>
+
+        <h2 className="text-xl font-bold text-white mb-4">
+          {taskName}
+        </h2>
+
+        <div className="bg-slate-800/60 rounded-xl p-3 mb-5 border border-slate-700/50">
+          <div className="flex items-start gap-2">
+            <Target size={16} className="text-cyan-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-cyan-300/80 mb-0.5">本关目标</div>
+              <div className="text-sm text-white leading-snug">{taskGoal}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <div className="bg-slate-800/40 rounded-lg p-3 border border-slate-700/30">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Keyboard size={14} className="text-amber-400" />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-300">移动操作</span>
+            </div>
+            <div className="text-xs text-slate-300 space-y-0.5">
+              <div><span className="font-mono text-amber-300">WASD</span> 移动</div>
+              <div><span className="font-mono text-amber-300">鼠标</span> 旋转视角</div>
+              <div><span className="font-mono text-amber-300">ESC</span> 暂停游戏</div>
+            </div>
+          </div>
+
+          <div className="bg-slate-800/40 rounded-lg p-3 border border-slate-700/30">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Brain size={14} className="text-purple-400" />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-purple-300">核心玩法</span>
+            </div>
+            <div className="text-xs text-slate-300 space-y-0.5">
+              <div><span className="font-mono text-purple-300">F</span> 拾取/放置物品</div>
+              <div><span className="font-mono text-purple-300">E</span> 保存位置记忆</div>
+              <div><span className="font-mono text-purple-300">H</span> 隐藏/显示 UI</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-5">
+          <AlertCircle size={16} className="text-yellow-400 flex-shrink-0 mt-0.5" />
+          <div className="text-xs text-yellow-200/90 leading-relaxed">
+            <span className="font-semibold text-yellow-300">提示：</span>
+            物品位置可能会改变！当物体移动时，你之前保存的记忆会过期（变灰），需要重新保存最新位置。
+          </div>
+        </div>
+
+        <button
+          onClick={handleClose}
+          className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold text-sm hover:from-purple-500 hover:to-pink-500 hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-200 active:scale-[0.98]"
+        >
+          开始挑战
+          <span className="ml-2 text-xs opacity-70">(按任意键关闭)</span>
+        </button>
+      </div>
+    </div>
+  )
+}
