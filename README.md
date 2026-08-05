@@ -6,7 +6,7 @@
 [![Three.js](https://img.shields.io/badge/Three.js-R3F-000000?style=flat&logo=three.js)](https://threejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?style=flat&logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=flat)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-321-green?style=flat)]()
+[![Tests](https://img.shields.io/badge/tests-345-green?style=flat)]()
 
 > 一款让你顺便练记忆的 3D 网页小游戏。你是记忆有限的家政机器人「小橡」，在会捣乱的房子里完成家务，应对调皮的记忆小妖。
 >
@@ -155,7 +155,7 @@ npm run build
 项目已配置 GitHub Actions 工作流（`.github/workflows/deploy.yml`），每次 push 到 `main` 分支后自动构建并部署到 GitHub Pages。
 
 - **在线试玩地址**：https://asandstar.github.io/homemem-arena/
-- **部署分支**：`gh-pages`（由 Actions 自动管理）
+- **部署方式**：push `main` → [.github/workflows/deploy.yml](.github/workflows/deploy.yml) 运行 `lint/test/qa/build`，通过后用 `actions/upload-pages-artifact@v3` + `actions/deploy-pages@v4` 直接把 `dist/` 部署到 GitHub Pages（不使用 `gh-pages` 分支）。
 - **Base Path**：`/homemem-arena/`（已在 `vite.config.ts` 中配置）
 
 ## 文档索引
