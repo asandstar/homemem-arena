@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Sun, Coffee, CloudMoon, Volume2, VolumeX, Sparkles, Play } from 'lucide-react'
-import { PUBLIC_LEVEL_ORDER, getTaskById } from '../data/tasks'
+import { ArrowLeft, Sun, Coffee, CloudMoon, Volume2, VolumeX, Sparkles, Play, Lock } from 'lucide-react'
+import { PUBLIC_LEVEL_ORDER, HIDDEN_TASK_IDS, getPublicTaskTemplates as _getPublicTaskTemplates, isHiddenTaskId } from '../data/tasks'
 import { TaskCard } from '../components/tasks/TaskCard'
 import { useUiStore } from '../store/useUiStore'
 import { getSaveList, loadGame } from '../save/saveSystem'
@@ -11,18 +11,16 @@ const timeSlots = [
   { icon: Sun, label: '清晨 07:30', color: 'text-yellow-400', emoji: '🌅' },
   { icon: Coffee, label: '上午 08:00', color: 'text-orange-400', emoji: '☕' },
   { icon: CloudMoon, label: '下午 15:00', color: 'text-purple-400', emoji: '🌆' },
+  { icon: CloudMoon, label: '黄昏 18:00', color: 'text-pink-400', emoji: '🌇' },
+  { icon: CloudMoon, label: '深夜 23:00', color: 'text-indigo-400', emoji: '🌙' },
 ]
 
 const PUBLIC_LEVEL_CAPTION: Record<string, string> = {
-  'task-clean-table': '基础教学 · 保存与使用记忆',
-  'task-leave-home': '核心挑战 · 识别并更新过期记忆',
-  'task-laundry-sort': '进阶挑战 · 有限记忆与多目标管理',
-}
-
-function getPublicTaskTemplates() {
-  return PUBLIC_LEVEL_ORDER
-    .map((id) => getTaskById(id))
-    .filter((t): t is NonNullable<typeof t> => Boolean(t))
+  'task-clean-table': '第一章 · 失忆管家初次启动',
+  'task-leave-home': '第二章 · 钥匙猫的清晨恶作剧',
+  'task-laundry-sort': '第三章 · 洗衣房的袜子幽灵',
+  'task-breakfast': '🔬 内部测试 · 时间循环与流程顺序（DEV 预览）',
+  'task-night-patrol': '🔬 内部测试 · 黑暗中的多房间巡查（DEV 预览）',
 }
 
 export function TaskSelectPage() {
@@ -38,11 +36,17 @@ export function TaskSelectPage() {
   const levelProgress = useGameStore((s) => s.levelProgress)
 
   const saveList = getSaveList()
-  const publicTaskTemplates = getPublicTaskTemplates()
+  // 用 src/data/tasks 里的权威 getPublicTaskTemplates（DEV 环境下 VITE_UNLOCK_HIDDEN_LEVELS=true 会返回 5 关）
+  const publicTaskTemplates = useMemo(() => _getPublicTaskTemplates(), [])
+  // 解锁序列使用 PUBLIC_LEVEL_ORDER 顺序（隐藏关排在后面，用前一关完成解锁）
+  const unlockOrder = useMemo<string[]>(() => {
+    return [...PUBLIC_LEVEL_ORDER, ...HIDDEN_TASK_IDS]
+  }, [])
 
   useEffect(() => {
-    initializeProgress([...PUBLIC_LEVEL_ORDER])
-  }, [initializeProgress])
+    // 初始化所有显示关卡的 progress（包括 5 关模式下的 breakfast/night-patrol）
+    initializeProgress(publicTaskTemplates.map((t) => t.id))
+  }, [initializeProgress, publicTaskTemplates])
 
   const handleStart = (taskId: string) => {
     navigate(`/play/${taskId}`)
@@ -74,20 +78,22 @@ export function TaskSelectPage() {
   }
 
   const getNextUnlockedTaskIndex = () => {
-    for (let i = 0; i < PUBLIC_LEVEL_ORDER.length; i++) {
-      const progress = levelProgress[PUBLIC_LEVEL_ORDER[i]]
+    const order = publicTaskTemplates.map((t) => t.id)
+    for (let i = 0; i < order.length; i++) {
+      const progress = levelProgress[order[i]]
       if (!progress?.completed) {
         return i
       }
     }
-    return PUBLIC_LEVEL_ORDER.length - 1
+    return Math.max(0, order.length - 1)
   }
 
-  const completedCount = PUBLIC_LEVEL_ORDER.filter(id => levelProgress[id]?.completed).length
+  const completedCount = publicTaskTemplates.filter((t) => levelProgress[t.id]?.completed).length
   const nextIndex = getNextUnlockedTaskIndex()
+  const isFiveLevelMode = publicTaskTemplates.length >= 5
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900 flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900 flex flex-col relative overflow-x-hidden">
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div
           className="absolute top-[5%] left-[5%] w-[350px] h-[350px] rounded-full opacity-25"
@@ -124,24 +130,39 @@ export function TaskSelectPage() {
       <div className="relative z-1 flex-1 flex flex-col items-center px-4 pb-16 pt-4">
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 mb-4">
-            <span className="text-4xl">{timeSlots[0].emoji}</span>
-            <span className="text-4xl animate-pulse">{timeSlots[1].emoji}</span>
-            <span className="text-4xl">{timeSlots[2].emoji}</span>
+            {timeSlots.slice(0, isFiveLevelMode ? 5 : 3).map((t, i) => (
+              <span
+                key={i}
+                className={`text-4xl ${i === Math.min(nextIndex, timeSlots.length - 1) ? 'animate-pulse' : ''}`}
+              >
+                {t.emoji}
+              </span>
+            ))}
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             <span className="bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-              三个递进关卡
+              {isFiveLevelMode ? '五个关卡（含预览）' : '三个递进关卡'}
             </span>
           </h1>
-          <p className="text-slate-400 text-lg mb-4">从基础教学到进阶挑战，一步步锻炼记忆能力~</p>
+          <p className="text-slate-400 text-lg mb-4">
+            {isFiveLevelMode
+              ? 'DEV 预览模式：3 个公开关 + 2 个隐藏关内测版（正式版默认只显示 3 关）'
+              : '跟随 MEM-07 在记忆宅邸中找回失落的记忆碎片，三幕剧情递进展开~'}
+          </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-full text-xs text-violet-300">
               <Sparkles size={12} />
               按顺序解锁，体验能力递进
             </div>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-slate-800/60 border border-slate-700/50 rounded-full text-xs text-slate-400">
-              <span className="text-green-400">{completedCount}</span> / {PUBLIC_LEVEL_ORDER.length} 已完成
+              <span className="text-green-400">{completedCount}</span> / {publicTaskTemplates.length} 已完成
             </div>
+            {isFiveLevelMode && (
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-500/20 border border-amber-500/30 rounded-full text-xs text-amber-300">
+                <Lock size={12} />
+                DEV 预览：2 个隐藏关已解锁显示
+              </div>
+            )}
           </div>
         </div>
 
@@ -151,11 +172,14 @@ export function TaskSelectPage() {
           <div className="space-y-6">
             {publicTaskTemplates.map((task, index) => {
               const progress = getLevelProgress(task.id)
-              const unlocked = isLevelUnlocked(task.id, [...PUBLIC_LEVEL_ORDER])
+              // 隐藏关卡：始终用 PUBLIC_ORDER + HIDDEN 的完整顺序作为解锁序列
+              const unlocked = isLevelUnlocked(task.id, unlockOrder)
+              const isHidden = isHiddenTaskId(task.id)
               const isNext = index === nextIndex && unlocked && !progress.completed
               const isCompleted = progress.completed
               const caption = PUBLIC_LEVEL_CAPTION[task.id] || task.description
               const displayTask = { ...task, description: caption }
+              const slot = timeSlots[index] ?? timeSlots[timeSlots.length - 1]
 
               return (
                 <div key={task.id} className="relative">
@@ -165,7 +189,9 @@ export function TaskSelectPage() {
                       ${isCompleted
                         ? 'bg-gradient-to-br from-green-400 to-emerald-500 shadow-lg shadow-green-500/30'
                         : unlocked
-                          ? 'bg-gradient-to-br from-purple-400 to-pink-500 shadow-lg shadow-purple-500/30 animate-pulse'
+                          ? isHidden
+                            ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-orange-500/30 animate-pulse'
+                            : 'bg-gradient-to-br from-purple-400 to-pink-500 shadow-lg shadow-purple-500/30 animate-pulse'
                           : 'bg-slate-700 border-2 border-slate-600'
                       }
                     `}>
@@ -183,24 +209,46 @@ export function TaskSelectPage() {
                     flex ${index % 2 === 0 ? 'md:justify-start' : 'md:justify-end'}
                   `}>
                     <div className={`
-                      w-full md:w-[calc(50%-2rem)] ${index % 2 === 0 ? 'md:pr-8' : 'md:pl-8'}
+                      w-full md:w-[calc(50%-2rem)] ${index % 2 === 0 ? 'md:pr-8' : 'md:pl-8'} relative
                     `}>
                       <TaskCard
                         task={displayTask}
                         levelNumber={index + 1}
                         onStart={handleStart}
-                        timeLabel={timeSlots[index].label}
-                        timeIcon={timeSlots[index].emoji}
+                        timeLabel={slot.label}
+                        timeIcon={slot.emoji}
                         saveInfo={getLatestSaveForTask(task.id)}
                         onContinue={handleContinue}
                         progress={progress}
                         unlocked={unlocked}
                         isNextToUnlock={isNext}
                       />
+                      {/* 未解锁关卡：加上锁蒙层，明确告诉用户"这关存在，但暂时不能玩"，避免误以为只有 1~2 关 */}
+                      {!unlocked && (
+                        <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-slate-950/85 backdrop-blur-sm pointer-events-none z-10 border-2 border-slate-700/60">
+                          <div className="text-center px-4">
+                            <div className="text-4xl mb-2">🔒</div>
+                            <div className="text-sm font-semibold text-slate-300 mb-1">
+                              第 {index + 1} 关 · 待解锁
+                            </div>
+                            <div className="text-xs text-slate-500 leading-relaxed">
+                              完成前一关后自动解锁
+                              <br />
+                              <span className="text-slate-400">（DEV 模式默认已全部解锁）</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {/* 隐藏关卡内测标签：只在 DEV 5 关预览模式下显示 */}
+                      {isHidden && unlocked && (
+                        <div className="absolute top-3 left-3 z-20 px-2 py-1 rounded text-[10px] font-bold text-amber-200 bg-amber-500/25 border border-amber-500/40 pointer-events-none">
+                          🔬 DEV 预览 · 未正式开放
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {index < PUBLIC_LEVEL_ORDER.length - 1 && (
+                  {index < publicTaskTemplates.length - 1 && (
                     <div className="absolute left-6 md:left-1/2 top-16 -translate-x-1/2 z-10">
                       <div className={`
                         w-0.5 h-8
@@ -228,6 +276,12 @@ export function TaskSelectPage() {
               <div className="w-4 h-4 rounded-full bg-slate-700 border-2 border-slate-600" />
               <span className="text-xs text-slate-400">未解锁</span>
             </div>
+            {isFiveLevelMode && (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-gradient-to-br from-amber-400 to-orange-500" />
+                <span className="text-xs text-slate-400">DEV 预览</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

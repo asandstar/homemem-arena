@@ -1,7 +1,14 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { Layout } from './components/layout/Layout'
 
-const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+// 加 try/catch 守卫：避免 SyntaxError: Cannot use 'import.meta' outside a module
+let basename = '/'
+try {
+  const baseUrl = String((import.meta as any)?.env?.BASE_URL || '/')
+  basename = baseUrl.replace(/\/$/, '') || '/'
+} catch {
+  /* ignore */
+}
 
 export const router = createBrowserRouter(
   [

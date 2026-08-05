@@ -9,6 +9,16 @@ import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { isHiddenTaskId } from '../data/tasks'
 
+/** 模块级安全 env 访问，避免 SyntaxError: Cannot use 'import.meta' outside a module */
+const _SAFE_ENV: { PROD: boolean } = (() => {
+  try {
+    const env = (import.meta as any)?.env
+    return { PROD: Boolean(env?.PROD) }
+  } catch {
+    return { PROD: true }
+  }
+})()
+
 export function SessionDataPage() {
   const { taskId } = useParams<{ taskId: string }>()
   const navigate = useNavigate()
@@ -16,7 +26,7 @@ export function SessionDataPage() {
   const currentSession = useSessionStore((s) => s.currentSession)
 
   useEffect(() => {
-    if (taskId && import.meta.env.PROD && isHiddenTaskId(taskId)) {
+    if (taskId && _SAFE_ENV.PROD && isHiddenTaskId(taskId)) {
       navigate('/tasks', { replace: true })
       return
     }

@@ -6,7 +6,12 @@ export function resolveAssetUrl(registryPath: string): string {
     return raw
   }
 
-  const baseUrl = String((import.meta as any).env?.BASE_URL || '/')
+  let baseUrl = '/'
+  try {
+    baseUrl = String((import.meta as any).env?.BASE_URL || '/')
+  } catch {
+    baseUrl = '/'
+  }
   const normalizedBase = baseUrl.replace(/\/+$/, '') + '/'
 
   if (raw.startsWith(normalizedBase)) {

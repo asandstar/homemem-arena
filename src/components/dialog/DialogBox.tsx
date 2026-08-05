@@ -33,6 +33,14 @@ export function DialogBox({ node, onChoice, onNext, onClose }: DialogBoxProps) {
     return () => clearInterval(interval)
   }, [node.text])
 
+  // 对话打开时立即释放浏览器 Pointer Lock，否则光标被锁定在 canvas 上，
+  // 选项按钮收不到 click 事件，玩家必须按 ESC 才能点选项。
+  useEffect(() => {
+    if (typeof document !== 'undefined' && document.pointerLockElement) {
+      document.exitPointerLock?.()
+    }
+  }, [])
+
   const handleSkip = () => {
     if (isTyping) {
       setDisplayedText(node.text)
@@ -43,7 +51,10 @@ export function DialogBox({ node, onChoice, onNext, onClose }: DialogBoxProps) {
   const hasChoices = node.choices && node.choices.length > 0
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none">
+    <div
+      data-dialog-root
+      className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none"
+    >
       <div 
         className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto"
         onClick={handleSkip}

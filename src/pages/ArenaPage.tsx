@@ -16,7 +16,7 @@ import { resetArenaCleanupFlag, updateBgmState, playBgm, stopBgm } from '../audi
 import { playRoomAmbient, stopAmbient } from '../audio/ambient'
 import { stopAllAudioImmediate, resumeAudioContexts } from '../audio/audioManager'
 import { executeContainerInteraction, executePick } from '../game/commands'
-import { getTaskById, isHiddenTaskId } from '../data/tasks'
+import { getTaskById, isHiddenTaskId, PUBLIC_LEVEL_ORDER } from '../data/tasks'
 import { useDialog } from '../dialog/useDialog'
 import { startAutoSave, stopAutoSave } from '../save/saveSystem'
 import { subscribeEvent } from '../engine/eventBus'
@@ -26,12 +26,34 @@ const HUD = lazy(() => import('../components/arena3d/HUD').then((m) => ({ defaul
 const DialogBox = lazy(() => import('../components/dialog/DialogBox').then((m) => ({ default: m.DialogBox })))
 const ItemHintIndicator = lazy(() => import('../components/arena3d/ItemHintIndicator').then((m) => ({ default: m.ItemHintIndicator })))
 
+/**
+ * 模块级安全 env 访问：import.meta 在非模块上下文（ErrorBoundary、HMR 损坏 chunk、
+ * 极少数 worker/shim 场景）下会抛 SyntaxError: Cannot use 'import.meta' outside a module。
+ * 这里在模块加载时读一次并缓存，避免每次 render 都 try/catch。
+ */
+const _SAFE_ENV: { DEV: boolean; PROD: boolean; MODE: string; VITE_E2E?: string } = (() => {
+  try {
+    const env = (import.meta as any)?.env
+    return {
+      DEV: Boolean(env?.DEV),
+      PROD: Boolean(env?.PROD),
+      MODE: String(env?.MODE ?? 'production'),
+      VITE_E2E: env?.VITE_E2E === undefined ? undefined : String(env.VITE_E2E),
+    }
+  } catch {
+    return { DEV: false, PROD: true, MODE: 'production', VITE_E2E: undefined }
+  }
+})()
+
 export function ArenaPage() {
   const { taskId } = useParams<{ taskId: string }>()
   const navigate = useNavigate()
   const location = useLocation()
 
   const audioEnabled = useUiStore((s) => s.audioEnabled)
+  const audioPromptAnswered = useUiStore((s) => s.audioPromptAnswered)
+  const answerAudioPrompt = useUiStore((s) => s.answerAudioPrompt)
+  const toggleAudioEnabled = useUiStore((s) => s.toggleAudioEnabled)
 
   // 所有状态都用「单字段 selector」，绝对不要每次创建新对象。
   const task = useGameStore((s) => s.task)
@@ -59,6 +81,26 @@ export function ArenaPage() {
   const [narrativeText, setNarrativeText] = useState<string | null>(null)
   const [showStats, setShowStats] = useState(false)
 
+  // [DEV ONLY · WP0A CALIBRATION HELPER] 计算一次即可，非 state 避免 re-render 抖动
+  const isCalibrationMode: boolean = (() => {
+    try {
+      if (!_SAFE_ENV.DEV || typeof window === 'undefined') return false
+      return /[?&]assetCalibration=(1|true|yes)/i.test(window.location.search)
+    } catch {
+      return false
+    }
+  })();
+
+  // 当进入 calibration 模式时，ArenaPage 的 Briefing 弹层仍会显示，但 Scene3D 内部已短路为 AssetCalibrationView，
+  // Briefing Modal 叠在校准页上方挡模型，同时 Briefing 的 canvas 与校准 view 都出现。
+  // 这里直接关弹层：保持视觉验收能看到完整的 Calibration UI。
+  useEffect(() => {
+    if (!_SAFE_ENV.DEV || typeof window === 'undefined') return
+    if (/[?&]assetCalibration=(1|true|yes)/i.test(window.location.search)) {
+      setBriefingOpen(false)
+    }
+  }, [taskId, location.key])
+
   const {
     dialogState,
     currentNode,
@@ -69,10 +111,47 @@ export function ArenaPage() {
   } = useDialog()
 
   useEffect(() => {
-    if (taskId && import.meta.env.PROD && isHiddenTaskId(taskId)) {
+    if (taskId && _SAFE_ENV.PROD && isHiddenTaskId(taskId)) {
       navigate('/tasks', { replace: true })
     }
   }, [taskId, navigate])
+
+  // [DEV ONLY · WP0A CALIBRATION HELPER]
+  // 当 URL query 包含 assetCalibration=1 / devUnlock=1 / devUnlockAll=1 时，
+  // 自动把 PUBLIC_LEVEL_ORDER 所有任务标记为 unlocked + completed，
+  // 确保 browser 自动化 / 视觉验收无需手动打通 L1 即可进入 L2=L3。
+  // 生产环境：_SAFE_ENV.DEV === false，该 effect 整段被 tree-shake 删除（不写 localStorage）。
+  useEffect(() => {
+    if (!_SAFE_ENV.DEV || typeof window === 'undefined') return
+    const search = window.location.search
+    const shouldUnlock = /[?&](assetCalibration|devUnlock|devUnlockAll)=(1|true|yes)/i.test(search)
+    if (!shouldUnlock) return
+    const state = useGameStore.getState()
+    const existing = state.levelProgress ?? {}
+    const updated: typeof existing = { ...existing }
+    let changed = false
+    ;(PUBLIC_LEVEL_ORDER as readonly string[]).forEach((id) => {
+      const cur = updated[id]
+      if (!cur || !cur.unlocked || !cur.completed) {
+        updated[id] = {
+          taskId: id,
+          unlocked: true,
+          completed: true,
+          rank: cur?.rank ?? 'S',
+          bestScore: cur?.bestScore ?? 9500,
+          completionTime: cur?.completionTime ?? 45_000,
+          attempts: (cur?.attempts ?? 0) + (cur?.completed ? 0 : 1),
+        }
+        changed = true
+      }
+    })
+    if (!changed) return
+    try {
+      const STORAGE_KEY = 'homemem-level-progress'
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    } catch { /* quota / disabled storage — ignore */ }
+    useGameStore.setState({ levelProgress: updated })
+  }, [taskId, location.key])
 
   useEffect(() => {
     // briefingOpen 守卫：ArenaPage 重新挂载时 Zustand store 中 phase 可能仍为上一局的 'playing'，
@@ -158,7 +237,10 @@ export function ArenaPage() {
     stopAllAudioImmediate()
     setNarrativeText(null)
     setShowStats(false)
-    setBriefingOpen(true)
+    // [DEV ONLY · Calibration] 校准模式不显示 Briefing 弹层，保证 AssetCalibrationView 全画面可见
+    const calibMode = _SAFE_ENV.DEV && typeof window !== 'undefined'
+      && /[?&]assetCalibration=(1|true|yes)/i.test(window.location.search)
+    setBriefingOpen(calibMode ? false : true)
     if (closeDialog) closeDialog()
     initializeTask(taskId)
   }, [taskId, location.key, initializeTask, navigate, closeDialog])
@@ -323,7 +405,7 @@ export function ArenaPage() {
   )
 
   return (
-    <div className="flex-1 relative h-full min-h-screen w-full overflow-hidden" style={{ background: '#0f172a' }} data-testid="arena-page-root">
+    <div className="flex-1 relative h-full min-h-0 w-full overflow-hidden" style={{ background: '#0f172a' }} data-testid="arena-page-root">
       {/* 3D 场景：始终渲染，briefing 阶段也提供背景画面，避免"后面白屏/透明"被误认为模型加载失败 */}
       <Suspense fallback={
         <div className="absolute inset-0 flex items-center justify-center" style={{ background: '#0f172a' }}>
@@ -338,14 +420,14 @@ export function ArenaPage() {
 
       {/* HUD 覆盖层：只有 task ready + briefing 关闭后 再渲染，避免 briefing 阶段 HUD/Minimap 内部更新 UiStore → 循环
           TODO: 修复 Minimap/UiStore 循环后改为：phase !== 'ended' && task */}
-      {task && !briefingOpen && (
+      {task && !briefingOpen && !isCalibrationMode && (
         <Suspense fallback={null}>
           <HUD />
         </Suspense>
       )}
 
       {/* 寻物方向指示器：task ready + briefing closed + playing 时才显示 */}
-      {task && !briefingOpen && phase === 'playing' && (
+      {task && !briefingOpen && phase === 'playing' && !isCalibrationMode && (
         <Suspense fallback={null}>
           <ItemHintIndicator />
         </Suspense>
@@ -431,6 +513,47 @@ export function ArenaPage() {
                 </>
               )}
 
+              {/* 声音选择：首次进入时询问，选择后显示当前状态 + 切换按钮 */}
+              {!audioPromptAnswered ? (
+                <div className="bg-cyan-50 border border-cyan-300 rounded-lg p-3 mb-3" data-testid="audio-prompt">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-base">🔊</span>
+                    <span className="text-sm font-semibold text-cyan-900">是否开启游戏声音？</span>
+                  </div>
+                  <p className="text-[11px] text-cyan-700 mb-2">默认静音。游戏中可按 M 键或点右下角按钮随时切换。</p>
+                  <div className="flex gap-2">
+                    <Button
+                      className="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-semibold"
+                      data-testid="audio-prompt-enable"
+                      onClick={() => answerAudioPrompt(true)}
+                    >
+                      开启声音
+                    </Button>
+                    <Button
+                      className="flex-1 border border-cyan-400 text-cyan-700 hover:bg-cyan-100 bg-cyan-50/60 text-sm font-semibold"
+                      data-testid="audio-prompt-disable"
+                      onClick={() => answerAudioPrompt(false)}
+                    >
+                      保持静音
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-slate-100/80 border border-slate-300 rounded-lg px-3 py-2 mb-3 flex items-center justify-between text-xs">
+                  <span className="text-slate-700">
+                    {audioEnabled ? '🔊 声音已开启' : '🔇 声音已关闭'}
+                  </span>
+                  <button
+                    type="button"
+                    className="text-cyan-700 hover:underline font-medium"
+                    data-testid="audio-prompt-toggle"
+                    onClick={() => toggleAudioEnabled()}
+                  >
+                    切换
+                  </button>
+                </div>
+              )}
+
               <div className="flex gap-3">
                 <Button
                   className={
@@ -442,8 +565,11 @@ export function ArenaPage() {
                   disabled={!task}
                   onClick={() => {
                     if (!task) return
-                    initAudio()
-                    void resumeAudioContexts()
+                    // 仅在用户已选择开启声音时初始化/恢复音频；否则保持静音
+                    if (audioEnabled) {
+                      initAudio()
+                      void resumeAudioContexts()
+                    }
                     startSession(task.id, task.name, task.briefing)
                     startPlaying()
                     setBriefingOpen(false)
@@ -496,7 +622,7 @@ export function ArenaPage() {
       )}
 
       {/* 结算统计弹窗 */}
-      {!briefingOpen && phase !== 'briefing' && showStats && (
+      {!briefingOpen && phase !== 'briefing' && showStats && !isCalibrationMode && (
         <div className="absolute inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-50 pointer-events-auto">
           <div className={`max-w-md mx-4 p-6 rounded-2xl shadow-2xl border ${
             levelCompleted
@@ -611,7 +737,7 @@ export function ArenaPage() {
       )}
 
       {/* 对话弹窗：仅 briefing 关闭后才允许弹出，避免挡住 briefing 开始任务按钮 */}
-      {dialogState.isOpen && currentNode && !briefingOpen && (
+      {dialogState.isOpen && currentNode && !briefingOpen && !isCalibrationMode && (
         <Suspense fallback={null}>
           <DialogBox
             node={currentNode}

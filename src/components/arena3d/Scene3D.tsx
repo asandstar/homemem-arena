@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect, useState } from 'react'
+import { useMemo, useRef, useEffect, useState, useLayoutEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useGameStore } from '../../store/useGameStore'
 import { useSessionStore } from '../../store/useSessionStore'
@@ -20,6 +20,59 @@ import { CATEGORY_TO_MODEL_ID } from './modelIds'
 import { PixelationPass } from './effects/PixelationPass'
 import { subscribeModelLoad, type ModelLoadStats, resetModelLoadStats } from './models/ModelAsset'
 import * as THREE from 'three'
+import { AssetCalibrationView, shouldShowAssetCalibration } from '../dev/AssetCalibrationView'
+
+// === DEV-only 就绪信号 + WebGL context 监控 ===
+interface HommemRenderReady {
+  sceneMounted: boolean
+  firstFrameRendered: boolean
+  modelTotal: number
+  modelPending: number
+  modelLoaded: number
+  modelFailed: number
+  fallbackCount: number
+  webglContextLost: boolean
+}
+function initRenderReadySignal() {
+  try {
+    const env = (import.meta as any)?.env
+    if (!env?.DEV || typeof window === 'undefined') return
+    const initial: HommemRenderReady = {
+      sceneMounted: false,
+      firstFrameRendered: false,
+      modelTotal: 0,
+      modelPending: 0,
+      modelLoaded: 0,
+      modelFailed: 0,
+      fallbackCount: 0,
+      webglContextLost: false,
+    }
+    // HMR 友好：如果已经存在则仅补全缺失字段，保留已经在状态中的模型统计
+    const existing = (window as any).__HOMEMEM_RENDER_READY__
+    if (existing && typeof existing === 'object') {
+      const merged: HommemRenderReady = { ...initial }
+      const keys = Object.keys(initial) as (keyof HommemRenderReady)[]
+      for (let i = 0; i < keys.length; i++) {
+        const k = keys[i]
+        if (typeof existing[k] === typeof initial[k]) {
+          ;(merged as any)[k] = existing[k]
+        }
+      }
+      ;(window as any).__HOMEMEM_RENDER_READY__ = merged
+    } else {
+      ;(window as any).__HOMEMEM_RENDER_READY__ = { ...initial }
+    }
+  } catch { /* ignore */ }
+}
+initRenderReadySignal()
+function setReadyPartial(patch: Partial<HommemRenderReady>) {
+  try {
+    const env = (import.meta as any)?.env
+    if (!env?.DEV || typeof window === 'undefined') return
+    const cur = (window as any).__HOMEMEM_RENDER_READY__ || {}
+    ;(window as any).__HOMEMEM_RENDER_READY__ = { ...cur, ...patch }
+  } catch { /* ignore */ }
+}
 
 interface Scene3DProps {
   onEntityClick: (entityId: string) => void
@@ -159,6 +212,7 @@ function BriefingScene() {
       {roomsToRender.map((room) => (
         <Room3D key={room.id} spec={room} />
       ))}
+      <FirstFrameTracker />
     </>
   )
 }
@@ -344,9 +398,225 @@ function PlayingSceneContents({ onEntityClick, onContainerClick }: Scene3DProps)
       <FirstPersonControls />
       <ChaosEffect active={chaosEffectActive} chaosValue={chaosValue} />
       <ParticleRenderer />
-      {!(import.meta.env.MODE === 'e2e' || import.meta.env.VITE_E2E === 'true') && <PixelationPass pixelSize={4} />}
+      {!(
+        (() => {
+          try {
+            const env = (import.meta as any)?.env
+            return env?.MODE === 'e2e' || String(env?.VITE_E2E ?? '') === 'true'
+          } catch {
+            return false
+          }
+        })()
+      ) && <PixelationPass pixelSize={4} />}
+      <FirstFrameTracker />
     </>
   )
+}
+
+/**
+ * FirstFrameTracker - 在 R3F 场景挂载后监控首帧渲染、WebGL context、模型加载状态，并写入 DEV 就绪信号。
+ * 只挂载在 SceneContents 内部，保证只在实际 Canvas 渲染时启动。
+ */
+function FirstFrameTracker() {
+  const { gl } = useThree()
+  const frameCountRef = useRef(0)
+  const sceneMountedFiredRef = useRef(false)
+  const firstFrameFiredRef = useRef(false)
+  const statsRef = useRef<ModelLoadStats>({ total: 0, loaded: 0, failed: 0, inflight: 0, failedIds: [] })
+  const lostDebounceRef = useRef<number | null>(null)
+  // StrictMode 第 1 次挂载→卸载触发的 context lost：用 mountedRef 标记，cleanup 后取消所有待判断的 lost
+  const mountedRef = useRef(false)
+  // 每个 mount 分配一个单调递增的 epoch：cleanup 后旧 epoch 的 setTimeout 不会污染新 mount
+  const epochRef = useRef(0)
+  // 每次 mount 的唯一 id：重置首帧计数（useLayoutEffect 同步运行，保证在 useFrame 之前执行）
+  const mountSeqRef = useRef(0)
+
+  // 0. SYNC reset（useLayoutEffect 早于任何 useFrame / useEffect）：
+  //    StrictMode 下顺序是：mount1 → layoutEffect1 → useFrame1+ useEffect1 setup → cleanup1 → layoutEffect2 → useFrame2+useEffect2 setup。
+  //    把重置放在 layoutEffect 能保证"每次挂载开始时，计数先清零 → 然后 useFrame 从 0 计数"。
+  useLayoutEffect(() => {
+    mountSeqRef.current += 1
+    epochRef.current += 1
+    const mySeq = mountSeqRef.current
+    const myEpoch = epochRef.current
+    mountedRef.current = true
+    sceneMountedFiredRef.current = false
+    firstFrameFiredRef.current = false
+    frameCountRef.current = 0
+    if (lostDebounceRef.current !== null) {
+      clearTimeout(lostDebounceRef.current)
+      lostDebounceRef.current = null
+    }
+    try {
+      const env = (import.meta as any)?.env
+      if (env?.DEV) {
+        // mount 时仅重置 webglContextLost，不重置 sceneMounted/firstFrameRendered
+        // 因为 BriefingScene → PlayingSceneContents 切换（同 Canvas 内 FirstFrameTracker 实例替换）
+        // 时，如果在 BriefingScene cleanup 里先写 false，再由新 useFrame 设为 true 过程中存在窗口；
+        // 这里直接假设新实例挂载后，useFrame 会很快（1-3帧内）重设为 true。
+        setReadyPartial({ webglContextLost: false })
+      }
+    } catch { /* ignore */ }
+    return () => {
+      // unmount（含 StrictMode 第一次假卸载）：仅清理定时器、关闭 mounted 标记
+      // —— 不再写回 sceneMounted=false / firstFrameRendered=false，
+      // 防止同 Canvas 内的另一个 FirstFrameTracker 正在活跃时被旧 cleanup 覆盖为 false。
+      // 新 tracker 的 useFrame 会在 1-3 帧内重设为 true，仅在全局场景真的卸载时（整个 Scene3D unmount），
+      // 外部上层 effect 会负责清理（否则即使 sceneMounted=true，上层也没意义）。
+      mountedRef.current = false
+      if (lostDebounceRef.current !== null) {
+        clearTimeout(lostDebounceRef.current)
+        lostDebounceRef.current = null
+      }
+      void mySeq; void myEpoch
+    }
+  }, [gl])
+
+  // 1. WebGL context 事件监控（挂在 canvas 元素上，useEffect 异步，不阻塞首帧）
+  useEffect(() => {
+    let isDev = false
+    try {
+      const env = (import.meta as any)?.env
+      isDev = !!env?.DEV
+    } catch { /* ignore */ }
+    if (!isDev) return
+    const canvas = gl.domElement as HTMLCanvasElement
+    if (!canvas) return
+
+    const myEpoch = epochRef.current
+
+    const onLost = (e: Event) => {
+      try { console.warn('[RenderReady] WebGL context lost (debounced 120ms, epoch=' + myEpoch + ')', e) } catch {}
+      if (!mountedRef.current) return
+      if (lostDebounceRef.current !== null) clearTimeout(lostDebounceRef.current)
+      // 缩短防抖到 120ms，避免瞬时丢失/恢复之间误判为真丢失
+      lostDebounceRef.current = window.setTimeout(() => {
+        lostDebounceRef.current = null
+        if (!mountedRef.current || epochRef.current !== myEpoch) return // 已 unmount 或 remount，忽略旧回调
+        try {
+          const ctx = (gl as any)?.ctx || (gl as any)?.context
+          const reallyLost = ctx?.isContextLost ? ctx.isContextLost() : true
+          if (reallyLost) setReadyPartial({ webglContextLost: true })
+        } catch {
+          setReadyPartial({ webglContextLost: true })
+        }
+      }, 120)
+    }
+    const onRestored = () => {
+      try { console.info('[RenderReady] WebGL context restored (epoch=' + myEpoch + ')') } catch {}
+      if (lostDebounceRef.current !== null) {
+        clearTimeout(lostDebounceRef.current)
+        lostDebounceRef.current = null
+      }
+      if (!mountedRef.current || epochRef.current !== myEpoch) return
+      // context restored 时重置 useFrame 计数守卫，保证 useFrame 重新触发 sceneMounted/firstFrame 信号
+      // （避免 StrictMode 双挂载/瞬时 context 丢失后 useFrame 已进入稳定阶段不再触发条件分支）
+      frameCountRef.current = 0
+      sceneMountedFiredRef.current = false
+      firstFrameFiredRef.current = false
+      try {
+        const env2 = (import.meta as any)?.env
+        if (env2?.DEV) {
+          // 乐观标记 sceneMounted=true，避免 useFrame 下一次触发前有 1-2 帧窗口错过就绪检查
+          setReadyPartial({ webglContextLost: false, sceneMounted: true })
+        }
+      } catch {
+        setReadyPartial({ webglContextLost: false })
+      }
+    }
+    canvas.addEventListener('webglcontextlost', onLost as EventListener)
+    canvas.addEventListener('webglcontextrestored', onRestored as EventListener)
+    try {
+      const ctx = (gl as any)?.ctx || (gl as any)?.context
+      const lost = ctx?.isContextLost ? ctx.isContextLost() : false
+      if (lost) {
+        setTimeout(() => {
+          if (!mountedRef.current || epochRef.current !== myEpoch) return
+          try {
+            const ctx2 = (gl as any)?.ctx || (gl as any)?.context
+            const stillLost = ctx2?.isContextLost ? ctx2.isContextLost() : true
+            if (stillLost) setReadyPartial({ webglContextLost: true })
+          } catch { setReadyPartial({ webglContextLost: true }) }
+        }, 150)
+      } else {
+        setReadyPartial({ webglContextLost: false })
+      }
+    } catch { /* ignore */ }
+    return () => {
+      if (lostDebounceRef.current !== null) {
+        clearTimeout(lostDebounceRef.current)
+        lostDebounceRef.current = null
+      }
+      canvas.removeEventListener('webglcontextlost', onLost as EventListener)
+      canvas.removeEventListener('webglcontextrestored', onRestored as EventListener)
+    }
+  }, [gl])
+
+  // 2. 模型加载统计订阅 → 写入 ready signal
+  useEffect(() => {
+    let isDev = false
+    try {
+      const env = (import.meta as any)?.env
+      isDev = !!env?.DEV
+    } catch { /* ignore */ }
+    if (!isDev) return
+    const unsub = subscribeModelLoad((s) => {
+      statsRef.current = s
+      setReadyPartial({
+        modelTotal: s.total,
+        modelPending: s.inflight,
+        modelLoaded: s.loaded,
+        modelFailed: s.failed,
+      })
+    })
+    try {
+      const init = (window as any).__HOMEMEM_MODEL_STATS_SNAP__
+      if (init) {
+        setReadyPartial({
+          modelTotal: init.total || 0,
+          modelPending: init.inflight || 0,
+          modelLoaded: init.loaded || 0,
+          modelFailed: init.failed || 0,
+        })
+      }
+    } catch { /* ignore */ }
+    return unsub
+  }, [])
+
+  // 3. 首帧标记 + sceneMounted（使用 >=N + 单独 ref 守卫保证只触发一次 setReadyPartial，
+  //    避免 StrictMode 假 unmount 后 frameCount 再次从 0 开始时遇到 count===1 丢失）
+  useFrame(() => {
+    frameCountRef.current += 1
+    // 注：setReadyPartial 内部已经做了 env?.DEV + window 守卫，这里无需额外判断，避免双守卫嵌套导致
+    //     useFrame 内的就绪信号写入失效。
+    if (!sceneMountedFiredRef.current && frameCountRef.current >= 1) {
+      sceneMountedFiredRef.current = true
+      setReadyPartial({ sceneMounted: true })
+    }
+    if (!firstFrameFiredRef.current && frameCountRef.current >= 3) {
+      firstFrameFiredRef.current = true
+      setReadyPartial({ firstFrameRendered: true })
+    }
+    // 兜底：每 6 帧（约 100ms@60fps）强制同步一次 sceneMounted + firstFrame + WebGL 状态
+    // 之前 60 帧间隔过长，context lost 事件丢失后最长 1 秒才会被检测到，
+    // 导致白屏检测窗口里仍报告 webglContextLost=false。
+    if (frameCountRef.current % 6 === 0) {
+      setReadyPartial({
+        sceneMounted: frameCountRef.current >= 1,
+        firstFrameRendered: frameCountRef.current >= 3,
+      })
+      // 周期性查询真实 context 状态，避免 context lost/restored 事件丢失后误报
+      try {
+        const ctx = (gl as any)?.ctx || (gl as any)?.context
+        const reallyLost = ctx?.isContextLost ? Boolean(ctx.isContextLost()) : false
+        setReadyPartial({ webglContextLost: reallyLost })
+      } catch {
+        // ignore
+      }
+    }
+  })
+
+  return null
 }
 
 function SceneContents({ onEntityClick, onContainerClick }: Scene3DProps) {
@@ -366,20 +636,40 @@ function SceneContents({ onEntityClick, onContainerClick }: Scene3DProps) {
 }
 
 export function Scene3D(props: Scene3DProps) {
+  // 每次进入场景重置模型加载统计，避免跨路由重入时累加失真（必须放在任何 early return 之前，保证 hooks 调用顺序一致）
+  useEffect(() => { resetModelLoadStats() }, [])
+  // §十：?assetCalibration=1 仅 DEV 显示完整校准页；生产路径永远不进入。
+  if (shouldShowAssetCalibration()) {
+    return <AssetCalibrationView />
+  }
   return (
     <div
-      style={{ width: '100%', height: '100%', minHeight: '100vh', position: 'relative' }}
+      style={{
+        width: '100%', height: '100%', minHeight: '100%', position: 'relative',
+        // 外层 div 也设背景，三重保险：
+        // 1) Canvas <color attach=background> 2) Canvas style background 3) 外层 div background
+        // 任何 WebGL context lost / Suspense fallback 期间都不会露出浏览器默认白底
+        backgroundColor: '#0f152a',
+      }}
       data-testid="scene3d-root"
     >
       <Canvas
         id="arena-canvas"
         shadows={{ type: THREE.PCFShadowMap }}
-        gl={{ preserveDrawingBuffer: false, antialias: true }}
+        // preserveDrawingBuffer=true：允许 DEV 下 gl.readPixels 检查像素实际内容；
+        // 性能略有影响，但保证白屏检测脚本总能读到真实 pixel RGBA，避免读到透明。
+        gl={{ preserveDrawingBuffer: true, antialias: true }}
         camera={{ position: [0, 1.7, 3], rotation: [0, Math.PI, 0], fov: 75, near: 0.1, far: 100 }}
-        // Canvas CSS 背景与内部 <color attach="background"> 保持一致（0.059,0.082,0.165 ≈ #0f152a），
-        // 双重保险避免 R3F Suspense/Error 期间露出父级白色
         dpr={[1, 2]}
-        style={{ background: '#0f152a' }}
+        style={{
+          background: '#0f152a',
+          display: 'block',
+          width: '100%',
+          height: '100%',
+          // 任何情况下 canvas 可见性 / 不透明度 不能为 0
+          visibility: 'visible',
+          opacity: 1,
+        }}
       >
         <SceneContents {...props} />
       </Canvas>
@@ -403,10 +693,17 @@ function ModelLoadProgressHud() {
   const [autoHidden, setAutoHidden] = useState(false)
   const phase = useGameStore((s) => s.phase)
 
-  // 每次场景从 idle/briefing 进入 playing 时重置计数器（防止跨任务累计）
+  // 每次场景挂载/卸载时重置计数器（防止跨路由重入时累加）。
+  // 注意：phase 从 idle/briefing 进入 playing 时 Scene3D 不会 unmount（SceneContents 只切换子组件），
+  // 所以这里只在真正挂载时 reset 一次；PlayingSceneContents 内的模型加载使用相同 epoch，
+  // BriefingScene 的模型加载 cleanup 仍可通过 prevKey epoch 匹配 inflight 闭合。
+  useEffect(() => { resetModelLoadStats() }, [])
+
+  // HUD 重置逻辑：仅当从 idle/briefing *首次进入任务流程* 时，不 reset（避免 BriefingScene 的
+  // 模型 start/done epoch 被断开导致 inflight 悬挂）。改为每次 HUD 组件挂载时 reset。
+  // 这里把 reset 移到下面独立的 HUD 挂载 effect。
   useEffect(() => {
-    if (phase === 'idle' || phase === 'briefing') {
-      resetModelLoadStats()
+    if (phase === 'idle') {
       setAutoHidden(false)
     }
   }, [phase])
@@ -443,7 +740,9 @@ function ModelLoadProgressHud() {
     return () => clearTimeout(t)
   }, [settled])
 
-  const IS_DEV = !!(import.meta as any).env?.DEV
+  const IS_DEV = (() => {
+    try { return !!((import.meta as any)?.env?.DEV) } catch { return false }
+  })()
   const hasProgress = stats.total > 0
   const stillLoading = stats.inflight > 0 || stats.failed > 0
   const shouldShow = forceShown || (hasProgress && (stillLoading || IS_DEV))

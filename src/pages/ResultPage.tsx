@@ -7,6 +7,16 @@ import { Download, RotateCcw, Home, Trophy, Zap, Clock, AlertCircle, Lightbulb, 
 import { getRank, getTitle } from '../game/scoring'
 import { getNextPublicTaskId, getTaskById, isPublicTaskId, isHiddenTaskId } from '../data/tasks'
 
+/** 模块级安全 env 访问，避免 SyntaxError: Cannot use 'import.meta' outside a module */
+const _SAFE_ENV: { DEV: boolean; PROD: boolean } = (() => {
+  try {
+    const env = (import.meta as any)?.env
+    return { DEV: Boolean(env?.DEV), PROD: Boolean(env?.PROD) }
+  } catch {
+    return { DEV: false, PROD: true }
+  }
+})()
+
 function StarIcon({ filled, index }: { filled: boolean; index: number }) {
   return (
     <Star
@@ -37,52 +47,58 @@ function formatTime(ms: number): string {
 }
 
 function generateDiagnosis(stats: GameStats): string {
-  const parts: string[] = ['MEM-07 诊断报告。']
+  const lines: string[] = []
 
+  // ===== 1. 头：完成/失败 =====
   if (stats.levelCompleted) {
-    parts.push('任务完成。')
+    lines.push('任务完成。')
   } else {
-    parts.push(`任务失败：${stats.failureReason || '未知原因'}。`)
+    lines.push(`任务未完成：${stats.failureReason || '没能找到最后一件关键物品。'}`)
   }
 
+  // ===== 2. 记忆槽使用情况 =====
   if (stats.memoryUsedCount > 0) {
     const rate = Math.round(stats.memoryEffectiveRate * 100)
     if (rate >= 80) {
-      parts.push(`记忆表现优秀，有效记忆率达到 ${rate}%。`)
+      lines.push(`你很会用记忆——${stats.memoryUsedCount} 条记录里有效率达到 ${rate}%。`)
     } else if (rate >= 50) {
-      parts.push(`记忆利用率为 ${rate}%，建议更频繁地更新记忆。`)
+      lines.push(`用了 ${stats.memoryUsedCount} 次记忆，有效率 ${rate}%。`)
+      lines.push('建议：物品位置变了之后尽快按 E 覆盖旧记录，别让过期记忆占着槽。')
     } else {
-      parts.push(`记忆系统需要维护，有效记忆率仅 ${rate}%。`)
+      lines.push(`记忆槽用了 ${stats.memoryUsedCount} 次，但有效率只有 ${rate}%——`)
+      lines.push('记录完之后，如果发生了猫咪捣乱、幽灵交换篮子这种事，要记得更新记录。')
     }
   } else {
-    parts.push('本机检测到：记忆槽未被使用。按 E 可以保存重要物品位置。')
+    lines.push('没有使用记忆槽。记住：看到重要物品时按 E 存个位置，省得之后满屋子找。')
   }
 
+  // ===== 3. 过期记忆 =====
   if (stats.outdatedMemoryCount > 0) {
-    parts.push(`检测到 ${stats.outdatedMemoryCount} 条过期记忆——建议在捣乱事件后优先重新验证。`)
+    lines.push(`有 ${stats.outdatedMemoryCount} 条记录已经过期了——它们指向的位置早就变了。`)
   }
 
+  // ===== 4. 放错物品 =====
   if (stats.wrongPlaceCount > 0) {
-    parts.push(`记录到 ${stats.wrongPlaceCount} 次错误放置。放置前请确认容器类型。`)
+    lines.push(`放错了 ${stats.wrongPlaceCount} 次。`)
+    lines.push('提示：把物品移到容器上方时，留意容器图标和物品颜色是否对得上。')
   }
 
+  // ===== 5. 混乱值（最后唯一 1 条轻度猫吐槽，要自然）=====
   if (stats.chaosPeak >= 80) {
-    parts.push(`混乱值峰值 ${Math.round(stats.chaosPeak)}%，系统曾接近过载。本机建议：少养猫。`)
+    lines.push(`混乱值最高到过 ${Math.round(stats.chaosPeak)}%。`)
+    lines.push('如果房间里有猫，记得多回头看看桌面。')
   } else if (stats.chaosPeak >= 60) {
-    parts.push(`混乱值峰值 ${Math.round(stats.chaosPeak)}%，处于中等水平。`)
+    lines.push(`混乱峰值 ${Math.round(stats.chaosPeak)}%，中间有几次小波澜，总体控制住了。`)
   } else {
-    parts.push(`混乱值峰值仅 ${Math.round(stats.chaosPeak)}%，系统运行稳定。`)
+    lines.push(`混乱峰值只有 ${Math.round(stats.chaosPeak)}%，很稳。`)
   }
 
+  // ===== 6. Combo =====
   if (stats.maxCombo >= 5) {
-    parts.push(`最高 Combo ${stats.maxCombo} 次，操作流畅度：令人印象深刻（对于一个记忆只有 3 槽的机器人来说）。`)
+    lines.push(`最流畅的一次连击：${stats.maxCombo} 步连续正确。手感不错。`)
   }
 
-  if (stats.levelCompleted) {
-    parts.push('记忆模块自检完成。')
-  }
-
-  return parts.join(' ')
+  return lines.join(' ')
 }
 
 export function ResultPage() {
@@ -123,7 +139,7 @@ export function ResultPage() {
   const diagnosis = generateDiagnosis(gameStats)
 
   useEffect(() => {
-    if (taskId && import.meta.env.PROD && isHiddenTaskId(taskId)) {
+    if (taskId && _SAFE_ENV.PROD && isHiddenTaskId(taskId)) {
       navigate('/tasks', { replace: true })
       return
     }

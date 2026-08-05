@@ -290,6 +290,9 @@ export function FirstPersonControls() {
 
     const handleMouseDown = (e: MouseEvent) => {
       if (e.button !== 0) return
+      // 对话打开时不请求 Pointer Lock，否则光标会被锁定到 canvas，
+      // 玩家无法点击对话选项按钮（必须按 ESC 才能退出）。
+      if (document.querySelector('[data-dialog-root]')) return
       if (!isMouseLockedRef.current) {
         isMouseLockedRef.current = true
         canvas.requestPointerLock?.()
@@ -298,6 +301,14 @@ export function FirstPersonControls() {
       isDraggingRef.current = true
       canvas.style.cursor = 'grabbing'
     }
+
+    // 同步 isMouseLockedRef 与浏览器真实 Pointer Lock 状态。
+    // DialogBox 打开时会调用 document.exitPointerLock()，这里监听变化把 ref 置 false，
+    // 这样 handleMouseMove 不会再转动相机，对话期间画面不会乱转。
+    const handlePointerLockChange = () => {
+      isMouseLockedRef.current = document.pointerLockElement === canvas
+    }
+    document.addEventListener('pointerlockchange', handlePointerLockChange)
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!isMouseLockedRef.current) return
@@ -385,6 +396,7 @@ export function FirstPersonControls() {
       canvas.removeEventListener('touchstart', handleTouchStart)
       window.removeEventListener('touchmove', handleTouchMove)
       window.removeEventListener('touchend', handleTouchEnd)
+      document.removeEventListener('pointerlockchange', handlePointerLockChange)
     }
   }, [gl, phase])
 

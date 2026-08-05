@@ -627,4 +627,4 @@ export const modelCategories = {
   } catch {
     /* 任何自检异常都不影响运行 */
   }
-})()
+})();

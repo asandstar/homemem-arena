@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo } from 'react'
+import { useRef, useState, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type { ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -89,23 +89,53 @@ export function Container3D({
   containedObjects = [],
 }: Container3DProps) {
   const groupRef = useRef<THREE.Group>(null)
+  const pulseRingRef = useRef<THREE.Mesh>(null)
+  const pulseRing2Ref = useRef<THREE.Mesh>(null)
+  const pulseLightRef = useRef<THREE.PointLight>(null)
   const [hovered, setHovered] = useState(false)
-  const [pulseTime, setPulseTime] = useState(0)
-  const [openProgress, setOpenProgress] = useState(isOpen ? 1 : 0)
+  // ⚠️ pulseTime / openProgress 改 ref，之前每帧 setState 触发每个 Container3D 实例每帧 re-render（~60fps）
+  // 容器多时是性能瓶颈，间接增加 WebGL Context Lost 风险。
+  const pulseTimeRef = useRef(0)
+  const openProgressRef = useRef(isOpen ? 1 : 0)
+  // ⚠️ 仅当开/关动画进度真的变化时，才 setState 触发一次重渲染，
+  // 让 <group> 的 scale/position / 内部物品位置 在下一帧能读到最新值。
+  // 收敛后（next === prev）停止更新，不再有多余 re-render。
+  const [, setOpenTick] = useState(0)
 
   // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
   const robotPosition = useGameStore((s) => s.robotPosition)
   const heldEntityId = useGameStore((s) => s.heldEntityId)
 
+  // isOpen 变化时同步目标值（ref + 强制下次 useFrame 插值进入新值）
+  useEffect(() => {
+    openProgressRef.current = isOpen ? 1 : 0
+  }, [isOpen])
+
   useFrame((_, delta) => {
-    setPulseTime((prev) => prev + delta)
-    setOpenProgress((prev) => {
-      const target = isOpen ? 1 : 0
-      const speed = 6
-      if (prev < target) return Math.min(1, prev + delta * speed)
-      if (prev > target) return Math.max(0, prev - delta * speed)
-      return prev
-    })
+    pulseTimeRef.current += delta
+    const prev = openProgressRef.current
+    const target = isOpen ? 1 : 0
+    const speed = 6
+    let next = prev
+    if (prev < target) next = Math.min(1, prev + delta * speed)
+    else if (prev > target) next = Math.max(0, prev - delta * speed)
+    openProgressRef.current = next
+    if (Math.abs(next - prev) > 0.001) setOpenTick((t) => (t + 1) & 0xffff)
+
+    // 脉动光环：直接更新 three 对象的 scale / material，不走 React re-render
+    const pt = pulseTimeRef.current
+    const sin4 = Math.sin(pt * 4)
+    const sin3 = Math.sin(pt * 3)
+    if (pulseRing2Ref.current) {
+      pulseRing2Ref.current.scale.setScalar(1 + sin4 * 0.1)
+      const mat2 = pulseRing2Ref.current.material as THREE.MeshBasicMaterial
+      if (mat2 && !Array.isArray(mat2)) {
+        mat2.opacity = 0.4 + sin4 * 0.2
+      }
+    }
+    if (pulseLightRef.current) {
+      pulseLightRef.current.intensity = 0.6 + sin3 * 0.2
+    }
   })
 
   const roomSpec = sharedRooms[room]
@@ -157,8 +187,8 @@ export function Container3D({
           setHovered(false)
           document.body.style.cursor = 'auto'
         }}
-        scale={[1 + openProgress * 0.03, 1 + openProgress * 0.02, 1 + openProgress * 0.03]}
-        position={[0, openProgress * 0.02, 0]}
+        scale={[1 + openProgressRef.current * 0.03, 1 + openProgressRef.current * 0.02, 1 + openProgressRef.current * 0.03]}
+        position={[0, openProgressRef.current * 0.02, 0]}
       >
         <FurnitureModel
           modelId={modelId}
@@ -173,8 +203,9 @@ export function Container3D({
       {spec.isTargetZone && (
         <>
           <mesh
+            ref={pulseRingRef as any}
             position={[0, surfaceLocalY + 0.1, 0]}
-            rotation={[Math.PI / 2, 0, 0]}
+            rotation={[-Math.PI / 2, 0, 0]}
           >
             <ringGeometry args={[0.4, 0.5, 24]} />
             <meshBasicMaterial
@@ -184,25 +215,22 @@ export function Container3D({
             />
           </mesh>
           <mesh
+            ref={pulseRing2Ref as any}
             position={[0, surfaceLocalY + 0.1, 0]}
-            rotation={[Math.PI / 2, 0, 0]}
-            scale={[
-              1 + Math.sin(pulseTime * 4) * 0.1,
-              1 + Math.sin(pulseTime * 4) * 0.1,
-              1,
-            ]}
+            rotation={[-Math.PI / 2, 0, 0]}
           >
             <ringGeometry args={[0.35, 0.55, 24]} />
             <meshBasicMaterial
               color={PALETTE.target.highlight}
               transparent
-              opacity={0.4 + Math.sin(pulseTime * 4) * 0.2}
+              opacity={0.5}
             />
           </mesh>
           <pointLight
+            ref={pulseLightRef as any}
             position={[0, surfaceLocalY + 0.15, 0]}
             color={PALETTE.target.primary}
-            intensity={0.6 + Math.sin(pulseTime * 3) * 0.2}
+            intensity={0.8}
             distance={2}
           />
         </>
@@ -248,7 +276,7 @@ export function Container3D({
 
       {isOpen && containedObjects.length > 0 && (
         <group
-          position={[0, surfaceLocalY + 0.02 + (1 - openProgress) * 0.2, spec.size.z / 2 + 0.1]}
+          position={[0, surfaceLocalY + 0.02 + (1 - openProgressRef.current) * 0.2, spec.size.z / 2 + 0.1]}
         >
           {containedObjects.map((obj, index) => {
             const offsetX = (index % 3 - 1) * 0.2

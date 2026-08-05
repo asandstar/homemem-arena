@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { sharedRooms } from '../../data/rooms'
+import { roomDecorFurniture } from '../../data/decorFurniture'
 import { useUiStore } from '../../store/useUiStore'
 import type { RoomId } from '../../types/room'
 import type { EntityState } from '../../types/object'
 import type { MemorySlot } from '../../store/gameTypes'
+import type { ContainerSpec } from '../../types/object'
 
 interface MinimapProps {
   currentRoom: RoomId
@@ -17,6 +19,8 @@ interface MinimapProps {
   isFullscreen?: boolean
   onToggleFullscreen?: () => void
   memorySlots?: (MemorySlot | null)[]
+  /** 当前房间的任务容器（不传则不画容器图标；仅读取坐标/尺寸/目标区标记，不改任何值） */
+  roomContainers?: ContainerSpec[]
 }
 
 const MIN_ZOOM = 0.3
@@ -45,6 +49,7 @@ export function Minimap({
   isFullscreen = false,
   onToggleFullscreen,
   memorySlots = [],
+  roomContainers = [],
 }: MinimapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -381,6 +386,81 @@ export function Minimap({
       }
     }
 
+    // ============== F1：大号家具简化矩形（只读 decorFurniture 坐标/尺寸，不改任何值）==============
+    // 视觉原则：只画 footprint >= 0.8㎡ 的大件，跳过纯墙上挂件（collisionMode==='none'）和极小装饰，避免地图过乱
+    const decorList = (roomDecorFurniture as any)[currentRoom] ?? []
+    for (const dec of decorList) {
+      if (dec.collisionMode === 'none') continue
+      const sx = Number(dec.size?.x ?? 0)
+      const sz = Number(dec.size?.z ?? 0)
+      if (sx < 0.5 || sz < 0.5) continue
+      if (sx * sz < 0.8) continue
+      const cx = Number(dec.position?.x ?? 0) * scale + offsetX
+      const cy = -Number(dec.position?.z ?? 0) * scale + offsetY
+      const w = sx * scale
+      const h = sz * scale
+      ctx.save()
+      ctx.fillStyle = 'rgba(148, 163, 184, 0.18)'
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.55)'
+      ctx.lineWidth = 1.2
+      ctx.beginPath()
+      ctx.roundRect(cx - w / 2, cy - h / 2, w, h, Math.max(2, scale * 0.25))
+      ctx.fill()
+      ctx.stroke()
+      ctx.restore()
+    }
+
+    // ============== F2：关键任务容器图标（只读 task.containers 的坐标/尺寸/目标区标记）==============
+    for (const c of roomContainers) {
+      const cx = Number(c.position?.x ?? 0) * scale + offsetX
+      const cy = -Number(c.position?.z ?? 0) * scale + offsetY
+      const sx = Number(c.size?.x ?? 0)
+      const sz = Number(c.size?.z ?? 0)
+      const w = Math.max(8, sx * scale)
+      const h = Math.max(8, sz * scale)
+      const isTarget = Boolean((c as any).isTargetZone)
+      const isDrawer = Boolean((c as any).isDrawer)
+      ctx.save()
+      if (isTarget) {
+        // 目标区：金色外发光 + 金色双线框
+        const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 1.1)
+        glow.addColorStop(0, 'rgba(251, 191, 36, 0.45)')
+        glow.addColorStop(1, 'rgba(251, 191, 36, 0)')
+        ctx.fillStyle = glow
+        ctx.fillRect(cx - w * 1.2, cy - h * 1.2, w * 2.4, h * 2.4)
+        ctx.fillStyle = 'rgba(251, 191, 36, 0.28)'
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.95)'
+        ctx.lineWidth = 2.2
+      } else if (isDrawer) {
+        // 抽屉：深棕描边 + 虚线内部表示"可开合"
+        ctx.fillStyle = 'rgba(120, 53, 15, 0.22)'
+        ctx.strokeStyle = 'rgba(180, 83, 9, 0.8)'
+        ctx.lineWidth = 1.8
+      } else {
+        // 普通容器：青色细框
+        ctx.fillStyle = 'rgba(34, 211, 238, 0.14)'
+        ctx.strokeStyle = 'rgba(34, 211, 238, 0.75)'
+        ctx.lineWidth = 1.4
+      }
+      ctx.beginPath()
+      ctx.roundRect(cx - w / 2, cy - h / 2, w, h, Math.max(2, scale * 0.15))
+      ctx.fill()
+      ctx.stroke()
+      // 目标区再加中心星/靶心，便于一眼识别
+      if (isTarget) {
+        ctx.strokeStyle = 'rgba(253, 224, 71, 0.95)'
+        ctx.lineWidth = 1.4
+        ctx.beginPath()
+        ctx.arc(cx, cy, Math.min(w, h) * 0.22, 0, Math.PI * 2)
+        ctx.moveTo(cx - Math.min(w, h) * 0.32, cy)
+        ctx.lineTo(cx + Math.min(w, h) * 0.32, cy)
+        ctx.moveTo(cx, cy - Math.min(w, h) * 0.32)
+        ctx.lineTo(cx, cy + Math.min(w, h) * 0.32)
+        ctx.stroke()
+      }
+      ctx.restore()
+    }
+
     // ============== 过期记忆空间标记（灰红虚线圆 + ×）= 用旧记忆位置，不泄露新位置 ==============
     for (let i = 0; i < memorySlots.length; i++) {
       const slot = memorySlots[i]
@@ -406,6 +486,55 @@ export function Minimap({
       ctx.moveTo(px + 6, py - 6)
       ctx.lineTo(px - 6, py + 6)
       ctx.stroke()
+      ctx.restore()
+    }
+
+    // ============== F3：有效记忆点（非过期 + 有 position + 有 entity 绑定）= 蓝绿渐变点 + 锁纹 ==============
+    for (let i = 0; i < memorySlots.length; i++) {
+      const slot = memorySlots[i]
+      if (!slot) continue
+      if (slot.outdated) continue
+      if (!slot.position) continue
+      if (!slot.entityConfigId) continue
+      const px = slot.position.x * scale + offsetX
+      const py = -slot.position.z * scale + offsetY
+      const locked = Boolean(slot.locked)
+      const conf = Number(slot.confidence ?? 0.5)
+      ctx.save()
+      // 外圈：颜色按 confidence 从 cyan(高) → blue(中) → slate(低)
+      let outer = 'rgba(34, 211, 238, 0.95)'
+      let fill = 'rgba(34, 211, 238, 0.35)'
+      if (conf < 0.35) {
+        outer = 'rgba(100, 116, 139, 0.95)'
+        fill = 'rgba(100, 116, 139, 0.2)'
+      } else if (conf < 0.7) {
+        outer = 'rgba(59, 130, 246, 0.95)'
+        fill = 'rgba(59, 130, 246, 0.28)'
+      }
+      ctx.strokeStyle = outer
+      ctx.fillStyle = fill
+      ctx.lineWidth = 1.8
+      ctx.beginPath()
+      ctx.arc(px, py, 9, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.stroke()
+      // 内圈：实心点
+      ctx.fillStyle = outer
+      ctx.beginPath()
+      ctx.arc(px, py, 3.4, 0, Math.PI * 2)
+      ctx.fill()
+      // 锁定记忆：加一个小 L 角标在右上角
+      if (locked) {
+        ctx.fillStyle = 'rgba(22, 163, 74, 0.95)'
+        ctx.beginPath()
+        ctx.arc(px + 6, py - 6, 3.6, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.fillStyle = '#ffffff'
+        ctx.font = 'bold 7px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText('L', px + 6, py - 6 + 0.5)
+      }
       ctx.restore()
     }
 
@@ -483,7 +612,7 @@ export function Minimap({
     ctx.fill()
     ctx.stroke()
     ctx.restore()
-  }, [currentRoom, visitedRooms, robotPosition, robotRotation, observedObjects, dimensions, taskRooms, minimapPan, minimapZoom, roomsToShow, currentRoomSpec, minimapFollowPlayer, memorySlots, isFullscreen])
+  }, [currentRoom, visitedRooms, robotPosition, robotRotation, observedObjects, dimensions, taskRooms, minimapPan, minimapZoom, roomsToShow, currentRoomSpec, minimapFollowPlayer, memorySlots, isFullscreen, roomContainers])
 
   if (!isVisible) return null
 

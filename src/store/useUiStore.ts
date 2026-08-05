@@ -11,6 +11,7 @@ interface UiState {
   memoryBarOpen: boolean
   hudHidden: boolean
   audioEnabled: boolean
+  audioPromptAnswered: boolean
 
   minimapZoom: number
   minimapPan: { x: number; y: number }
@@ -23,6 +24,7 @@ interface UiState {
   toggleMemoryBar: () => void
   toggleHudHidden: () => void
   toggleAudioEnabled: () => void
+  answerAudioPrompt: (enabled: boolean) => void
   setMinimapZoom: (zoom: number | ((prev: number) => number)) => void
   setMinimapPan: (pan: { x: number; y: number }) => void
   setMinimapFollowPlayer: (follow: boolean | ((prev: boolean) => boolean)) => void
@@ -39,7 +41,8 @@ export const useUiStore = create<UiState>()(
       controlsOpen: true,
       memoryBarOpen: true,
       hudHidden: false,
-      audioEnabled: true,
+      audioEnabled: false,
+      audioPromptAnswered: false,
 
       minimapZoom: 1,
       minimapPan: { x: 0, y: 0 },
@@ -59,10 +62,6 @@ export const useUiStore = create<UiState>()(
         }
       },
       toggleAudioEnabled: () => {
-        // 关键：当前 audioEnabled=true 且任一 AudioContext 非 running 时，用户点击按钮 = 提供了可靠用户手势，
-        // 先走 resumeAudioContexts() 尝试恢复声音，不错误切换到 USER_OFF。
-        // 只有当 audioEnabled=true 且 全部 3 个 context 都已经处于 running 状态时，本次点击才视为"用户要关声音"。
-        // 当 audioEnabled=false 时，点击 = 明确用户要开声音，直接切换到 true + 恢复。
         const currentEnabled = get().audioEnabled
         const ctxStates = getAudioContextStates()
         const allCtxActuallyRunning =
@@ -71,7 +70,6 @@ export const useUiStore = create<UiState>()(
           ctxStates.ambient === 'running'
 
         if (currentEnabled && !allCtxActuallyRunning) {
-          // 视为"恢复手势"：不改变 audioEnabled（保持 true），只触发 resume（内部会重建 scheduler 当 AC 跑起来后）
           setAudioEnabled(true)
           initSfxAudio()
           resetRoomAmbientFlag()
@@ -79,7 +77,6 @@ export const useUiStore = create<UiState>()(
           return
         }
 
-        // 其余情况：true + 都 running → toggle OFF；false → toggle ON
         set((state) => {
           const newValue = !state.audioEnabled
           setAudioEnabled(newValue)
@@ -92,6 +89,17 @@ export const useUiStore = create<UiState>()(
           }
           return { audioEnabled: newValue }
         })
+      },
+      answerAudioPrompt: (enabled: boolean) => {
+        setAudioEnabled(enabled)
+        if (enabled) {
+          initSfxAudio()
+          resetRoomAmbientFlag()
+          void resumeAudioContexts()
+        } else {
+          stopAllAudioImmediate()
+        }
+        set({ audioEnabled: enabled, audioPromptAnswered: true })
       },
       setMinimapZoom: (zoom) => set((state) => ({ minimapZoom: typeof zoom === 'function' ? zoom(state.minimapZoom) : zoom })),
       setMinimapPan: (pan) => set({ minimapPan: pan }),
@@ -117,6 +125,17 @@ export const useUiStore = create<UiState>()(
     }),
     {
       name: 'home-mem-ui-state',
+      version: 2,
+      // v1 → v2 迁移：强制把 audioEnabled 重置为 false（默认静音），
+      // 并重置 audioPromptAnswered，让用户重新走声音选择弹窗。
+      // 老用户持久化里的 audioEnabled=true 会被清除，避免"明明改了默认 false 还是有声音"。
+      migrate: (persistedState: any, version: number) => {
+        if (version < 2 && persistedState) {
+          persistedState.audioEnabled = false
+          persistedState.audioPromptAnswered = false
+        }
+        return persistedState
+      },
       onRehydrateStorage: () => (state) => {
         if (state) {
           setAudioEnabled(state.audioEnabled)
