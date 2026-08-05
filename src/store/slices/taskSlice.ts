@@ -111,6 +111,7 @@ export interface TaskSlice {
   proceduralProgress: Record<string, ProceduralProgress>
   currentStageId: string | null
   currentObjective: string | null
+  isPaused: boolean
 
   initializeTask: (taskId: string) => void
   resetTask: () => void
@@ -127,6 +128,8 @@ export interface TaskSlice {
   checkProceduralAction: (action: 'pick' | 'place' | 'use', targetId: string) => { wrongOrder: boolean; currentStepLabel?: string }
   evaluateStageTransitions: (hint?: { afterEventId?: string; afterMemoryForEntityId?: string }) => void
   setStage: (stageId: string) => void
+  setPaused: (paused: boolean) => void
+  togglePause: () => void
 }
 
 export function createTaskSlice(set: any, get: any): TaskSlice {
@@ -145,6 +148,18 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
     proceduralProgress: {},
     currentStageId: null,
     currentObjective: null,
+    isPaused: false,
+
+    setPaused: (paused: boolean) => {
+      // 仅在 playing 阶段允许切换暂停；result/probe 阶段保持 false，避免与过渡动画冲突
+      const { phase } = get()
+      if (phase !== 'playing' && phase !== 'briefing' && paused) return
+      set({ isPaused: !!paused })
+    },
+    togglePause: () => {
+      const { isPaused } = get()
+      get().setPaused(!isPaused)
+    },
 
     initializeTask: (taskId: string) => {
       const t0 = Date.now()
@@ -211,6 +226,7 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
         set({
           phase: 'briefing',
           task,
+          isPaused: false,
           robotPosition: startPos,
           robotRotation: startRotation,
           cameraPitch: 0,
@@ -285,7 +301,7 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
 
     startPlaying: () => {
       if (!get().task) return
-      set({ phase: 'playing', startTime: Date.now(), elapsedMs: 0 })
+      set({ phase: 'playing', isPaused: false, startTime: Date.now(), elapsedMs: 0 })
       if (isAudioEnabled()) {
         playSfx('task_start')
       }
@@ -503,8 +519,9 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
     },
 
     tickElapsed: (deltaMs: number) => {
-      const { levelFailed, levelCompleted, phase, task, elapsedMs } = get()
-      if (phase !== 'playing' || levelFailed || levelCompleted) return
+      const { levelFailed, levelCompleted, phase, task, elapsedMs, isPaused } = get()
+      // 暂停或不在 playing：时间/混乱/记忆/脚本 全部冻结
+      if (phase !== 'playing' || levelFailed || levelCompleted || isPaused) return
 
       get().updateMoveAnimations()
 

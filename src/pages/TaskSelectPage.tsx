@@ -1,10 +1,10 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Sun, Coffee, CloudMoon, Volume2, VolumeX, Sparkles, Play, Lock } from 'lucide-react'
 import { PUBLIC_LEVEL_ORDER, HIDDEN_TASK_IDS, getPublicTaskTemplates as _getPublicTaskTemplates, isHiddenTaskId } from '../data/tasks'
 import { TaskCard } from '../components/tasks/TaskCard'
 import { useUiStore } from '../store/useUiStore'
-import { getSaveList, loadGame } from '../save/saveSystem'
+import { hasSavedGame } from '../save/saveSystem'
 import { useGameStore } from '../store/useGameStore'
 
 const timeSlots = [
@@ -23,19 +23,36 @@ const PUBLIC_LEVEL_CAPTION: Record<string, string> = {
   'task-night-patrol': '🔬 内部测试 · 黑暗中的多房间巡查（DEV 预览）',
 }
 
+interface SaveInfo {
+  ok: boolean
+  timestamp: number
+  elapsedMs: number
+  score: number
+}
+
 export function TaskSelectPage() {
   const navigate = useNavigate()
   // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
   const audioEnabled = useUiStore((s) => s.audioEnabled)
   const toggleAudioEnabled = useUiStore((s) => s.toggleAudioEnabled)
-  const loadFromSave = useGameStore((s) => s.loadFromSave)
-  const initializeTask = useGameStore((s) => s.initializeTask)
   const initializeProgress = useGameStore((s) => s.initializeProgress)
   const getLevelProgress = useGameStore((s) => s.getLevelProgress)
   const isLevelUnlocked = useGameStore((s) => s.isLevelUnlocked)
   const levelProgress = useGameStore((s) => s.levelProgress)
 
-  const saveList = getSaveList()
+  // hasSavedGame 做的是 localStorage 同步读，挂 component 内的 useMemo 即可；
+  // 额外依赖 remountTrigger 让"继续失败后 fallback 清空存档"能立刻移除按钮。
+  // 保留 useState 以便后续扩展"主动删除存档"按钮。
+  const [remountTrigger] = useState(0)
+  const saveMap = useMemo<Record<string, SaveInfo>>(() => {
+    const map: Record<string, SaveInfo> = {}
+    ;([...PUBLIC_LEVEL_ORDER, ...HIDDEN_TASK_IDS] as readonly string[]).forEach((id) => {
+      const r = hasSavedGame(id)
+      if (r.ok) map[id] = { ok: true, timestamp: r.timestamp, elapsedMs: r.elapsedMs, score: r.score }
+    })
+    return map
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remountTrigger])
   // 用 src/data/tasks 里的权威 getPublicTaskTemplates（DEV 环境下 VITE_UNLOCK_HIDDEN_LEVELS=true 会返回 5 关）
   const publicTaskTemplates = useMemo(() => _getPublicTaskTemplates(), [])
   // 解锁序列使用 PUBLIC_LEVEL_ORDER 顺序（隐藏关排在后面，用前一关完成解锁）
@@ -49,32 +66,26 @@ export function TaskSelectPage() {
   }, [initializeProgress, publicTaskTemplates])
 
   const handleStart = (taskId: string) => {
+    // 点"开始任务" → 清掉可能残留的 sessionStorage 标记，避免 ArenaPage 当成继续入口
+    try { sessionStorage.removeItem(`hm_continue_${taskId}`) } catch {}
     navigate(`/play/${taskId}`)
   }
 
-  const handleContinue = (saveId: string) => {
-    const saveInfo = saveList.find(s => s.id === saveId)
-    const fallbackTaskId = saveInfo?.taskId
-    try {
-      const saveData = loadGame(saveId)
-      if (saveData) {
-        initializeTask(saveData.taskId)
-        loadFromSave(saveData)
-        navigate(`/play/${saveData.taskId}`)
-        return
-      }
-    } catch (e) {
-      console.warn('[TaskSelectPage] handleContinue: loadGame failed for saveId=', saveId, e)
+  const handleContinue = (taskId: string) => {
+    // 点"继续游戏" → 先标记 sessionStorage，ArenaPage 初始化时会读这个标记并 restoreSave
+    if (!hasSavedGame(taskId).ok) {
+      // 存档不合法（被过期版本扫到/手动删了）→ 直接 fallback 到新开局
+      handleStart(taskId)
+      return
     }
-    // 存档加载失败时 fallback：直接开始对应任务（相当于重新开始）
-    if (fallbackTaskId) {
-      console.warn('[TaskSelectPage] handleContinue: fallback to handleStart for taskId=', fallbackTaskId)
-      handleStart(fallbackTaskId)
-    }
+    try { sessionStorage.setItem(`hm_continue_${taskId}`, '1') } catch {}
+    navigate(`/play/${taskId}`)
   }
 
   const getLatestSaveForTask = (taskId: string) => {
-    return saveList.find(s => s.taskId === taskId)
+    const s = saveMap[taskId]
+    if (!s) return undefined
+    return { id: `autosave_${taskId}`, taskId, timestamp: s.timestamp, elapsedMs: s.elapsedMs, score: s.score }
   }
 
   const getNextUnlockedTaskIndex = () => {

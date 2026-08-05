@@ -92,8 +92,12 @@ export function FirstPersonControls() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      const currentPhase = useGameStore.getState().phase
-      if (currentPhase !== 'playing') return
+      const gs = useGameStore.getState()
+      // ESC 无论是否暂停都要处理（才能触发 setPaused 取消暂停，或恢复锁定）
+      if (e.code !== 'Escape') {
+        if (gs.phase !== 'playing') return
+        if (gs.isPaused) return
+      }
 
       switch (e.code) {
         case 'KeyW':
@@ -191,16 +195,40 @@ export function FirstPersonControls() {
           }
           break
         }
-        case 'Escape':
+        case 'Escape': {
+          const gs = useGameStore.getState()
+          const phase = gs.phase
+          const inGame = phase === 'playing' || phase === 'briefing'
+          if (inGame) {
+            // 游戏中按 ESC 直接暂停 + 释放鼠标锁定（用户选择的交互）
+            gs.setPaused(true)
+            if (isMouseLockedRef.current) {
+              isMouseLockedRef.current = false
+              document.exitPointerLock?.()
+            }
+            addToast('info', '游戏已暂停')
+            break
+          }
+          // 非游戏阶段（probe/result/idle）ESC 只释放鼠标锁定
           if (isMouseLockedRef.current) {
             isMouseLockedRef.current = false
             document.exitPointerLock?.()
             addToast('info', '鼠标已释放，点击游戏画面重新锁定')
           }
           break
+        }
       }
     }
     const handleKeyUp = (e: KeyboardEvent) => {
+      const gs = useGameStore.getState()
+      if (gs.phase !== 'playing' || gs.isPaused) {
+        // 暂停或非 playing 时，仍清除所有方向按键的 state，避免恢复后持续漂移
+        moveState.current.forward = false
+        moveState.current.backward = false
+        moveState.current.left = false
+        moveState.current.right = false
+        return
+      }
       switch (e.code) {
         case 'KeyW':
         case 'ArrowUp':
@@ -402,10 +430,11 @@ export function FirstPersonControls() {
 
   useFrame((_, delta) => {
     const state = useGameStore.getState()
-    const { robotPosition, currentRoom, viewMode, phase: gamePhase } = state
+    const { robotPosition, currentRoom, viewMode, phase: gamePhase, isPaused } = state
 
     // ⚠️ briefing 阶段完全禁用任何回写 store，避免浮点插值抖动 → store setState → 无限重渲染循环
-    const isPlaying = gamePhase === 'playing'
+    // ⚠️ 暂停时禁用移动/旋转，只保留相机位置与 store 同步（避免机器人冻结后继续漂移）
+    const isPlaying = gamePhase === 'playing' && !isPaused
 
     const storeYaw = state.robotRotation
     const storePitch = state.cameraPitch

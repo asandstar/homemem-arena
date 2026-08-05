@@ -18,13 +18,14 @@ import { stopAllAudioImmediate, resumeAudioContexts } from '../audio/audioManage
 import { executeContainerInteraction, executePick } from '../game/commands'
 import { getTaskById, isHiddenTaskId, PUBLIC_LEVEL_ORDER } from '../data/tasks'
 import { useDialog } from '../dialog/useDialog'
-import { startAutoSave, stopAutoSave } from '../save/saveSystem'
+import { startAutoSave, stopAutoSave, autosaveGame, hasSavedGame, restoreSave } from '../save/saveSystem'
 import { subscribeEvent } from '../engine/eventBus'
 
 const Scene3D = lazy(() => import('../components/arena3d/Scene3D').then((m) => ({ default: m.Scene3D })))
 const HUD = lazy(() => import('../components/arena3d/HUD').then((m) => ({ default: m.HUD })))
 const DialogBox = lazy(() => import('../components/dialog/DialogBox').then((m) => ({ default: m.DialogBox })))
 const ItemHintIndicator = lazy(() => import('../components/arena3d/ItemHintIndicator').then((m) => ({ default: m.ItemHintIndicator })))
+const PauseMenu = lazy(() => import('../components/arena3d/PauseMenu').then((m) => ({ default: m.PauseMenu })))
 
 /**
  * 模块级安全 env 访问：import.meta 在非模块上下文（ErrorBoundary、HMR 损坏 chunk、
@@ -237,12 +238,36 @@ export function ArenaPage() {
     stopAllAudioImmediate()
     setNarrativeText(null)
     setShowStats(false)
-    // [DEV ONLY · Calibration] 校准模式不显示 Briefing 弹层，保证 AssetCalibrationView 全画面可见
+
     const calibMode = _SAFE_ENV.DEV && typeof window !== 'undefined'
       && /[?&]assetCalibration=(1|true|yes)/i.test(window.location.search)
-    setBriefingOpen(calibMode ? false : true)
+    const savedContinue = typeof window !== 'undefined'
+      ? sessionStorage.getItem(`hm_continue_${taskId}`) === '1'
+      : false
+    if (savedContinue) {
+      try { sessionStorage.removeItem(`hm_continue_${taskId}`) } catch {}
+    }
+
     if (closeDialog) closeDialog()
     initializeTask(taskId)
+
+    // "继续"进入：restoreSave 覆盖 initializeTask 的默认状态，然后跳过 briefing 直接进入 playing
+    // 若存档校验失败（version/hash 不一致），hasSavedGame 会返回 false，照常显示 briefing 重新开始
+    if (savedContinue && taskId && hasSavedGame(taskId).ok) {
+      const ok = restoreSave(taskId)
+      if (ok) {
+        setBriefingOpen(false)
+        // 存档里 phase 若是 briefing/playing，都直接切到 playing（保证玩家"继续"时立刻可操作）
+        const gs = useGameStore.getState()
+        if (gs.phase === 'briefing' || gs.phase === 'playing') {
+          gs.setGamePhase('playing')
+        }
+        return
+      }
+    }
+
+    // 校准模式也不显示 briefing。正常新开局显示 briefing。
+    setBriefingOpen(calibMode ? false : true)
   }, [taskId, location.key, initializeTask, navigate, closeDialog])
 
   // 离开 ArenaPage 时停止所有音频，避免浏览器后退后继续播放
@@ -281,7 +306,16 @@ export function ArenaPage() {
     }
   }, [phase])
 
-  // 自动保存
+  // 阶段切换存档：除了定时 60 秒存一次，关键过渡（进入 probing / 进入 playing / 任务完成 / 失败）也要存一次。
+  // 避免玩家"刚进入探针就刷新丢了进度"的糟糕体验。
+  useEffect(() => {
+    if (!task || !taskId) return
+    if (phase !== 'idle' && phase !== 'aborted') {
+      try { autosaveGame(taskId) } catch {}
+    }
+  }, [phase, taskId, task])
+
+  // 自动保存：playing 阶段 60 秒一次。暂停时不重复保存（saveSystem.startAutoSave 内部已检查 isPaused 跳过）
   useEffect(() => {
     if (phase === 'playing') {
       startAutoSave(() => {
@@ -747,6 +781,11 @@ export function ArenaPage() {
           />
         </Suspense>
       )}
+
+      {/* 暂停菜单：z-[60] 顶在 HUD/Dialog/校准弹层之上 */}
+      <Suspense fallback={null}>
+        <PauseMenu />
+      </Suspense>
     </div>
   )
 }

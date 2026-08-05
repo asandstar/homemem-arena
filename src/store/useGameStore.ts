@@ -13,7 +13,7 @@ import { createFeedbackSlice } from './slices/feedbackSlice'
 import { createAnimationSlice } from './slices/animationSlice'
 import { createFlowSlice } from './slices/flowSlice'
 import { createProgressSlice } from './slices/progressSlice'
-import { saveGame, type SaveData } from '../save/saveSystem'
+import { saveGame, autosaveGame, type SaveData } from '../save/saveSystem'
 import type {
   ViewMode,
   GamePhase,
@@ -67,6 +67,7 @@ export interface GameState {
   levelFailed: boolean
   levelCompleted: boolean
   failureReason: string | null
+  isPaused: boolean
   triggeredEvents: Set<string>
   achievedGoalIds: Set<string>
   wrongPlaceCount: number
@@ -122,6 +123,8 @@ interface GameStore extends GameState, ProgressState {
   initializeTask: (taskId: string) => void
   resetTask: () => void
   startPlaying: () => void
+  setPaused: (paused: boolean) => void
+  togglePause: () => void
   setGamePhase: (phase: GamePhase) => void
   moveToRoom: (toRoom: RoomId, position: Vec3) => void
   rotateRobot: (deltaRot: number) => void
@@ -234,7 +237,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!state.task) return null
 
     try {
-      return saveGame({
+      const data = saveGame({
         taskId: state.task.id,
         taskName: state.task.name,
         phase: state.phase,
@@ -258,14 +261,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
         levelCompleted: state.levelCompleted,
         levelFailed: state.levelFailed,
       })
+      // 完成/失败后仍写一次存档（但 hasSavedGame 会过滤掉这些状态，不显示继续按钮），
+      // 方便 SessionDataPage 后续从存档恢复研究数据。
+      try { autosaveGame(state.task.id) } catch { /* ignore */ }
+      return data
     } catch {
       return null
     }
   },
 
   loadFromSave: (saveData: SaveData) => {
+    // 恢复时先确保 task/config 引用与存档对应（task 本身不会持久化在 localStorage，
+    // 因为它包含函数与不可序列化字段；所以我们从 getTaskById 重新取一份）。
+    // 如果 task 尚未初始化，就调用 initializeTask 一次，保证所有 slices 的基础状态都正确。
+    const stateBefore = get()
+    if (!stateBefore.task || stateBefore.task.id !== saveData.taskId) {
+      get().initializeTask(saveData.taskId)
+    }
     set({
       phase: saveData.phase as GamePhase,
+      isPaused: false,
       robotPosition: saveData.robotPosition,
       robotRotation: saveData.robotRotation,
       currentRoom: saveData.currentRoom,

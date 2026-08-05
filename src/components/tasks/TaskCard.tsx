@@ -1,7 +1,14 @@
-import { Lock, Star, Zap, Clock, RotateCcw, ChevronRight } from 'lucide-react'
+import { Lock, Star, Zap, Clock, RotateCcw, ChevronRight, Play } from 'lucide-react'
 import type { TaskConfig } from '../../types/task'
-import type { SaveMetadata } from '../../save/saveSystem'
+import type { SaveData } from '../../save/saveSystem'
 import type { LevelProgress } from '../../store/slices/progressSlice'
+
+type TaskCardSaveInfo = Pick<SaveData, 'taskId' | 'timestamp' | 'elapsedMs'> & {
+  id: string
+  levelCompleted?: boolean
+  levelFailed?: boolean
+  score?: number
+}
 
 interface TaskCardProps {
   task: TaskConfig
@@ -9,8 +16,8 @@ interface TaskCardProps {
   onStart: (taskId: string) => void
   timeLabel?: string
   timeIcon?: React.ReactNode
-  saveInfo?: SaveMetadata
-  onContinue?: (saveId: string) => void
+  saveInfo?: TaskCardSaveInfo
+  onContinue?: (taskId: string) => void
   progress?: LevelProgress
   unlocked?: boolean
   isNextToUnlock?: boolean
@@ -207,25 +214,51 @@ export function TaskCard({
             </div>
 
             {unlocked ? (
-              <button
-                type="button"
-                data-testid={`task-start-${task.id}`}
-                onClick={() => {
-                  if (hasSave && onContinue) {
-                    onContinue(saveInfo!.id)
-                  } else {
-                    onStart(task.id)
-                  }
-                }}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300
-                  bg-gradient-to-r from-purple-600 to-pink-600 text-white
-                  hover:from-purple-500 hover:to-pink-500
-                  hover:shadow-lg hover:shadow-purple-500/30
-                  active:scale-95"
-              >
-                <span>{hasSave ? '继续挑战' : '开始挑战'}</span>
-                <ChevronRight size={16} />
-              </button>
+              hasSave && onContinue ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    data-testid={`task-continue-${task.id}`}
+                    onClick={() => onContinue(saveInfo!.taskId)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300
+                      bg-gradient-to-r from-emerald-600 to-green-600 text-white
+                      hover:from-emerald-500 hover:to-green-500
+                      hover:shadow-lg hover:shadow-emerald-500/30
+                      active:scale-95"
+                    title={`已用时间 ${formatElapsedTime(saveInfo!.elapsedMs)}，${formatSaveTime(saveInfo!.timestamp)}`}
+                  >
+                    <Play size={14} className="fill-white" />
+                    <span>继续挑战</span>
+                  </button>
+                  <button
+                    type="button"
+                    data-testid={`task-start-${task.id}`}
+                    onClick={() => onStart(task.id)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300
+                      bg-slate-800/80 text-slate-200 border border-slate-700
+                      hover:bg-slate-700 hover:text-white
+                      active:scale-95"
+                    title="放弃当前存档，从头开始"
+                  >
+                    <RotateCcw size={13} />
+                    <span>重来</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  data-testid={`task-start-${task.id}`}
+                  onClick={() => onStart(task.id)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300
+                    bg-gradient-to-r from-purple-600 to-pink-600 text-white
+                    hover:from-purple-500 hover:to-pink-500
+                    hover:shadow-lg hover:shadow-purple-500/30
+                    active:scale-95"
+                >
+                  <span>开始挑战</span>
+                  <ChevronRight size={16} />
+                </button>
+              )
             ) : (
               <button
                 type="button"
