@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { X, Target, Keyboard, Brain, Sparkles, AlertCircle } from 'lucide-react'
+import { X, Target, Keyboard, Brain, Sparkles, AlertCircle, Gamepad2, Hand } from 'lucide-react'
 
 interface TutorialOverlayProps {
   taskName: string
@@ -10,9 +10,14 @@ interface TutorialOverlayProps {
 export function TutorialOverlay({ taskName, taskGoal, onClose }: TutorialOverlayProps) {
   const [visible, setVisible] = useState(false)
   const [fadeOut, setFadeOut] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(true), 100)
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window)
+    }
+    checkMobile()
     return () => clearTimeout(timer)
   }, [])
 
@@ -37,9 +42,11 @@ export function TutorialOverlay({ taskName, taskGoal, onClose }: TutorialOverlay
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}
       style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
+      onClick={handleClose}
     >
       <div
         className={`relative max-w-lg w-[90%] bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl border border-purple-500/40 p-6 transition-all duration-300 ${fadeOut ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}`}
+        onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={handleClose}
@@ -67,31 +74,59 @@ export function TutorialOverlay({ taskName, taskGoal, onClose }: TutorialOverlay
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-5">
-          <div className="bg-slate-800/40 rounded-lg p-3 border border-slate-700/30">
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <Keyboard size={14} className="text-amber-400" />
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-300">移动操作</span>
+        {isMobile ? (
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <div className="bg-slate-800/40 rounded-lg p-3 border border-slate-700/30">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Gamepad2 size={14} className="text-amber-400" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-300">移动操作</span>
+              </div>
+              <div className="text-xs text-slate-300 space-y-0.5">
+                <div><span className="font-mono text-amber-300">左下摇杆</span> 移动</div>
+                <div><span className="font-mono text-amber-300">右半屏拖动</span> 转视角</div>
+                <div><span className="font-mono text-amber-300">菜单键</span> 暂停</div>
+              </div>
             </div>
-            <div className="text-xs text-slate-300 space-y-0.5">
-              <div><span className="font-mono text-amber-300">WASD</span> 移动</div>
-              <div><span className="font-mono text-amber-300">鼠标</span> 旋转视角</div>
-              <div><span className="font-mono text-amber-300">ESC</span> 暂停游戏</div>
-            </div>
-          </div>
 
-          <div className="bg-slate-800/40 rounded-lg p-3 border border-slate-700/30">
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <Brain size={14} className="text-purple-400" />
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-purple-300">核心玩法</span>
-            </div>
-            <div className="text-xs text-slate-300 space-y-0.5">
-              <div><span className="font-mono text-purple-300">F</span> 拾取/放置物品</div>
-              <div><span className="font-mono text-purple-300">E</span> 保存位置记忆</div>
-              <div><span className="font-mono text-purple-300">H</span> 隐藏/显示 UI</div>
+            <div className="bg-slate-800/40 rounded-lg p-3 border border-slate-700/30">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Hand size={14} className="text-purple-400" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-purple-300">核心玩法</span>
+              </div>
+              <div className="text-xs text-slate-300 space-y-0.5">
+                <div><span className="font-mono text-purple-300">点物品</span> 拾取/放置</div>
+                <div><span className="font-mono text-purple-300">长按物品</span> 保存记忆</div>
+                <div><span className="font-mono text-purple-300">点容器</span> 开/关</div>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <div className="bg-slate-800/40 rounded-lg p-3 border border-slate-700/30">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Keyboard size={14} className="text-amber-400" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-300">移动操作</span>
+              </div>
+              <div className="text-xs text-slate-300 space-y-0.5">
+                <div><span className="font-mono text-amber-300">WASD</span> 移动</div>
+                <div><span className="font-mono text-amber-300">鼠标</span> 旋转视角</div>
+                <div><span className="font-mono text-amber-300">ESC</span> 暂停游戏</div>
+              </div>
+            </div>
+
+            <div className="bg-slate-800/40 rounded-lg p-3 border border-slate-700/30">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Brain size={14} className="text-purple-400" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-purple-300">核心玩法</span>
+              </div>
+              <div className="text-xs text-slate-300 space-y-0.5">
+                <div><span className="font-mono text-purple-300">F</span> 拾取/放置物品</div>
+                <div><span className="font-mono text-purple-300">E</span> 保存位置记忆</div>
+                <div><span className="font-mono text-purple-300">H</span> 隐藏/显示 UI</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-start gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-5">
           <AlertCircle size={16} className="text-yellow-400 flex-shrink-0 mt-0.5" />
@@ -106,7 +141,7 @@ export function TutorialOverlay({ taskName, taskGoal, onClose }: TutorialOverlay
           className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold text-sm hover:from-purple-500 hover:to-pink-500 hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-200 active:scale-[0.98]"
         >
           开始挑战
-          <span className="ml-2 text-xs opacity-70">(按任意键关闭)</span>
+          <span className="ml-2 text-xs opacity-70">({isMobile ? '点击关闭' : '按任意键关闭'})</span>
         </button>
       </div>
     </div>
