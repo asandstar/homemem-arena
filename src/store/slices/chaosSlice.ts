@@ -78,12 +78,7 @@ export const createChaosSlice = (set: any, get: any): ChaosSlice => ({
     const newMistakes = consecutiveMistakes + 1
 
     if (newMistakes >= 3) {
-      get().addEventToast({
-        id: 'evt-frustration',
-        type: 'warning' as const,
-        message: '⚠️ 连续错误操作！混乱值增加！',
-        icon: 'alert',
-      })
+      get().addEventToast('⚠️ 连续错误操作！混乱值增加！', 'warning' as const, 4000, 'alert')
       get().incrementChaos(15)
       get().breakCombo()
     }
@@ -99,12 +94,7 @@ export const createChaosSlice = (set: any, get: any): ChaosSlice => ({
     const newSuccesses = consecutiveSuccesses + 1
 
     if (newSuccesses >= 5) {
-      get().addEventToast({
-        id: 'evt-focus',
-        type: 'success' as const,
-        message: '✨ 连续正确操作！混乱值下降！',
-        icon: 'sparkles',
-      })
+      get().addEventToast('✨ 连续正确操作！混乱值下降！', 'info' as const, 4000, 'sparkles')
       get().modifyChaos(-10)
     }
 
@@ -129,12 +119,7 @@ export const createChaosSlice = (set: any, get: any): ChaosSlice => ({
       if (freeEntities.length > 0) {
         const randomEntity = freeEntities[Math.floor(Math.random() * freeEntities.length)]
 
-        get().addEventToast({
-          id: 'evt-chaos-move',
-          type: 'warning' as const,
-          message: `🌪️ 混乱中！${randomEntity.name} 被移动了！`,
-          icon: 'wind',
-        })
+        get().addEventToast(`🌪️ 混乱中！${randomEntity.name} 被移动了！`, 'warning' as const, 4000, 'wind')
         get().markMemoryOutdated(randomEntity.configId)
       }
     }
