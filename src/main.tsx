@@ -4,6 +4,10 @@ import App from './App.tsx'
 import { AudioInitializer } from './components/AudioInitializer'
 import { GlobalErrorBoundary } from './components/GlobalErrorBoundary'
 import { installE2eTestApi } from './utils/e2eTestApi'
+import { installGlobalErrorHandlers } from './utils/globalErrorHandlers'
+
+// 全局错误兜底（覆盖异步/Promise/ChunkLoad 非 React 生命周期错误）
+installGlobalErrorHandlers()
 
 // 仅在 DEV && (MODE === 'e2e' || VITE_E2E === 'true') 时挂载测试 API
 installE2eTestApi()

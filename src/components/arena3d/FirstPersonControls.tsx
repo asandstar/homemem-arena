@@ -70,6 +70,17 @@ export function FirstPersonControls() {
   const doorCooldownRef = useRef(0)
   const lastHintRef = useRef<string | null>(null)
 
+  // 防抖：E/F 连续按键时忽略短于 180ms 的重复触发
+  const lastActionAtRef = useRef<Record<string, number>>({})
+  const ACTION_DEBOUNCE_MS = 180
+
+  const isActionCooled = (key: string, now = performance.now()): boolean => {
+    const last = lastActionAtRef.current[key] ?? 0
+    if (now - last < ACTION_DEBOUNCE_MS) return false
+    lastActionAtRef.current[key] = now
+    return true
+  }
+
   const findNearbyEntity = useCallback(() => {
     const state = useGameStore.getState()
     return findNearestInteractableEntity(entities, state.robotPosition, state.currentRoom)
@@ -120,6 +131,7 @@ export function FirstPersonControls() {
           useGameStore.getState().toggleViewMode()
           break
         case 'KeyE': {
+          if (!isActionCooled('KeyE')) break
           const nearbyEntityForMemory = findNearbyEntity()
           if (nearbyEntityForMemory) {
             const stateBefore = useGameStore.getState()
@@ -159,6 +171,7 @@ export function FirstPersonControls() {
           break
         }
         case 'KeyF': {
+          if (!isActionCooled('KeyF')) break
           if (heldEntityId) {
             const container = findNearbyContainer()
             if (container) {
