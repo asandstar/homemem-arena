@@ -34,9 +34,15 @@ function toResult(r: GameCommandResult): { success: boolean; reason?: string } {
 }
 
 // E2E 模式判定提前，方便 buildTestApi 内部使用
-export const IS_E2E_MODE =
-  import.meta.env.DEV &&
-  (import.meta.env.MODE === 'e2e' || import.meta.env.VITE_E2E === 'true')
+function _computeIsE2eMode(): boolean {
+  try {
+    const env = (import.meta as any)?.env
+    return Boolean(env?.DEV) && (env?.MODE === 'e2e' || String(env?.VITE_E2E ?? '') === 'true')
+  } catch {
+    return false
+  }
+}
+export const IS_E2E_MODE = _computeIsE2eMode()
 
 // 只读 / 诊断安全方法：即使在非 E2E 环境下误触也不会改游戏状态
 const SAFE_READ_ONLY_KEYS = new Set([

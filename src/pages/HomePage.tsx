@@ -17,7 +17,7 @@ export function HomePage() {
   const toggleAudioEnabled = useUiStore((s) => s.toggleAudioEnabled)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col relative overflow-x-hidden">
       {/* 浮动背景装饰 */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div

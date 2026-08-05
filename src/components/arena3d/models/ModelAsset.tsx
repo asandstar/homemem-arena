@@ -15,7 +15,7 @@ const CACHE_KEY_PREFIX: string = (() => {
   } catch {
     return 'cache::/::'
   }
-})()
+})();
 
 const MODEL_TEXTURE_CACHE = new Map<string, Promise<any>>()
 const MODEL_CACHE_FIFO_KEYS: string[] = []
@@ -38,7 +38,9 @@ function evictCacheIfNeeded() {
 // === 失败可观测（A1：防抖 30s，只在 DEV 打 warn；PROD 不污染用户控制台） ===
 const WARN_COOLDOWN_MS = 30_000
 const lastWarnAtByPath = new Map<string, number>()
-const IS_DEV = !!(import.meta as any).env?.DEV
+// 加 try/catch 守卫：避免 SyntaxError: Cannot use 'import.meta' outside a module
+let IS_DEV = false
+try { IS_DEV = !!(import.meta as any)?.env?.DEV } catch { /* ignore */ }
 
 function _rateLimitedWarn(modelId: string, path: string, message: string, err?: unknown) {
   const now = Date.now()
@@ -84,21 +86,86 @@ export function subscribeModelLoad(fn: ModelLoadSubscriber): () => void {
   try { fn(cloneStats()) } catch { /* ignore */ }
   return () => { loadSubscribers.delete(fn) }
 }
-function statsIncLoadStart() {
+/**
+ * 全局原子化守卫：防止 StrictMode 双渲染 / cleanup 再调用导致 markDone 被调用多次。
+ * key = `${callSiteTag}::${stableId}::${ticket}`。
+ * 严格要求：同一个 key 最多只允许一次 statsIncLoadStart / 一次 statsIncLoadDone。
+ */
+const STARTED_KEYS = new Set<string>()
+const DONE_KEYS = new Set<string>()
+let _guardSeq = 0
+// reset epoch：每次 resetModelLoadStats 递增，STARTED/DONE key 中包含 epoch，
+// 这样 reset 之前遗留的 markDone 不会与 reset 之后的 start 互相干扰，
+// 也不会因为 STARTED_KEYS.clear() 导致老的 markDone 全部变成 orphan。
+let _statsEpoch = 0
+
+function statsIncLoadStart(tag: string = 'unknown', stableId: string = '', ticket: number | string = 0) {
+  const key = `E${_statsEpoch}::${tag}::${stableId}::${ticket}`
+  if (STARTED_KEYS.has(key)) {
+    if (IS_DEV) console.debug('[statsGuard] duplicate statsIncLoadStart ignored:', key)
+    return
+  }
+  STARTED_KEYS.add(key)
   loadStats.total++
   loadStats.inflight++
   publishStats()
 }
-function statsIncLoadDone(ok: boolean, modelId: string) {
+function statsIncLoadDone(ok: boolean, modelId: string, tag: string = 'unknown', stableId: string = '', ticket: number | string = 0) {
+  const key = `E${_statsEpoch}::${tag}::${stableId}::${ticket}`
+  if (DONE_KEYS.has(key)) {
+    if (IS_DEV) console.debug('[statsGuard] duplicate statsIncLoadDone ignored:', key, 'ok=', ok)
+    return
+  }
+  const hasMatchingStart = STARTED_KEYS.has(key)
+  if (!hasMatchingStart) {
+    // 尝试在过去最多 1 个 epoch 内匹配（reset 触发后旧 key 的 start 不在当前 epoch，但可能在前一 epoch）
+    const prevKey = `E${Math.max(0, _statsEpoch - 1)}::${tag}::${stableId}::${ticket}`
+    if (!STARTED_KEYS.has(prevKey)) {
+      if (IS_DEV) console.debug('[statsGuard] orphan statsIncLoadDone skipped (no matching start in curr/prev epoch):', key, 'ok=', ok)
+      return
+    }
+  }
+  DONE_KEYS.add(key)
   if (ok) loadStats.loaded++
   else { loadStats.failed++; loadStats.failedIds.push(modelId) }
   loadStats.inflight = Math.max(0, loadStats.inflight - 1)
   publishStats()
 }
+function nextGuardTicket() { _guardSeq += 1; return _guardSeq }
+
+export { statsIncLoadStart, statsIncLoadDone, nextGuardTicket }
 export function resetModelLoadStats() {
+  // 递增 epoch（不清除 STARTED/DONE key，这样旧 epoch 的 markDone 仍能通过 prevKey 找到）
+  _statsEpoch += 1
+  // 为防止 _statsEpoch 运行超长时间后溢出（理论上极难触发，简单保护），每 >10000 清理
+  if (_statsEpoch > 10_000) {
+    STARTED_KEYS.clear()
+    DONE_KEYS.clear()
+    _statsEpoch = 0
+  }
+  _guardSeq = 0
   loadStats = { total: 0, loaded: 0, failed: 0, inflight: 0, failedIds: [] }
   publishStats()
 }
+
+// === 暴露到 window（DEV-only，供就绪信号/浏览器调试读取） ===
+;(function EXPOSE_MODEL_STATS_TO_WINDOW() {
+  try {
+    const env = (import.meta as any)?.env
+    if (!env?.DEV || typeof window === 'undefined') return
+    const snap = () => cloneStats()
+    Object.defineProperty(window, '__HOMEMEM_MODEL_STATS__', {
+      configurable: true,
+      enumerable: true,
+      get: snap,
+    })
+    // 同时订阅变化时更新一个简单副本（便于直接 JSON.stringify）
+    ;(window as any).__HOMEMEM_MODEL_STATS_SNAP__ = snap()
+    subscribeModelLoad((s) => {
+      ;(window as any).__HOMEMEM_MODEL_STATS_SNAP__ = { ...s, failedIds: s.failedIds.slice() }
+    })
+  } catch { /* ignore */ }
+})();
 
 /**
  * 全局静默 GLTFLoader 纹理加载错误。
@@ -110,15 +177,27 @@ export function resetModelLoadStats() {
  * 这里在模块加载时就对 console.error 加一层轻量过滤：只吞掉 GLTFLoader 纹理
  * 相关的 error，其它任何错误正常输出不影响真实 bug 排查。
  */
-(() => {
+;(() => {
   const orig = console.error.bind(console)
   const GLTF_TEX_ERR = /GLTFLoader.*Couldn't load texture/i
   // 只 patch 一次（热更新时这个模块会被重复执行），避免套娃。
   if ((console.error as any)._gltfTextureSilenced) return
+  let _reentrantGuard = false
   const next = function gltfSilentError(...args: any[]) {
+    // 重入防护：如果 orig(...) 内部又触发 console.error，不做二次过滤，直接透传，
+    // 避免：React ErrorBoundary → setState → console.error → React → console.error 无限循环。
+    if (_reentrantGuard) {
+      orig(...args)
+      return
+    }
     const first = String(args?.[0] ?? '')
     if (GLTF_TEX_ERR.test(first)) return
-    orig(...args)
+    _reentrantGuard = true
+    try {
+      orig(...args)
+    } finally {
+      _reentrantGuard = false
+    }
   } as any
   next._gltfTextureSilenced = true
   console.error = next
@@ -245,17 +324,19 @@ function loadGLTF(path: string): Promise<any> {
   MODEL_CACHE_FIFO_KEYS.push(cacheKey)
   evictCacheIfNeeded()
 
-  // 防悬挂：极端情况下（fetch 被中止且 promise 永不 settle），5 分钟后重试
+  // 防悬挂：极端情况下（fetch 被中止且 promise 永不 settle），15 秒后重试
   setTimeout(() => {
     if (!settled && MODEL_TEXTURE_CACHE.get(cacheKey) === promise) {
       MODEL_TEXTURE_CACHE.delete(cacheKey)
       const idx = MODEL_CACHE_FIFO_KEYS.indexOf(cacheKey)
       if (idx >= 0) MODEL_CACHE_FIFO_KEYS.splice(idx, 1)
     }
-  }, 5 * 60_000).unref?.()
+  }, 15_000).unref?.()
 
   return promise
 }
+
+export { loadGLTF }
 
 interface ModelAssetProps {
   modelId: string
@@ -493,37 +574,48 @@ function ModelContent({
   const assetAvailable = config?.assetAvailable !== false && !!rawModelPath && !!modelPath
 
   const [gltf, setGltf] = useState<any>(null)
+  const accountedTicketRef = useRef(0)
+  const ticketSeedRef = useRef(0)
 
   useEffect(() => {
     let cancelled = false
-    let statsCounted = false
-    let accountedDone = false
+    ticketSeedRef.current += 1
+    const myTicket = ticketSeedRef.current
+    let settled = false
     setGltf(null)
     if (!assetAvailable) {
       return () => { cancelled = true }
     }
 
-    statsIncLoadStart()
-    statsCounted = true
+    statsIncLoadStart('ModelAsset', modelId, myTicket)
 
-    let settled = false
+    // markDone：双重守卫（局部 accountedTicketRef + 全局 STARTED/DONE_KEYS），确保每个 ticket 恰好一次
     const markDone = (ok: boolean) => {
-      if (accountedDone) return
-      accountedDone = true
-      statsIncLoadDone(ok, modelId)
+      if (accountedTicketRef.current === myTicket) return
+      accountedTicketRef.current = myTicket
+      try { statsIncLoadDone(ok, modelId, 'ModelAsset', modelId, myTicket) } catch { /* protect */ }
     }
 
     loadGLTF(modelPath)
       .then((g) => {
-        if (cancelled) return
-        setGltf(g)
         settled = true
-        markDone(true)
+        if (cancelled) {
+          markDone(false)
+          return
+        }
+        try {
+          setGltf(g)
+          markDone(true)
+        } catch (err) {
+          markDone(false)
+          const msg = err instanceof Error ? err.message : typeof err === 'string' ? err : 'setState failed'
+          _rateLimitedWarn(modelId, modelPath, msg, err)
+        }
       })
       .catch((err) => {
-        if (cancelled) return
         settled = true
         markDone(false)
+        if (cancelled) return
         const msg =
           err instanceof Error ? err.message :
           typeof err === 'string' ? err :
@@ -531,16 +623,18 @@ function ModelContent({
         _rateLimitedWarn(modelId, modelPath, msg, err)
       })
 
-    // 保险：30s 未 settle 按超时计入失败（不中止 fetch，避免 double-count）
+    // 保险：12s 未 settle 按超时计入失败（DEV 更快 fallback）
     const to = setTimeout(() => {
-      if (cancelled || settled || !statsCounted) return
+      if (settled) return
       markDone(false)
-      _rateLimitedWarn(modelId, modelPath, 'timeout(>30s)', new Error('ModelAsset loading timeout'))
-    }, 30_000)
+      _rateLimitedWarn(modelId, modelPath, 'timeout(>12s)', new Error('ModelAsset loading timeout'))
+    }, 12_000)
 
     return () => {
       cancelled = true
       clearTimeout(to)
+      // 仅当 Promise 尚未 settle 时闭合（then/catch 会自行闭合），避免与真实完成重复计数
+      if (!settled) markDone(false)
     }
   }, [modelPath, assetAvailable, modelId])
 

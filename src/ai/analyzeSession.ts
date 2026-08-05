@@ -224,77 +224,93 @@ export function generateSummary(session: SessionData): string {
   return lines.join(' ')
 }
 
-/** 生成机器人诊断报告 */
+/** 生成 MEM-07 机器人观察日志
+ *  风格：第一人称、科幻感（编号日志口吻）、真实数据解读，
+ *  避免"模块/编码/索引"等伪 AI 术语；不玩 meta 梗；
+ *  最多 1 条轻度吐槽（如猫），其余为客观观察。
+ */
 export function generateRobotDiagnosis(session: SessionData): string {
-  const { metrics, memories } = session
-  
+  const { metrics, memories, failureReasons, taskName } = session
+
   const memByType: Record<string, number> = {}
   for (const m of memories) {
     memByType[m.type] = (memByType[m.type] ?? 0) + 1
   }
 
-  const diagnostics: string[] = []
-  const suggestions: string[] = []
+  const obs: string[] = []
+  const adv: string[] = []
 
-  const spatialScore = memByType.spatial ?? 0
-  const objectScore = memByType.object ?? 0
-  const proceduralScore = memByType.procedural ?? 0
+  // ===== 基础事实（从不撒谎，只讲数据）=====
+  obs.push(
+    `本次任务「${taskName ?? '未命名'}」目标完成度 ${metrics.goalsAchieved}/${metrics.goalsTotal}，` +
+    `共执行 ${metrics.stepCount} 步，跨房间移动 ${metrics.roomTransitions} 次。`,
+  )
 
-  if (spatialScore >= 5) {
-    diagnostics.push('空间记忆模块表现优秀')
-  } else if (spatialScore >= 2) {
-    diagnostics.push('空间记忆模块运行正常')
+  const probeTotal = session.events.filter((e) => e.type === 'probe_answer').length
+  const probeWrong = session.events.filter((e) => e.type === 'probe_answer' && !e.isCorrect).length
+  if (probeTotal > 0) {
+    const acc = Math.round(((probeTotal - probeWrong) / probeTotal) * 100)
+    obs.push(`记忆自检 ${probeTotal} 题，正确率 ${acc}%${probeWrong > 0 ? `，错误 ${probeWrong} 题` : ''}。`)
+  }
+
+  // ===== 记忆写入分布（讲人话，不说"模块"）=====
+  if (memories.length > 0) {
+    const parts: string[] = []
+    if ((memByType.spatial ?? 0) > 0) parts.push(`位置记忆 ${memByType.spatial} 条`)
+    if ((memByType.object ?? 0) > 0) parts.push(`物品记忆 ${memByType.object} 条`)
+    if ((memByType.temporal ?? 0) > 0) parts.push(`时间记忆 ${memByType.temporal} 条`)
+    if ((memByType.procedural ?? 0) > 0) parts.push(`流程记忆 ${memByType.procedural} 条`)
+    if (parts.length > 0) {
+      obs.push(`共写入 ${memories.length} 条记忆：${parts.join('，')}。`)
+    }
   } else {
-    diagnostics.push('空间记忆模块数据不足')
+    adv.push('本轮没有使用记忆槽。遇到关键物品位置时按 E 记录，之后能节省大量寻找时间。')
   }
 
-  if (objectScore >= 5) {
-    diagnostics.push('物体识别模块精度达标')
-  } else if (objectScore >= 2) {
-    diagnostics.push('物体识别模块运行稳定')
-  } else {
-    diagnostics.push('物体识别模块需要校准')
+  // ===== 回头路次数（重复搜索）=====
+  const repeatedSearch = metrics.repeatedSearchCount
+  if (repeatedSearch >= 3) {
+    obs.push(`检测到 ${repeatedSearch} 次重复进入同一房间——大概率是在找东西时迷了路。`)
+    adv.push('下一轮建议：先花 10 秒把当前房间扫一遍，再去下一个房间，减少来回。')
+  } else if (repeatedSearch > 0) {
+    obs.push(`有 ${repeatedSearch} 次短程折返，整体动线尚可。`)
   }
 
-  if (proceduralScore >= 3) {
-    diagnostics.push('流程记忆模块逻辑连贯')
-  } else if (proceduralScore >= 1) {
-    diagnostics.push('流程记忆模块存在断点')
-  } else {
-    diagnostics.push('流程记忆模块未建立')
+  // ===== 放错次数 =====
+  if (metrics.wrongPlacements > 0) {
+    obs.push(`有 ${metrics.wrongPlacements} 次物品放错了容器。`)
+    adv.push('放置前看一眼容器上方提示的颜色/图标，和手上物品对比一下再按 F。')
   }
 
-  const breakpointCount = metrics.repeatedSearchCount
-  if (breakpointCount > 0) {
-    diagnostics.push(`检测到 ${breakpointCount} 次记忆断点`)
-    suggestions.push(`建议先锁定关键物品位置，再执行长程归位任务`)
-  }
-
-  const wrongProbes = session.events.filter(e => e.type === 'probe_answer' && !e.isCorrect).length
-  if (wrongProbes > 0) {
-    diagnostics.push(`记忆测试出现 ${wrongProbes} 次错误响应`)
-    suggestions.push(`建议强化多模态记忆编码，建立"视觉-位置"关联索引`)
-  }
-
+  // ===== 目标未完成 =====
   const missedGoals = metrics.goalsTotal - metrics.goalsAchieved
-  if (missedGoals > 0) {
-    diagnostics.push(`任务目标达成率 ${((metrics.goalsAchieved / metrics.goalsTotal) * 100).toFixed(0)}%，${missedGoals} 项未完成`)
-    suggestions.push(`建议启用系统性遍历模式，按"先开容器 → 观察 → 拾取"序列工作`)
+  if (missedGoals > 0 && failureReasons.length > 0) {
+    const top = failureReasons[0].description
+    obs.push(`最主要的障碍：${top}`)
   }
 
-  if (suggestions.length === 0) {
-    suggestions.push('当前模块运行状态良好，建议持续验证多任务泛化能力')
+  // ===== 混乱峰值 / 猫吐槽（保留 1 条轻度吐槽，且要自然）=====
+  // 注意：这里不直接访问 gameStats.chaosPeak，因为 SessionData 里没有 chaosPeak，
+  // 用 failureReasons 里如果提到"猫"相关，再触发吐槽。
+  const hasCatEvent = session.events.some((e) =>
+    (e as any).eventId?.toLowerCase?.().includes('cat') ||
+    String((e as any).description ?? '').toLowerCase().includes('cat') ||
+    String((e as any).description ?? '').includes('猫咪') ||
+    String((e as any).description ?? '').includes('猫'),
+  )
+  if (hasCatEvent) {
+    // 唯一 1 条轻度吐槽，且与真实剧情事件挂钩
+    adv.push('另外：有猫咪活动痕迹的房间，离开前再扫一眼桌面——你懂的。')
   }
 
-  const diagnosisParts: string[] = []
-  
-  if (diagnostics.length > 0) {
-    diagnosisParts.push(`诊断报告：${diagnostics.join('，')}。`)
-  }
-  
-  if (suggestions.length > 0) {
-    diagnosisParts.push(`优化建议：${suggestions.join('；')}。`)
+  // ===== 正面收尾（如果表现好就不要给建议，给肯定）=====
+  if (missedGoals === 0 && adv.length === 0) {
+    adv.push('本轮动线流畅、记忆使用合理，保持这个节奏即可。')
   }
 
-  return diagnosisParts.join(' ')
+  const lines: string[] = []
+  if (obs.length > 0) lines.push(obs.join(' '))
+  if (adv.length > 0) lines.push(`建议：${adv.join(' ')}`)
+
+  return lines.join(' ')
 }

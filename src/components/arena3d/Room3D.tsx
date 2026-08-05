@@ -36,6 +36,23 @@ import {
   ShelfFallback,
   DresserFallback,
 } from './models/FallbackModels'
+import { RegisteredModel } from './RegisteredModel'
+import type { ModelAssetId } from '../../data/assets/modelRegistry'
+
+/** §十一 feature flag: 默认启用 Kenney Living GLB 模型（DEV + PROD 均启用）。
+ *  可通过 VITE_USE_KENNEY_LIVING_ASSETS=false 显式关闭（用于回归对比、A/B 验证）。
+ *  注意：不以 hook 形式定义，避免在 renderLiving 子函数中调用触发 hooks 规则警告。
+ */
+function shouldUseKenneyLiving(): boolean {
+  try {
+    const env = import.meta.env
+    const flag = String(env?.VITE_USE_KENNEY_LIVING_ASSETS ?? '')
+    if (flag === 'false' || flag === '0') return false
+    return true
+  } catch {
+    return true
+  }
+}
 
 interface Room3DProps {
   spec: RoomSpec
@@ -172,7 +189,14 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
 
       <RoomDecorPiece modelId="sofa" color="#8b5a2b">
         <group position={[center.x, 0, center.z - 1.2]} castShadow receiveShadow>
-          <SofaModel size={{ x: 2.4, y: 0.9, z: 1.0 }} />
+          {shouldUseKenneyLiving() ? (
+            <RegisteredModel
+              assetId={'furniture/loungeSofa' as ModelAssetId}
+              fallback={<SofaModel size={{ x: 2.4, y: 0.9, z: 1.0 }} />}
+            />
+          ) : (
+            <SofaModel size={{ x: 2.4, y: 0.9, z: 1.0 }} />
+          )}
         </group>
       </RoomDecorPiece>
 
@@ -200,7 +224,14 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
 
       <RoomDecorPiece modelId="coffee_table" color="#8b7355">
         <group position={[center.x - 0.5, 0, center.z - 0.3]} castShadow receiveShadow>
-          <CoffeeTableModel size={{ x: 1.4, y: 0.45, z: 0.7 }} />
+          {shouldUseKenneyLiving() ? (
+            <RegisteredModel
+              assetId={'furniture/tableCoffee' as ModelAssetId}
+              fallback={<CoffeeTableModel size={{ x: 1.4, y: 0.45, z: 0.7 }} />}
+            />
+          ) : (
+            <CoffeeTableModel size={{ x: 1.4, y: 0.45, z: 0.7 }} />
+          )}
         </group>
       </RoomDecorPiece>
 
@@ -269,19 +300,40 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
 
       <RoomDecorPiece modelId="cabinet" color="#4a4a4a">
         <group position={[center.x + size.x / 2 - 1.1, 0, center.z - 1.0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
-          <TVStandModel size={{ x: 2.2, y: 0.55, z: 0.45 }} />
+          {shouldUseKenneyLiving() ? (
+            <RegisteredModel
+              assetId={'furniture/cabinetTelevision' as ModelAssetId}
+              fallback={<TVStandModel size={{ x: 2.2, y: 0.55, z: 0.45 }} />}
+            />
+          ) : (
+            <TVStandModel size={{ x: 2.2, y: 0.55, z: 0.45 }} />
+          )}
         </group>
       </RoomDecorPiece>
 
       <FallbackColorizer modelId="tv" color="#1f2937">
         <group position={[center.x + size.x / 2 - 1.0, 0.8, center.z - 1.0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
-          <TVFallback size={{ x: 1.8, y: 1.0, z: 0.15 }} />
+          {shouldUseKenneyLiving() ? (
+            <RegisteredModel
+              assetId={'furniture/televisionModern' as ModelAssetId}
+              fallback={<TVFallback size={{ x: 1.8, y: 1.0, z: 0.15 }} />}
+            />
+          ) : (
+            <TVFallback size={{ x: 1.8, y: 1.0, z: 0.15 }} />
+          )}
         </group>
       </FallbackColorizer>
 
       <FallbackColorizer modelId="bookshelf" color="#6b4423">
         <group position={[center.x + size.x / 2 - 0.6, 0, center.z - 1.5]} castShadow receiveShadow>
-          <BookshelfFallback size={{ x: 0.8, y: 1.8, z: 0.35 }} />
+          {shouldUseKenneyLiving() ? (
+            <RegisteredModel
+              assetId={'furniture/bookcaseOpen' as ModelAssetId}
+              fallback={<BookshelfFallback size={{ x: 0.8, y: 1.8, z: 0.35 }} />}
+            />
+          ) : (
+            <BookshelfFallback size={{ x: 0.8, y: 1.8, z: 0.35 }} />
+          )}
         </group>
       </FallbackColorizer>
 
