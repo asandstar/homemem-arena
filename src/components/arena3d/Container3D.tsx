@@ -299,13 +299,32 @@ export function Container3D({
             const offsetX = (index % 3 - 1) * 0.2
             const modelId = CATEGORY_TO_MODEL_ID[String(obj.category)] || 'cup'
             const objHalfHeight = getEntityHalfHeight(obj)
+            // R2A.1 锚点契约：
+            // PropModel (CENTER_ORIGIN): y = objHalfHeight + 0.01 → center 在表面上方, bottom 在 0.01
+            // RegisteredModel (BOTTOM_CENTER_ORIGIN): y = 0.01 → bottom 直接在表面上方 0.01
+            const containedY = obj.modelAssetId ? 0.01 : objHalfHeight + 0.01
             return (
-              <group key={obj.id} position={[offsetX, objHalfHeight + 0.01, 0]}>
-                <PropModel
-                  modelId={modelId}
-                  color={obj.color}
-                  size={obj.size}
-                />
+              <group key={obj.id} position={[offsetX, containedY, 0]}>
+                {obj.modelAssetId ? (
+                  <RegisteredModel
+                    assetId={obj.modelAssetId}
+                    fallback={
+                      <group position={[0, objHalfHeight, 0]}>
+                        <PropModel
+                          modelId={modelId}
+                          color={obj.color}
+                          size={obj.size}
+                        />
+                      </group>
+                    }
+                  />
+                ) : (
+                  <PropModel
+                    modelId={modelId}
+                    color={obj.color}
+                    size={obj.size}
+                  />
+                )}
               </group>
             )
           })}

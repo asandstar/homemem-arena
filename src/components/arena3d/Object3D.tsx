@@ -7,6 +7,7 @@ import type { EntityState } from '../../types/object'
 import { PALETTE } from './colors'
 import { useGameStore } from '../../store/useGameStore'
 import { PropModel } from './models/PropModel'
+import { RegisteredModel } from './RegisteredModel'
 import { snapEntityToWorld, getModelApproxHeight } from '../../game/placement'
 import { CATEGORY_TO_MODEL_ID } from './modelIds'
 
@@ -182,15 +183,39 @@ export function Object3D({ entity, onClick, isHeld }: Object3DProps) {
         scale={pulseScale}
         rotation={[0, idleRotate, 0]}
       >
-        <PropModel
-          modelId={modelId}
-          color={displayColor}
-          hovered={hovered}
-          selected={false}
-          interactable={!isHeld}
-          isHeld={isHeld}
-          size={entity.size}
-        />
+        {entity.modelAssetId ? (
+          <RegisteredModel
+            assetId={entity.modelAssetId}
+            // R2A.1 锚点契约：snapEntityToWorld 返回 center-origin y（surfaceY + halfHeight）。
+            // PropModel (CENTER_ORIGIN) center 位于该 y，bottom 在 surfaceY。
+            // RegisteredModel (BOTTOM_CENTER_ORIGIN) 需减去 halfHeight 使 bottom 在 surfaceY。
+            // fallback PropModel 需 +halfHeight 偏移恢复 center-origin 位置。
+            position={[0, -halfHeight, 0]}
+            fallback={
+              <group position={[0, halfHeight, 0]}>
+                <PropModel
+                  modelId={modelId}
+                  color={displayColor}
+                  hovered={hovered}
+                  selected={false}
+                  interactable={!isHeld}
+                  isHeld={isHeld}
+                  size={entity.size}
+                />
+              </group>
+            }
+          />
+        ) : (
+          <PropModel
+            modelId={modelId}
+            color={displayColor}
+            hovered={hovered}
+            selected={false}
+            interactable={!isHeld}
+            isHeld={isHeld}
+            size={entity.size}
+          />
+        )}
       </group>
 
       {proximityGlow > 0.01 && (

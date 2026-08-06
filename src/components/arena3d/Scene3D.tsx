@@ -17,7 +17,9 @@ import { CatShadowEffect } from './feedback/CatShadowEffect'
 import { PhoneRingEffect } from './feedback/PhoneRingEffect'
 import { ParticleRenderer } from './effects/ParticleRenderer'
 import { PropModel } from './models/PropModel'
+import { RegisteredModel } from './RegisteredModel'
 import { CATEGORY_TO_MODEL_ID } from './modelIds'
+import { getModelAsset } from '../../data/assets/modelRegistry'
 import { PixelationPass } from './effects/PixelationPass'
 import { subscribeModelLoad, type ModelLoadStats, resetModelLoadStats } from './models/ModelAsset'
 import * as THREE from 'three'
@@ -149,17 +151,46 @@ function HeldItem() {
   const modelId = CATEGORY_TO_MODEL_ID[String(heldEntity.category)] || 'cup'
   const displayColor = heldEntity.properties['cleanliness'] === 'dirty' ? '#9ca3af' : (heldEntity['color'] || '#f87171')
 
+  // R2A.1 锚点契约：HELD 状态使用专门的 heldOffset，不复用 floor placement。
+  // PropModel (CENTER_ORIGIN): center 在 group origin (y=0)。
+  // RegisteredModel (BOTTOM_CENTER_ORIGIN): GLB bottom 在 position.y，center 在 position.y + glbHalfHeight。
+  // 要使 GLB center 对齐 group origin: position.y = -glbHalfHeight。
+  // fallback PropModel 需额外 +glbHalfHeight 偏移使 center 回到 group origin。
+  const heldGlbHalfHeight = heldEntity.modelAssetId
+    ? getModelAsset(heldEntity.modelAssetId).effectiveAabb.y / 2
+    : 0
+
   return (
     <group ref={groupRef}>
-      <PropModel
-        modelId={modelId}
-        color={displayColor}
-        hovered={false}
-        selected={false}
-        interactable={false}
-        isHeld={true}
-        size={heldEntity.size}
-      />
+      {heldEntity.modelAssetId ? (
+        <RegisteredModel
+          assetId={heldEntity.modelAssetId}
+          position={[0, -heldGlbHalfHeight, 0]}
+          fallback={
+            <group position={[0, heldGlbHalfHeight, 0]}>
+              <PropModel
+                modelId={modelId}
+                color={displayColor}
+                hovered={false}
+                selected={false}
+                interactable={false}
+                isHeld={true}
+                size={heldEntity.size}
+              />
+            </group>
+          }
+        />
+      ) : (
+        <PropModel
+          modelId={modelId}
+          color={displayColor}
+          hovered={false}
+          selected={false}
+          interactable={false}
+          isHeld={true}
+          size={heldEntity.size}
+        />
+      )}
     </group>
   )
 }
