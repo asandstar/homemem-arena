@@ -5,7 +5,7 @@
 
 import { useEffect, useCallback, useState, lazy, Suspense } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { useGameStore } from '../store/useGameStore'
+import { useGameStore, type GameStats } from '../store/useGameStore'
 import { useSessionStore } from '../store/useSessionStore'
 import { useToastStore } from '../store/useToastStore'
 import { useUiStore } from '../store/useUiStore'
@@ -79,7 +79,7 @@ export function ArenaPage() {
 
   // Hotfix 2026-08-07: 一次性安全包装 stats，避免 JSX 里 12+ 处 typeof 重复检查 / 首帧 null。
   // stats 直接每 render 重新计算（只是属性读取，没有性能问题），保证与上面 selectors 同步更新。
-  const EMPTY_STATS: NonNullable<ReturnType<NonNullable<typeof getGameStats>>> = {
+  const EMPTY_STATS: GameStats = {
     score: 0, maxCombo: 0, wrongPlaceCount: 0, repeatSearchCount: 0,
     memoryUsedCount: 0, outdatedMemoryCount: 0, memoryUpdateCount: 0,
     memoryEffectiveRate: 0, spatialMemoryUsed: 0, objectMemoryUsed: 0,
@@ -87,9 +87,15 @@ export function ArenaPage() {
     chaosValue: 0, chaosPeak: 0, levelCompleted: false, levelFailed: false,
     failureReason: null, taskName: null,
   }
-  const stats = typeof getGameStats === 'function'
-    ? (() => { try { return { ...EMPTY_STATS, ...(getGameStats() ?? EMPTY_STATS) } } catch { return EMPTY_STATS } })()
-    : EMPTY_STATS
+  let stats: GameStats = EMPTY_STATS
+  if (typeof getGameStats === 'function') {
+    try {
+      const raw = getGameStats() ?? EMPTY_STATS
+      stats = { ...EMPTY_STATS, ...raw }
+    } catch {
+      stats = EMPTY_STATS
+    }
+  }
 
   // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
   const startSession = useSessionStore((s) => s.startSession)
