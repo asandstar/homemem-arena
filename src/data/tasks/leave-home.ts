@@ -141,11 +141,14 @@ export const leaveHomeTask: TaskConfig = {
       id: 'cnt-bookcase',
       name: '书架',
       room: 'living',
-      // 与 decor-bookshelf (2.75, 1.5) 同位：作为目标区放置点。
+      // 与 decor-bookshelf (x=2.75, z=1.5) 同位：作为目标区放置点。
       // 不设 modelAssetId（由 decor-bookshelf 承担 GLB 视觉），避免双重渲染。
       // 小尺寸 + isTargetZone pulseRing 作为"放书到这里"的标记。
       // size.x=0.30 使 AABB 边缘 2.75+0.15=2.90 ≤ living 房间边界 2.90（WALL_MARGIN=0.35）
-      position: { x: 2.75, y: 0, z: 1.5 },
+      // position.y=0.85 + size.y=0.05 → 盒顶在 y=0.90，与 surfaceHeight 对齐，
+      //   书落下后正好落在 Kenney bookcaseOpen GLB 的中间层板高度（~0.8~1.0m），
+      //   既不悬浮也不穿过模型；同时满足 qa-layout "surfaceHeight ≤ 盒顶+0.5" 的约束。
+      position: { x: 2.75, y: 0.85, z: 1.5 },
       size: { x: 0.30, y: 0.05, z: 0.4 },
       surfaceHeight: 0.9,
       color: '#92400e',
