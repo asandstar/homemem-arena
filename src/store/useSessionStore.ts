@@ -4,6 +4,7 @@ import type { MemoryEntry, MemoryType } from '../types/memory'
 import type { SessionData, SessionMetrics, FailureReason, PolicySuggestion, SessionStatus, ProbeAnswer } from '../types/session'
 import { generateId } from '../utils/format'
 import { subscribeEvent } from '../engine/eventBus'
+import { withSafeSnapshot, makeSafeGet } from './safeStore'
 
 type NewSessionEvent<T extends SessionEvent = SessionEvent> = T extends SessionEvent
   ? Omit<T, 'id' | 'timestamp' | 'step'>
@@ -22,7 +23,11 @@ interface SessionStore {
   _unsubscribeEventBus?: () => void
 }
 
-export const useSessionStore = create<SessionStore>((set, get) => ({
+// Hotfix 2026-08-07: 首帧 getSnapshot=null 全局兜底（详见 safeStore.ts）；
+// 同时 action 内的跨 slice 读 state 通过 makeSafeGet(rawGet) 避免 rawGet() 返回 null。
+const _rawSessionStore = create<SessionStore>((set, rawGet) => {
+  const get = makeSafeGet(rawGet)
+  return {
   currentSession: null,
 
   startSession: (taskId, taskName, taskInstruction = '') => {
@@ -287,6 +292,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     if (unsubscribe) unsubscribe()
     set({ currentSession: null, _unsubscribeEventBus: undefined })
   },
-}))
+}})
+
+export const useSessionStore = withSafeSnapshot(_rawSessionStore)
 
 export type { ObservationEvent, ActionEvent, MovementEvent }

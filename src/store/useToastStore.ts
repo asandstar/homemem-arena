@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { withSafeSnapshot } from './safeStore'
 
 export type ToastType = 'success' | 'error' | 'info'
 
@@ -14,13 +15,13 @@ interface ToastStore {
   removeToast: (id: string) => void
 }
 
-export const useToastStore = create<ToastStore>((set) => ({
+const _rawToastStore = create<ToastStore>((set) => ({
   toasts: [],
 
   addToast: (type, message) => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
     set((state) => ({ toasts: [...state.toasts, { id, type, message }] }))
-    
+
     const duration = type === 'error' ? 3000 : 2000
     setTimeout(() => {
       set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }))
@@ -31,3 +32,6 @@ export const useToastStore = create<ToastStore>((set) => ({
     set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }))
   },
 }))
+
+// Hotfix 2026-08-07: 首帧 getSnapshot=null 全局兜底（详见 safeStore.ts）
+export const useToastStore = withSafeSnapshot(_rawToastStore)

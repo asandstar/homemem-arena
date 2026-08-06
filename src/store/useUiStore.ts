@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { setAudioEnabled, resetRoomAmbientFlag, initAudio as initSfxAudio } from '../audio/sfx'
 import { stopAllAudioImmediate, resumeAudioContexts, getAudioContextStates } from '../audio/audioManager'
+import { withSafeSnapshot, makeSafeGet } from './safeStore'
 
 interface UiState {
   taskPanelOpen: boolean
@@ -32,9 +33,12 @@ interface UiState {
   resetUi: () => void
 }
 
-export const useUiStore = create<UiState>()(
+// Hotfix 2026-08-07: 首帧 getSnapshot=null 全局兜底（详见 safeStore.ts）
+const _rawUiStore = create<UiState>()(
   persist(
-    (set, get) => ({
+    (set, rawGet) => {
+      const get = makeSafeGet(rawGet)
+      return {
       taskPanelOpen: true,
       eventLogOpen: false,
       minimapOpen: true,
@@ -122,7 +126,8 @@ export const useUiStore = create<UiState>()(
           minimapFollowPlayer: false,
         })
       },
-    }),
+    }
+    },
     {
       name: 'home-mem-ui-state',
       version: 2,
@@ -150,3 +155,5 @@ export const useUiStore = create<UiState>()(
     }
   )
 )
+
+export const useUiStore = withSafeSnapshot(_rawUiStore)

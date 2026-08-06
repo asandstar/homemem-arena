@@ -14,6 +14,7 @@ import { createAnimationSlice } from './slices/animationSlice'
 import { createFlowSlice } from './slices/flowSlice'
 import { createProgressSlice } from './slices/progressSlice'
 import { saveGame, autosaveGame, type SaveData } from '../save/saveSystem'
+import { withSafeSnapshot } from './safeStore'
 import type {
   ViewMode,
   GamePhase,
@@ -205,7 +206,8 @@ interface GameStore extends GameState, ProgressState {
   triggerMemoryClearPulse: () => void
 }
 
-export const useGameStore = create<GameStore>((set, rawGet, _store) => {
+// Hotfix 2026-08-07: 首帧 getSnapshot=null → 全局 withSafeSnapshot 包装，consumer 层 selector 自动获得 s ?? {}
+const _rawGameStore = create<GameStore>((set, rawGet, _store) => {
   // Hotfix 2026-08-07: 代码分包 / 路由懒加载会导致 zustand 内部首次 getSnapshot 返回 null；
   // 所有 slice 与跨 slice 聚合统一通过 safeGet 访问，避免 "Cannot read properties of null"。
   const EMPTY_STATE = {} as GameStore
@@ -327,3 +329,5 @@ export const useGameStore = create<GameStore>((set, rawGet, _store) => {
   },
 }
 })
+
+export const useGameStore = withSafeSnapshot(_rawGameStore)
