@@ -240,6 +240,93 @@ function getConnections(): Connection[] {
   return connections
 }
 
+/**
+ * Transition target validation:
+ * For each doorway A→B, compute the target position in B's local coords and verify:
+ *   1. transition-target-inside-target-room: targetPos inside B's bounds (with PLAYER_RADIUS margin)
+ *   2. transition-target-near-reciprocal-door: along-wall deviation ≤ 0.05m from reciprocal door
+ *   3. transition-target-not-on-wall: targetPos not on B's wall (strictly inside)
+ *   4. transition-target-no-immediate-bounce: targetPos far enough from reciprocal door to not re-trigger
+ */
+const PLAYER_RADIUS_TS = 0.3
+const INWARD_OFFSET = PLAYER_RADIUS_TS + 0.15 // 0.45m
+
+interface TransitionCheck {
+  from: RoomId
+  to: RoomId
+  targetLocalX: number
+  targetLocalZ: number
+  insideRoom: boolean
+  nearReciprocalDoor: boolean
+  notOnWall: boolean
+  noImmediateBounce: boolean
+  issues: string[]
+}
+
+function checkTransitionTargets(): TransitionCheck[] {
+  const results: TransitionCheck[] = []
+
+  for (const roomA of Object.values(sharedRooms)) {
+    for (const door of roomA.doorways ?? []) {
+      const roomB = sharedRooms[door.connectsTo as RoomId]
+      if (!roomB) continue
+
+      // World position of this doorway
+      const doorWorldX = roomA.center.x + door.offset.x
+      const doorWorldZ = roomA.center.z + door.offset.z
+
+      // Convert to room B local coords
+      const localInB_X = doorWorldX - roomB.center.x
+      const localInB_Z = doorWorldZ - roomB.center.z
+
+      // targetPosition is room B local
+      const tx = door.targetPosition.x
+      const tz = door.targetPosition.z
+
+      const halfX = roomB.size.x / 2
+      const halfZ = roomB.size.z / 2
+
+      // 1. Inside room (with PLAYER_RADIUS margin)
+      const insideRoom = Math.abs(tx) <= halfX - PLAYER_RADIUS_TS && Math.abs(tz) <= halfZ - PLAYER_RADIUS_TS
+
+      // 2. Near reciprocal door (along-wall deviation ≤ 0.05m)
+      const isXWall = Math.abs(door.offset.x) > Math.abs(door.offset.z)
+      const alongDev = isXWall ? Math.abs(tz - localInB_Z) : Math.abs(tx - localInB_X)
+      const nearReciprocalDoor = alongDev <= 0.05
+
+      // 3. Not on wall (strictly inside, no touching wall)
+      const notOnWall = Math.abs(tx) < halfX - 0.01 && Math.abs(tz) < halfZ - 0.01
+
+      // 4. No immediate bounce: target must be at least INWARD_OFFSET from the wall
+      //    (so player doesn't immediately trigger reverse transition)
+      const wallDist = isXWall
+        ? halfX - Math.abs(tx) // distance from X wall
+        : halfZ - Math.abs(tz) // distance from Z wall
+      const noImmediateBounce = wallDist >= INWARD_OFFSET - 0.01
+
+      const issues: string[] = []
+      if (!insideRoom) issues.push(`❌ transition-target-inside-target-room: target (${tx.toFixed(2)}, ${tz.toFixed(2)}) outside ${door.connectsTo} bounds with PR margin`)
+      if (!nearReciprocalDoor) issues.push(`❌ transition-target-near-reciprocal-door: along-wall deviation ${alongDev.toFixed(3)}m > 0.05m`)
+      if (!notOnWall) issues.push(`❌ transition-target-not-on-wall: target on wall of ${door.connectsTo}`)
+      if (!noImmediateBounce) issues.push(`❌ transition-target-no-immediate-bounce: wallDist ${wallDist.toFixed(3)}m < INWARD_OFFSET ${INWARD_OFFSET}m`)
+
+      results.push({
+        from: roomA.id,
+        to: door.connectsTo as RoomId,
+        targetLocalX: tx,
+        targetLocalZ: tz,
+        insideRoom,
+        nearReciprocalDoor,
+        notOnWall,
+        noImmediateBounce,
+        issues,
+      })
+    }
+  }
+
+  return results
+}
+
 function main() {
   const connections = getConnections()
 
@@ -307,11 +394,34 @@ function main() {
   console.log(`  📊 Total  : ${connections.length}`)
   console.log('============================================================')
 
-  if (fail > 0) {
-    console.log('\n❌ 至少一条门洞连接不合法，详见上方每条连接的 issues 列表。')
+  // ===== Transition Target Validation =====
+  const tsResults = checkTransitionTargets()
+  let tsPass = 0
+  let tsFail = 0
+
+  console.log('\n============================================================')
+  console.log('  Transition Target 验证 (inside-room / near-door / not-on-wall / no-bounce)')
+  console.log('============================================================\n')
+
+  for (const tc of tsResults) {
+    const status = tc.issues.length === 0 ? '✅ PASS' : '❌ FAIL'
+    if (tc.issues.length === 0) tsPass += 1
+    else tsFail += 1
+    console.log(`${status}  ${tc.from.padEnd(8, ' ')} → ${tc.to.padEnd(8, ' ')}  target=(${tc.targetLocalX.toFixed(2)}, ${tc.targetLocalZ.toFixed(2)})`)
+    for (const iss of tc.issues) console.log(`      ${iss}`)
+  }
+
+  console.log('\n============================================================')
+  console.log(`  ✅ TS Passed : ${tsPass}`)
+  console.log(`  ❌ TS Failed : ${tsFail}`)
+  console.log(`  📊 TS Total  : ${tsResults.length}`)
+  console.log('============================================================')
+
+  if (fail > 0 || tsFail > 0) {
+    console.log('\n❌ 门洞对齐或 transition target 验证未通过。')
     process.exit(1)
   } else {
-    console.log('\n✅ 所有门洞连接均满足 5 房间枢纽布局的对齐/尺寸/空隙要求。')
+    console.log('\n✅ 所有门洞连接和 transition target 均满足要求。')
     process.exit(0)
   }
 }

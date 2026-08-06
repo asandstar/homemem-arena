@@ -5,6 +5,8 @@ import type { RoomSpec, RoomId } from '../types/room'
 //           Living ↔ DiningKitchen(-Z) ↔ Laundry(+X of DK)
 // All doorways: width 1.4m, height 2.4m
 // targetPosition is room-local (relative to target room center)
+// Derivation: targetPosition = reciprocalDoorLocalPos + inwardNormal * (PLAYER_RADIUS + 0.15)
+// where inwardNormal points from the shared wall toward the target room center.
 export const sharedRooms: Record<RoomId, RoomSpec> = {
   living: {
     id: 'living',
@@ -20,21 +22,21 @@ export const sharedRooms: Record<RoomId, RoomSpec> = {
         width: 1.4,
         height: 2.4,
         connectsTo: 'bedroom',
-        targetPosition: { x: 1.85, y: 0, z: 0 },
+        targetPosition: { x: 1.95, y: 0, z: 0 },
       },
       {
         offset: { x: 3.25, y: 0, z: -1.1 },
         width: 1.4,
         height: 2.4,
         connectsTo: 'entrance',
-        targetPosition: { x: 2.25, y: 0, z: -1.1 },
+        targetPosition: { x: -1.05, y: 0, z: 0.525 },
       },
       {
         offset: { x: 0, y: 0, z: -2.75 },
         width: 1.4,
         height: 2.4,
         connectsTo: 'dining',
-        targetPosition: { x: 0, y: 0, z: 2.05 },
+        targetPosition: { x: 0, y: 0, z: 2.15 },
       },
     ],
   },
@@ -52,7 +54,7 @@ export const sharedRooms: Record<RoomId, RoomSpec> = {
         width: 1.4,
         height: 2.4,
         connectsTo: 'living',
-        targetPosition: { x: -2.7, y: 0, z: 0 },
+        targetPosition: { x: -2.8, y: 0, z: 0 },
       },
     ],
   },
@@ -70,14 +72,14 @@ export const sharedRooms: Record<RoomId, RoomSpec> = {
         width: 1.4,
         height: 2.4,
         connectsTo: 'living',
-        targetPosition: { x: 0, y: 0, z: -2.2 },
+        targetPosition: { x: 0, y: 0, z: -2.3 },
       },
       {
         offset: { x: 2.75, y: 0, z: -0.25 },
         width: 1.4,
         height: 2.4,
         connectsTo: 'laundry',
-        targetPosition: { x: -1.45, y: 0, z: 0 },
+        targetPosition: { x: -1.55, y: 0, z: 0.525 },
       },
     ],
   },
@@ -95,7 +97,7 @@ export const sharedRooms: Record<RoomId, RoomSpec> = {
         width: 1.4,
         height: 2.4,
         connectsTo: 'living',
-        targetPosition: { x: 3.75, y: 0, z: -1.1 },
+        targetPosition: { x: 2.8, y: 0, z: -1.1 },
       },
     ],
   },
@@ -114,7 +116,7 @@ export const sharedRooms: Record<RoomId, RoomSpec> = {
         connectsTo: 'dining',
         width: 1.4,
         height: 2.4,
-        targetPosition: { x: -1.45, y: 0, z: 0.525 },
+        targetPosition: { x: 2.3, y: 0, z: -0.25 },
       },
     ],
   },

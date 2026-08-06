@@ -391,5 +391,94 @@ describe('playerMovement - 压力/边界测试', () => {
       expect(Math.abs(target.x - tr.center.x)).toBeLessThan(tr.size.x / 2)
       expect(Math.abs(target.z - tr.center.z)).toBeLessThan(tr.size.z / 2)
     })
+
+    it('所有双向连接的 targetPosition 在目标房间内 (含 PLAYER_RADIUS margin)', () => {
+      const testCases: { from: RoomId; to: RoomId; doorIndex: number }[] = [
+        { from: 'living', to: 'bedroom', doorIndex: 0 },
+        { from: 'living', to: 'entrance', doorIndex: 1 },
+        { from: 'living', to: 'dining', doorIndex: 2 },
+        { from: 'bedroom', to: 'living', doorIndex: 0 },
+        { from: 'dining', to: 'living', doorIndex: 0 },
+        { from: 'dining', to: 'laundry', doorIndex: 1 },
+        { from: 'entrance', to: 'living', doorIndex: 0 },
+        { from: 'laundry', to: 'dining', doorIndex: 0 },
+      ]
+
+      for (const tc of testCases) {
+        const r = sharedRooms[tc.from]
+        const door = r.doorways[tc.doorIndex]
+        const tr = sharedRooms[tc.to]
+
+        // targetPosition is local to target room; world = tr.center + targetPosition
+        const targetWorldX = tr.center.x + door.targetPosition.x
+        const targetWorldZ = tr.center.z + door.targetPosition.z
+
+        // Check inside with PLAYER_RADIUS margin
+        const localX = targetWorldX - tr.center.x
+        const localZ = targetWorldZ - tr.center.z
+        expect(Math.abs(localX)).toBeLessThanOrEqual(tr.size.x / 2 - PLAYER_RADIUS)
+        expect(Math.abs(localZ)).toBeLessThanOrEqual(tr.size.z / 2 - PLAYER_RADIUS)
+      }
+    })
+
+    it('所有 targetPosition 不在目标房间墙上 (strictly inside)', () => {
+      const testCases: { from: RoomId; to: RoomId; doorIndex: number }[] = [
+        { from: 'living', to: 'bedroom', doorIndex: 0 },
+        { from: 'living', to: 'entrance', doorIndex: 1 },
+        { from: 'living', to: 'dining', doorIndex: 2 },
+        { from: 'bedroom', to: 'living', doorIndex: 0 },
+        { from: 'dining', to: 'living', doorIndex: 0 },
+        { from: 'dining', to: 'laundry', doorIndex: 1 },
+        { from: 'entrance', to: 'living', doorIndex: 0 },
+        { from: 'laundry', to: 'dining', doorIndex: 0 },
+      ]
+
+      for (const tc of testCases) {
+        const r = sharedRooms[tc.from]
+        const door = r.doorways[tc.doorIndex]
+        const tr = sharedRooms[tc.to]
+
+        const tx = door.targetPosition.x
+        const tz = door.targetPosition.z
+        const halfX = tr.size.x / 2
+        const halfZ = tr.size.z / 2
+
+        // Must be strictly inside, not touching wall
+        expect(Math.abs(tx)).toBeLessThan(halfX - 0.01)
+        expect(Math.abs(tz)).toBeLessThan(halfZ - 0.01)
+      }
+    })
+
+    it('所有 targetPosition 沿墙方向偏差 ≤0.05m (near reciprocal door)', () => {
+      const testCases: { from: RoomId; to: RoomId; doorIndex: number }[] = [
+        { from: 'living', to: 'bedroom', doorIndex: 0 },
+        { from: 'living', to: 'entrance', doorIndex: 1 },
+        { from: 'living', to: 'dining', doorIndex: 2 },
+        { from: 'bedroom', to: 'living', doorIndex: 0 },
+        { from: 'dining', to: 'living', doorIndex: 0 },
+        { from: 'dining', to: 'laundry', doorIndex: 1 },
+        { from: 'entrance', to: 'living', doorIndex: 0 },
+        { from: 'laundry', to: 'dining', doorIndex: 0 },
+      ]
+
+      for (const tc of testCases) {
+        const r = sharedRooms[tc.from]
+        const door = r.doorways[tc.doorIndex]
+        const tr = sharedRooms[tc.to]
+
+        // Door world position
+        const doorWorldX = r.center.x + door.offset.x
+        const doorWorldZ = r.center.z + door.offset.z
+        // Door in target room local
+        const doorLocalX = doorWorldX - tr.center.x
+        const doorLocalZ = doorWorldZ - tr.center.z
+
+        const isXWall = Math.abs(door.offset.x) > Math.abs(door.offset.z)
+        const alongDev = isXWall
+          ? Math.abs(door.targetPosition.z - doorLocalZ)
+          : Math.abs(door.targetPosition.x - doorLocalX)
+        expect(alongDev).toBeLessThanOrEqual(0.05)
+      }
+    })
   })
 })

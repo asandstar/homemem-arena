@@ -277,7 +277,7 @@ export function Minimap({
       ctx.lineCap = 'round'
       ctx.strokeStyle = 'rgba(34, 197, 94, 0.85)'
       ctx.lineWidth = Math.max(3, scale * 0.3)
-      for (const [roomId, roomSpec] of roomsToShow) {
+      for (const [, roomSpec] of roomsToShow) {
         const cx = roomSpec.center.x * scale + offsetX
         const cy = roomSpec.center.z * scale + offsetY
         for (const dw of roomSpec.doorways ?? []) {
@@ -290,12 +290,12 @@ export function Minimap({
           const offX = dw.offset.x * scale
           const offZ = dw.offset.z * scale
           ctx.beginPath()
-          if (Math.abs(offX + roomHalfX) < EPS || Math.abs(offX - roomHalfX) < EPS) {
-            // 东/西墙：竖向短线
+          if (Math.abs(Math.abs(offX) - roomHalfX) < EPS) {
+            // 东/西墙 (X-wall)：竖向短线
             ctx.moveTo(dwX, dwY - dwW / 2)
             ctx.lineTo(dwX, dwY + dwW / 2)
-          } else {
-            // 南/北墙：横向短线
+          } else if (Math.abs(Math.abs(offZ) - roomHalfZ) < EPS) {
+            // 南/北墙 (Z-wall)：横向短线
             ctx.moveTo(dwX - dwW / 2, dwY)
             ctx.lineTo(dwX + dwW / 2, dwY)
           }
