@@ -20,9 +20,13 @@
       var rawPath = loc.pathname.substring(base.length);
       var normalizedPath = !rawPath ? '/' : (rawPath.charAt(0) !== '/' ? '/' + rawPath : rawPath);
       var stored = normalizedPath + loc.search + loc.hash;
+      // 优先：hash 内联携带（无跨文档持久化时序问题）；
+      // 兜底：sessionStorage（兼容被旧 index.html 缓存的部署过渡期）
       try { window.sessionStorage.setItem('spa-redirect', stored); } catch (e) { /* ignore */ }
+      var encoded;
+      try { encoded = encodeURIComponent(stored); } catch (e) { encoded = encodeURIComponent('/'); }
       // 替换历史栈的当前条：不会在浏览器历史里留下 404 页，用户按「后退」不会再回到 404
-      window.location.replace(base);
+      window.location.replace(base + '#spa-redirect=' + encoded);
     })();
   </script>
 </head>

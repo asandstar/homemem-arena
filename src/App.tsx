@@ -21,8 +21,10 @@ try {
 
 /**
  * 说明：GitHub Pages 404 fallback 的「stored 路径恢复」已经交给 index.html 的 inline script 处理：
- *   public/404.html             → 存 sessionStorage['spa-redirect']（basename 之后相对路径 + search + hash）
- *   index.html <head> inline    → history.replaceState(origin + basename + stored)
+ *   public/404.html             → location.replace(base + '#spa-redirect=' + encodeURIComponent(stored))
+ *                                  （sessionStorage 写为兜底，兼容旧缓存的 index.html）
+ *   index.html <head> inline    → 优先从 hash 读 #spa-redirect=...，decode 后
+ *                                  history.replaceState(origin + basename + stored)
  * 这样做的理由：
  *   - inline script 在 React Router Provider 渲染之前（甚至在 React 还没初始化时）就已执行，
  *     保证首帧 HTML doc 渲染时 window.location.pathname 已是正确深路径（含 basename 前缀）。
@@ -31,6 +33,7 @@ try {
  *     不会走 routes.tsx 最后一条 '*' fallback Navigate('/tasks')。
  *   - 全程使用 history.replaceState，不会触发新 HTTP 请求，也就不会再次让 preview/GitHub Pages
  *     对深路径文件不存在返回 404.html → 不会再触发 stored 重新写入死循环。
+ *   - hash 方案无跨文档 sessionStorage 持久化竞态，根除深链接间歇性回落根路径问题。
  */
 const _routes = _originalRouter.routes.map((r) => {
   if (r.path === '/') return { ...r, element: <Layout /> }
