@@ -93,6 +93,7 @@ export function buildStageContext(get: any): StageContext {
     heldEntityConfigId: heldEntity?.configId ?? null,
     containerStates: s.containerStates ?? {},
     nearbyEntityConfigId: nearby,
+    proceduralProgress: s.proceduralProgress ?? {},
   }
 }
 

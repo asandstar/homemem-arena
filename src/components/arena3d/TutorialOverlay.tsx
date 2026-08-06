@@ -84,7 +84,7 @@ export function TutorialOverlay({ taskName, taskGoal, onClose }: TutorialOverlay
               <div className="text-xs text-slate-300 space-y-0.5">
                 <div><span className="font-mono text-amber-300">左下摇杆</span> 移动</div>
                 <div><span className="font-mono text-amber-300">右半屏拖动</span> 转视角</div>
-                <div><span className="font-mono text-amber-300">菜单键</span> 暂停</div>
+                <div><span className="font-mono text-amber-300">⏸ 按钮</span> 暂停 / 重来</div>
               </div>
             </div>
 
@@ -110,7 +110,7 @@ export function TutorialOverlay({ taskName, taskGoal, onClose }: TutorialOverlay
               <div className="text-xs text-slate-300 space-y-0.5">
                 <div><span className="font-mono text-amber-300">WASD</span> 移动</div>
                 <div><span className="font-mono text-amber-300">鼠标</span> 旋转视角</div>
-                <div><span className="font-mono text-amber-300">ESC</span> 暂停游戏</div>
+                <div><span className="font-mono text-amber-300">ESC×2</span> 暂停 / 重来</div>
               </div>
             </div>
 
@@ -122,7 +122,7 @@ export function TutorialOverlay({ taskName, taskGoal, onClose }: TutorialOverlay
               <div className="text-xs text-slate-300 space-y-0.5">
                 <div><span className="font-mono text-purple-300">F</span> 拾取/放置物品</div>
                 <div><span className="font-mono text-purple-300">E</span> 保存位置记忆</div>
-                <div><span className="font-mono text-purple-300">H</span> 隐藏/显示 UI</div>
+                <div><span className="font-mono text-purple-300">V</span> 切换视角</div>
               </div>
             </div>
           </div>

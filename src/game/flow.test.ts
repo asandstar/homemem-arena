@@ -19,7 +19,7 @@ describe('心流辅助', () => {
     const state = useGameStore.getState()
     const goal = findActiveGoal(state.task, state.getEntitySnapshot(), state.achievedGoalIds)
 
-    expect(goal?.id).toBe('g-dirty-cup')
+    expect(goal?.id).toBe('g-mug-sink')
     expect(buildFlowHint(goal!, 1)).toContain(goal!.description)
     expect(buildFlowHint(goal!, 2)).toContain('物体状态')
   })
@@ -53,15 +53,15 @@ describe('心流辅助', () => {
       elapsedMs: 30_000,
       lastGoalProgressMs: 0,
       flowHintLevel: 1,
-      activeFlowHint: { goalId: 'g-dirty-cup', level: 1, message: 'test' },
+      activeFlowHint: { goalId: 'g-mug-sink', level: 1, message: 'test' },
     })
 
-    const cup = useGameStore.getState().entities.find((entity) => entity.configId === 'obj-dirty-cup')!
+    const cup = useGameStore.getState().entities.find((entity) => entity.configId === 'obj-mug')!
     useGameStore.setState((state) => ({
       phase: 'playing',
       entities: state.entities.map((entity) => (
         entity.id === cup.id
-          ? { ...entity, status: 'placed' as const, placedIn: 'cnt-dishwasher' }
+          ? { ...entity, status: 'placed' as const, placedIn: 'cnt-kitchen-sink' }
           : entity
       )),
     }))

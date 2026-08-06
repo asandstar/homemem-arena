@@ -377,26 +377,26 @@ describe('useGameStore - 核心状态流转测试', () => {
 
     it('脚本移动已放置物体时清除旧 placedIn 和容器成员关系', () => {
       useGameStore.getState().initializeTask('task-clean-table')
-      const entity = useGameStore.getState().entities.find((item) => item.configId === 'obj-dirty-cup')!
+      const entity = useGameStore.getState().entities.find((item) => item.configId === 'obj-mug')!
       useGameStore.setState((state) => ({
         entities: state.entities.map((item) => (
-          item.id === entity.id ? { ...item, status: 'placed' as const, placedIn: 'cnt-dishwasher' } : item
+          item.id === entity.id ? { ...item, status: 'placed' as const, placedIn: 'cnt-kitchen-sink' } : item
         )),
         containerStates: {
           ...state.containerStates,
-          'cnt-dishwasher': {
-            ...state.containerStates['cnt-dishwasher'],
-            containedIds: ['obj-dirty-cup'],
+          'cnt-kitchen-sink': {
+            ...state.containerStates['cnt-kitchen-sink'],
+            containedIds: ['obj-mug'],
           },
         },
       }))
 
-      useGameStore.getState().startMoveAnimation('obj-dirty-cup', 'dining', { x: 0, y: 0, z: 0 })
+      useGameStore.getState().startMoveAnimation('obj-mug', 'dining', { x: 0, y: 0, z: 0 })
 
       const moved = useGameStore.getState().entities.find((item) => item.id === entity.id)
       expect(moved?.status).toBe('free')
       expect(moved?.placedIn).toBeUndefined()
-      expect(useGameStore.getState().containerStates['cnt-dishwasher'].containedIds).not.toContain('obj-dirty-cup')
+      expect(useGameStore.getState().containerStates['cnt-kitchen-sink'].containedIds).not.toContain('obj-mug')
     })
 
     it('已放置物体可以重新拾取并从容器中移除', () => {

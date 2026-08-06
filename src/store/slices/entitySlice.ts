@@ -140,6 +140,30 @@ export const createEntitySlice = (set: any, get: any): EntitySlice => ({
       return { success: false, reason: friendlyMsg }
     }
 
+    // ========== 程序记忆序列预检查（仅目标区，OVERRIDES：错误顺序拒绝放置并保持 held） ==========
+    // 仅对目标区容器检查序列顺序，避免玩家放回茶几（非目标区）换手时被误判为序列错误。
+    // 顺序正确时 checkProceduralAction 推进 proceduralProgress；顺序错误时拒绝放置、保持 held、给短提示。
+    if (isTargetZone) {
+      const procResultPlace = get().checkProceduralAction('place', heldEntity.configId)
+      if (procResultPlace.wrongOrder) {
+        get().incrementChaos(5)
+        get().addFloatingText(
+          `顺序不对！${procResultPlace.currentStepLabel ?? '应该先放别的'}`,
+          'error',
+          containerPos.x,
+          containerPos.y + 1.5,
+        )
+        get().breakCombo()
+        get().showFeedback({
+          type: 'error',
+          message: `顺序不对！${procResultPlace.currentStepLabel ?? '应该先放别的'}`,
+        })
+        playSfx('place_error')
+        // 不释放 heldEntityId，玩家保持手持可放回茶几换手重试
+        return { success: false, reason: '顺序错误，请按示范顺序放置' }
+      }
+    }
+
     // ========== 正确放置分支 ==========
     const scoreGain = calcCorrectPlaceScore(get().combo, DEFAULT_LEVEL_BALANCE)
     get().addScore(scoreGain)
@@ -197,18 +221,8 @@ export const createEntitySlice = (set: any, get: any): EntitySlice => ({
       ),
     })
 
-    // 程序记忆检查（检查放置的物体是否符合序列顺序）
-    const procResultPlace = get().checkProceduralAction('place', heldEntity.configId)
-    if (procResultPlace.wrongOrder) {
-      get().incrementChaos(5)
-      get().addFloatingText(
-        `顺序不对！${procResultPlace.currentStepLabel ?? '应该先放别的'}`,
-        'error',
-        containerPos.x,
-        containerPos.y + 1.5,
-      )
-      get().breakCombo()
-    }
+    // 程序记忆检查已在上方"序列预检查"中对目标区完成（顺序正确时推进 proceduralProgress）。
+    // 非目标区放置（如放回茶几换手）不触发序列检查，避免误判。
 
     return { success: true }
   },

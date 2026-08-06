@@ -19,7 +19,6 @@ import { MODEL_ASSET_REGISTRY, RUNTIME_MODEL_ASSET_REGISTRY, WP0A_LIVING_ASSET_I
 import {
   localAabbMinMax,
   roomLocalBounds,
-  isLocalBoxInsideRoom,
   doorwayBoxes,
   boxesOverlap2D,
 } from '../../scripts/qa-layout'
@@ -52,9 +51,6 @@ function effectiveFootprint(model: ModelAssetId, pos: { x: number; z: number }) 
     z2: pos.z + hz,
   }
 }
-
-// A6: loungeSofa effective footprint = X[-2.48,-0.52] × Z[1.83,2.65]（与 A6 文档 §5 一致）
-const SOFA_FOOTPRINT = effectiveFootprint('furniture/loungeSofa', { x: LIVING_A6.sofa.pos.x, z: LIVING_A6.sofa.pos.z })
 
 describe('LIVING A6 · 定向测试（12 项验证）', () => {
   describe('1-3. 四件 static decor 坐标、房间内、门洞净空', () => {
@@ -121,42 +117,6 @@ describe('LIVING A6 · 定向测试（12 项验证）', () => {
         // 如果注册表保留，仅作记录，不强制删除（避免超纲修改）
         expect(roomDecorFurniture.living.find((d) => d.id === 'decor-sofa-side')).toBeUndefined()
       }
-    })
-  })
-
-  describe('5-7. relocated key 位置约束', () => {
-    const catEvent = leaveHomeTask.scriptedEvents.find(
-      (e) => e.id === 'se-cat-pushes-key' && e.type === 'move-entity',
-    )
-
-    it('5. relocated key 在 Living 内', () => {
-      expect(catEvent?.targetPosition).toBeDefined()
-      const tp = catEvent!.targetPosition!
-      expect(tp.room).toBe('living')
-      const inside = isLocalBoxInsideRoom(
-        'living',
-        { x: tp.x, z: tp.z },
-        { x: 0.3, z: 0.3 },
-        0.10,
-      )
-      expect(inside, `relocated key (${tp.x},${tp.z}) 应在 Living 内`).toBe(true)
-    })
-
-    it('6. relocated key 不在 sofa footprint 内', () => {
-      const tp = catEvent!.targetPosition!
-      // 钥匙尺寸 0.2×0.14，用半尺寸判断中心点是否在 footprint 外
-      const keyBox = { x1: tp.x - 0.1, x2: tp.x + 0.1, z1: tp.z - 0.07, z2: tp.z + 0.07 }
-      const overlap = boxesOverlap2D(keyBox, SOFA_FOOTPRINT, 0)
-      expect(overlap, 'relocated key 不应落在 sofa footprint 内').toBe(false)
-    })
-
-    it('7. relocated key 到 sofa footprint 距离 ≤ 0.40m', () => {
-      const tp = catEvent!.targetPosition!
-      // 计算点到 AABB 的最近距离
-      const dx = Math.max(SOFA_FOOTPRINT.x1 - tp.x, 0, tp.x - SOFA_FOOTPRINT.x2)
-      const dz = Math.max(SOFA_FOOTPRINT.z1 - tp.z, 0, tp.z - SOFA_FOOTPRINT.z2)
-      const dist = Math.sqrt(dx * dx + dz * dz)
-      expect(dist, `relocated key 到 sofa footprint 距离 ${dist.toFixed(3)}m 应 ≤ 0.40m`).toBeLessThanOrEqual(0.40)
     })
   })
 

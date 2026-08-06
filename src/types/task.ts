@@ -160,6 +160,16 @@ export interface StageContext {
   containerStates: Record<string, { open: boolean; containedIds: string[] }>
   /** 距离最近的可交互实体的 configId（范围内 maxDistance=2.0）；null 代表当前无可交互 */
   nearbyEntityConfigId: string | null
+  /**
+   * 程序记忆（Perceptual Memory）进度快照：goalId → 当前进度。
+   * 用于 procedural goal 的 predicate 判断动作序列是否已按序完成。
+   * 只读快照，不可在 predicate 中修改。
+   */
+  proceduralProgress?: Readonly<Record<string, {
+    currentStepIndex: number
+    mistakeCount: number
+    completed: boolean
+  }>>
 }
 
 /** 任务配置 */

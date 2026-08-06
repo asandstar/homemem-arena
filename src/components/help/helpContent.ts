@@ -33,8 +33,8 @@ export const helpTabs: HelpTab[] = [
           { label: 'E', description: '保存当前看到的物体到记忆槽' },
           { label: 'Tab', description: '显示/隐藏任务面板' },
           { label: 'R', description: '展开/收起事件日志' },
-          { label: 'H', description: '打开/关闭帮助面板' },
-          { label: 'ESC', description: '关闭弹窗 / 暂停（任务简报时）' },
+          { label: 'H', description: '隐藏/显示游戏 UI' },
+          { label: 'ESC×2', description: '按两次 ESC 打开暂停菜单（继续 / 重新开始本关 / 返回关卡选择）' },
         ],
       },
       {

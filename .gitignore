@@ -38,3 +38,4 @@ node_modules/.tmp/
 *.sw?
 
 _patches/
+.vercel

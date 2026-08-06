@@ -132,7 +132,8 @@ function HeldItem() {
     const bob = Math.sin(bobTime.current * 3) * 0.02
     const sway = Math.sin(bobTime.current * 2) * 0.03
 
-    const offset = new THREE.Vector3(0.3, -0.25, -0.5)
+    // R2A.2: 调整偏移使物体更靠右下方，避免遮挡视线
+    const offset = new THREE.Vector3(0.4, -0.35, -0.4)
     offset.y += bob
     offset.x += sway
 
@@ -160,8 +161,11 @@ function HeldItem() {
     ? getModelAsset(heldEntity.modelAssetId).effectiveAabb.y / 2
     : 0
 
+  // R2A.2: held 状态缩放因子，避免大模型遮挡视线
+  const heldScale = 0.6
+
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} scale={heldScale}>
       {heldEntity.modelAssetId ? (
         <RegisteredModel
           assetId={heldEntity.modelAssetId}

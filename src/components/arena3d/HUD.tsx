@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState, useMemo } from 'react'
 import { useGameStore } from '../../store/useGameStore'
 import { useUiStore } from '../../store/useUiStore'
-import { Target, Clock, CheckCircle2, AlertTriangle, Zap, Package, Keyboard, Brain, Lock, Unlock, Trash2, ChevronDown, ChevronUp, Skull, AlertCircle, X, Cat, Smartphone, HelpCircle, Eye, EyeOff, MapPin, Box, History, Play, Volume2, VolumeX } from 'lucide-react'
+import { Target, Clock, CheckCircle2, AlertTriangle, Zap, Package, Keyboard, Brain, Lock, Unlock, Trash2, ChevronDown, ChevronUp, Skull, AlertCircle, X, Cat, Smartphone, HelpCircle, Eye, EyeOff, MapPin, Box, History, Play, Pause, Volume2, VolumeX } from 'lucide-react'
 import { Minimap } from './Minimap'
 import type { GoalSpec } from '../../types/task'
 import { HelpPanel } from '../help/HelpPanel'
@@ -87,6 +87,7 @@ export function HUD() {
   const activeFlowHint = useGameStore((s) => s.activeFlowHint)
   const currentStageId = useGameStore((s) => s.currentStageId)
   const currentObjective = useGameStore((s) => s.currentObjective)
+  const setPaused = useGameStore((s) => s.setPaused)
   const currentSession = useSessionStore((s) => s.currentSession)
 
   // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
@@ -201,15 +202,8 @@ export function HUD() {
   const stageProgress1Based = stageIndex >= 0 ? Math.min(totalStages, stageIndex + 1) : 0
 
   // Sprint B.1: E/F 上下文提示按阶段定制
-  const keySlot = memorySlots.find(s => s?.entityConfigId === 'obj-key') ?? null
-  const keyOutdated = !!keySlot?.outdated
-  const catFired = eventToasts.some(t => t.type === 'cat')
-  // Sprint B.1: 仅 task-leave-home 阶段规则生效，避免影响其他关卡
+  // task-leave-home 已重写为"睡前仪式"，旧出门大作战硬编码（obj-key/stage-observe-fetch 等）已移除。
   const isLeaveHome = task?.id === 'task-leave-home'
-  const stageObserveKey = isLeaveHome && currentStageId === 'stage-observe-fetch'
-  const stageUpdateKey = isLeaveHome && currentStageId === 'stage-key-outdated'
-  const stageFinalize = isLeaveHome && currentStageId === 'stage-finalize'
-  const nearKey = nearbyEntity?.configId === 'obj-key'
 
   // P1 L1 教学：task-clean-table 规则（§五 定制 E/F 提示：不同时显示 E 和 F 教学；先突出 E 再突出 F）
   const isCleanTable = task?.id === 'task-clean-table'
@@ -228,11 +222,7 @@ export function HUD() {
   // P1 L1：L1 阶段 2+（已至少保存 1 条任务记忆）→ 隐藏 E 教学提示（不展示 E）
   const cleanTableShouldHideMemoryHint = cleanTableStage2
   if (!cleanTableShouldHideMemoryHint && nearbyEntity) {
-    if (stageObserveKey && nearKey) {
-      memoryActionLabel = '记录钥匙位置'
-    } else if (stageUpdateKey && nearKey) {
-      memoryActionLabel = '更新钥匙记忆'
-    } else if (memorySlots.some(s => s?.objectName === nearbyEntity.name && s.outdated)) {
+    if (memorySlots.some(s => s?.objectName === nearbyEntity.name && s.outdated)) {
       memoryActionLabel = `更新 ${nearbyEntity.name} 的记忆`
     } else {
       memoryActionLabel = `保存 ${nearbyEntity.name} 的位置记忆`
@@ -247,13 +237,7 @@ export function HUD() {
     if (heldEntity && nearbyContainer) {
       itemActionLabel = `放入 ${nearbyContainer.name}`
     } else if (!heldEntity && nearbyEntity) {
-      if (stageObserveKey && nearKey) {
-        itemActionLabel = '拾取钥匙'
-        itemActionDisabledReason = '先记录钥匙位置'
-      } else if (stageUpdateKey && nearKey) {
-        itemActionLabel = '拾取钥匙'
-        itemActionDisabledReason = '先更新钥匙记忆再拾取'
-      } else if (isCleanTable && currentStageId === 'stage-observe-table' && !anyTaskMemorySavedCleanTable && taskObjectIdsCleanTable.includes(nearbyEntity.configId)) {
+      if (isCleanTable && currentStageId === 'stage-observe-table' && !anyTaskMemorySavedCleanTable && taskObjectIdsCleanTable.includes(nearbyEntity.configId)) {
         itemActionLabel = `拾取 ${nearbyEntity.name}`
         itemActionDisabledReason = '先按 E 记住它的位置'
       } else {
@@ -263,12 +247,7 @@ export function HUD() {
       itemActionLabel = `${containerStates[nearbyContainer.id]?.open ? '关闭' : '打开'} ${nearbyContainer.name}`
     }
   }
-  if (stageFinalize && heldEntity && !nearbyContainer) {
-    itemActionLabel = '放入玄关托盘'
-    itemActionDisabledReason = '靠近玄关托盘后再按 F'
-  }
-  void catFired
-  void keyOutdated
+  void isLeaveHome
 
   const roomUncollectedItems = entities.filter(e =>
     e.type === 'object' &&
@@ -564,6 +543,15 @@ export function HUD() {
                 </div>
               )}
               <button
+                onClick={() => setPaused(true)}
+                title="暂停游戏（重新开始 / 返回关卡选择）"
+                className="p-1.5 rounded-lg transition-colors bg-slate-800/70 text-slate-300 hover:bg-slate-700/80 hover:text-white border border-slate-600/50"
+                data-testid="pause-btn"
+                aria-label="暂停游戏"
+              >
+                <Pause size={isMobile ? 14 : 16} />
+              </button>
+              <button
                 onClick={toggleAudioEnabled}
                 title={audioEnabled ? '关闭所有音频' : '开启音频'}
                 className={`p-1.5 rounded-lg transition-colors ${
@@ -643,7 +631,6 @@ export function HUD() {
               robotPosition={robotPosition}
               robotRotation={robotRotation}
               observedObjects={entities.filter((e) => {
-                if (isLeaveHome && currentStageId === 'stage-key-outdated' && e.configId === 'obj-key') return false
                 return e.currentRoom === currentRoom && e.status !== 'hidden' && e.status !== 'held'
               })}
               taskRooms={task?.rooms}
@@ -740,7 +727,7 @@ export function HUD() {
               </div>
               <div className="flex items-center gap-1">
                 <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">V</kbd>
-                <span className="text-slate-400">切换</span>
+                <span className="text-slate-400">切换视角</span>
               </div>
               <div className="flex items-center gap-1">
                 <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">Tab</kbd>
@@ -756,15 +743,15 @@ export function HUD() {
               </div>
               <div className="flex items-center gap-1">
                 <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">H</kbd>
-                <span className="text-slate-400">隐藏</span>
+                <span className="text-slate-400">隐藏UI</span>
               </div>
               <div className="flex items-center gap-1">
                 <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">R</kbd>
                 <span className="text-slate-400">日志</span>
               </div>
               <div className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">ESC</kbd>
-                <span className="text-slate-400">恢复</span>
+                <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">ESC×2</kbd>
+                <span className="text-slate-400">暂停菜单</span>
               </div>
             </div>
           </div>
@@ -923,13 +910,6 @@ export function HUD() {
               {memoryActionDisabledReason && (
                 <span className="ml-1.5 text-[10px] text-red-300">（{memoryActionDisabledReason}）</span>
               )}
-            </div>
-          )}
-          {nearbyEntity?.configId === 'obj-key' && memorySlots.every((s) => s === null) && (
-            <div className="mt-2 max-w-[260px] px-4 py-3 rounded-lg bg-gradient-to-br from-purple-600/40 to-pink-600/40 border-2 border-purple-400/60 text-xs text-purple-100 shadow-xl animate-pulse">
-              <div className="font-bold mb-1">🧠 第一次靠近钥匙！</div>
-              <div>按 <kbd className="px-1.5 py-0.5 rounded bg-purple-500/30 text-purple-300 font-mono">E</kbd> 保存位置记忆</div>
-              <div className="text-purple-200/80 mt-1">捣乱事件后可以回顾，保存一次 +50 分！</div>
             </div>
           )}
           {nearbyEntity && memorySlots.some(s => s?.objectName === nearbyEntity.name && s.outdated) && (

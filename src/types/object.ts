@@ -27,6 +27,9 @@ export type ObjectCategory =
   | 'cereal'
   | 'bowl'
   | 'spoon'
+  // 睡前仪式任务
+  | 'book'
+  | 'toy'
 
 /** 物体运行时类型 */
 export type EntityType = 'object' | 'container' | 'target-zone' | 'robot'
