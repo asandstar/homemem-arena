@@ -35,10 +35,12 @@ export function TaskSelectPage() {
   // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
   const audioEnabled = useUiStore((s) => s.audioEnabled)
   const toggleAudioEnabled = useUiStore((s) => s.toggleAudioEnabled)
-  const initializeProgress = useGameStore((s) => s.initializeProgress)
-  const getLevelProgress = useGameStore((s) => s.getLevelProgress)
-  const isLevelUnlocked = useGameStore((s) => s.isLevelUnlocked)
-  const levelProgress = useGameStore((s) => s.levelProgress)
+  // Hotfix 2026-08-07: 代码分包 / 懒加载会让 zustand selector 首帧拿到 null，
+  // 所有 useGameStore selector 统一加可选链 + 下方 useEffect/callback 做 typeof 检查。
+  const initializeProgress = useGameStore((s) => s?.initializeProgress)
+  const getLevelProgress = useGameStore((s) => s?.getLevelProgress)
+  const isLevelUnlocked = useGameStore((s) => s?.isLevelUnlocked)
+  const levelProgress = useGameStore((s) => s?.levelProgress ?? {})
 
   // hasSavedGame 做的是 localStorage 同步读，挂 component 内的 useMemo 即可；
   // 额外依赖 remountTrigger 让"继续失败后 fallback 清空存档"能立刻移除按钮。
@@ -62,6 +64,7 @@ export function TaskSelectPage() {
 
   useEffect(() => {
     // 初始化所有显示关卡的 progress（包括 5 关模式下的 breakfast/night-patrol）
+    if (typeof initializeProgress !== 'function') return
     initializeProgress(publicTaskTemplates.map((t) => t.id))
   }, [initializeProgress, publicTaskTemplates])
 
@@ -182,9 +185,13 @@ export function TaskSelectPage() {
 
           <div className="space-y-6">
             {publicTaskTemplates.map((task, index) => {
-              const progress = getLevelProgress(task.id)
+              const progress = typeof getLevelProgress === 'function'
+                ? getLevelProgress(task.id)
+                : { taskId: task.id, unlocked: index === 0, completed: false, rank: null, bestScore: 0, completionTime: null, attempts: 0 }
               // 隐藏关卡：始终用 PUBLIC_ORDER + HIDDEN 的完整顺序作为解锁序列
-              const unlocked = isLevelUnlocked(task.id, unlockOrder)
+              const unlocked = typeof isLevelUnlocked === 'function'
+                ? isLevelUnlocked(task.id, unlockOrder)
+                : index === 0
               const isHidden = isHiddenTaskId(task.id)
               const isNext = index === nextIndex && unlocked && !progress.completed
               const isCompleted = progress.completed

@@ -58,22 +58,38 @@ export function ArenaPage() {
   const toggleAudioEnabled = useUiStore((s) => s.toggleAudioEnabled)
 
   // 所有状态都用「单字段 selector」，绝对不要每次创建新对象。
-  const task = useGameStore((s) => s.task)
-  const phase = useGameStore((s) => s.phase)
-  const currentRoom = useGameStore((s) => s.currentRoom)
-  const chaosValue = useGameStore((s) => s.chaosValue)
-  const achievedGoalIds = useGameStore((s) => s.achievedGoalIds)
-  const combo = useGameStore((s) => s.combo)
-  const wrongPlaceCount = useGameStore((s) => s.wrongPlaceCount)
-  const activeFlowHint = useGameStore((s) => s.activeFlowHint)
-  const memorySlots = useGameStore((s) => s.memorySlots)
-  const levelCompleted = useGameStore((s) => s.levelCompleted)
-  const levelFailed = useGameStore((s) => s.levelFailed)
+  // Hotfix 2026-08-07: 代码分包 / 懒加载首帧 zustand selector snapshot 可能为 null，
+  // 统一加可选链 + call site 做 typeof 检查，避免 Cannot read properties of null。
+  const task = useGameStore((s) => s?.task ?? null)
+  const phase = useGameStore((s) => s?.phase ?? 'idle')
+  const currentRoom = useGameStore((s) => s?.currentRoom ?? 'living')
+  const chaosValue = useGameStore((s) => s?.chaosValue ?? 0)
+  const achievedGoalIds = useGameStore((s) => s?.achievedGoalIds ?? new Set<string>())
+  const combo = useGameStore((s) => s?.combo ?? 0)
+  const wrongPlaceCount = useGameStore((s) => s?.wrongPlaceCount ?? 0)
+  const activeFlowHint = useGameStore((s) => s?.activeFlowHint ?? null)
+  const memorySlots = useGameStore((s) => s?.memorySlots ?? [])
+  const levelCompleted = useGameStore((s) => !!s?.levelCompleted)
+  const levelFailed = useGameStore((s) => !!s?.levelFailed)
   // 函数引用：Zustand 中 action 函数引用是稳定的（set/get 绑定在 slice 创建时），直接安全解构
-  const initializeTask = useGameStore((s) => s.initializeTask)
-  const startPlaying = useGameStore((s) => s.startPlaying)
-  const saveCurrentGame = useGameStore((s) => s.saveCurrentGame)
-  const getGameStats = useGameStore((s) => s.getGameStats)
+  const initializeTask = useGameStore((s) => s?.initializeTask)
+  const startPlaying = useGameStore((s) => s?.startPlaying)
+  const saveCurrentGame = useGameStore((s) => s?.saveCurrentGame)
+  const getGameStats = useGameStore((s) => s?.getGameStats)
+
+  // Hotfix 2026-08-07: 一次性安全包装 stats，避免 JSX 里 12+ 处 typeof 重复检查 / 首帧 null。
+  // stats 直接每 render 重新计算（只是属性读取，没有性能问题），保证与上面 selectors 同步更新。
+  const EMPTY_STATS: NonNullable<ReturnType<NonNullable<typeof getGameStats>>> = {
+    score: 0, maxCombo: 0, wrongPlaceCount: 0, repeatSearchCount: 0,
+    memoryUsedCount: 0, outdatedMemoryCount: 0, memoryUpdateCount: 0,
+    memoryEffectiveRate: 0, spatialMemoryUsed: 0, objectMemoryUsed: 0,
+    temporalMemoryUsed: 0, proceduralMemoryUsed: 0, elapsedMs: 0, stepCount: 0,
+    chaosValue: 0, chaosPeak: 0, levelCompleted: false, levelFailed: false,
+    failureReason: null, taskName: null,
+  }
+  const stats = typeof getGameStats === 'function'
+    ? (() => { try { return { ...EMPTY_STATS, ...(getGameStats() ?? EMPTY_STATS) } } catch { return EMPTY_STATS } })()
+    : EMPTY_STATS
 
   // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
   const startSession = useSessionStore((s) => s.startSession)
@@ -258,7 +274,7 @@ export function ArenaPage() {
     }
 
     if (closeDialog) closeDialog()
-    initializeTask(taskId)
+    if (typeof initializeTask === 'function') initializeTask(taskId)
 
     // "继续"进入：restoreSave 覆盖 initializeTask 的默认状态，然后跳过 briefing 直接进入 playing
     // 若存档校验失败（version/hash 不一致），hasSavedGame 会返回 false，照常显示 briefing 重新开始
@@ -291,11 +307,11 @@ export function ArenaPage() {
       ;(window as any).__cleanupCallCount = ((window as any).__cleanupCallCount || 0) + 1
       stopAllAudioImmediate()
       stopAutoSave()
-      saveCurrentGame()
+      if (typeof saveCurrentGame === 'function') saveCurrentGame()
     }
 
     const handleBeforeUnload = () => {
-      saveCurrentGame()
+      if (typeof saveCurrentGame === 'function') saveCurrentGame()
       handleCleanup()
     }
 
@@ -329,7 +345,7 @@ export function ArenaPage() {
   useEffect(() => {
     if (phase === 'playing') {
       startAutoSave(() => {
-        saveCurrentGame()
+        if (typeof saveCurrentGame === 'function') saveCurrentGame()
       })
     }
     return () => {
@@ -342,7 +358,7 @@ export function ArenaPage() {
   useEffect(() => {
     if (!briefingOpen && phase === 'briefing' && task) {
       console.warn('[FIX-3] briefing 已关闭但 phase=briefing，兜底补 startPlaying() 调用')
-      startPlaying()
+      if (typeof startPlaying === 'function') startPlaying()
     }
   }, [briefingOpen, phase, task, startPlaying])
 
@@ -389,15 +405,15 @@ export function ArenaPage() {
   }, [phase])
 
   const getMemoryStrategyComment = () => {
-    const stats = getGameStats()
+    // 使用包装后的 stats（已经做过 safe check），避免首帧 getGameStats 为 undefined
     if (stats.levelFailed) {
-      return '时间到了！下次记得更快一点找到钥匙哦！'
+      return '时间到了！下次记得更快一点哦！'
     }
     if (stats.memoryUsedCount >= 2 && stats.memoryUpdateCount >= 1) {
       return '记忆大师！你完美地保存并更新了记忆，简直是记忆系统的最佳使用者！'
     }
     if (stats.memoryUsedCount >= 1 && stats.memoryUpdateCount >= 1) {
-      return '反应迅速！猫事件后你很快找到了钥匙并更新了记忆，效率很高！'
+      return '反应迅速！事件后你很快找到了物品并更新了记忆，效率很高！'
     }
     if (stats.memoryUsedCount >= 1) {
       return '做得不错！你使用了记忆系统保存位置，下次试试更新记忆吧！'
@@ -637,7 +653,7 @@ export function ArenaPage() {
                       void resumeAudioContexts()
                     }
                     startSession(task.id, task.name, task.briefing)
-                    startPlaying()
+                    if (typeof startPlaying === 'function') startPlaying()
                     setBriefingOpen(false)
                     setShowTutorial(true)
                   }}
@@ -724,18 +740,18 @@ export function ArenaPage() {
             <div className="flex justify-center items-center gap-6 mb-6">
               <div className="text-center">
                 <div className="text-xs text-slate-400">得分</div>
-                <div className="text-3xl font-bold text-white">{getGameStats().score}</div>
+                <div className="text-3xl font-bold text-white">{stats.score}</div>
               </div>
               <div className="text-center">
                 <div className="text-xs text-slate-400">评级</div>
                 <div className="text-3xl font-bold text-yellow-400">
-                  {getGameStats().score >= 900 ? 'S' : getGameStats().score >= 700 ? 'A' : getGameStats().score >= 500 ? 'B' : getGameStats().score >= 300 ? 'C' : 'D'}
+                  {stats.score >= 900 ? 'S' : stats.score >= 700 ? 'A' : stats.score >= 500 ? 'B' : stats.score >= 300 ? 'C' : 'D'}
                 </div>
               </div>
               <div className="text-center">
                 <div className="text-xs text-slate-400">用时</div>
                 <div className="text-2xl font-bold text-cyan-400">
-                  {Math.round(getGameStats().elapsedMs / 1000)}s
+                  {Math.round(stats.elapsedMs / 1000)}s
                 </div>
               </div>
             </div>
@@ -748,7 +764,7 @@ export function ArenaPage() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-slate-700/30 rounded-lg p-2 text-center">
                   <div className="text-xs text-slate-400">保存次数</div>
-                  <div className="text-lg font-bold text-green-400">{getGameStats().memoryUsedCount}</div>
+                  <div className="text-lg font-bold text-green-400">{stats.memoryUsedCount}</div>
                 </div>
                 <div className="bg-slate-700/30 rounded-lg p-2 text-center">
                   <div className="text-xs text-slate-400">有效记忆</div>
@@ -764,13 +780,13 @@ export function ArenaPage() {
                 </div>
                 <div className="bg-slate-700/30 rounded-lg p-2 text-center">
                   <div className="text-xs text-slate-400">更新次数</div>
-                  <div className="text-lg font-bold text-yellow-400">{getGameStats().memoryUpdateCount}</div>
+                  <div className="text-lg font-bold text-yellow-400">{stats.memoryUpdateCount}</div>
                 </div>
                 <div className="bg-slate-700/30 rounded-lg p-2 text-center col-span-2">
                   <div className="text-xs text-slate-400">记忆效率</div>
                   <div className="text-lg font-bold text-purple-400">
-                    {getGameStats().memoryUsedCount > 0
-                      ? Math.round((memorySlots.filter(s => s && !s.outdated).length / getGameStats().memoryUsedCount) * 100)
+                    {stats.memoryUsedCount > 0
+                      ? Math.round((memorySlots.filter(s => s && !s.outdated).length / stats.memoryUsedCount) * 100)
                       : 0}%
                   </div>
                 </div>

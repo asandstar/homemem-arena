@@ -205,53 +205,58 @@ interface GameStore extends GameState, ProgressState {
   triggerMemoryClearPulse: () => void
 }
 
-export const useGameStore = create<GameStore>((set, get) => ({
-  ...createTaskSlice(set, get),
-  ...createPlayerSlice(set, get),
-  ...createEntitySlice(set, get),
-  ...createMemorySlice(set, get),
-  ...createChaosSlice(set, get),
-  ...createScoreSlice(set, get),
-  ...createFeedbackSlice(set, get),
-  ...createAnimationSlice(set, get),
-  ...createFlowSlice(set, get),
-  ...createProgressSlice(set, get),
+export const useGameStore = create<GameStore>((set, rawGet, _store) => {
+  // Hotfix 2026-08-07: 代码分包 / 路由懒加载会导致 zustand 内部首次 getSnapshot 返回 null；
+  // 所有 slice 与跨 slice 聚合统一通过 safeGet 访问，避免 "Cannot read properties of null"。
+  const EMPTY_STATE = {} as GameStore
+  const safeGet = (): GameStore => (rawGet() ?? EMPTY_STATE)
+  return {
+  ...createTaskSlice(set, safeGet),
+  ...createPlayerSlice(set, safeGet),
+  ...createEntitySlice(set, safeGet),
+  ...createMemorySlice(set, safeGet),
+  ...createChaosSlice(set, safeGet),
+  ...createScoreSlice(set, safeGet),
+  ...createFeedbackSlice(set, safeGet),
+  ...createAnimationSlice(set, safeGet),
+  ...createFlowSlice(set, safeGet),
+  ...createProgressSlice(set, safeGet),
 
   // Cross-slice aggregations that don't belong to any single slice
   getGameStats: () => {
-    const { score, maxCombo, wrongPlaceCount, repeatSearchCount, memoryUsedCount, outdatedMemoryCount, memoryUpdateCount, elapsedMs, stepCount, chaosValue, chaosPeak, levelCompleted, levelFailed, failureReason, task, memorySlots } = get()
-    const memoryEffectiveRate = calcMemoryEffectiveRate(memoryUsedCount, outdatedMemoryCount)
-    const spatialMemoryUsed = memorySlots.filter(s => s?.memoryType === 'spatial').length
-    const objectMemoryUsed = memorySlots.filter(s => s?.memoryType === 'object').length
-    const temporalMemoryUsed = memorySlots.filter(s => s?.memoryType === 'temporal').length
-    const proceduralMemoryUsed = memorySlots.filter(s => s?.memoryType === 'procedural').length
+    const { score, maxCombo, wrongPlaceCount, repeatSearchCount, memoryUsedCount, outdatedMemoryCount, memoryUpdateCount, elapsedMs, stepCount, chaosValue, chaosPeak, levelCompleted, levelFailed, failureReason, task, memorySlots } = safeGet()
+    const memoryEffectiveRate = calcMemoryEffectiveRate(memoryUsedCount ?? 0, outdatedMemoryCount ?? 0)
+    const spatialMemoryUsed = (memorySlots ?? []).filter(s => s?.memoryType === 'spatial').length
+    const objectMemoryUsed = (memorySlots ?? []).filter(s => s?.memoryType === 'object').length
+    const temporalMemoryUsed = (memorySlots ?? []).filter(s => s?.memoryType === 'temporal').length
+    const proceduralMemoryUsed = (memorySlots ?? []).filter(s => s?.memoryType === 'procedural').length
     return {
-      score,
-      maxCombo,
-      wrongPlaceCount,
-      repeatSearchCount,
-      memoryUsedCount,
-      outdatedMemoryCount,
-      memoryUpdateCount,
+      score: score ?? 0,
+      maxCombo: maxCombo ?? 0,
+      wrongPlaceCount: wrongPlaceCount ?? 0,
+      repeatSearchCount: repeatSearchCount ?? 0,
+      memoryUsedCount: memoryUsedCount ?? 0,
+      outdatedMemoryCount: outdatedMemoryCount ?? 0,
+      memoryUpdateCount: memoryUpdateCount ?? 0,
       memoryEffectiveRate,
       spatialMemoryUsed,
       objectMemoryUsed,
       temporalMemoryUsed,
       proceduralMemoryUsed,
-      elapsedMs,
-      stepCount,
-      chaosValue,
-      chaosPeak,
-      levelCompleted,
-      levelFailed,
-      failureReason,
+      elapsedMs: elapsedMs ?? 0,
+      stepCount: stepCount ?? 0,
+      chaosValue: chaosValue ?? 0,
+      chaosPeak: chaosPeak ?? 0,
+      levelCompleted: !!levelCompleted,
+      levelFailed: !!levelFailed,
+      failureReason: failureReason ?? null,
       taskName: task?.name ?? null,
     }
   },
 
   saveCurrentGame: () => {
-    const state = get()
-    if (!state.task) return null
+    const state = safeGet()
+    if (!state?.task) return null
 
     try {
       const data = saveGame({
@@ -291,9 +296,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // 恢复时先确保 task/config 引用与存档对应（task 本身不会持久化在 localStorage，
     // 因为它包含函数与不可序列化字段；所以我们从 getTaskById 重新取一份）。
     // 如果 task 尚未初始化，就调用 initializeTask 一次，保证所有 slices 的基础状态都正确。
-    const stateBefore = get()
+    const stateBefore = safeGet()
     if (!stateBefore.task || stateBefore.task.id !== saveData.taskId) {
-      get().initializeTask(saveData.taskId)
+      const init = safeGet().initializeTask
+      if (typeof init === 'function') init(saveData.taskId)
     }
     set({
       phase: saveData.phase as GamePhase,
@@ -319,4 +325,5 @@ export const useGameStore = create<GameStore>((set, get) => ({
       levelFailed: saveData.levelFailed,
     })
   },
-}))
+}
+})
