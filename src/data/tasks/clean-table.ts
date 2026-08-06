@@ -1,13 +1,24 @@
-// 关卡 1：初次整理（教学关卡）
-// 目标：学习基本操作——移动、拾取、放置、保存记忆
-// 记忆类型：空间记忆入门
-// 难度：新手教学
+// 关卡 1：餐桌整理（Symbolic Memory 符号记忆）
+// 目标：记住餐桌上的四件餐具（计数 + 物体识别），归位时发现猫移走了勺子
+// 记忆类型：符号记忆（Symbolic Memory）—— counting + visual grounding
+// 难度：新手入门
+//
+// 研究展示（RoboMEME / 三关 MVP · L1）：
+// - Symbolic Memory 擅长 counting 与 visual grounding
+// - 玩家需先记住"桌上有 4 件餐具"（counting）及分别是什么（grounding）
+// - 保持间隔：玩家必须离开餐桌去厨房水槽（触发扰动），再回到餐桌发现变化
+// - 猫确定性移走勺子后，计数记忆与现状不符，展示符号记忆的脆弱性
+// - 研究数据点：计数准确率、缺失物识别、记忆保存时机（仅在 Probe 采集，不中途答题）
 
 import type { EntityStateSnapshot, StageContext, TaskConfig } from '../../types/task'
+import type { RoomId } from '../../types/room'
 
-const STAGE_ID_OBSERVE_TABLE = 'stage-observe-table'
-const STAGE_ID_SORT_CUP_TISSUE = 'stage-sort-cup-tissue'
-const STAGE_ID_FINALIZE_FORK = 'stage-finalize-fork'
+const STAGE_ID_OBSERVE = 'stage-observe'
+const STAGE_ID_PERTURBED = 'stage-perturbed'
+
+// 厨房水槽在 dining 房间内的局部坐标（用于 cat 事件触发时的距离判定）
+const KITCHEN_SINK_LOCAL = { x: 1.8, z: 1.8 }
+const SINK_PROXIMITY_THRESHOLD = 1.6
 
 function entityPlacedIn(entities: EntityStateSnapshot[], configId: string, containerId: string): boolean {
   const e = entities.find((x) => x.configId === configId)
@@ -16,91 +27,86 @@ function entityPlacedIn(entities: EntityStateSnapshot[], configId: string, conta
 
 export const cleanTableTask: TaskConfig = {
   id: 'task-clean-table',
-  name: '初次整理',
-  description: '🍽️ 欢迎来到记忆宅邸！MEM-07 的记忆模块出了故障，只能记住 3 件物品。先从简单的整理任务开始吧——把餐桌上的脏餐具和餐巾纸归位，学习基本操作。',
-  memoryTypes: ['spatial'],
+  name: '餐桌整理',
+  description: '🍽️ 欢迎来到记忆宅邸！MEM-07 的记忆模块出了故障。先从餐桌整理开始——记住桌上有几件餐具、分别是什么，然后把它们归位。注意：猫可能会捣乱！',
+  memoryTypes: ['spatial', 'object'],
   difficulty: 'tutorial',
   rooms: ['dining'],
   iconKey: 'dish',
-  tags: ['新手入门', '教学关卡'],
-  timeLimit: 180,
+  tags: ['新手入门', '符号记忆'],
+  timeLimit: 240,
   spawnPosition: { x: 0, z: -2.0 },
   spawnRotation: Math.PI,
-  initialStageId: STAGE_ID_OBSERVE_TABLE,
+  initialStageId: STAGE_ID_OBSERVE,
 
   stages: [
     {
-      id: STAGE_ID_OBSERVE_TABLE,
-      playerObjective: '先靠近餐桌上的一件物品，按 E 保存它的位置记忆。',
+      id: STAGE_ID_OBSERVE,
+      playerObjective: '观察桌上餐具，记住一共有几件及分别是什么。靠近物品按 E 保存位置记忆。',
       entryCondition: () => true,
-      completionCondition: (ctx: StageContext) => ctx.memorySlots.some((s) => s !== null),
-      nextStage: STAGE_ID_SORT_CUP_TISSUE,
+      // 编码→保持间隔：玩家必须先保存记忆，再去厨房水槽触发扰动；扰动发生后才进入下一阶段
+      completionCondition: (ctx: StageContext) =>
+        ctx.memorySlots.some((s) => s !== null) &&
+        ctx.triggeredEvents.has('se-cat-moves-spoon'),
+      nextStage: STAGE_ID_PERTURBED,
     },
     {
-      id: STAGE_ID_SORT_CUP_TISSUE,
-      playerObjective: '按 F 拾取脏杯子，放进洗碗机；再拾取餐巾纸，扔进垃圾桶。',
-      entryCondition: (ctx: StageContext) => ctx.memorySlots.some((s) => s !== null),
+      id: STAGE_ID_PERTURBED,
+      playerObjective: '桌面发生了变化！回忆原来有几件，找到被移动的勺子，把四件餐具归位。',
+      entryCondition: (ctx: StageContext) => ctx.triggeredEvents.has('se-cat-moves-spoon'),
       completionCondition: (ctx: StageContext) =>
-        entityPlacedIn(ctx.entities, 'obj-dirty-cup', 'cnt-dishwasher') &&
-        entityPlacedIn(ctx.entities, 'obj-tissue', 'cnt-trash-bin'),
-      nextStage: STAGE_ID_FINALIZE_FORK,
-    },
-    {
-      id: STAGE_ID_FINALIZE_FORK,
-      playerObjective: '把叉子放回餐具架，完成第一次整理。',
-      entryCondition: (ctx: StageContext) =>
-        entityPlacedIn(ctx.entities, 'obj-dirty-cup', 'cnt-dishwasher') &&
-        entityPlacedIn(ctx.entities, 'obj-tissue', 'cnt-trash-bin'),
-      completionCondition: (ctx: StageContext) =>
-        entityPlacedIn(ctx.entities, 'obj-dirty-cup', 'cnt-dishwasher') &&
-        entityPlacedIn(ctx.entities, 'obj-tissue', 'cnt-trash-bin') &&
-        entityPlacedIn(ctx.entities, 'obj-fork', 'cnt-utensil-rack') &&
-        ctx.achievedGoalIds.has('g-dirty-cup') &&
-        ctx.achievedGoalIds.has('g-tissue') &&
-        ctx.achievedGoalIds.has('g-fork'),
+        entityPlacedIn(ctx.entities, 'obj-mug', 'cnt-kitchen-sink') &&
+        entityPlacedIn(ctx.entities, 'obj-spoon', 'cnt-kitchen-sink') &&
+        entityPlacedIn(ctx.entities, 'obj-plate', 'cnt-cabinet') &&
+        entityPlacedIn(ctx.entities, 'obj-fork', 'cnt-cabinet'),
       nextStage: null,
     },
   ],
 
-  briefing: `🍽️ 记忆宅邸 · 第一天
+  briefing: `🍽️ 记忆宅邸 · 第一关（符号记忆）
 
-MEM-07：「你好，我是 MEM-07。我的记忆模块出了故障，只能同时记住 3 件物品的位置。」
+MEM-07：「你好，我是 MEM-07。我的记忆模块出了故障。」
 
-「让我们从简单的整理开始——餐桌上有三件物品需要归位：脏杯子、餐巾纸和叉子。」
+「餐桌上有四件餐具需要归位——马克杯、盘子、叉子和勺子。先记住桌上有几件、分别是什么。」
 
-操作说明（先做 E，再做 F）：
+「⚠️ 这很重要：归位前你需要先去厨房水槽看看——猫可能趁你不注意捣乱！」
+
+操作说明：
 • WASD / 方向键 — 移动
 • 鼠标 — 转视角
-• 「E — 先靠近餐桌物品按 E 保存位置记忆（必须先做）」
-• 「F — 保存记忆后再按 F 拾取 / 放置物品」
+• E — 靠近餐桌物品保存位置记忆（先做）
+• F — 保存记忆后拾取 / 放置物品
 
-💡 目标：脏杯子 → 洗碗机，餐巾纸 → 垃圾桶，叉子 → 餐具架`,
-  completionText: '🎉 太棒了！你完成了第一次整理任务！\nMEM-07：「基础操作已记录。接下来的挑战会更有趣——也会更难。」',
-  failureText: '⏰ 时间到了...没关系，再来一次！\nMEM-07：「别灰心，每个机器人都需要练习。记住：按 E 可以保存记忆，按 F 可以拾取和放置物品。」',
-  systemPrompt: '【MEM-07 日志】教学模式启动。物品数量：3。时限：180秒。混乱事件：已禁用。引导模式：分步提示。',
+💡 归位目标：马克杯、勺子 → 水槽；盘子、叉子 → 橱柜`,
+
+  completionText: '🎉 太棒了！你完成了餐桌整理！\nMEM-07：「符号记忆已校准。接下来的挑战会更有趣——也会更难。」',
+
+  failureText: '⏰ 时间到了...没关系，再来一次！\nMEM-07：「别灰心。记住：按 E 保存记忆，按 F 拾取和放置物品。」',
+
+  systemPrompt: '【MEM-07 日志】L1 符号记忆关卡。物品数量：4（mug/plate/fork/spoon）。时限：240秒。记忆类型：符号记忆（计数+识别）。扰动事件：猫移走勺子（保存记忆+靠近水槽后确定性触发）。Probe 采集：计数、缺失物识别、位置。研究数据：计数准确率、缺失物识别率、记忆保存时机。',
 
   objects: [
     {
-      id: 'obj-dirty-cup',
-      name: '脏杯子',
+      id: 'obj-mug',
+      name: '马克杯',
       category: 'cup',
       initialRoom: 'dining',
-      initialPosition: { x: -0.6, y: 0, z: 0 },
+      initialPosition: { x: -0.5, y: 0, z: 0.2 },
       surfaceContainerId: 'cnt-dining-table',
-      size: { x: 0.1, y: 0.12, z: 0.1 },
+      size: { x: 0.1, y: 0.1, z: 0.1 },
       color: '#d1d5db',
-      stateProperties: { cleanliness: 'dirty' },
       modelAssetId: 'food/mug',
     },
     {
-      id: 'obj-tissue',
-      name: '餐巾纸',
-      category: 'tissue',
+      id: 'obj-plate',
+      name: '盘子',
+      category: 'plate',
       initialRoom: 'dining',
-      initialPosition: { x: 0.6, y: 0, z: 0 },
+      initialPosition: { x: 0.5, y: 0, z: 0.2 },
       surfaceContainerId: 'cnt-dining-table',
-      size: { x: 0.1, y: 0.05, z: 0.08 },
-      color: '#fcd34d',
+      size: { x: 0.18, y: 0.018, z: 0.18 },
+      color: '#f3f4f6',
+      modelAssetId: 'food/plate',
     },
     {
       id: 'obj-fork',
@@ -109,9 +115,20 @@ MEM-07：「你好，我是 MEM-07。我的记忆模块出了故障，只能同�
       initialRoom: 'dining',
       initialPosition: { x: 0, y: 0, z: -0.3 },
       surfaceContainerId: 'cnt-dining-table',
-      size: { x: 0.08, y: 0.15, z: 0.03 },
+      size: { x: 0.05, y: 0.2, z: 0.0084 },
       color: '#b8c0c4',
       modelAssetId: 'food/utensil-fork',
+    },
+    {
+      id: 'obj-spoon',
+      name: '勺子',
+      category: 'spoon',
+      initialRoom: 'dining',
+      initialPosition: { x: -0.3, y: 0, z: -0.2 },
+      surfaceContainerId: 'cnt-dining-table',
+      size: { x: 0.073, y: 0.2, z: 0.061 },
+      color: '#cbd5e1',
+      modelAssetId: 'food/utensil-spoon',
     },
   ],
 
@@ -120,7 +137,7 @@ MEM-07：「你好，我是 MEM-07。我的记忆模块出了故障，只能同�
       id: 'cnt-dining-table',
       name: '餐桌',
       room: 'dining',
-      // R2A: position.y=0 让 furniture/table GLB 贴地；surfaceHeight 对齐 effectiveAabb.y=0.653
+      // position.y=0 让 furniture/table GLB 贴地；surfaceHeight 对齐 effectiveAabb.y=0.653
       position: { x: 0, y: 0, z: 0 },
       size: { x: 1.683, y: 0.653, z: 0.895 },
       surfaceHeight: 0.653,
@@ -131,216 +148,230 @@ MEM-07：「你好，我是 MEM-07。我的记忆模块出了故障，只能同�
       modelAssetId: 'furniture/table',
     },
     {
-      id: 'cnt-dishwasher',
-      name: '洗碗机',
+      id: 'cnt-kitchen-sink',
+      name: '厨房水槽',
       room: 'dining',
-      // R2A: 无真实 dishwasher GLB，使用 kitchenCabinetDrawer 作为视觉代理 (proxy)
-      // position.y=0 让 GLB 贴地；surfaceHeight 对齐 effectiveAabb.y=0.563
-      position: { x: 1.8, y: 0, z: 1.8 },
-      size: { x: 0.538, y: 0.563, z: 0.600 },
-      surfaceHeight: 0.563,
+      // position.y=0 让 furniture/kitchenSink GLB 贴地；surfaceHeight 对齐 effectiveAabb.y=0.613
+      position: { x: KITCHEN_SINK_LOCAL.x, y: 0, z: KITCHEN_SINK_LOCAL.z },
+      size: { x: 0.538, y: 0.613, z: 0.600 },
+      surfaceHeight: 0.613,
       color: '#a3a3a3',
       initialOpen: true,
-      acceptedCategories: ['cup'],
+      acceptedCategories: ['cup', 'spoon'],
       isTargetZone: true,
-      targetLabel: '洗碗机（杯子放这里）',
+      targetLabel: '水槽（杯、勺放这里）',
+      modelAssetId: 'furniture/kitchenSink',
+    },
+    {
+      id: 'cnt-cabinet',
+      name: '橱柜',
+      room: 'dining',
+      // position.y=0 让 furniture/kitchenCabinetDrawer GLB 贴地；surfaceHeight 对齐 effectiveAabb.y=0.563
+      position: { x: -1.8, y: 0, z: 1.8 },
+      size: { x: 0.538, y: 0.563, z: 0.600 },
+      surfaceHeight: 0.563,
+      color: '#92400e',
+      initialOpen: true,
+      acceptedCategories: ['plate', 'fork'],
+      isTargetZone: true,
+      targetLabel: '橱柜（盘、叉放这里）',
       modelAssetId: 'furniture/kitchenCabinetDrawer',
-    },
-    {
-      id: 'cnt-trash-bin',
-      name: '垃圾桶',
-      room: 'dining',
-      // R2A: position.y=0 让 furniture/trashcan GLB 贴地；surfaceHeight 对齐 effectiveAabb.y=0.861
-      position: { x: 2.1, y: 0, z: 1.1 },
-      size: { x: 0.471, y: 0.861, z: 0.418 },
-      surfaceHeight: 0.861,
-      color: '#1f2937',
-      initialOpen: true,
-      acceptedCategories: ['tissue'],
-      isTargetZone: true,
-      targetLabel: '垃圾桶（餐巾纸扔这里）',
-      modelAssetId: 'furniture/trashcan',
-    },
-    {
-      id: 'cnt-utensil-rack',
-      name: '餐具架',
-      room: 'dining',
-      // R2A: 保持程序化高辨识度模型，不强行替换 GLB
-      position: { x: -1.2, y: 0.4, z: 1.0 },
-      size: { x: 0.4, y: 0.6, z: 0.3 },
-      surfaceHeight: 0.62,
-      color: '#f59e0b',
-      initialOpen: true,
-      acceptedCategories: ['fork'],
-      isTargetZone: true,
-      targetLabel: '餐具架（叉子放这里）',
     },
   ],
 
   goals: [
     {
-      id: 'g-dirty-cup',
-      description: '脏杯子放入洗碗机',
+      id: 'g-mug-sink',
+      description: '马克杯放入水槽',
       memoryType: 'object',
-      relatedObjectIds: ['obj-dirty-cup'],
+      relatedObjectIds: ['obj-mug'],
       predicate: (entities: EntityStateSnapshot[]) => {
-        const cup = entities.find((e) => e.configId === 'obj-dirty-cup')
-        return cup?.placedIn === 'cnt-dishwasher'
+        const mug = entities.find((e) => e.configId === 'obj-mug')
+        return mug?.placedIn === 'cnt-kitchen-sink'
       },
-      achievedMessage: '脏杯子已放入洗碗机！',
+      achievedMessage: '马克杯已放入水槽！',
     },
     {
-      id: 'g-tissue',
-      description: '餐巾纸扔进垃圾桶',
+      id: 'g-plate-cabinet',
+      description: '盘子放入橱柜',
       memoryType: 'object',
-      relatedObjectIds: ['obj-tissue'],
+      relatedObjectIds: ['obj-plate'],
       predicate: (entities: EntityStateSnapshot[]) => {
-        const tissue = entities.find((e) => e.configId === 'obj-tissue')
-        return tissue?.placedIn === 'cnt-trash-bin'
+        const plate = entities.find((e) => e.configId === 'obj-plate')
+        return plate?.placedIn === 'cnt-cabinet'
       },
-      achievedMessage: '垃圾已清理！',
+      achievedMessage: '盘子已放入橱柜！',
     },
     {
-      id: 'g-fork',
-      description: '叉子放回餐具架',
+      id: 'g-fork-cabinet',
+      description: '叉子放入橱柜',
       memoryType: 'object',
       relatedObjectIds: ['obj-fork'],
       predicate: (entities: EntityStateSnapshot[]) => {
         const fork = entities.find((e) => e.configId === 'obj-fork')
-        return fork?.placedIn === 'cnt-utensil-rack'
+        return fork?.placedIn === 'cnt-cabinet'
       },
-      achievedMessage: '餐具已归位！',
+      achievedMessage: '叉子已放入橱柜！',
+    },
+    {
+      id: 'g-spoon-sink',
+      description: '勺子放入水槽',
+      memoryType: 'object',
+      relatedObjectIds: ['obj-spoon'],
+      predicate: (entities: EntityStateSnapshot[]) => {
+        const spoon = entities.find((e) => e.configId === 'obj-spoon')
+        return spoon?.placedIn === 'cnt-kitchen-sink'
+      },
+      achievedMessage: '勺子已放入水槽！',
+    },
+    {
+      id: 'g-observe',
+      description: '保存过位置记忆',
+      kind: 'milestone',
+      memoryType: 'spatial',
+      predicate: (_entities: EntityStateSnapshot[], _snapshot?: EntityStateSnapshot[], ctx?: StageContext) =>
+        (ctx?.memorySlots ?? []).some((s) => s !== null),
+      achievedMessage: '已记录物品位置！',
     },
   ],
 
   scriptedEvents: [
     {
-      id: 'se-tutorial-welcome',
-      trigger: (step) => step === 1,
+      id: 'se-welcome',
+      trigger: (step: number) => step === 1,
       type: 'message',
-      message: '👋 MEM-07：「欢迎！先看看餐桌上有三件物品——一个脏杯子、一张餐巾纸和一把叉子。」',
-      description: '欢迎提示',
+      message: '👋 MEM-07：「欢迎！看看餐桌上有四件餐具——马克杯、盘子、叉子和勺子。记住有几件、分别是什么。」',
+      description: '欢迎提示，介绍四件物品',
       memoryType: 'spatial',
       toastType: 'info' as const,
     },
     {
-      id: 'se-tutorial-memory-first',
+      id: 'se-memory-hint',
       trigger: (
         step: number,
         _entities: EntityStateSnapshot[],
-        _currentRoom: string,
-        _rooms: Record<string, { id: string; name?: string; center?: { x: number; z?: number; y?: number } }> | undefined,
+        _currentRoom: RoomId,
+        _rooms: Record<string, { id: RoomId; name?: string; center?: { x: number; z?: number; y?: number } }> | undefined,
         ctx: StageContext | undefined,
-      ) => (step ?? 0) >= 2 && (ctx?.memorySlots ?? []).every((s: any) => s === null),
+      ) => (step ?? 0) >= 2 && (ctx?.memorySlots ?? []).every((s) => s === null),
       type: 'message',
-      message: '🧠 MEM-07：「先靠近一件物品，按 E 键保存它的位置记忆。一定要先存记忆再拾取哦！」',
-      description: '第一步教学：E 保存记忆（必须在未保存记忆时出现）',
+      message: '🧠 MEM-07：「先靠近一件餐具，按 E 键保存它的位置记忆。一定要先存记忆再操作！」',
+      description: '提示按 E 保存记忆（未保存记忆时出现）',
       memoryType: 'spatial',
       toastType: 'info' as const,
     },
-    // §四 提示过载优化：删除原本的 `se-tutorial-memory-saved`（其 message 会弹 Dialog，
-    // 与成功 Toast + 600ms F Toast 组成三重重叠同义提示，遮挡玩家操作）。
-    // 删除该事件不会影响后续流程：F 拾取提示由 FirstPersonControls.tsx 的 600ms 延迟 Toast 承担，
-    // 后续其他 scriptedEvents 也均不依赖 triggeredEvents.has('se-tutorial-memory-saved')。
     {
-      id: 'se-tutorial-place-hint',
+      id: 'se-place-hint',
       trigger: (
         _step: number,
         _entities: EntityStateSnapshot[],
-        _currentRoom: string,
-        _rooms: Record<string, { id: string; name?: string; center?: { x: number; z?: number; y?: number } }> | undefined,
+        _currentRoom: RoomId,
+        _rooms: Record<string, { id: RoomId; name?: string; center?: { x: number; z?: number; y?: number } }> | undefined,
         ctx: StageContext | undefined,
       ) => {
         const held = ctx?.heldEntityConfigId
-        return !!held && !(ctx?.triggeredEvents ?? new Set()).has('se-tutorial-place-hint')
+        return !!held && !(ctx?.triggeredEvents ?? new Set()).has('se-place-hint')
       },
       type: 'message',
-      message: '📦 MEM-07：「拿着物品靠近发光的目标区，按 F 键放置。杯子→洗碗机，餐巾纸→垃圾桶，叉子→餐具架。」',
+      message: '📦 MEM-07：「拿着物品靠近发光的目标区，按 F 键放置。马克杯、勺子 → 水槽；盘子、叉子 → 橱柜。」',
       description: '拾取手持后提示放置',
       memoryType: 'object',
       toastType: 'info' as const,
     },
     {
-      id: 'se-tutorial-encourage',
-      trigger: (step: number) => (step ?? 0) === 8,
-      type: 'message',
-      message: '🌟 MEM-07：「做得很好！继续把剩下的物品归位吧！」',
-      description: '鼓励玩家',
+      id: 'se-cat-moves-spoon',
+      // 确定性触发（OVERRIDES）：玩家保存记忆 + 靠近厨房水槽后触发，固定位置，不随机
+      trigger: (
+        _step: number,
+        _entities: EntityStateSnapshot[],
+        currentRoom: RoomId,
+        rooms: Record<string, { id: RoomId; name?: string; center?: { x: number; z?: number; y?: number } }> | undefined,
+        ctx: StageContext | undefined,
+      ) => {
+        if (!ctx) return false
+        if (ctx.triggeredEvents.has('se-cat-moves-spoon')) return false
+        // 1) 必须已保存记忆
+        if (!ctx.memorySlots.some((s) => s !== null)) return false
+        // 2) 必须在 dining 房间
+        if (currentRoom !== 'dining') return false
+        // 3) 必须靠近厨房水槽（世界坐标距离判定）
+        const diningCenter = rooms?.dining?.center
+        if (!diningCenter) return false
+        const sinkWorldX = diningCenter.x + KITCHEN_SINK_LOCAL.x
+        const sinkWorldZ = (diningCenter.z ?? 0) + KITCHEN_SINK_LOCAL.z
+        const dx = ctx.playerPosition.x - sinkWorldX
+        const dz = ctx.playerPosition.z - sinkWorldZ
+        return Math.hypot(dx, dz) <= SINK_PROXIMITY_THRESHOLD
+      },
+      type: 'move-entity',
+      targetId: 'obj-spoon',
+      targetPosition: { room: 'dining', x: 0.8, y: 0.025, z: 0.6 },
+      message: '🐱 突然，一只猫跳上餐桌，把勺子拨到了地上！\nMEM-07：「我的计数记忆...桌上原来有 4 件餐具，现在少了一件。记得找到勺子！」',
+      description: '猫把勺子从餐桌移到地上，触发符号记忆失效',
       memoryType: 'object',
-      toastType: 'info' as const,
+      markMemoryOutdated: 'obj-spoon',
+      eventEffect: 'cat-prints',
+      toastType: 'cat' as const,
     },
     {
-      id: 'se-tutorial-hint-dishwasher',
+      id: 'se-perturbed-hint',
       trigger: (
-        step: number,
-        entities: EntityStateSnapshot[],
+        _step: number,
+        _entities: EntityStateSnapshot[],
+        _currentRoom: RoomId,
+        _rooms: Record<string, { id: RoomId; name?: string; center?: { x: number; z?: number; y?: number } }> | undefined,
+        ctx: StageContext | undefined,
       ) => {
-        const cup = entities?.find?.((e: EntityStateSnapshot) => e.configId === 'obj-dirty-cup')
-        return (step ?? 0) >= 10 && !!cup && cup.status !== 'placed'
+        if (!ctx) return false
+        // StageContext 不暴露 currentStageId；猫事件触发后阶段即切到 stage-perturbed，
+        // 故以 cat 事件已触发且本提示未出现过为判定
+        return ctx.triggeredEvents.has('se-cat-moves-spoon') &&
+          !(ctx.triggeredEvents ?? new Set()).has('se-perturbed-hint')
       },
       type: 'message',
-      message: '💡 MEM-07：「提示：蓝色光圈标记的是洗碗机，脏杯子应该放进去。」',
-      description: '提示洗碗机位置',
-      memoryType: 'procedural',
-      toastType: 'info' as const,
-    },
-    {
-      id: 'se-tutorial-hint-trash',
-      trigger: (
-        step: number,
-        entities: EntityStateSnapshot[],
-      ) => {
-        const tissue = entities?.find?.((e: EntityStateSnapshot) => e.configId === 'obj-tissue')
-        return (step ?? 0) >= 12 && !!tissue && tissue.status !== 'placed'
-      },
-      type: 'message',
-      message: '💡 MEM-07：「提示：红色光圈标记的是垃圾桶，餐巾纸应该扔进去。」',
-      description: '提示垃圾桶位置',
-      memoryType: 'procedural',
-      toastType: 'info' as const,
-    },
-    {
-      id: 'se-tutorial-hint-fork',
-      trigger: (
-        step: number,
-        entities: EntityStateSnapshot[],
-      ) => {
-        const fork = entities?.find?.((e: EntityStateSnapshot) => e.configId === 'obj-fork')
-        return (step ?? 0) >= 14 && !!fork && fork.status !== 'placed'
-      },
-      type: 'message',
-      message: '💡 MEM-07：「提示：黄色光圈标记的是餐具架，叉子应该放回去。」',
-      description: '提示餐具架位置',
-      memoryType: 'procedural',
+      message: '🔍 MEM-07：「勺子被猫移到了地上！找到它，把四件餐具归位：杯、勺 → 水槽；盘、叉 → 橱柜。」',
+      description: '扰动后提示找回勺子并归位',
+      memoryType: 'object',
       toastType: 'info' as const,
     },
   ],
 
   probes: [
     {
-      id: 'p-cup-location',
+      id: 'p-count-items',
+      type: 'count',
+      question: '餐桌上一开始共有几件餐具？',
+      options: ['2', '3', '4', '5'],
+      correctAnswer: '4',
+      dependsOnMemoryType: 'object',
+      difficulty: 'easy',
+      hint: '想想猫来之前桌上的情况',
+    },
+    {
+      id: 'p-missing-item',
+      type: 'recognition',
+      question: '哪件餐具被猫移走了？',
+      options: ['马克杯', '盘子', '叉子', '勺子'],
+      correctAnswer: '勺子',
+      dependsOnMemoryType: 'object',
+      difficulty: 'medium',
+      hint: '回忆猫的恶作剧',
+    },
+    {
+      id: 'p-mug-location',
       type: 'location',
-      question: '脏杯子一开始放在哪里？',
-      options: ['餐桌上', '洗碗机里', '垃圾桶里'],
+      question: '马克杯一开始放在哪里？',
+      options: ['餐桌上', '水槽里', '橱柜里'],
       correctAnswer: '餐桌上',
       dependsOnMemoryType: 'spatial',
       difficulty: 'easy',
     },
     {
-      id: 'p-trash-destination',
+      id: 'p-spoon-destination',
       type: 'location',
-      question: '餐巾纸应该扔到哪里？',
-      options: ['洗碗机', '垃圾桶', '餐桌'],
-      correctAnswer: '垃圾桶',
-      dependsOnMemoryType: 'procedural',
-      difficulty: 'easy',
-    },
-    {
-      id: 'p-fork-destination',
-      type: 'location',
-      question: '叉子应该放到哪里？',
-      options: ['洗碗机', '垃圾桶', '餐具架'],
-      correctAnswer: '餐具架',
+      question: '勺子应该归位到哪里？',
+      options: ['水槽', '橱柜', '餐桌'],
+      correctAnswer: '水槽',
       dependsOnMemoryType: 'procedural',
       difficulty: 'easy',
     },

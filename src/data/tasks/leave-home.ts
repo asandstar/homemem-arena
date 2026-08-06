@@ -1,150 +1,122 @@
-// 关卡 2：出门大作战
-// 目标：找到钥匙、手机、雨伞放到玄关托盘（必须使用记忆：保存→过期→更新）
-// 记忆类型：空间记忆 + 物体位置记忆
-// 核心循环：观察→保存记忆→离开→猫事件移动钥匙→记忆过期→重新确认→更新记忆→完成
-// 策略要点：3 个记忆槽对应 3 个目标物品；关键物品锁定仅防覆盖，不阻止真实世界导致的过期
+// 关卡 2：睡前仪式（旗舰关）
+// 目标：观察主人的睡前仪式示范，记住动作顺序，然后按序把书放书架、杯子放床头柜、小熊放床上
+// 记忆类型：程序记忆（Procedural Memory · 动作序列）+ 空间记忆（物体位置）
+// 核心循环：观察示范（scriptedEvent 轻量演示）→ 按序复现三步动作序列 → 完成
+// 策略要点：3 件物品初始都在客厅茶几上；仪式顺序为 📖书→☕杯子→🧸小熊（place 序列）；
+//           错误顺序时拒绝放置并保持 held，玩家可放回茶几换手后重新按序放置
+//
+// TECH_DEBT：内部 task id 仍为 'task-leave-home'（历史出门大作战），显示名已改为"睡前仪式"。
+//            避免破坏 PUBLIC_LEVEL_ORDER / 存档 / 路由 / e2e 等下游引用。
+//
+// 研究展示（RoboMEME）：
+// - Procedural Memory 用于 motion mimicking（动作模仿）
+// - 玩家先观察主人睡前的固定仪式（scriptedEvent 演示），再在 REPRODUCE 阶段复现动作序列
+// - 序列错误时拒绝放置并保持 held，给出短提示，玩家可放回茶几换手重新按序放置来纠正
+// - 研究数据点：序列复现准确率、错误步骤分布、纠正策略、观察→复现延迟
 
 import type { EntityStateSnapshot, StageContext, TaskConfig } from '../../types/task'
 
-const STAGE_ID_OBSERVE_FETCH = 'stage-observe-fetch'
-const STAGE_ID_KEY_OUTDATED = 'stage-key-outdated'
-const STAGE_ID_FINALIZE = 'stage-finalize'
+const STAGE_ID_DEMO = 'STAGE_DEMO'
+const STAGE_ID_REPRODUCE = 'STAGE_REPRODUCE'
 
-function hasKeySavedAnyMemory(ctx: StageContext): boolean {
-  return ctx.memorySlots.some((s) => s !== null && s.entityConfigId === 'obj-key')
-}
+// 睡前仪式序列 goal id（与 requiredSequence 关联，proceduralProgress 以此为 key）
+const GOAL_ID_RITUAL = 'g-ritual-sequence'
 
-function hasKeyFreshMemory(ctx: StageContext): boolean {
-  return ctx.memorySlots.some((s) => s !== null && s.entityConfigId === 'obj-key' && !s.outdated)
-}
-
-function hasKeyOutdatedMemory(ctx: StageContext): boolean {
-  return ctx.memorySlots.some((s) => s !== null && s.entityConfigId === 'obj-key' && s.outdated)
-}
-
-function catEventTriggered(ctx: StageContext): boolean {
-  return ctx.triggeredEvents.has('se-cat-pushes-key')
-}
-
-function entityPlacedIn(entities: EntityStateSnapshot[], configId: string, containerId: string): boolean {
-  const e = entities.find((x) => x.configId === configId)
-  return !!e && e.placedIn === containerId && e.status === 'placed'
-}
-
-function hasPhoneObtained(ctx: StageContext): boolean {
-  if (ctx.heldEntityConfigId === 'obj-phone') return true
-  if (entityPlacedIn(ctx.entities, 'obj-phone', 'cnt-entrance-tray')) return true
-  const phone = ctx.entities.find((e) => e.configId === 'obj-phone')
-  return !!phone && phone.status === 'held'
-}
-
-function hasUmbrellaObtained(ctx: StageContext): boolean {
-  if (ctx.heldEntityConfigId === 'obj-umbrella') return true
-  if (entityPlacedIn(ctx.entities, 'obj-umbrella', 'cnt-entrance-tray')) return true
-  const u = ctx.entities.find((e) => e.configId === 'obj-umbrella')
-  return !!u && u.status === 'held'
+/**
+ * Proceptual/Procedural Memory：睡前仪式动作序列是否已按序复现完成。
+ * requiredSequence 为 place 序列（📖书→☕杯子→🧸小熊），由 checkProceduralAction 推进。
+ * 玩家若乱序放置到目标区，placeEntity 会拒绝放置并保持 held（不推进进度）；
+ * 玩家可放回茶几（非目标区，不触发序列检查）换手后重新按序放置。
+ */
+function hasRitualSequenceCompleted(ctx: StageContext): boolean {
+  const progress = ctx.proceduralProgress?.[GOAL_ID_RITUAL]
+  return !!progress?.completed
 }
 
 export const leaveHomeTask: TaskConfig = {
   id: 'task-leave-home',
-  name: '出门大作战',
+  name: '睡前仪式',
   description:
-    '🌅 早上八点，主人要出门上班啦！可是钥匙猫又开始调皮了，把钥匙扒拉得到处都是。快找到钥匙、手机和雨伞，在主人迟到之前放到玄关托盘上吧！',
-  memoryTypes: ['spatial', 'object'],
+    '🌙 临睡前，主人有一套固定的睡前仪式。观察主人的示范，记住动作顺序，然后依次把书放回书架、杯子放到床头柜、小熊放到床上——顺序可不能错哦！',
+  memoryTypes: ['procedural', 'spatial'],
   difficulty: 'easy',
-  rooms: ['living', 'entrance', 'bedroom'],
+  rooms: ['living', 'bedroom'],
   iconKey: 'door',
-  tags: ['空间记忆', '限时挑战', '钥匙猫'],
-  initialStageId: STAGE_ID_OBSERVE_FETCH,
-  briefing: `🌅 早上 8:00 · 主人出门前准备
+  tags: ['程序记忆', '动作序列', '睡前仪式', '观察复现'],
+  initialStageId: STAGE_ID_DEMO,
+  briefing: `🌙 临睡前 · 主人的睡前仪式
 
-📋 找到 3 样东西并放到「玄关托盘」：
-  🔑 钥匙   → 客厅茶几（金色小件）
-  📱 手机   → 卧室床头柜抽屉（先按 F 开抽屉）
-  ☂️ 雨伞   → 玄关伞架
+📋 观察主人的睡前仪式示范，记住三步动作顺序：
+  📖 书     → 客厅书架
+  ☕ 杯子   → 卧室床头柜
+  🧸 小熊   → 卧室床上
 
-💡 小贴士：靠近物品按 E 保存位置记忆；沙发上的猫会扒拉钥匙！`,
+🧠 程序记忆（Procedural Memory · 记住顺序！）：
+  ① 📖 先把书放回书架
+  ② ☕ 再把杯子放到床头柜
+  ③ 🧸 最后把小熊放到床上
+
+💡 小贴士：三件物品都在客厅茶几上；放错顺序会被拒绝，可放回茶几换手重试。`,
   completionText:
-    '主人冲出门前看了一眼托盘：「钥匙、手机、雨伞都找到了！小橡你太靠谱了！」\n猫跳上窗台，甩了甩尾巴。明天，它大概还会来。',
+    '主人看着整齐的书架、放好的杯子和床上的小熊，微笑着说：「小橡你记性真好，仪式一步不差！」夜色温柔，灯光渐暗。',
   failureText:
-    '主人翻遍口袋，叹了口气：「算了...今天蹭同事车吧。」\n似乎听见沙发缝里传来金属碰撞声。猫的耳朵动了一下。',
+    '主人揉揉眼睛：「顺序怎么不对呀……今晚算了，明天再练吧。」小熊从床上滚落，似乎也在摇头。',
   systemPrompt:
-    '【MEM-07 日志】任务：协助主人出门。三件物品：钥匙客厅茶几；手机卧室床头柜抽屉（需开抽屉）；雨伞玄关伞架。策略：先 save 再取，猫会在玩家离开客厅或拿到手机后扒拉钥匙，记得更新记忆。',
+    '【MEM-07 日志】任务：协助主人完成睡前仪式。三件物品均在客厅茶几上：书、杯子、小熊。主人睡前仪式顺序：📖书→书架 → ☕杯子→床头柜 → 🧸小熊→床（Procedural Memory 动作序列，REPRODUCE 阶段按序放置到目标区）。策略：先观看示范，再按序拾取并放置。放错顺序会被拒绝并保持手持，可放回茶几换手重试。',
   timeLimit: 180,
   spawnPosition: { x: 0, z: -1.5 },
   spawnRotation: Math.PI,
 
   stages: [
     {
-      id: STAGE_ID_OBSERVE_FETCH,
-      playerObjective: '找到钥匙、手机、雨伞。靠近物品时按 E 保存它们的位置！',
+      id: STAGE_ID_DEMO,
+      playerObjective: '👀 观看主人的睡前仪式示范，记住动作顺序！',
       entryCondition: () => true,
-      completionCondition: (ctx) => hasKeySavedAnyMemory(ctx) && hasPhoneObtained(ctx) && hasUmbrellaObtained(ctx),
-      nextStage: STAGE_ID_KEY_OUTDATED,
+      completionCondition: (ctx) => ctx.triggeredEvents.has('se-ritual-demo-done'),
+      nextStage: STAGE_ID_REPRODUCE,
     },
     {
-      id: STAGE_ID_KEY_OUTDATED,
-      playerObjective: '🔴 钥匙记忆已过期！回到客厅重新找到钥匙，找到后按 E 更新记忆。',
-      entryCondition: (ctx) => {
-        if (!catEventTriggered(ctx)) return false
-        // 要么已过期，要么压根没 fresh 的，都算进入"过期更新阶段"
-        if (hasKeyOutdatedMemory(ctx)) return true
-        if (!hasKeyFreshMemory(ctx) && hasKeySavedAnyMemory(ctx)) return true
-        return false
-      },
-      completionCondition: (ctx) => catEventTriggered(ctx) && ctx.memoryUpdateCount >= 1 && hasKeyFreshMemory(ctx),
-      nextStage: STAGE_ID_FINALIZE,
-    },
-    {
-      id: STAGE_ID_FINALIZE,
-      playerObjective: '把钥匙、手机、雨伞都放进玄关托盘，完成出门准备！',
-      entryCondition: (ctx) => catEventTriggered(ctx) && hasKeyFreshMemory(ctx) && ctx.memoryUpdateCount >= 1,
-      completionCondition: (ctx) => {
-        const keyOnTray = entityPlacedIn(ctx.entities, 'obj-key', 'cnt-entrance-tray')
-        const phoneOnTray = entityPlacedIn(ctx.entities, 'obj-phone', 'cnt-entrance-tray')
-        const umbrellaOnTray = entityPlacedIn(ctx.entities, 'obj-umbrella', 'cnt-entrance-tray')
-        // 钥匙在 tray 上时允许 memory 过期（因为物理上已经归位了，记忆过期不再是问题）
-        const keyMemoryOk = keyOnTray || (hasKeyFreshMemory(ctx) && ctx.memoryUpdateCount >= 1)
-        return keyOnTray && phoneOnTray && umbrellaOnTray && catEventTriggered(ctx) && keyMemoryOk
-      },
+      id: STAGE_ID_REPRODUCE,
+      playerObjective: '🧠 按睡前仪式顺序依次放置：📖书→书架 → ☕杯子→床头柜 → 🧸小熊→床。放错可放回茶几换手！',
+      entryCondition: (ctx) => ctx.triggeredEvents.has('se-ritual-demo-done'),
+      completionCondition: (ctx) => hasRitualSequenceCompleted(ctx),
       nextStage: null,
     },
   ],
 
   objects: [
     {
-      id: 'obj-key',
-      name: '钥匙',
-      category: 'key',
+      id: 'obj-books',
+      name: '书',
+      category: 'book',
+      initialRoom: 'living',
+      initialPosition: { x: -0.3, y: 0, z: 0.3 },
+      surfaceContainerId: 'cnt-coffee-table',
+      size: { x: 0.22, y: 0.08, z: 0.16 },
+      color: '#3b82f6',
+      modelAssetId: 'furniture/books',
+    },
+    {
+      id: 'obj-mug',
+      name: '马克杯',
+      category: 'cup',
+      initialRoom: 'living',
+      initialPosition: { x: 0.3, y: 0, z: 0.3 },
+      surfaceContainerId: 'cnt-coffee-table',
+      size: { x: 0.14, y: 0.12, z: 0.14 },
+      color: '#dc2626',
+      modelAssetId: 'food/mug',
+    },
+    {
+      id: 'obj-bear',
+      name: '玩具熊',
+      category: 'toy',
       initialRoom: 'living',
       initialPosition: { x: 0, y: 0, z: 0.3 },
       surfaceContainerId: 'cnt-coffee-table',
-      size: { x: 0.2, y: 0.06, z: 0.14 },
-      color: '#fbbf24',
-    },
-    {
-      id: 'obj-phone',
-      name: '手机',
-      category: 'phone',
-      initialRoom: 'bedroom',
-      // ROUND R1：床头柜容器 (0.95, 0.4, 0.95) × (0.58, 0.605, 0.84)
-      // 将手机放到容器居中后方的抽屉内部（房间绝对坐标）
-      // 满足 qa-layout object-on-container: 距中心 dx<=0.58/2-0.05=0.24, dz<=0.84/2-0.05=0.37
-      initialPosition: { x: 0.95, y: 0.6, z: 0.88 },
-      surfaceContainerId: 'cnt-nightstand',
-      hiddenInContainer: 'cnt-nightstand',
-      size: { x: 0.18, y: 0.09, z: 0.02 },
-      color: '#1f2937',
-    },
-    {
-      id: 'obj-umbrella',
-      name: '雨伞',
-      category: 'umbrella',
-      initialRoom: 'entrance',
-      initialPosition: { x: 0.8, y: 0, z: 1.3 },
-      surfaceContainerId: 'cnt-umbrella-stand',
-      size: { x: 0.15, y: 0.8, z: 0.15 },
-      color: '#3b82f6',
+      size: { x: 0.22, y: 0.28, z: 0.20 },
+      color: '#a16207',
+      modelAssetId: 'furniture/bear',
     },
   ],
 
@@ -166,6 +138,23 @@ export const leaveHomeTask: TaskConfig = {
       modelAssetId: 'furniture/tableCoffee',
     },
     {
+      id: 'cnt-bookcase',
+      name: '书架',
+      room: 'living',
+      // 与 decor-bookshelf (2.75, 1.5) 同位：作为目标区放置点。
+      // 不设 modelAssetId（由 decor-bookshelf 承担 GLB 视觉），避免双重渲染。
+      // 小尺寸 + isTargetZone pulseRing 作为"放书到这里"的标记。
+      // size.x=0.30 使 AABB 边缘 2.75+0.15=2.90 ≤ living 房间边界 2.90（WALL_MARGIN=0.35）
+      position: { x: 2.75, y: 0, z: 1.5 },
+      size: { x: 0.30, y: 0.05, z: 0.4 },
+      surfaceHeight: 0.9,
+      color: '#92400e',
+      initialOpen: true,
+      acceptedCategories: ['book'],
+      isTargetZone: true,
+      targetLabel: '书架（目标区）',
+    },
+    {
       id: 'cnt-nightstand',
       name: '床头柜',
       room: 'bedroom',
@@ -173,230 +162,126 @@ export const leaveHomeTask: TaskConfig = {
       size: { x: 0.58, y: 0.605, z: 0.84 },
       surfaceHeight: 0.605,
       color: '#4a3728',
-      initialOpen: false,
-      acceptedCategories: [],
-      isDrawer: true,
-      containsObjectIds: ['obj-phone'],
-      // 床头柜表面也是临时放物点
-      acceptAny: true,
-      // ROUND R1 §八：task-container 唯一视觉所有者（§九所有权规则）。
-      // Container3D 检测此字段后改用 RegisteredModel 渲染 cabinetBedDrawer GLB；
-      // 加载失败时回退程序化 FurnitureModel。不允许另建 decor-nightstand。
+      initialOpen: true,
+      acceptedCategories: ['cup'],
+      isTargetZone: true,
+      targetLabel: '床头柜（目标区）',
+      // task-container 唯一视觉所有者：Container3D 用 RegisteredModel 渲染 cabinetBedDrawer GLB。
       modelAssetId: 'furniture/cabinetBedDrawer',
     },
     {
-      id: 'cnt-umbrella-stand',
-      name: '伞架',
-      room: 'entrance',
-      position: { x: 0.8, y: 0.4, z: 1.3 },
-      size: { x: 0.3, y: 0.4, z: 0.3 },
-      surfaceHeight: 0.4,
-      color: '#6b7280',
+      id: 'cnt-bed',
+      name: '床',
+      room: 'bedroom',
+      // 与 decor-bed (0, -0.8) 同位：作为目标区放置点。
+      // 不设 modelAssetId（由 decor-bed 承担 GLB 视觉），避免双重渲染。
+      // 小尺寸 + isTargetZone pulseRing 作为"放小熊到这里"的标记。
+      position: { x: 0, y: 0, z: -0.8 },
+      size: { x: 0.6, y: 0.05, z: 0.4 },
+      surfaceHeight: 0.5,
+      color: '#7c3aed',
       initialOpen: true,
-      acceptedCategories: [],
-      // 伞架表面可以临时放回（拿起后嫌远想换手）
-      acceptAny: true,
-    },
-    {
-      id: 'cnt-entrance-tray',
-      name: '玄关托盘',
-      room: 'entrance',
-      position: { x: 0.2, y: 0.5, z: 1.3 },
-      size: { x: 0.8, y: 0.1, z: 0.4 },
-      surfaceHeight: 0.55,
-      color: '#f59e0b',
-      initialOpen: true,
-      acceptedCategories: ['key', 'phone', 'umbrella'],
+      acceptedCategories: ['toy'],
       isTargetZone: true,
-      targetLabel: '玄关托盘（目标区）',
+      targetLabel: '床（目标区）',
     },
   ],
 
   goals: [
-    // ========== 阶段里程碑 ==========
+    // ========== Perceptual/Procedural Memory · 睡前仪式动作序列 ==========
+    // 玩家观察主人睡前仪式示范（se-ritual-demo-*）后，在 REPRODUCE 阶段按序复现：
+    //   📖书 → 书架  →  ☕杯子 → 床头柜  →  🧸小熊 → 床
+    // requiredSequence 仅在 STAGE_DEMO 完成（se-ritual-demo-done 触发）后激活，
+    // 因为 goal 无 dependsOnGoalIds，checkProceduralAction 在所有阶段都会检查。
+    // 但 placeEntity 仅对 isTargetZone 容器调用 checkProceduralAction，
+    // 且 STAGE_DEMO 期间玩家拾取/放回茶几不影响序列（非目标区不检查）。
+    // 玩家放错顺序到目标区会被拒绝并保持 held，可放回茶几换手后重新按序放置。
     {
-      id: 'g-stage-observe-key',
-      description: '至少保存过一次钥匙的位置记忆',
+      id: GOAL_ID_RITUAL,
+      description: '按睡前仪式顺序放置：📖书→书架 → ☕杯子→床头柜 → 🧸小熊→床',
       priority: 'high',
-      memoryType: 'spatial',
-      kind: 'milestone',
-      stage: STAGE_ID_OBSERVE_FETCH,
-      predicate: (_entities: EntityStateSnapshot[], _snap: EntityStateSnapshot[] | undefined, ctx: StageContext | undefined) => {
-        return !!ctx?.memorySlots.some(
-          (s: { entityConfigId: string; outdated: boolean; locked: boolean; confidence: number; timestamp: number } | null) => s && s.entityConfigId === 'obj-key',
-        )
-      },
-      achievedMessage: '已记录钥匙位置！',
-    },
-    {
-      id: 'g-stage-cat-fired',
-      description: '钥匙猫事件已触发',
-      priority: 'high',
-      memoryType: 'temporal',
-      kind: 'milestone',
-      stage: STAGE_ID_OBSERVE_FETCH,
-      dependsOnGoalIds: ['g-stage-observe-key'],
-      predicate: (_entities: EntityStateSnapshot[], _snap: EntityStateSnapshot[] | undefined, ctx: StageContext | undefined) => !!ctx?.triggeredEvents.has('se-cat-pushes-key'),
-      achievedMessage: '调皮的钥匙猫来过了，注意更新记忆！',
-    },
-    {
-      id: 'g-stage-key-updated',
-      description: '至少更新过一次钥匙的位置记忆',
-      priority: 'high',
-      memoryType: 'temporal',
-      kind: 'milestone',
-      stage: STAGE_ID_KEY_OUTDATED,
-      dependsOnGoalIds: ['g-stage-cat-fired'],
-      predicate: (_entities: EntityStateSnapshot[], _snap: EntityStateSnapshot[] | undefined, ctx: StageContext | undefined) => !!ctx && ctx.memoryUpdateCount >= 1,
-      achievedMessage: '已更新钥匙记忆！',
-    },
-    {
-      id: 'g-stage-key-fresh',
-      description: '钥匙记忆当前未过期',
-      priority: 'high',
-      memoryType: 'spatial',
+      memoryType: 'procedural',
       kind: 'terminal-constraint',
-      stage: STAGE_ID_FINALIZE,
-      dependsOnGoalIds: ['g-stage-key-updated'],
+      stage: STAGE_ID_REPRODUCE,
       predicate: (_entities: EntityStateSnapshot[], _snap: EntityStateSnapshot[] | undefined, ctx: StageContext | undefined) =>
-        !!ctx?.memorySlots.some((s: { entityConfigId: string; outdated: boolean; locked: boolean; confidence: number; timestamp: number } | null) => s && s.entityConfigId === 'obj-key' && !s.outdated),
-      achievedMessage: '钥匙记忆状态完好，顺利出门！',
-    },
-
-    // ========== 归位目标（物品本身） ==========
-    {
-      id: 'g-key-on-tray',
-      description: '钥匙放到玄关托盘',
-      priority: 'high',
-      memoryType: 'spatial',
-      stage: STAGE_ID_FINALIZE,
-      // 放宽依赖：只要钥匙已经被更新过（里程碑已到）就行，不强制 fresh（因为钥匙可能先被放好）
-      dependsOnGoalIds: ['g-stage-key-updated'],
-      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-key', 'cnt-entrance-tray'),
-      achievedMessage: '钥匙已归位！',
-    },
-    {
-      id: 'g-phone-on-tray',
-      description: '手机放到玄关托盘',
-      priority: 'high',
-      memoryType: 'object',
-      stage: STAGE_ID_FINALIZE,
-      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-phone', 'cnt-entrance-tray'),
-      achievedMessage: '手机已归位！',
-    },
-    {
-      id: 'g-umbrella-on-tray',
-      description: '雨伞放到玄关托盘',
-      priority: 'medium',
-      memoryType: 'spatial',
-      stage: STAGE_ID_FINALIZE,
-      predicate: (entities: EntityStateSnapshot[]) =>
-        entityPlacedIn(entities, 'obj-umbrella', 'cnt-entrance-tray'),
-      achievedMessage: '雨伞已归位！',
+        hasRitualSequenceCompleted(ctx ?? ({} as StageContext)),
+      achievedMessage: '🧠 睡前仪式序列复现成功！Procedural Memory 已固化。',
+      requiredSequence: [
+        { action: 'place', targetId: 'obj-books', label: '① 把📖书放回书架' },
+        { action: 'place', targetId: 'obj-mug', label: '② 把☕杯子放到床头柜' },
+        { action: 'place', targetId: 'obj-bear', label: '③ 把🧸小熊放到床上' },
+      ],
     },
   ],
 
   scriptedEvents: [
+    // ========== 轻量示范（仅 scriptedEvent 消息，OVERRIDES 禁止 NPC/Timeline/摄像机演出） ==========
+    // 每步 1-2 秒，通过 step 计数触发，示范后物体仍在茶几上（无需重置）。
     {
-      id: 'se-cat-pushes-key',
-      trigger: (_step: number, entities: EntityStateSnapshot[], currentRoom: import('../../types/room').RoomId, _rooms: Record<string, { id: import('../../types/room').RoomId; name?: string; center?: { x: number; z?: number; y?: number } }> | undefined, ctx: StageContext | undefined) => {
-        const key = entities.find((e: EntityStateSnapshot) => e.configId === 'obj-key')
-        const keyFreshSaved =
-          !!ctx?.memorySlots.some(
-            (s: { entityConfigId: string; outdated: boolean; locked: boolean; confidence: number; timestamp: number } | null) => s && s.entityConfigId === 'obj-key' && !s.outdated,
-          )
-        const keyFree = !!key && key.currentRoom === 'living' && key.status === 'free'
-        const leftLiving = currentRoom !== 'living'
-        // 放宽触发：(a) 原条件（存了 fresh 钥匙 + 离开客厅 + 钥匙 free）
-        //        或 (b) 玩家已经拿到手机（不管有没有存钥匙记忆，都让猫捣乱）
-        const phoneObtained = hasPhoneObtained(ctx as StageContext)
-        return (!!keyFreshSaved && !!keyFree && !!leftLiving) || (!!keyFree && phoneObtained)
-      },
-      type: 'move-entity',
-      targetId: 'obj-key',
-      targetPosition: { room: 'living', x: -2.6, y: 0, z: 1.9 },
-      message: '🐱 啪嗒——钥匙猫扒拉了你的钥匙！它不在原来的位置了…客厅沙发西侧找找？按 E 更新记忆吧。',
-      description: '钥匙猫把钥匙从茶几推到了客厅沙发西侧（A6: -2.6, 1.9）',
-      memoryType: 'spatial',
-      markMemoryOutdated: 'obj-key',
-      eventEffect: 'cat-prints',
-      toastType: 'cat',
-    },
-    {
-      id: 'se-phone-ringing',
-      trigger: (step: number, entities: EntityStateSnapshot[], currentRoom: import('../../types/room').RoomId, _rooms: Record<string, { id: import('../../types/room').RoomId; name?: string; center?: { x: number; z?: number; y?: number } }> | undefined, ctx: StageContext | undefined) => {
-        const phone = entities.find((e: EntityStateSnapshot) => e.configId === 'obj-phone')
-        if (!phone) return false
-        // 阶段 1 期间，或钥匙记忆已保存时，响铃提示手机位置
-        const keySaved =
-          !!ctx?.memorySlots.some((s: { entityConfigId: string; outdated: boolean; locked: boolean; confidence: number; timestamp: number } | null) => s && s.entityConfigId === 'obj-key')
-        const stageStarted = true
-        return (
-          !!stageStarted &&
-          !!keySaved &&
-          (step ?? 0) >= 3 &&
-          phone.status !== 'placed' &&
-          phone.currentRoom === 'bedroom' &&
-          currentRoom !== 'bedroom'
-        )
-      },
+      id: 'se-ritual-demo-1',
+      trigger: (step: number) => step === 2,
       type: 'message',
-      message: '📱 卧室方向传来手机铃声！快去床头柜找找吧！',
-      description: '手机响铃提示位置',
-      memoryType: 'object',
-      toastType: 'phone',
-    },
-    {
-      id: 'se-save-hint',
-      trigger: (_step: number, _entities: EntityStateSnapshot[], _currentRoom: import('../../types/room').RoomId, _rooms: Record<string, { id: import('../../types/room').RoomId; name?: string; center?: { x: number; z?: number; y?: number } }> | undefined, ctx: StageContext | undefined) => {
-        const keySaved = !!ctx?.memorySlots.some((s: { entityConfigId: string; outdated: boolean; locked: boolean; confidence: number; timestamp: number } | null) => s && s.entityConfigId === 'obj-key')
-        return !keySaved && ((_step ?? 0) >= 2)
-      },
-      type: 'message',
-      message:
-        '💡 提示：靠近物品时按 E 保存位置记忆。',
-      description: '记忆系统引导提示',
-      memoryType: 'object',
+      message: '📖 示范第 1 步：主人把书放回书架。「睡前先收好书。」',
+      description: '睡前仪式示范第 1 步：书→书架',
+      memoryType: 'procedural',
       toastType: 'info',
+    },
+    {
+      id: 'se-ritual-demo-2',
+      trigger: (step: number) => step === 4,
+      type: 'message',
+      message: '☕ 示范第 2 步：主人把杯子放到床头柜。「水杯放床边。」',
+      description: '睡前仪式示范第 2 步：杯子→床头柜',
+      memoryType: 'procedural',
+      toastType: 'info',
+    },
+    {
+      id: 'se-ritual-demo-3',
+      trigger: (step: number) => step === 6,
+      type: 'message',
+      message: '🧸 示范第 3 步：主人把小熊放到床上。「小熊该睡觉啦。」',
+      description: '睡前仪式示范第 3 步：小熊→床',
+      memoryType: 'procedural',
+      toastType: 'info',
+    },
+    {
+      id: 'se-ritual-demo-done',
+      trigger: (step: number) => step === 8,
+      type: 'message',
+      message: '✅ 示范结束！现在请你按照刚才的顺序完成睡前仪式：📖书→书架 → ☕杯子→床头柜 → 🧸小熊→床。',
+      description: '睡前仪式示范完成，进入复现阶段',
+      memoryType: 'procedural',
+      toastType: 'success',
     },
   ],
 
   probes: [
     {
-      id: 'p-loc-key-original',
-      type: 'location',
-      question: '钥匙最初放在哪个房间的什么位置？',
-      options: ['客厅茶几上', '卧室床头柜抽屉里', '厨房台面上', '玄关伞架旁'],
-      correctAnswer: '客厅茶几上',
-      dependsOnMemoryType: 'spatial',
+      id: 'p-ritual-sequence',
+      type: 'sequence',
+      question: '🧠 睡前仪式的正确顺序是？',
+      options: [
+        '📖书→☕杯子→🧸小熊',
+        '☕杯子→📖书→🧸小熊',
+        '🧸小熊→📖书→☕杯子',
+        '📖书→🧸小熊→☕杯子',
+      ],
+      correctAnswer: '📖书→☕杯子→🧸小熊',
+      dependsOnMemoryType: 'procedural',
       difficulty: 'medium',
+      hint: '回忆主人睡前的三步示范',
+      relatedEventIds: ['se-ritual-demo-1', 'se-ritual-demo-2', 'se-ritual-demo-3'],
     },
     {
-      id: 'p-loc-key-moved',
-      type: 'location',
-      question: '钥匙猫把钥匙推到了哪里？',
-      options: ['沙发旁边', '茶几上', '卧室里', '玄关托盘'],
-      correctAnswer: '沙发旁边',
-      dependsOnMemoryType: 'spatial',
-      difficulty: 'medium',
-    },
-    {
-      id: 'p-loc-phone',
-      type: 'location',
-      question: '手机最初放在哪个房间的什么位置？',
-      options: ['卧室床头柜抽屉里', '客厅茶几上', '厨房台面上', '玄关托盘上'],
-      correctAnswer: '卧室床头柜抽屉里',
-      dependsOnMemoryType: 'object',
-      difficulty: 'medium',
-    },
-    {
-      id: 'p-loc-umbrella',
-      type: 'location',
-      question: '雨伞最初放在哪个房间的什么位置？',
-      options: ['玄关伞架上', '客厅沙发上', '卧室床头柜上', '厨房角落里'],
-      correctAnswer: '玄关伞架上',
-      dependsOnMemoryType: 'spatial',
+      id: 'p-ritual-first-step',
+      type: 'sequence',
+      question: '🧠 睡前仪式中，第一件该放回原位的是？',
+      options: ['📖 书', '☕ 杯子', '🧸 小熊', '先关灯'],
+      correctAnswer: '📖 书',
+      dependsOnMemoryType: 'procedural',
       difficulty: 'easy',
+      hint: '主人睡前第一件事是收好书',
+      relatedEventIds: ['se-ritual-demo-1'],
     },
   ],
 }
