@@ -1,4 +1,5 @@
 import type { RoomId, Vec3 } from '../types/room'
+import type { ModelAssetId } from './assets/modelRegistry'
 
 /**
  * ⚠️ 坐标系约定：所有 position 字段为**房间局部坐标**（相对于 sharedRooms[roomId].center）。
@@ -19,6 +20,13 @@ export interface DecorFurnitureSpec {
   rotationY?: number
   collisionMode?: DecorCollisionMode
   visualOwner?: DecorVisualOwner
+  /**
+   * 可选：Room3D 检测到此字段后改用 RegisteredModel 渲染对应 GLB；
+   * 加载中或失败时回退到程序化 fallback。
+   * 该字段同时作为 decorFurniture → Room3D 的"单一数据源"标记：
+   * 拥有此字段的 static decor，Room3D 不再手写其 transform。
+   */
+  modelAssetId?: ModelAssetId
 }
 
 const ROT = {
@@ -30,59 +38,45 @@ const ROT = {
 
 export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
   living: [
+    // ========== A6 候选布局（ROUND B2 实现） ==========
+    // 四件核心 static decor 为 Room3D 的单一数据源（modelAssetId 驱动 RegisteredModel）。
+    // 坐标来自 docs/design/LIVING_A_CONSTRAINT_FREEZE.md §5 CANDIDATE A6。
     {
       id: 'decor-sofa-main',
-      position: { x: 0, y: 0, z: -3.0 },
+      position: { x: -1.5, y: 0, z: 2.24 },
       size: { x: 2.4, y: 0.9, z: 1.0 },
       rotationY: ROT.FACE_NEG_Z,
-    },
-    {
-      id: 'decor-sofa-side',
-      position: { x: -1.5, y: 0, z: 0.0 },
-      size: { x: 1.4, y: 0.85, z: 0.8 },
-      rotationY: ROT.FACE_PLUS_X,
+      modelAssetId: 'furniture/loungeSofa',
     },
     {
       id: 'decor-tv-stand',
-      position: { x: 2.8, y: 0, z: -3.0 },
+      position: { x: -2.0, y: 0, z: -2.1 },
       size: { x: 2.0, y: 0.55, z: 0.45 },
-      rotationY: ROT.FACE_NEG_Z,
+      rotationY: ROT.FACE_PLUS_Z,
+      modelAssetId: 'furniture/cabinetTelevision',
     },
     {
       id: 'decor-tv',
-      position: { x: 2.8, y: 0.8, z: -3.0 },
+      position: { x: -2.0, y: 0.62, z: -2.1 },
       size: { x: 1.6, y: 1.0, z: 0.15 },
-      rotationY: ROT.FACE_NEG_Z,
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+      modelAssetId: 'furniture/televisionModern',
     },
     {
       id: 'decor-bookshelf',
-      position: { x: 3.5, y: 0, z: -2.5 },
+      position: { x: 2.75, y: 0, z: 1.5 },
       size: { x: 0.8, y: 1.8, z: 0.35 },
       rotationY: ROT.FACE_NEG_X,
+      modelAssetId: 'furniture/bookcaseOpen',
     },
+    // ========== 墙饰（collisionMode='none'，不碰撞不覆盖门洞，保留） ==========
     {
       id: 'decor-clock',
       position: { x: 3.7, y: 1.8, z: 0 },
       size: { x: 0.4, y: 0.4, z: 0.05 },
       rotationY: ROT.FACE_NEG_X,
       collisionMode: 'none',
-    },
-    {
-      id: 'decor-floor-lamp-1',
-      position: { x: 3.2, y: 0, z: 2.0 },
-      size: { x: 0.4, y: 1.8, z: 0.4 },
-    },
-    {
-      id: 'decor-chair',
-      position: { x: 3.0, y: 0, z: 1.5 },
-      size: { x: 0.5, y: 0.7, z: 0.5 },
-      rotationY: ROT.FACE_NEG_X,
-    },
-    {
-      id: 'decor-side-table',
-      position: { x: 3.8, y: 0, z: -2.0 },
-      size: { x: 0.6, y: 0.35, z: 0.6 },
-      rotationY: ROT.FACE_NEG_X,
     },
     {
       id: 'decor-shelf',
@@ -98,16 +92,13 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       rotationY: ROT.FACE_PLUS_X,
       collisionMode: 'none',
     },
-    {
-      id: 'decor-plant-1',
-      position: { x: -3.5, y: 0, z: -3.5 },
-      size: { x: 0.5, y: 1.2, z: 0.5 },
-    },
-    {
-      id: 'decor-plant-2',
-      position: { x: -3.5, y: 0, z: 2.5 },
-      size: { x: 0.35, y: 0.8, z: 0.35 },
-    },
+    // ========== 已删除（A6 重构） ==========
+    // decor-sofa-side: 侵入 Bedroom-Entrance 走廊，A6 移除
+    // decor-side-table: 与 A6 无关的旧落地家具，本轮移除
+    // decor-chair: 与 A6 无关的旧落地家具，本轮移除
+    // decor-floor-lamp-1: 越界（X[3.0,3.4] 超出 room x_max=3.25），本轮移除
+    // decor-plant-1: 越界（X[-3.75,-3.25] 且 Z[-3.75,-3.25] 超出房间），本轮移除
+    // decor-plant-2: 越界（X[-3.675,-3.325] 超出 room x_min=-3.25），本轮移除
   ],
   bedroom: [
     // Converted from world coords to room-local (old center: -8, 0, 0)

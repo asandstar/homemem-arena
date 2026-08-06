@@ -11,6 +11,7 @@ import { CATEGORY_TO_MODEL_ID } from './modelIds'
 import { PALETTE } from './colors'
 import { FurnitureModel } from './models/FurnitureModel'
 import { PropModel } from './models/PropModel'
+import { RegisteredModel } from './RegisteredModel'
 import { useGameStore } from '../../store/useGameStore'
 import { getContainerSurfaceY, getEntityHalfHeight } from '../../game/placement'
 
@@ -190,14 +191,30 @@ export function Container3D({
         scale={[1 + openProgressRef.current * 0.03, 1 + openProgressRef.current * 0.02, 1 + openProgressRef.current * 0.03]}
         position={[0, openProgressRef.current * 0.02, 0]}
       >
-        <FurnitureModel
-          modelId={modelId}
-          color={spec.color}
-          hovered={hovered}
-          isOpen={isOpen}
-          isTarget={spec.isTargetZone || false}
-          size={spec.size}
-        />
+        {spec.modelAssetId ? (
+          <RegisteredModel
+            assetId={spec.modelAssetId}
+            fallback={
+              <FurnitureModel
+                modelId={modelId}
+                color={spec.color}
+                hovered={hovered}
+                isOpen={isOpen}
+                isTarget={spec.isTargetZone || false}
+                size={spec.size}
+              />
+            }
+          />
+        ) : (
+          <FurnitureModel
+            modelId={modelId}
+            color={spec.color}
+            hovered={hovered}
+            isOpen={isOpen}
+            isTarget={spec.isTargetZone || false}
+            size={spec.size}
+          />
+        )}
       </group>
 
       {spec.isTargetZone && (

@@ -37,7 +37,7 @@ import {
   DresserFallback,
 } from './models/FallbackModels'
 import { RegisteredModel } from './RegisteredModel'
-import type { ModelAssetId } from '../../data/assets/modelRegistry'
+import { roomDecorFurniture } from '../../data/decorFurniture'
 
 /** §十一 feature flag: 默认启用 Kenney Living GLB 模型（DEV + PROD 均启用）。
  *  可通过 VITE_USE_KENNEY_LIVING_ASSETS=false 显式关闭（用于回归对比、A/B 验证）。
@@ -179,7 +179,20 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
     </group>
   )
 
-  const renderLiving = () => (
+  const renderLiving = () => {
+    // A6 单一数据源：四件核心 static decor 的 transform 来自 decorFurniture.ts
+    // Room3D 不再手写这四件的 position/rotation，避免与碰撞/小地图坐标漂移。
+    const livingDecor = roomDecorFurniture.living
+    const sofaSpec = livingDecor.find((d) => d.id === 'decor-sofa-main')
+    const tvStandSpec = livingDecor.find((d) => d.id === 'decor-tv-stand')
+    const tvSpec = livingDecor.find((d) => d.id === 'decor-tv')
+    const bookshelfSpec = livingDecor.find((d) => d.id === 'decor-bookshelf')
+    const decorWorld = (pos: { x: number; y: number; z: number }): [number, number, number] => [
+      center.x + pos.x,
+      pos.y,
+      center.z + pos.z,
+    ]
+    return (
     <group>
       <RoomDecorPiece modelId="rug" color="#a0522d">
         <group position={[center.x, 0, center.z - 0.5]} receiveShadow>
@@ -187,89 +200,42 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </RoomDecorPiece>
 
-      {shouldUseKenneyLiving() ? (
+      {/* 主沙发：decorFurniture 单一数据源（A6: (-1.5, 0, 2.24) rot=π） */}
+      {sofaSpec && shouldUseKenneyLiving() && sofaSpec.modelAssetId ? (
         <RegisteredModel
-          assetId={'furniture/loungeSofa' as ModelAssetId}
-          position={[center.x, 0, center.z - 1.2]}
-          fallback={<SofaModel size={{ x: 2.4, y: 0.9, z: 1.0 }} />}
+          assetId={sofaSpec.modelAssetId}
+          position={decorWorld(sofaSpec.position)}
+          rotationY={sofaSpec.rotationY ?? 0}
+          fallback={<SofaModel size={{ x: sofaSpec.size.x, y: sofaSpec.size.y, z: sofaSpec.size.z }} />}
         />
-      ) : (
+      ) : sofaSpec ? (
         <FallbackColorizer modelId="sofa" color="#8b5a2b">
-          <group position={[center.x, 0, center.z - 1.2]} castShadow receiveShadow>
-            <SofaModel size={{ x: 2.4, y: 0.9, z: 1.0 }} />
+          <group position={decorWorld(sofaSpec.position)} rotation={[0, sofaSpec.rotationY ?? 0, 0]} castShadow receiveShadow>
+            <SofaModel size={{ x: sofaSpec.size.x, y: sofaSpec.size.y, z: sofaSpec.size.z }} />
           </group>
         </FallbackColorizer>
-      )}
+      ) : null}
 
+      {/* 枕头：跟随主沙发 A6 位置（南墙 z=+2.24，沙发 X 跨度 [-2.7, -0.3]） */}
       <RoomDecorPiece modelId="pillow" color="#ff6b6b">
-        <group position={[center.x - 0.9, 0.45, center.z - 1.3]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
+        <group position={[center.x - 2.4, 0.45, center.z + 2.0]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.3 }} />
         </group>
       </RoomDecorPiece>
       <RoomDecorPiece modelId="pillow" color="#4ecdc4">
-        <group position={[center.x, 0.45, center.z - 1.35]} rotation={[0, -Math.PI / 8, 0]} receiveShadow>
+        <group position={[center.x - 1.5, 0.45, center.z + 2.0]} rotation={[0, -Math.PI / 8, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.3 }} />
         </group>
       </RoomDecorPiece>
       <RoomDecorPiece modelId="pillow" color="#ffe66d">
-        <group position={[center.x + 0.9, 0.45, center.z - 1.3]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
+        <group position={[center.x - 0.6, 0.45, center.z + 2.0]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.3 }} />
         </group>
       </RoomDecorPiece>
 
-      <RoomDecorPiece modelId="sofa" color="#6b4e3d">
-        <group position={[center.x - 2.0, 0, center.z - 0.5]} castShadow receiveShadow rotation={[0, Math.PI / 2, 0]}>
-          <SofaModel size={{ x: 1.6, y: 0.85, z: 0.9 }} />
-        </group>
-      </RoomDecorPiece>
-
-      {shouldUseKenneyLiving() ? (
-        <RegisteredModel
-          assetId={'furniture/tableCoffee' as ModelAssetId}
-          position={[center.x - 0.5, 0, center.z - 0.3]}
-          fallback={<CoffeeTableModel size={{ x: 1.4, y: 0.45, z: 0.7 }} />}
-        />
-      ) : (
-        <FallbackColorizer modelId="coffee_table" color="#8b7355">
-          <group position={[center.x - 0.5, 0, center.z - 0.3]} castShadow receiveShadow>
-            <CoffeeTableModel size={{ x: 1.4, y: 0.45, z: 0.7 }} />
-          </group>
-        </FallbackColorizer>
-      )}
-
-      <group position={[center.x - 0.8, 0.48, center.z - 0.5]} receiveShadow>
-        <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[0.25, 0.02, 0.35]} />
-          <meshStandardMaterial color="#3b82f6" roughness={0.3} />
-        </mesh>
-        <mesh position={[0.02, 0.02, 0.02]}>
-          <boxGeometry args={[0.24, 0.015, 0.34]} />
-          <meshStandardMaterial color="#ef4444" roughness={0.3} />
-        </mesh>
-        <mesh position={[0.04, 0.035, 0.04]}>
-          <boxGeometry args={[0.23, 0.015, 0.33]} />
-          <meshStandardMaterial color="#22c55e" roughness={0.3} />
-        </mesh>
-      </group>
-
-      <group position={[center.x - 0.2, 0.48, center.z - 0.1]} receiveShadow>
-        <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.15, 0.15, 0.04, 16]} />
-          <meshStandardMaterial color="#d4a574" roughness={0.4} />
-        </mesh>
-        <mesh position={[0, 0.06, 0]}>
-          <sphereGeometry args={[0.04, 12, 12]} />
-          <meshStandardMaterial color="#ef4444" roughness={0.3} />
-        </mesh>
-        <mesh position={[0.06, 0.05, 0.03]}>
-          <sphereGeometry args={[0.035, 12, 12]} />
-          <meshStandardMaterial color="#fbbf24" roughness={0.3} />
-        </mesh>
-        <mesh position={[-0.05, 0.05, 0.04]}>
-          <sphereGeometry args={[0.03, 12, 12]} />
-          <meshStandardMaterial color="#22c55e" roughness={0.3} />
-        </mesh>
-      </group>
+      {/* decor-sofa-side 已删除（A6 移除：侵入 Bedroom-Entrance 走廊） */}
+      {/* 茶几视觉由 cnt-coffee-table (Container3D) 唯一承担，不再在此渲染第二张 */}
+      {/* 旧茶几上的书本/果盘装饰随旧茶几位置失效，已移除 */}
 
       <FallbackColorizer modelId="cat" color="#8b7355">
         <group position={[center.x + 0.3, 0.45, center.z - 1.4]} rotation={[0, Math.PI / 4, 0]} receiveShadow>
@@ -300,49 +266,53 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </FallbackColorizer>
 
-      {shouldUseKenneyLiving() ? (
+      {/* 电视柜：decorFurniture 单一数据源（A6: (-2.0, 0, -2.1) rot=0） */}
+      {tvStandSpec && shouldUseKenneyLiving() && tvStandSpec.modelAssetId ? (
         <RegisteredModel
-          assetId={'furniture/cabinetTelevision' as ModelAssetId}
-          position={[center.x + size.x / 2 - 1.1, 0, center.z - 1.0]}
-          rotationY={-Math.PI / 2}
-          fallback={<TVStandModel size={{ x: 2.2, y: 0.55, z: 0.45 }} />}
+          assetId={tvStandSpec.modelAssetId}
+          position={decorWorld(tvStandSpec.position)}
+          rotationY={tvStandSpec.rotationY ?? 0}
+          fallback={<TVStandModel size={{ x: tvStandSpec.size.x, y: tvStandSpec.size.y, z: tvStandSpec.size.z }} />}
         />
-      ) : (
+      ) : tvStandSpec ? (
         <FallbackColorizer modelId="cabinet" color="#4a4a4a">
-          <group position={[center.x + size.x / 2 - 1.1, 0, center.z - 1.0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
-            <TVStandModel size={{ x: 2.2, y: 0.55, z: 0.45 }} />
+          <group position={decorWorld(tvStandSpec.position)} rotation={[0, tvStandSpec.rotationY ?? 0, 0]} castShadow receiveShadow>
+            <TVStandModel size={{ x: tvStandSpec.size.x, y: tvStandSpec.size.y, z: tvStandSpec.size.z }} />
           </group>
         </FallbackColorizer>
-      )}
+      ) : null}
 
-      {shouldUseKenneyLiving() ? (
+      {/* 电视：decorFurniture 单一数据源（A6: (-2.0, 0.62, -2.1) rot=0, collisionMode=none） */}
+      {tvSpec && shouldUseKenneyLiving() && tvSpec.modelAssetId ? (
         <RegisteredModel
-          assetId={'furniture/televisionModern' as ModelAssetId}
-          position={[center.x + size.x / 2 - 1.0, 0.8, center.z - 1.0]}
-          rotationY={-Math.PI / 2}
-          fallback={<TVFallback size={{ x: 1.8, y: 1.0, z: 0.15 }} />}
+          assetId={tvSpec.modelAssetId}
+          position={decorWorld(tvSpec.position)}
+          rotationY={tvSpec.rotationY ?? 0}
+          fallback={<TVFallback size={{ x: tvSpec.size.x, y: tvSpec.size.y, z: tvSpec.size.z }} />}
         />
-      ) : (
+      ) : tvSpec ? (
         <FallbackColorizer modelId="tv" color="#1f2937">
-          <group position={[center.x + size.x / 2 - 1.0, 0.8, center.z - 1.0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
-            <TVFallback size={{ x: 1.8, y: 1.0, z: 0.15 }} />
+          <group position={decorWorld(tvSpec.position)} rotation={[0, tvSpec.rotationY ?? 0, 0]} castShadow receiveShadow>
+            <TVFallback size={{ x: tvSpec.size.x, y: tvSpec.size.y, z: tvSpec.size.z }} />
           </group>
         </FallbackColorizer>
-      )}
+      ) : null}
 
-      {shouldUseKenneyLiving() ? (
+      {/* 书架：decorFurniture 单一数据源（A6: (2.75, 0, 1.5) rot=-π/2） */}
+      {bookshelfSpec && shouldUseKenneyLiving() && bookshelfSpec.modelAssetId ? (
         <RegisteredModel
-          assetId={'furniture/bookcaseOpen' as ModelAssetId}
-          position={[center.x + size.x / 2 - 0.6, 0, center.z - 1.5]}
-          fallback={<BookshelfFallback size={{ x: 0.8, y: 1.8, z: 0.35 }} />}
+          assetId={bookshelfSpec.modelAssetId}
+          position={decorWorld(bookshelfSpec.position)}
+          rotationY={bookshelfSpec.rotationY ?? 0}
+          fallback={<BookshelfFallback size={{ x: bookshelfSpec.size.x, y: bookshelfSpec.size.y, z: bookshelfSpec.size.z }} />}
         />
-      ) : (
+      ) : bookshelfSpec ? (
         <FallbackColorizer modelId="bookshelf" color="#6b4423">
-          <group position={[center.x + size.x / 2 - 0.6, 0, center.z - 1.5]} castShadow receiveShadow>
-            <BookshelfFallback size={{ x: 0.8, y: 1.8, z: 0.35 }} />
+          <group position={decorWorld(bookshelfSpec.position)} rotation={[0, bookshelfSpec.rotationY ?? 0, 0]} castShadow receiveShadow>
+            <BookshelfFallback size={{ x: bookshelfSpec.size.x, y: bookshelfSpec.size.y, z: bookshelfSpec.size.z }} />
           </group>
         </FallbackColorizer>
-      )}
+      ) : null}
 
       <FallbackColorizer modelId="shelf" color="#9ca3af">
         <group position={[center.x + size.x / 2 - 0.6, 0, center.z + 1.0]} castShadow receiveShadow>
@@ -392,19 +362,11 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </RoomDecorPiece>
 
-      <FallbackColorizer modelId="chair" color="#8b7355">
-        <group position={[center.x + 1.5, 0, center.z + 1.0]} castShadow receiveShadow>
-          <ChairFallback size={{ x: 0.5, y: 0.7, z: 0.5 }} />
-        </group>
-      </FallbackColorizer>
-
-      <RoomDecorPiece modelId="coffee_table" color="#6b4e3d">
-        <group position={[center.x + 1.8, 0, center.z + 0.8]} castShadow receiveShadow>
-          <CoffeeTableModel size={{ x: 0.6, y: 0.35, z: 0.6 }} />
-        </group>
-      </RoomDecorPiece>
+      {/* decor-chair 已删除（A6：与核心布局无关的旧落地家具） */}
+      {/* 第二张 coffee_table 已删除（A6-H7：cnt-coffee-table 唯一视觉所有者） */}
     </group>
-  )
+    )
+  }
 
   const renderDiningKitchen = () => (
     <group>

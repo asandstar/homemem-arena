@@ -2,6 +2,7 @@
 
 import type { RoomId } from './room'
 import type { Vec3 } from './room'
+import type { ModelAssetId } from '../data/assets/modelRegistry'
 
 /** 物体大类 */
 export type ObjectCategory =
@@ -109,6 +110,12 @@ export interface ContainerSpec {
    * 缺失时视为 legacy 未迁移数据，保持当前 Container3D 渲染行为。
    */
   visualOwner?: ContainerVisualOwner
+  /**
+   * 可选：Container3D 检测到此字段后改用 RegisteredModel 渲染对应 GLB；
+   * 加载中或失败时回退到 FurnitureModel 程序化 fallback。
+   * 仅用于已注册的 Kenney Living 5 件套等核心资产。
+   */
+  modelAssetId?: ModelAssetId
 }
 
 /** 物体运行时状态 */

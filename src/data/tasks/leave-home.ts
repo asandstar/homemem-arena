@@ -158,6 +158,9 @@ export const leaveHomeTask: TaskConfig = {
       acceptedCategories: [],
       // 台面是"表面"语义，拿起东西后可以临时放回台面换手
       acceptAny: true,
+      // A6-H7：茶几唯一视觉所有者。Container3D 检测此字段后使用 RegisteredModel
+      // 渲染 Kenney tableCoffee GLB；加载失败回退到 FurnitureModel 程序化 CoffeeTable。
+      modelAssetId: 'furniture/tableCoffee',
     },
     {
       id: 'cnt-nightstand',
@@ -304,9 +307,9 @@ export const leaveHomeTask: TaskConfig = {
       },
       type: 'move-entity',
       targetId: 'obj-key',
-      targetPosition: { room: 'living', x: -0.4, y: 0, z: 2.0 },
+      targetPosition: { room: 'living', x: -2.6, y: 0, z: 1.9 },
       message: '🐱 啪嗒——钥匙猫扒拉了你的钥匙！它不在原来的位置了…客厅沙发西侧找找？按 E 更新记忆吧。',
-      description: '钥匙猫把钥匙从茶几推到了客厅沙发西侧',
+      description: '钥匙猫把钥匙从茶几推到了客厅沙发西侧（A6: -2.6, 1.9）',
       memoryType: 'spatial',
       markMemoryOutdated: 'obj-key',
       eventEffect: 'cat-prints',
