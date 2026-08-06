@@ -127,7 +127,10 @@ export const leaveHomeTask: TaskConfig = {
       name: '手机',
       category: 'phone',
       initialRoom: 'bedroom',
-      initialPosition: { x: 0.5, y: 0, z: 0.75 },
+      // ROUND R1：床头柜容器 (0.95, 0.4, 0.95) × (0.58, 0.605, 0.84)
+      // 将手机放到容器居中后方的抽屉内部（房间绝对坐标）
+      // 满足 qa-layout object-on-container: 距中心 dx<=0.58/2-0.05=0.24, dz<=0.84/2-0.05=0.37
+      initialPosition: { x: 0.95, y: 0.6, z: 0.88 },
       surfaceContainerId: 'cnt-nightstand',
       hiddenInContainer: 'cnt-nightstand',
       size: { x: 0.18, y: 0.09, z: 0.02 },
@@ -166,9 +169,9 @@ export const leaveHomeTask: TaskConfig = {
       id: 'cnt-nightstand',
       name: '床头柜',
       room: 'bedroom',
-      position: { x: 0.5, y: 0.4, z: 0.8 },
-      size: { x: 0.6, y: 0.5, z: 0.4 },
-      surfaceHeight: 0.5,
+      position: { x: 0.95, y: 0.4, z: 0.95 },
+      size: { x: 0.58, y: 0.605, z: 0.84 },
+      surfaceHeight: 0.605,
       color: '#4a3728',
       initialOpen: false,
       acceptedCategories: [],
@@ -176,6 +179,10 @@ export const leaveHomeTask: TaskConfig = {
       containsObjectIds: ['obj-phone'],
       // 床头柜表面也是临时放物点
       acceptAny: true,
+      // ROUND R1 §八：task-container 唯一视觉所有者（§九所有权规则）。
+      // Container3D 检测此字段后改用 RegisteredModel 渲染 cabinetBedDrawer GLB；
+      // 加载失败时回退程序化 FurnitureModel。不允许另建 decor-nightstand。
+      modelAssetId: 'furniture/cabinetBedDrawer',
     },
     {
       id: 'cnt-umbrella-stand',

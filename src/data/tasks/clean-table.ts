@@ -90,6 +90,7 @@ MEM-07：「你好，我是 MEM-07。我的记忆模块出了故障，只能同�
       size: { x: 0.1, y: 0.12, z: 0.1 },
       color: '#d1d5db',
       stateProperties: { cleanliness: 'dirty' },
+      modelAssetId: 'food/mug',
     },
     {
       id: 'obj-tissue',
@@ -110,6 +111,7 @@ MEM-07：「你好，我是 MEM-07。我的记忆模块出了故障，只能同�
       surfaceContainerId: 'cnt-dining-table',
       size: { x: 0.08, y: 0.15, z: 0.03 },
       color: '#b8c0c4',
+      modelAssetId: 'food/utensil-fork',
     },
   ],
 
@@ -118,45 +120,53 @@ MEM-07：「你好，我是 MEM-07。我的记忆模块出了故障，只能同�
       id: 'cnt-dining-table',
       name: '餐桌',
       room: 'dining',
-      position: { x: 0, y: 0.45, z: 0 },
-      size: { x: 1.8, y: 0.9, z: 0.9 },
-      surfaceHeight: 0.9,
+      // R2A: position.y=0 让 furniture/table GLB 贴地；surfaceHeight 对齐 effectiveAabb.y=0.653
+      position: { x: 0, y: 0, z: 0 },
+      size: { x: 1.683, y: 0.653, z: 0.895 },
+      surfaceHeight: 0.653,
       color: '#92400e',
       initialOpen: true,
       acceptedCategories: [],
       acceptAny: false,
+      modelAssetId: 'furniture/table',
     },
     {
       id: 'cnt-dishwasher',
       name: '洗碗机',
       room: 'dining',
-      position: { x: 1.8, y: 0.4, z: 1.8 }, // 北墙，远离东墙门洞（东墙门洞 z∈[-0.95, 0.45]）
-      size: { x: 0.6, y: 0.8, z: 0.6 },
-      surfaceHeight: 0.82,
+      // R2A: 无真实 dishwasher GLB，使用 kitchenCabinetDrawer 作为视觉代理 (proxy)
+      // position.y=0 让 GLB 贴地；surfaceHeight 对齐 effectiveAabb.y=0.563
+      position: { x: 1.8, y: 0, z: 1.8 },
+      size: { x: 0.538, y: 0.563, z: 0.600 },
+      surfaceHeight: 0.563,
       color: '#a3a3a3',
       initialOpen: true,
       acceptedCategories: ['cup'],
       isTargetZone: true,
       targetLabel: '洗碗机（杯子放这里）',
+      modelAssetId: 'furniture/kitchenCabinetDrawer',
     },
     {
       id: 'cnt-trash-bin',
       name: '垃圾桶',
       room: 'dining',
-      position: { x: 2.1, y: 0.2, z: 1.1 }, // 东北角，远离门洞
-      size: { x: 0.3, y: 0.4, z: 0.3 },
-      surfaceHeight: 0.42,
+      // R2A: position.y=0 让 furniture/trashcan GLB 贴地；surfaceHeight 对齐 effectiveAabb.y=0.861
+      position: { x: 2.1, y: 0, z: 1.1 },
+      size: { x: 0.471, y: 0.861, z: 0.418 },
+      surfaceHeight: 0.861,
       color: '#1f2937',
       initialOpen: true,
       acceptedCategories: ['tissue'],
       isTargetZone: true,
       targetLabel: '垃圾桶（餐巾纸扔这里）',
+      modelAssetId: 'furniture/trashcan',
     },
     {
       id: 'cnt-utensil-rack',
       name: '餐具架',
       room: 'dining',
-      position: { x: -1.2, y: 0.4, z: 1.0 }, // 北墙西段
+      // R2A: 保持程序化高辨识度模型，不强行替换 GLB
+      position: { x: -1.2, y: 0.4, z: 1.0 },
       size: { x: 0.4, y: 0.6, z: 0.3 },
       surfaceHeight: 0.62,
       color: '#f59e0b',

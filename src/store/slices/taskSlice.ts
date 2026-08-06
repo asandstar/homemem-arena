@@ -190,6 +190,7 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
             rotation: 0,
             status,
             properties: { ...(obj.stateProperties ?? {}) },
+            modelAssetId: obj.modelAssetId,
           })
         })
 

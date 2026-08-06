@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { roomDecorFurniture } from './decorFurniture'
 import { leaveHomeTask } from './tasks/leave-home'
-import { MODEL_ASSET_REGISTRY, WP0A_LIVING_ASSET_IDS, type ModelAssetId } from './assets/modelRegistry'
+import { MODEL_ASSET_REGISTRY, RUNTIME_MODEL_ASSET_REGISTRY, WP0A_LIVING_ASSET_IDS, type ModelAssetId } from './assets/modelRegistry'
 import {
   localAabbMinMax,
   roomLocalBounds,
@@ -42,7 +42,7 @@ const LIVING_A6 = {
  * 故此处直接用 effectiveAabb.x/z 作为 footprint 尺寸（与 A6 文档 §5 一致）。
  */
 function effectiveFootprint(model: ModelAssetId, pos: { x: number; z: number }) {
-  const def = MODEL_ASSET_REGISTRY[model]
+  const def = RUNTIME_MODEL_ASSET_REGISTRY[model]
   const hx = def.effectiveAabb.x / 2
   const hz = def.effectiveAabb.z / 2
   return {

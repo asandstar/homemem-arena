@@ -50,6 +50,12 @@ export interface ObjectSpec {
   surfaceContainerId?: string
   /** 状态属性（任务相关，会在运行中变化） */
   stateProperties?: Record<string, string | number | boolean>
+  /**
+   * 可选：Object3D 检测到此字段后改用 RegisteredModel 渲染对应 GLB；
+   * 加载中或失败时回退到 PropModel 程序化 fallback。
+   * 用于 L1 任务物品（如 food/mug, food/utensil-fork）的 GLB 替换。
+   */
+  modelAssetId?: ModelAssetId
 }
 
 /** 容器碰撞承担模式 */
@@ -143,4 +149,6 @@ export interface EntityState {
   placedIn?: string
   /** 任务相关状态属性 */
   properties: Record<string, string | number | boolean>
+  /** 从 ObjectSpec 传播的 GLB 资产 ID（可选，用于 RegisteredModel 渲染） */
+  modelAssetId?: ModelAssetId
 }

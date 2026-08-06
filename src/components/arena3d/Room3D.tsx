@@ -5,36 +5,18 @@ import { MATERIAL_CONFIG } from './colors'
 import { Door3D } from './Door3D'
 import { FallbackColorizer, RoomDecorPiece } from './models/ModelAsset'
 import {
-  ShoeCabinetModel,
-  TowelRackModel,
   TVStandModel,
-  WardrobeModel,
-  NightstandModel,
   ChandelierModel,
   SofaModel,
-  CoffeeTableModel,
   BedModel,
-  DeskModel,
   WashingMachineGeometry,
-  LaundryBasketModel,
 } from './ObjectGeometries'
 import {
-  LampFallback,
-  PlantFallback,
   RugFallback,
   PillowFallback,
-  ShoesFallback,
-  HookFallback,
-  TrashFallback,
-  TowelFallback,
-  EntranceTrayFallback,
   BookshelfFallback,
   ChairFallback,
   TVFallback,
-  ClockFallback,
-  PaintingFallback,
-  ShelfFallback,
-  DresserFallback,
 } from './models/FallbackModels'
 import { RegisteredModel } from './RegisteredModel'
 import { roomDecorFurniture } from '../../data/decorFurniture'
@@ -69,113 +51,11 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </RoomDecorPiece>
 
-      <RoomDecorPiece modelId="cabinet" color="#8b5a2b">
-        <group position={[center.x - size.x / 2 + 0.6, 0, center.z - 0.5]} castShadow receiveShadow>
-          <ShoeCabinetModel size={{ x: 1.2, y: 1.1, z: 0.4 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="shoes" color="#4a4a4a">
-        <group position={[center.x - size.x / 2 + 0.6, 0, center.z + 0.3]} receiveShadow>
-          <ShoesFallback size={{ x: 0.35, y: 0.15, z: 0.45 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <group position={[center.x - size.x / 2 + 0.9, 0.15, center.z + 0.2]} receiveShadow>
-        <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[0.25, 0.12, 0.08]} />
-          <meshStandardMaterial color="#ef4444" roughness={0.4} />
-        </mesh>
-      </group>
-      <group position={[center.x - size.x / 2 + 1.2, 0.12, center.z + 0.15]} receiveShadow>
-        <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[0.22, 0.1, 0.08]} />
-          <meshStandardMaterial color="#3b82f6" roughness={0.4} />
-        </mesh>
-      </group>
-
-      <group position={[center.x - 0.4, 0.12, center.z - size.z / 2 + 0.7]} receiveShadow>
-        <mesh position={[0.15, 0, 0]}>
-          <boxGeometry args={[0.15, 0.1, 0.1]} />
-          <meshStandardMaterial color="#6b4e3d" roughness={0.4} />
-        </mesh>
-        <mesh position={[-0.15, 0, 0]}>
-          <sphereGeometry args={[0.04, 12, 12]} />
-          <meshStandardMaterial color="#fbbf24" roughness={0.3} />
-        </mesh>
-        <mesh position={[-0.15, 0, 0.08]}>
-          <sphereGeometry args={[0.035, 12, 12]} />
-          <meshStandardMaterial color="#ef4444" roughness={0.3} />
-        </mesh>
-      </group>
-
-      <RoomDecorPiece modelId="hook" color="#4a4a4a">
-        <group position={[center.x + size.x / 2 - 0.3, 1.5, center.z]} receiveShadow>
-          <HookFallback size={{ x: 1.0, y: 0.3, z: 0.05 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="entrance_tray" color="#d4a574">
-        <group position={[center.x - 0.4, 0, center.z - size.z / 2 + 0.7]} receiveShadow>
-          <EntranceTrayFallback size={{ x: 0.5, y: 0.1, z: 0.35 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="umbrella" color="#ef4444">
-        <group position={[center.x + 0.8, 0.4, center.z - size.z / 2 + 0.7]} castShadow receiveShadow>
-          <mesh position={[0, 0.25, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.012, 0.012, 0.5, 8]} />
-            <meshStandardMaterial color="#654321" />
-          </mesh>
-          <mesh position={[0, 0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <coneGeometry args={[0.25, 0.2, 8]} />
-            <meshStandardMaterial color="#ef4444" />
-          </mesh>
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="umbrella" color="#3b82f6">
-        <group position={[center.x + 0.5, 0.4, center.z - size.z / 2 + 0.7]} castShadow receiveShadow>
-          <mesh position={[0, 0.25, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.012, 0.012, 0.45, 8]} />
-            <meshStandardMaterial color="#654321" />
-          </mesh>
-          <mesh position={[0, 0.48, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 6]}>
-            <coneGeometry args={[0.22, 0.18, 8]} />
-            <meshStandardMaterial color="#3b82f6" />
-          </mesh>
-        </group>
-      </RoomDecorPiece>
-
-      <FallbackColorizer modelId="painting" color="#8b5a2b">
-        <group position={[center.x, 1.0, center.z + size.z / 2 - 0.3]} rotation={[0, Math.PI, 0]} receiveShadow>
-          <PaintingFallback size={{ x: 0.6, y: 0.45, z: 0.05 }} />
-        </group>
-      </FallbackColorizer>
-
-      <FallbackColorizer modelId="clock" color="#d4a574">
-        <group position={[center.x + size.x / 2 - 0.3, 1.6, center.z + 1.0]} receiveShadow>
-          <ClockFallback size={{ x: 0.3, y: 0.3, z: 0.05 }} />
-        </group>
-      </FallbackColorizer>
-
-      <RoomDecorPiece modelId="plant" color="#22c55e">
-        <group position={[center.x - size.x / 2 + 1.0, 0, center.z + 0.8]} receiveShadow>
-          <PlantFallback size={{ x: 0.3, y: 0.7, z: 0.3 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="plant" color="#15803d">
-        <group position={[center.x + size.x / 2 - 1.0, 0, center.z - 0.5]} receiveShadow>
-          <PlantFallback size={{ x: 0.25, y: 0.6, z: 0.25 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <FallbackColorizer modelId="shelf" color="#9ca3af">
-        <group position={[center.x + size.x / 2 - 0.5, 0, center.z + 1.5]} castShadow receiveShadow>
-          <ShelfFallback size={{ x: 0.4, y: 0.8, z: 0.15 }} />
-        </group>
-      </FallbackColorizer>
+      {/* MVP C1: Entrance 只保留 rug。
+        - entrance tray → cnt-entrance-tray (Container3D) 唯一渲染
+        - umbrella stand → cnt-umbrella-stand (Container3D) 唯一渲染
+        - 删除鞋柜、鞋、hook、装饰托盘、2 伞装饰、挂画、时钟、2 植物、墙架
+        - 避免与 task container 重复所有者，确保玩家第一眼看到 tray */}
     </group>
   )
 
@@ -314,236 +194,66 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </FallbackColorizer>
       ) : null}
 
-      <FallbackColorizer modelId="shelf" color="#9ca3af">
-        <group position={[center.x + size.x / 2 - 0.6, 0, center.z + 1.0]} castShadow receiveShadow>
-          <ShelfFallback size={{ x: 0.7, y: 1.2, z: 0.2 }} />
-        </group>
-      </FallbackColorizer>
-
-      <FallbackColorizer modelId="painting" color="#8b5a2b">
-        <group position={[center.x - size.x / 2 + 0.3, 1.2, center.z + 1.5]} rotation={[0, Math.PI, 0]} receiveShadow>
-          <PaintingFallback size={{ x: 0.8, y: 0.6, z: 0.05 }} />
-        </group>
-      </FallbackColorizer>
-
-      <FallbackColorizer modelId="clock" color="#d4a574">
-        <group position={[center.x + size.x / 2 - 0.3, 1.8, center.z]} receiveShadow>
-          <ClockFallback size={{ x: 0.4, y: 0.4, z: 0.05 }} />
-        </group>
-      </FallbackColorizer>
-
-      <RoomDecorPiece modelId="lamp" color="#f5d49a">
-        <group position={[center.x + size.x / 2 - 1.0, 0, center.z - 2.0]} receiveShadow>
-          <LampFallback size={{ x: 0.4, y: 1.8, z: 0.4 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="lamp" color="#e8d5b7">
-        <group position={[center.x - size.x / 2 + 1.0, 0, center.z + 0.5]} receiveShadow>
-          <LampFallback size={{ x: 0.35, y: 1.6, z: 0.35 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="plant" color="#16a34a">
-        <group position={[center.x - size.x / 2 + 0.6, 0, center.z - 2.0]} receiveShadow>
-          <PlantFallback size={{ x: 0.5, y: 1.2, z: 0.5 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="plant" color="#22c55e">
-        <group position={[center.x + size.x / 2 - 0.6, 0, center.z + 2.0]} receiveShadow>
-          <PlantFallback size={{ x: 0.35, y: 0.8, z: 0.35 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="plant" color="#15803d">
-        <group position={[center.x + 1.5, 0, center.z - 2.0]} receiveShadow>
-          <PlantFallback size={{ x: 0.4, y: 1.0, z: 0.4 }} />
-        </group>
-      </RoomDecorPiece>
-
+      {/* MVP C1: 删除非必要落地灯、植物、墙架、挂画、时钟，减少视觉噪声 */}
       {/* decor-chair 已删除（A6：与核心布局无关的旧落地家具） */}
       {/* 第二张 coffee_table 已删除（A6-H7：cnt-coffee-table 唯一视觉所有者） */}
     </group>
     )
   }
 
-  const renderDiningKitchen = () => (
+  const renderDiningKitchen = () => {
+    // ROUND R2A：Kitchen 视觉已迁移到 decorFurniture（kitchenCabinetDrawer/kitchenSink）
+    // 并由 renderDining() 的 diningDecor.filter(...).map(...) 统一渲染。
+    // 此函数保留为空 group 以维持 switch 结构兼容，不再渲染任何旧程序化几何。
+    return <group />
+  }
+
+  const renderBedroom = () => {
+    const bedroomDecor = roomDecorFurniture.bedroom
+    const bedSpec = bedroomDecor.find((d) => d.id === 'decor-bed')
+    const rugSpec = bedroomDecor.find((d) => d.id === 'decor-bedroom-rug')
+    const decorWorld = (pos: { x: number; y: number; z: number }): [number, number, number] => [
+      center.x + pos.x,
+      pos.y,
+      center.z + pos.z,
+    ]
+    return (
     <group>
-      <RoomDecorPiece modelId="rug" color="#7a7a7a">
-        <group position={[center.x, 0, center.z - 0.5]} receiveShadow>
-          <RugFallback size={{ x: 3.0, y: 0.04, z: 2.0 }} />
-        </group>
-      </RoomDecorPiece>
+      {/* ROUND R1 §八：卧室地毯由单一系统（static-decor）渲染，decor-bedroom-rug 条目为唯一所有者 */}
+      {rugSpec?.modelAssetId ? (
+        <RegisteredModel
+          assetId={rugSpec.modelAssetId}
+          position={decorWorld(rugSpec.position)}
+          fallback={
+            <RoomDecorPiece modelId="rug" color="#9e7a7a">
+              <group position={decorWorld(rugSpec.position)} receiveShadow>
+                <RugFallback size={{ x: Math.max(rugSpec.size.x, 3.0), y: 0.04, z: Math.max(rugSpec.size.z, 2.2) }} />
+              </group>
+            </RoomDecorPiece>
+          }
+        />
+      ) : null}
 
-      <RoomDecorPiece modelId="cabinet" color="#6b7280">
-        <group position={[center.x - size.x / 2 + 0.5, 0, center.z - size.z / 2 + 0.6]} castShadow receiveShadow>
-          <CoffeeTableModel size={{ x: 0.8, y: 0.9, z: 0.6 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="cabinet" color="#6b7280">
-        <group position={[center.x - size.x / 2 + 0.5, 0, center.z + 0.5]} castShadow receiveShadow>
-          <CoffeeTableModel size={{ x: 0.8, y: 0.9, z: 0.6 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="cabinet" color="#6b7280">
-        <group position={[center.x - size.x / 2 + 0.5, 0, center.z + size.z / 2 - 0.6]} castShadow receiveShadow>
-          <CoffeeTableModel size={{ x: 0.8, y: 0.9, z: 0.6 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="cabinet" color="#6b7280">
-        <group position={[center.x, 0, center.z + size.z / 2 - 0.5]} castShadow receiveShadow>
-          <CoffeeTableModel size={{ x: 1.6, y: 0.9, z: 0.6 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="cabinet" color="#6b7280">
-        <group position={[center.x + size.x / 2 - 0.5, 0, center.z + size.z / 2 - 0.6]} castShadow receiveShadow>
-          <CoffeeTableModel size={{ x: 0.8, y: 0.9, z: 0.6 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="cabinet" color="#6b7280">
-        <group position={[center.x + size.x / 2 - 0.5, 0, center.z + 0.5]} castShadow receiveShadow>
-          <CoffeeTableModel size={{ x: 0.8, y: 0.9, z: 0.6 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="fridge" color="#f9fafb">
-        <group position={[center.x + size.x / 2 - 0.6, 0, center.z - size.z / 2 + 0.8]} castShadow receiveShadow>
-          <mesh position={[0, 1.0, 0]}>
-            <boxGeometry args={[0.7, 2.0, 0.6]} />
-            <meshStandardMaterial color="#f9fafb" roughness={0.2} metalness={0.1} />
-          </mesh>
-          <mesh position={[0, 1.6, 0.31]}>
-            <boxGeometry args={[0.3, 0.7, 0.02]} />
-            <meshStandardMaterial color="#3b82f6" roughness={0.1} metalness={0.2} />
-          </mesh>
-          <mesh position={[0.25, 1.6, 0.32]}>
-            <sphereGeometry args={[0.02, 8, 8]} />
-            <meshStandardMaterial color="#ef4444" />
-          </mesh>
-          <mesh position={[0.25, 1.2, 0.32]}>
-            <sphereGeometry args={[0.02, 8, 8]} />
-            <meshStandardMaterial color="#22c55e" />
-          </mesh>
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="sink" color="#9ca3af">
-        <group position={[center.x - 0.5, 0.85, center.z + size.z / 2 - 0.5]} castShadow receiveShadow>
-          <mesh position={[0, 0.15, 0]}>
-            <boxGeometry args={[0.6, 0.3, 0.4]} />
-            <meshStandardMaterial color="#9ca3af" roughness={0.3} metalness={0.2} />
-          </mesh>
-          <mesh position={[0, 0.3, 0]}>
-            <cylinderGeometry args={[0.2, 0.2, 0.02, 16]} />
-            <meshStandardMaterial color="#e5e7eb" roughness={0.1} metalness={0.1} />
-          </mesh>
-          <mesh position={[0.15, 0.4, 0]}>
-            <cylinderGeometry args={[0.015, 0.015, 0.15, 8]} />
-            <meshStandardMaterial color="#6b7280" metalness={0.3} />
-          </mesh>
-          <mesh position={[0.15, 0.48, 0.08]}>
-            <boxGeometry args={[0.06, 0.02, 0.02]} />
-            <meshStandardMaterial color="#6b7280" metalness={0.3} />
-          </mesh>
-        </group>
-      </RoomDecorPiece>
-
-      <FallbackColorizer modelId="stove" color="#374151">
-        <group position={[center.x + 0.5, 0.85, center.z + size.z / 2 - 0.5]} castShadow receiveShadow>
-          <mesh position={[0, 0.1, 0]}>
-            <boxGeometry args={[0.7, 0.2, 0.5]} />
-            <meshStandardMaterial color="#374151" roughness={0.2} metalness={0.2} />
-          </mesh>
-          <mesh position={[-0.15, 0.2, 0]}>
-            <cylinderGeometry args={[0.12, 0.12, 0.02, 12]} />
-            <meshStandardMaterial color="#1f2937" roughness={0.1} metalness={0.3} />
-          </mesh>
-          <mesh position={[0.15, 0.2, 0]}>
-            <cylinderGeometry args={[0.12, 0.12, 0.02, 12]} />
-            <meshStandardMaterial color="#1f2937" roughness={0.1} metalness={0.3} />
-          </mesh>
-          <mesh position={[0, 0.22, -0.12]}>
-            <cylinderGeometry args={[0.1, 0.1, 0.02, 12]} />
-            <meshStandardMaterial color="#1f2937" roughness={0.1} metalness={0.3} />
-          </mesh>
-          <mesh position={[0.25, 0.15, 0.18]}>
-            <boxGeometry args={[0.04, 0.06, 0.03]} />
-            <meshStandardMaterial color="#fbbf24" />
-          </mesh>
-        </group>
-      </FallbackColorizer>
-
-      <FallbackColorizer modelId="microwave" color="#1f2937">
-        <group position={[center.x + 0.5, 1.5, center.z + size.z / 2 - 0.5]} castShadow receiveShadow>
-          <mesh position={[0, 0, 0]}>
-            <boxGeometry args={[0.5, 0.35, 0.4]} />
-            <meshStandardMaterial color="#1f2937" roughness={0.2} metalness={0.2} />
-          </mesh>
-          <mesh position={[0, 0.02, 0.21]}>
-            <boxGeometry args={[0.35, 0.25, 0.01]} />
-            <meshStandardMaterial color="#0ea5e9" roughness={0.1} metalness={0.1} />
-          </mesh>
-          <mesh position={[0.15, -0.05, 0.22]}>
-            <sphereGeometry args={[0.015, 8, 8]} />
-            <meshStandardMaterial color="#fbbf24" />
-          </mesh>
-        </group>
-      </FallbackColorizer>
-
-      <RoomDecorPiece modelId="plant" color="#22c55e">
-        <group position={[center.x - 0.8, 0, center.z + size.z / 2 - 0.5]} receiveShadow>
-          <PlantFallback size={{ x: 0.25, y: 0.45, z: 0.25 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="trash" color="#374151">
-        <group position={[center.x + size.x / 2 - 0.6, 0, center.z - 1.0]} receiveShadow>
-          <TrashFallback size={{ x: 0.35, y: 0.45, z: 0.35 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <FallbackColorizer modelId="shelf" color="#9ca3af">
-        <group position={[center.x + size.x / 2 - 0.6, 0, center.z + 2.0]} castShadow receiveShadow>
-          <ShelfFallback size={{ x: 0.5, y: 1.0, z: 0.15 }} />
-        </group>
-      </FallbackColorizer>
-
-      <mesh position={[center.x + 0.8, 1.0, center.z + size.z / 2 - 0.5]} castShadow receiveShadow>
-        <boxGeometry args={[0.15, 0.2, 0.08]} />
-        <meshStandardMaterial color="#fbbf24" />
-      </mesh>
-      <mesh position={[center.x + 0.8, 1.15, center.z + size.z / 2 - 0.5]} receiveShadow>
-        <cylinderGeometry args={[0.03, 0.03, 0.08, 8]} />
-        <meshStandardMaterial color="#ef4444" />
-      </mesh>
-
-      <FallbackColorizer modelId="chair" color="#6b4e3d">
-        <group position={[center.x + 1.5, 0, center.z - 1.0]} castShadow receiveShadow>
-          <ChairFallback size={{ x: 0.45, y: 0.65, z: 0.45 }} />
-        </group>
-      </FallbackColorizer>
-    </group>
-  )
-
-  const renderBedroom = () => (
-    <group>
-      <RoomDecorPiece modelId="rug" color="#9e7a7a">
-        <group position={[center.x, 0, center.z - 0.3]} receiveShadow>
-          <RugFallback size={{ x: 3.0, y: 0.04, z: 2.2 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="bed" color="#d4c5b0">
-        <group position={[center.x, 0, center.z - 0.8]} castShadow receiveShadow>
-          <BedModel size={{ x: 2.0, y: 1.0, z: 2.4 }} />
-        </group>
-      </RoomDecorPiece>
+      {/* W1B: bed 使用 Kenney bedSingle GLB，transform 来自 decorFurniture 单一数据源 */}
+      {bedSpec && bedSpec.modelAssetId ? (
+        <RegisteredModel
+          assetId={bedSpec.modelAssetId}
+          position={decorWorld(bedSpec.position)}
+          fallback={
+            <RoomDecorPiece modelId="bed" color="#d4c5b0">
+              <group position={decorWorld(bedSpec.position)} castShadow receiveShadow>
+                <BedModel size={{ x: bedSpec.size.x, y: bedSpec.size.y, z: bedSpec.size.z }} />
+              </group>
+            </RoomDecorPiece>
+          }
+        />
+      ) : bedSpec ? (
+        <RoomDecorPiece modelId="bed" color="#d4c5b0">
+          <group position={decorWorld(bedSpec.position)} castShadow receiveShadow>
+            <BedModel size={{ x: bedSpec.size.x, y: bedSpec.size.y, z: bedSpec.size.z }} />
+          </group>
+        </RoomDecorPiece>
+      ) : null}
 
       <RoomDecorPiece modelId="pillow" color="#fec8d8">
         <group position={[-0.6, 0.65, center.z - 1.5]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
@@ -561,281 +271,68 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </RoomDecorPiece>
 
-      <RoomDecorPiece modelId="cabinet" color="#8b7355">
-        <group position={[center.x + 1.5, 0, center.z - 1.5]} castShadow receiveShadow>
-          <NightstandModel size={{ x: 0.55, y: 0.55, z: 0.45 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="lamp" color="#f5d49a">
-        <group position={[center.x + 1.5, 0.55, center.z - 1.5]} receiveShadow>
-          <LampFallback size={{ x: 0.22, y: 0.45, z: 0.22 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="cabinet" color="#8b7355">
-        <group position={[center.x - size.x / 2 + 0.85, 0, center.z - 1.5]} castShadow receiveShadow>
-          <NightstandModel size={{ x: 0.55, y: 0.55, z: 0.45 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="lamp" color="#e8d5b7">
-        <group position={[center.x - size.x / 2 + 0.85, 0.55, center.z - 1.5]} receiveShadow>
-          <LampFallback size={{ x: 0.22, y: 0.45, z: 0.22 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="desk" color="#8b7355">
-        <group position={[center.x + 1.6, 0, center.z + 1.0]} castShadow receiveShadow>
-          <DeskModel size={{ x: 1.3, y: 0.75, z: 0.65 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="lamp" color="#f5d49a">
-        <group position={[center.x + 1.2, 0.75, center.z + 0.9]} receiveShadow>
-          <LampFallback size={{ x: 0.18, y: 0.4, z: 0.18 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <FallbackColorizer modelId="chair" color="#6b4e3d">
-        <group position={[center.x + 2.5, 0, center.z + 1.0]} castShadow receiveShadow rotation={[0, Math.PI, 0]}>
-          <ChairFallback size={{ x: 0.45, y: 0.65, z: 0.45 }} />
-        </group>
-      </FallbackColorizer>
-
-      <RoomDecorPiece modelId="cabinet" color="#d4c5b0">
-        <group position={[center.x - size.x / 2 + 0.85, 0, center.z + 0.6]} castShadow receiveShadow>
-          <WardrobeModel size={{ x: 1.8, y: 2.1, z: 0.65 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <FallbackColorizer modelId="dresser" color="#c4a7a7">
-        <group position={[center.x - 1.5, 0, center.z + 1.5]} castShadow receiveShadow>
-          <DresserFallback size={{ x: 1.2, y: 0.9, z: 0.45 }} />
-        </group>
-      </FallbackColorizer>
-
-      <FallbackColorizer modelId="bookshelf" color="#6b4423">
-        <group position={[center.x + size.x / 2 - 0.6, 0, center.z + 1.0]} castShadow receiveShadow>
-          <BookshelfFallback size={{ x: 0.7, y: 1.6, z: 0.3 }} />
-        </group>
-      </FallbackColorizer>
-
-      <FallbackColorizer modelId="painting" color="#8b5a2b">
-        <group position={[center.x, 1.2, center.z + size.z / 2 - 0.3]} rotation={[0, Math.PI, 0]} receiveShadow>
-          <PaintingFallback size={{ x: 0.7, y: 0.5, z: 0.05 }} />
-        </group>
-      </FallbackColorizer>
-
-      <FallbackColorizer modelId="clock" color="#d4a574">
-        <group position={[center.x + size.x / 2 - 0.3, 1.8, center.z - 1.5]} receiveShadow>
-          <ClockFallback size={{ x: 0.35, y: 0.35, z: 0.05 }} />
-        </group>
-      </FallbackColorizer>
-
-      <RoomDecorPiece modelId="towel" color="#ff6b6b">
-        <group position={[center.x + 0.8, 0, center.z + 1.6]} rotation={[Math.PI / 12, Math.PI / 6, Math.PI / 8]} receiveShadow>
-          <TowelFallback size={{ x: 0.5, y: 0.1, z: 0.4 }} />
-        </group>
-      </RoomDecorPiece>
-      <RoomDecorPiece modelId="towel" color="#4ecdc4">
-        <group position={[center.x + 1.1, 0, center.z + 1.4]} rotation={[-Math.PI / 10, -Math.PI / 8, Math.PI / 12]} receiveShadow>
-          <TowelFallback size={{ x: 0.45, y: 0.08, z: 0.4 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="plant" color="#22c55e">
-        <group position={[center.x - size.x / 2 + 1.2, 0, center.z + 2.0]} receiveShadow>
-          <PlantFallback size={{ x: 0.4, y: 0.9, z: 0.4 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="plant" color="#15803d">
-        <group position={[center.x + 1.0, 0, center.z + 2.5]} receiveShadow>
-          <PlantFallback size={{ x: 0.35, y: 0.75, z: 0.35 }} />
-        </group>
-      </RoomDecorPiece>
+      {/* MVP C1: 删除非必要家具（2 装饰床头柜、2 灯、书桌、椅子、衣柜、梳妆台、书架、挂画、时钟、2 毛巾、2 植物）*/}
+      {/* 床头柜仅由 task container cnt-nightstand (Container3D) 渲染，避免重复所有者 */}
     </group>
   )
+  }
 
-  const renderLaundry = () => (
+  const renderLaundry = () => {
+    // ROUND R2A：Laundry 视觉由 decorFurniture（washer/dryer/utility-shelf）
+    // + task containers（cnt-white/dark/towel-basket 程序化篮子）唯一承担。
+    // Room3D 不再渲染旧 WashingMachineGeometry 黑色机器模型、重复橱柜、毛巾架等遮挡物。
+    const laundryDecor = roomDecorFurniture.laundry
+    const decorWorld = (pos: { x: number; y: number; z: number }): [number, number, number] => [
+      center.x + pos.x,
+      pos.y,
+      center.z + pos.z,
+    ]
+    return (
     <group>
-      <mesh position={[center.x - 0.5, 0.55, center.z - size.z / 2 + 1.2]} castShadow receiveShadow>
-        <WashingMachineGeometry size={{ x: 0.6, y: 1.1, z: 0.6 }} />
-        <meshStandardMaterial color="#e5e7eb" />
-      </mesh>
+      {/* 洗衣机 / 烘干机 / 矮置物架：decorFurniture 单一数据源（R2A） */}
+      {laundryDecor.filter((d) => d.modelAssetId).map((d) => (
+        <RegisteredModel
+          key={d.id}
+          assetId={d.modelAssetId!}
+          position={decorWorld(d.position)}
+          rotationY={d.rotationY ?? 0}
+          fallback={
+            <FallbackColorizer modelId="cabinet" color="#6b7280">
+              <group position={decorWorld(d.position)} rotation={[0, d.rotationY ?? 0, 0]} castShadow receiveShadow>
+                <WashingMachineGeometry size={{ x: d.size.x, y: d.size.y, z: d.size.z }} />
+              </group>
+            </FallbackColorizer>
+          }
+        />
+      ))}
 
-      <mesh position={[center.x + 0.5, 0.55, center.z - size.z / 2 + 1.2]} castShadow receiveShadow>
-        <WashingMachineGeometry size={{ x: 0.6, y: 1.1, z: 0.6 }} />
-        <meshStandardMaterial color="#f3f4f6" />
-      </mesh>
-
-      <RoomDecorPiece modelId="cabinet" color="#6b7280">
-        <group position={[center.x - size.x / 2 + 0.5, 0, center.z - size.z / 2 + 0.6]} castShadow receiveShadow>
-          <CoffeeTableModel size={{ x: 0.6, y: 0.9, z: 0.5 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="cabinet" color="#6b7280">
-        <group position={[center.x - size.x / 2 + 0.5, 0, center.z + 0.5]} castShadow receiveShadow>
-          <CoffeeTableModel size={{ x: 0.6, y: 0.9, z: 0.5 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="cabinet" color="#6b7280">
-        <group position={[center.x - size.x / 2 + 0.5, 0, center.z + size.z / 2 - 0.6]} castShadow receiveShadow>
-          <CoffeeTableModel size={{ x: 0.6, y: 0.9, z: 0.5 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <FallbackColorizer modelId="shelf" color="#9ca3af">
-        <group position={[center.x + size.x / 2 - 0.5, 0, center.z + 1.5]} castShadow receiveShadow>
-          <ShelfFallback size={{ x: 0.5, y: 1.0, z: 0.15 }} />
-        </group>
-      </FallbackColorizer>
-
-      <RoomDecorPiece modelId="laundry_basket" color="#ef4444">
-        <group position={[center.x - 1.0, 0.25, center.z - 0.3]} castShadow receiveShadow>
-          <LaundryBasketModel size={{ x: 0.45, y: 0.5, z: 0.45 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="laundry_basket" color="#3b82f6">
-        <group position={[center.x, 0.25, center.z - 0.3]} castShadow receiveShadow>
-          <LaundryBasketModel size={{ x: 0.45, y: 0.5, z: 0.45 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="laundry_basket" color="#22c55e">
-        <group position={[center.x + 1.0, 0.25, center.z - 0.3]} castShadow receiveShadow>
-          <LaundryBasketModel size={{ x: 0.45, y: 0.5, z: 0.45 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="cabinet" color="#6b7280">
-        <group position={[center.x + size.x / 2 - 0.4, 0.8, center.z]} castShadow receiveShadow>
-          <TowelRackModel size={{ x: 1.0, y: 1.5, z: 0.05 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="towel" color="#fbbf24">
-        <group position={[center.x + size.x / 2 - 0.35, 0.9, center.z + 0.1]} receiveShadow>
-          <TowelFallback size={{ x: 0.25, y: 0.5, z: 0.08 }} />
-        </group>
-      </RoomDecorPiece>
-      <RoomDecorPiece modelId="towel" color="#a855f7">
-        <group position={[center.x + size.x / 2 - 0.35, 0.9, center.z - 0.2]} receiveShadow>
-          <TowelFallback size={{ x: 0.25, y: 0.5, z: 0.08 }} />
-        </group>
-      </RoomDecorPiece>
-      <RoomDecorPiece modelId="towel" color="#ec4899">
-        <group position={[center.x + size.x / 2 - 0.35, 0.9, center.z + 0.4]} receiveShadow>
-          <TowelFallback size={{ x: 0.25, y: 0.5, z: 0.08 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <mesh position={[center.x - 0.3, 1.225, center.z - size.z / 2 + 1.2]} castShadow receiveShadow>
-        <boxGeometry args={[0.12, 0.25, 0.08]} />
-        <meshStandardMaterial color="#60a5fa" />
-      </mesh>
-      <mesh position={[center.x - 0.3, 1.38, center.z - size.z / 2 + 1.2]} receiveShadow>
-        <cylinderGeometry args={[0.025, 0.025, 0.06, 8]} />
-        <meshStandardMaterial color="#1e40af" />
-      </mesh>
-
-      <RoomDecorPiece modelId="towel" color="#fbbf24">
-        <group position={[center.x - 0.6, 0.1, center.z + 1.2]} rotation={[Math.PI / 8, Math.PI / 6, Math.PI / 10]} receiveShadow>
-          <TowelFallback size={{ x: 0.45, y: 0.08, z: 0.35 }} />
-        </group>
-      </RoomDecorPiece>
-      <RoomDecorPiece modelId="towel" color="#a855f7">
-        <group position={[center.x + 0.4, 0.08, center.z + 1.5]} rotation={[-Math.PI / 10, -Math.PI / 8, -Math.PI / 12]} receiveShadow>
-          <TowelFallback size={{ x: 0.4, y: 0.07, z: 0.3 }} />
-        </group>
-      </RoomDecorPiece>
-      <RoomDecorPiece modelId="towel" color="#ec4899">
-        <group position={[center.x - 0.1, 0.06, center.z + 1.8]} rotation={[Math.PI / 12, -Math.PI / 6, Math.PI / 8]} receiveShadow>
-          <TowelFallback size={{ x: 0.5, y: 0.09, z: 0.4 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="plant" color="#22c55e">
-        <group position={[center.x + size.x / 2 - 0.8, 0, center.z - 0.5]} receiveShadow>
-          <PlantFallback size={{ x: 0.25, y: 0.6, z: 0.25 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="trash" color="#374151">
-        <group position={[center.x - size.x / 2 + 0.6, 0, center.z - 1.0]} receiveShadow>
-          <TrashFallback size={{ x: 0.3, y: 0.4, z: 0.3 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <mesh position={[center.x + 0.5, 1.2, center.z - 0.8]} castShadow receiveShadow>
-        <boxGeometry args={[0.1, 0.15, 0.15]} />
-        <meshStandardMaterial color="#f59e0b" />
-      </mesh>
-
-      <mesh position={[center.x + 0.8, 1.2, center.z - 0.8]} castShadow receiveShadow>
-        <boxGeometry args={[0.08, 0.12, 0.12]} />
-        <meshStandardMaterial color="#ef4444" />
-      </mesh>
+      {/* R2A：删除所有旧程序化家具 */}
+      {/* 旧 WashingMachineGeometry 黑色机器 → 由 GLB washer/dryer 取代 */}
+      {/* 旧 3 LaundryBasketModel 红蓝绿装饰篮 → 由 task-container cnt-white/dark/towel-basket 唯一渲染 */}
+      {/* 旧 3 CoffeeTableModel 西墙橱柜 → 遮挡三个任务篮，删除 */}
+      {/* 旧 TowelRackModel + 3 TowelFallback → 遮挡东墙通道，删除 */}
+      {/* 旧 3 散落 TowelFallback + Plant + Trash + 装饰方块 → 视觉噪声，删除 */}
     </group>
-  )
+    )
+  }
 
-  const renderDining = () => (
+  const renderDining = () => {
+    // ROUND R2A：Dining 视觉由 decorFurniture（chairs/kitchenCabinetDrawer/kitchenSink）
+    // + task containers（cnt-dining-table/cnt-dishwasher/cnt-trash-bin/cnt-utensil-rack）唯一承担。
+    // Room3D 仅保留非冲突的氛围装饰（地毯、吊灯、墙饰）。
+    const diningDecor = roomDecorFurniture.dining
+    const decorWorld = (pos: { x: number; y: number; z: number }): [number, number, number] => [
+      center.x + pos.x,
+      pos.y,
+      center.z + pos.z,
+    ]
+    return (
     <group>
       <RoomDecorPiece modelId="rug" color="#8b7355">
         <group position={[center.x, 0, center.z]} receiveShadow>
-          <RugFallback size={{ x: 4.0, y: 0.04, z: 3.0 }} />
+          <RugFallback size={{ x: 3.0, y: 0.04, z: 2.0 }} />
         </group>
       </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="cabinet" color="#6b4e3d">
-        <group position={[center.x + size.x / 2 - 0.6, 0, center.z]} castShadow receiveShadow>
-          <CoffeeTableModel size={{ x: 1.2, y: 0.85, z: 0.5 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <FallbackColorizer modelId="shelf" color="#9ca3af">
-        <group position={[center.x + size.x / 2 - 0.5, 0, center.z + 1.5]} castShadow receiveShadow>
-          <ShelfFallback size={{ x: 0.5, y: 1.0, z: 0.15 }} />
-        </group>
-      </FallbackColorizer>
-
-      <mesh position={[center.x - 0.5, 0.92, center.z - 0.25]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.06, 0.05, 0.1, 12]} />
-        <meshStandardMaterial color="#cbd5e1" roughness={0.4} metalness={0.1} />
-      </mesh>
-
-      <mesh position={[center.x + 0.5, 0.92, center.z - 0.25]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.06, 0.05, 0.1, 12]} />
-        <meshStandardMaterial color="#e0f2fe" roughness={0.4} metalness={0.1} />
-      </mesh>
-
-      <mesh position={[center.x - 0.5, 0.92, center.z + 0.25]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.06, 0.05, 0.1, 12]} />
-        <meshStandardMaterial color="#fdf2f8" roughness={0.4} metalness={0.1} />
-      </mesh>
-
-      <mesh position={[center.x + 0.5, 0.92, center.z + 0.25]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.06, 0.05, 0.1, 12]} />
-        <meshStandardMaterial color="#fef3c7" roughness={0.4} metalness={0.1} />
-      </mesh>
-
-      <mesh position={[center.x, 0.91, center.z]} rotation={[Math.PI / 12, 0, Math.PI / 8]} receiveShadow>
-        <cylinderGeometry args={[0.15, 0.15, 0.02, 16]} />
-        <meshStandardMaterial color="#fef3c7" roughness={0.5} metalness={0.05} />
-      </mesh>
-
-      <mesh position={[center.x - 0.2, 0.88, center.z]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.08, 0.08, 0.18, 8]} />
-        <meshStandardMaterial color="#f59e0b" />
-      </mesh>
-      <mesh position={[center.x + 0.2, 0.88, center.z]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.08, 0.08, 0.18, 8]} />
-        <meshStandardMaterial color="#ef4444" />
-      </mesh>
 
       <RoomDecorPiece modelId="lamp" color="#f5d49a">
         <group position={[center.x, 2.7, center.z]} castShadow receiveShadow>
@@ -843,43 +340,31 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </RoomDecorPiece>
 
-      <FallbackColorizer modelId="painting" color="#8b5a2b">
-        <group position={[center.x - size.x / 2 + 0.3, 1.2, center.z + 1.0]} rotation={[0, Math.PI, 0]} receiveShadow>
-          <PaintingFallback size={{ x: 0.7, y: 0.55, z: 0.05 }} />
-        </group>
-      </FallbackColorizer>
+      {/* 餐椅、厨房工作区、墙饰：decorFurniture 单一数据源（R2A） */}
+      {diningDecor.filter((d) => d.modelAssetId).map((d) => (
+        <RegisteredModel
+          key={d.id}
+          assetId={d.modelAssetId!}
+          position={decorWorld(d.position)}
+          rotationY={d.rotationY ?? 0}
+          fallback={
+            <FallbackColorizer modelId="cabinet" color="#6b4e3d">
+              <group position={decorWorld(d.position)} rotation={[0, d.rotationY ?? 0, 0]} castShadow receiveShadow>
+                <ChairFallback size={{ x: d.size.x, y: d.size.y, z: d.size.z }} />
+              </group>
+            </FallbackColorizer>
+          }
+        />
+      ))}
 
-      <FallbackColorizer modelId="clock" color="#d4a574">
-        <group position={[center.x + size.x / 2 - 0.3, 1.8, center.z - 1.0]} receiveShadow>
-          <ClockFallback size={{ x: 0.35, y: 0.35, z: 0.05 }} />
-        </group>
-      </FallbackColorizer>
-
-      <RoomDecorPiece modelId="plant" color="#22c55e">
-        <group position={[center.x - size.x / 2 + 0.8, 0, center.z - size.z / 2 + 0.8]} receiveShadow>
-          <PlantFallback size={{ x: 0.35, y: 0.8, z: 0.35 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <RoomDecorPiece modelId="plant" color="#15803d">
-        <group position={[center.x - size.x / 2 + 0.8, 0, center.z + size.z / 2 - 0.8]} receiveShadow>
-          <PlantFallback size={{ x: 0.3, y: 0.7, z: 0.3 }} />
-        </group>
-      </RoomDecorPiece>
-
-      <FallbackColorizer modelId="chair" color="#6b4e3d">
-        <group position={[center.x + 2.0, 0, center.z - 0.8]} castShadow receiveShadow rotation={[0, -Math.PI / 2, 0]}>
-          <ChairFallback size={{ x: 0.45, y: 0.65, z: 0.45 }} />
-        </group>
-      </FallbackColorizer>
-
-      <FallbackColorizer modelId="chair" color="#8b7355">
-        <group position={[center.x + 2.0, 0, center.z + 0.8]} castShadow receiveShadow rotation={[0, -Math.PI / 2, 0]}>
-          <ChairFallback size={{ x: 0.45, y: 0.65, z: 0.45 }} />
-        </group>
-      </FallbackColorizer>
+      {/* R2A：删除所有与 L1 无关或重复的旧程序化家具（橱柜/杯子/盘子/椅子/冰箱/炉灶/微波炉/植物/垃圾架/装饰几何） */}
+      {/* 餐桌 → cnt-dining-table (task-container, furniture/table) */}
+      {/* 垃圾桶 → cnt-trash-bin (task-container, furniture/trashcan) */}
+      {/* 洗碗机 → cnt-dishwasher (task-container, furniture/kitchenCabinetDrawer proxy) */}
+      {/* 餐具架 → cnt-utensil-rack (task-container, 程序化高辨识度) */}
     </group>
-  )
+    )
+  }
 
   switch (id) {
     case 'entrance':
