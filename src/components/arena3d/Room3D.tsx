@@ -187,18 +187,19 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </RoomDecorPiece>
 
-      <RoomDecorPiece modelId="sofa" color="#8b5a2b">
-        <group position={[center.x, 0, center.z - 1.2]} castShadow receiveShadow>
-          {shouldUseKenneyLiving() ? (
-            <RegisteredModel
-              assetId={'furniture/loungeSofa' as ModelAssetId}
-              fallback={<SofaModel size={{ x: 2.4, y: 0.9, z: 1.0 }} />}
-            />
-          ) : (
+      {shouldUseKenneyLiving() ? (
+        <RegisteredModel
+          assetId={'furniture/loungeSofa' as ModelAssetId}
+          position={[center.x, 0, center.z - 1.2]}
+          fallback={<SofaModel size={{ x: 2.4, y: 0.9, z: 1.0 }} />}
+        />
+      ) : (
+        <FallbackColorizer modelId="sofa" color="#8b5a2b">
+          <group position={[center.x, 0, center.z - 1.2]} castShadow receiveShadow>
             <SofaModel size={{ x: 2.4, y: 0.9, z: 1.0 }} />
-          )}
-        </group>
-      </RoomDecorPiece>
+          </group>
+        </FallbackColorizer>
+      )}
 
       <RoomDecorPiece modelId="pillow" color="#ff6b6b">
         <group position={[center.x - 0.9, 0.45, center.z - 1.3]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
@@ -222,18 +223,19 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </RoomDecorPiece>
 
-      <RoomDecorPiece modelId="coffee_table" color="#8b7355">
-        <group position={[center.x - 0.5, 0, center.z - 0.3]} castShadow receiveShadow>
-          {shouldUseKenneyLiving() ? (
-            <RegisteredModel
-              assetId={'furniture/tableCoffee' as ModelAssetId}
-              fallback={<CoffeeTableModel size={{ x: 1.4, y: 0.45, z: 0.7 }} />}
-            />
-          ) : (
+      {shouldUseKenneyLiving() ? (
+        <RegisteredModel
+          assetId={'furniture/tableCoffee' as ModelAssetId}
+          position={[center.x - 0.5, 0, center.z - 0.3]}
+          fallback={<CoffeeTableModel size={{ x: 1.4, y: 0.45, z: 0.7 }} />}
+        />
+      ) : (
+        <FallbackColorizer modelId="coffee_table" color="#8b7355">
+          <group position={[center.x - 0.5, 0, center.z - 0.3]} castShadow receiveShadow>
             <CoffeeTableModel size={{ x: 1.4, y: 0.45, z: 0.7 }} />
-          )}
-        </group>
-      </RoomDecorPiece>
+          </group>
+        </FallbackColorizer>
+      )}
 
       <group position={[center.x - 0.8, 0.48, center.z - 0.5]} receiveShadow>
         <mesh position={[0, 0, 0]}>
@@ -298,44 +300,49 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </FallbackColorizer>
 
-      <RoomDecorPiece modelId="cabinet" color="#4a4a4a">
-        <group position={[center.x + size.x / 2 - 1.1, 0, center.z - 1.0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
-          {shouldUseKenneyLiving() ? (
-            <RegisteredModel
-              assetId={'furniture/cabinetTelevision' as ModelAssetId}
-              fallback={<TVStandModel size={{ x: 2.2, y: 0.55, z: 0.45 }} />}
-            />
-          ) : (
+      {shouldUseKenneyLiving() ? (
+        <RegisteredModel
+          assetId={'furniture/cabinetTelevision' as ModelAssetId}
+          position={[center.x + size.x / 2 - 1.1, 0, center.z - 1.0]}
+          rotationY={-Math.PI / 2}
+          fallback={<TVStandModel size={{ x: 2.2, y: 0.55, z: 0.45 }} />}
+        />
+      ) : (
+        <FallbackColorizer modelId="cabinet" color="#4a4a4a">
+          <group position={[center.x + size.x / 2 - 1.1, 0, center.z - 1.0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
             <TVStandModel size={{ x: 2.2, y: 0.55, z: 0.45 }} />
-          )}
-        </group>
-      </RoomDecorPiece>
+          </group>
+        </FallbackColorizer>
+      )}
 
-      <FallbackColorizer modelId="tv" color="#1f2937">
-        <group position={[center.x + size.x / 2 - 1.0, 0.8, center.z - 1.0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
-          {shouldUseKenneyLiving() ? (
-            <RegisteredModel
-              assetId={'furniture/televisionModern' as ModelAssetId}
-              fallback={<TVFallback size={{ x: 1.8, y: 1.0, z: 0.15 }} />}
-            />
-          ) : (
+      {shouldUseKenneyLiving() ? (
+        <RegisteredModel
+          assetId={'furniture/televisionModern' as ModelAssetId}
+          position={[center.x + size.x / 2 - 1.0, 0.8, center.z - 1.0]}
+          rotationY={-Math.PI / 2}
+          fallback={<TVFallback size={{ x: 1.8, y: 1.0, z: 0.15 }} />}
+        />
+      ) : (
+        <FallbackColorizer modelId="tv" color="#1f2937">
+          <group position={[center.x + size.x / 2 - 1.0, 0.8, center.z - 1.0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
             <TVFallback size={{ x: 1.8, y: 1.0, z: 0.15 }} />
-          )}
-        </group>
-      </FallbackColorizer>
+          </group>
+        </FallbackColorizer>
+      )}
 
-      <FallbackColorizer modelId="bookshelf" color="#6b4423">
-        <group position={[center.x + size.x / 2 - 0.6, 0, center.z - 1.5]} castShadow receiveShadow>
-          {shouldUseKenneyLiving() ? (
-            <RegisteredModel
-              assetId={'furniture/bookcaseOpen' as ModelAssetId}
-              fallback={<BookshelfFallback size={{ x: 0.8, y: 1.8, z: 0.35 }} />}
-            />
-          ) : (
+      {shouldUseKenneyLiving() ? (
+        <RegisteredModel
+          assetId={'furniture/bookcaseOpen' as ModelAssetId}
+          position={[center.x + size.x / 2 - 0.6, 0, center.z - 1.5]}
+          fallback={<BookshelfFallback size={{ x: 0.8, y: 1.8, z: 0.35 }} />}
+        />
+      ) : (
+        <FallbackColorizer modelId="bookshelf" color="#6b4423">
+          <group position={[center.x + size.x / 2 - 0.6, 0, center.z - 1.5]} castShadow receiveShadow>
             <BookshelfFallback size={{ x: 0.8, y: 1.8, z: 0.35 }} />
-          )}
-        </group>
-      </FallbackColorizer>
+          </group>
+        </FallbackColorizer>
+      )}
 
       <FallbackColorizer modelId="shelf" color="#9ca3af">
         <group position={[center.x + size.x / 2 - 0.6, 0, center.z + 1.0]} castShadow receiveShadow>
