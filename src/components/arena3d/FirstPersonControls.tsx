@@ -213,13 +213,17 @@ export function FirstPersonControls() {
           const phase = gs.phase
           const inGame = phase === 'playing' || phase === 'briefing'
           if (inGame) {
-            // 游戏中按 ESC 直接暂停 + 释放鼠标锁定（用户选择的交互）
-            gs.setPaused(true)
+            // 两次 ESC 交互：
+            //   第一次 ESC：鼠标锁定中 → 仅释放鼠标锁定（不暂停），玩家可自由操作 UI
+            //   第二次 ESC：鼠标已释放 → 暂停游戏
             if (isMouseLockedRef.current) {
               isMouseLockedRef.current = false
               document.exitPointerLock?.()
+              addToast('info', '鼠标已释放，再按 ESC 暂停游戏')
+            } else if (!gs.isPaused) {
+              gs.setPaused(true)
+              addToast('info', '游戏已暂停')
             }
-            addToast('info', '游戏已暂停')
             break
           }
           // 非游戏阶段（probe/result/idle）ESC 只释放鼠标锁定

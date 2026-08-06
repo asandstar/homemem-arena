@@ -191,49 +191,6 @@ export function resetModelLoadStats() {
 })()
 
 /**
- * 遍历 GLTF scene，剥离所有材质的纹理引用并 dispose。
- * 原因：本项目未附带任何 GLB 外部纹理（Textures/*.png 等），
- * GLTFLoader 会在 parse 后异步调用 TextureLoader 拉取这些纹理并打印
- * console.error，进而可能触发 WebGL context 的警告/丢失。
- * 直接在 parse 完成后立即把所有 texture map 置 null 并 dispose，
- * 可以从根源避免网络请求 + 控制台报错。
- */
-function stripAllTextures(scene: THREE.Object3D) {
-  try {
-    scene.traverse((child) => {
-      try {
-        if (!(child instanceof THREE.Mesh)) return
-        const mats = Array.isArray(child.material) ? child.material : [child.material]
-        mats.forEach((mat) => {
-          try {
-            if (!mat) return
-            const matAny = mat as any
-            const textureKeys = [
-              'map', 'emissiveMap', 'normalMap', 'roughnessMap', 'metalnessMap',
-              'aoMap', 'bumpMap', 'displacementMap', 'envMap', 'lightMap',
-              'alphaMap', 'specularMap', 'clearcoatMap', 'clearcoatNormalMap',
-              'clearcoatRoughnessMap', 'transmissionMap', 'thicknessMap',
-              'sheenColorMap', 'sheenRoughnessMap', 'iridescenceMap',
-              'iridescenceThicknessMap', 'specularIntensityMap', 'specularColorMap',
-            ]
-            textureKeys.forEach((k) => {
-              const tex = matAny[k]
-              if (tex && typeof tex.dispose === 'function') {
-                try { tex.dispose() } catch { /* ignore */ }
-              }
-              matAny[k] = null
-            })
-            if (typeof (mat as any).needsUpdate === 'boolean') {
-              (mat as any).needsUpdate = true
-            }
-          } catch { /* ignore per-material */ }
-        })
-      } catch { /* ignore per-child */ }
-    })
-  } catch { /* ignore traverse */ }
-}
-
-/**
  * 判断 URL 是否是「本项目不存在的纹理请求」。
  * - 绝对/内联 URL（data/blob/http/file）放过；
  * - GLB/GLTF/BIN 二进制放过；
@@ -290,7 +247,9 @@ function loadGLTF(path: string): Promise<any> {
     return new Promise<any>((resolve, reject) => {
       try {
         loader.parse(buffer as any, '', (gltf: any) => {
-          try { if (gltf && gltf.scene) stripAllTextures(gltf.scene) } catch { /* ignore */ }
+          // 不再调用 stripAllTextures：LoadingManager.setURLModifier 已拦截外部纹理请求
+          // （返回 1x1 像素），console.error patch 已过滤 GLTFLoader 纹理错误。
+          // 移除 stripAllTextures 可保留 GLB 内嵌纹理，让模型显示真实材质而非纯色。
           resolve(gltf)
         }, reject)
       } catch (e) {

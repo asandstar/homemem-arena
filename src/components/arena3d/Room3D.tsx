@@ -115,11 +115,11 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </RoomDecorPiece>
 
-      <FallbackColorizer modelId="entray" color="#d4a574">
+      <RoomDecorPiece modelId="entrance_tray" color="#d4a574">
         <group position={[center.x - 0.4, 0, center.z - size.z / 2 + 0.7]} receiveShadow>
           <EntranceTrayFallback size={{ x: 0.5, y: 0.1, z: 0.35 }} />
         </group>
-      </FallbackColorizer>
+      </RoomDecorPiece>
 
       <RoomDecorPiece modelId="umbrella" color="#ef4444">
         <group position={[center.x + 0.8, 0.4, center.z - size.z / 2 + 0.7]} castShadow receiveShadow>
