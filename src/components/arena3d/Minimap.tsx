@@ -107,7 +107,7 @@ export function Minimap({
     // 在 room-local 坐标系中：room 中心 = currentRoomSpec.center；canvas 中心 = room center 所在位置
     // pan = -room.center * scale，这样 room.center 正好落在 (width/2, height/2)
     const panX = -currentRoomSpec.center.x * fitScale
-    const panY = currentRoomSpec.center.z * fitScale
+    const panY = -currentRoomSpec.center.z * fitScale
     return { zoom: fitScale, pan: { x: panX, y: panY } }
   }, [dimensions, currentRoomSpec])
 
@@ -225,7 +225,7 @@ export function Minimap({
 
     if (minimapFollowPlayer) {
       const targetPanX = -robotPosition.x * scale
-      const targetPanY = robotPosition.z * scale
+      const targetPanY = -robotPosition.z * scale
       smoothedPanRef.current.x += (targetPanX - smoothedPanRef.current.x) * FOLLOW_LERP
       smoothedPanRef.current.y += (targetPanY - smoothedPanRef.current.y) * FOLLOW_LERP
       offsetX = width / 2 + smoothedPanRef.current.x
@@ -247,7 +247,7 @@ export function Minimap({
         const isAdjacent = adjacentRoomIds.has(roomId as RoomId)
 
         const x = roomSpec.center.x * scale + offsetX
-        const y = -roomSpec.center.z * scale + offsetY
+        const y = roomSpec.center.z * scale + offsetY
         const w = roomSpec.size.x * scale
         const h = roomSpec.size.z * scale
 
@@ -271,12 +271,44 @@ export function Minimap({
         ctx.textBaseline = 'middle'
         ctx.fillText(roomSpec.name, x, y)
       })
+
+      // 全屏模式：绘制每个房间的门洞（绿色短线段），显示 5 房间枢纽连接关系
+      ctx.save()
+      ctx.lineCap = 'round'
+      ctx.strokeStyle = 'rgba(34, 197, 94, 0.85)'
+      ctx.lineWidth = Math.max(3, scale * 0.3)
+      for (const [roomId, roomSpec] of roomsToShow) {
+        const cx = roomSpec.center.x * scale + offsetX
+        const cy = roomSpec.center.z * scale + offsetY
+        for (const dw of roomSpec.doorways ?? []) {
+          const dwX = cx + dw.offset.x * scale
+          const dwY = cy + dw.offset.z * scale
+          const dwW = Math.max(8, dw.width * scale)
+          const roomHalfX = roomSpec.size.x * scale / 2
+          const roomHalfZ = roomSpec.size.z * scale / 2
+          const EPS = Math.max(2, scale * 0.1)
+          const offX = dw.offset.x * scale
+          const offZ = dw.offset.z * scale
+          ctx.beginPath()
+          if (Math.abs(offX + roomHalfX) < EPS || Math.abs(offX - roomHalfX) < EPS) {
+            // 东/西墙：竖向短线
+            ctx.moveTo(dwX, dwY - dwW / 2)
+            ctx.lineTo(dwX, dwY + dwW / 2)
+          } else {
+            // 南/北墙：横向短线
+            ctx.moveTo(dwX - dwW / 2, dwY)
+            ctx.lineTo(dwX + dwW / 2, dwY)
+          }
+          ctx.stroke()
+        }
+      }
+      ctx.restore()
     } else {
       // ============== 默认模式：只高亮当前房间 + 绘制门洞 ==============
       if (currentRoomSpec) {
         const room = currentRoomSpec
         const cx = room.center.x * scale + offsetX
-        const cy = -room.center.z * scale + offsetY
+        const cy = room.center.z * scale + offsetY
         const rw = room.size.x * scale
         const rh = room.size.z * scale
         const left = cx - rw / 2
@@ -297,11 +329,11 @@ export function Minimap({
 
         for (const dw of doorways) {
           const offX = dw.offset.x * scale
-          const offZ = -dw.offset.z * scale
+          const offZ = dw.offset.z * scale
           const dwCenterX = cx + offX
           const dwCenterY = cy + offZ
           const dwWidthPx = Math.max(12, dw.width * scale)
-          // 判断在哪面墙：offset.x === -size.x/2 -> 西墙；+size.x/2 -> 东墙；offset.z === -size.z/2 -> 北墙；+size.z/2 -> 南墙（注意 z 翻转）
+          // 判断在哪面墙：offset.x === -size.x/2 -> 西墙；+size.x/2 -> 东墙；offset.z === -size.z/2 -> 北墙(canvas 上)；+size.z/2 -> 南墙(canvas 下)
           const roomHalfX = room.size.x * scale / 2
           const roomHalfZ = room.size.z * scale / 2
           const EPS = Math.max(2, scale * 0.1)
@@ -438,7 +470,7 @@ export function Minimap({
         const worldX = roomSpec.center.x + Number(dec.position?.x ?? 0)
         const worldZ = roomSpec.center.z + Number(dec.position?.z ?? 0)
         const cx = worldX * scale + offsetX
-        const cy = -worldZ * scale + offsetY
+        const cy = worldZ * scale + offsetY
         const w = sx * scale
         const h = sz * scale
         ctx.save()
@@ -517,7 +549,7 @@ export function Minimap({
       const slot = memorySlots[i]
       if (!slot || !slot.outdated || !slot.position) continue
       const px = slot.position.x * scale + offsetX
-      const py = -slot.position.z * scale + offsetY
+      const py = slot.position.z * scale + offsetY
       ctx.save()
       ctx.setLineDash([4, 3])
       ctx.strokeStyle = 'rgba(239, 68, 68, 0.75)'
@@ -548,7 +580,7 @@ export function Minimap({
       if (!slot.position) continue
       if (!slot.entityConfigId) continue
       const px = slot.position.x * scale + offsetX
-      const py = -slot.position.z * scale + offsetY
+      const py = slot.position.z * scale + offsetY
       const locked = Boolean(slot.locked)
       const conf = Number(slot.confidence ?? 0.5)
       ctx.save()
@@ -599,7 +631,7 @@ export function Minimap({
     for (const list of objMap.values()) {
       const o0 = list[0]
       const px = o0.position.x * scale + offsetX
-      const py = -o0.position.z * scale + offsetY
+      const py = o0.position.z * scale + offsetY
       ctx.save()
       // 外层实心
       ctx.fillStyle = '#22c55e'
@@ -622,7 +654,7 @@ export function Minimap({
 
     // ============== 玩家位置（高对比描边 + 12~14px 方向箭头）==============
     const robotX = robotPosition.x * scale + offsetX
-    const robotY = -robotPosition.z * scale + offsetY
+    const robotY = robotPosition.z * scale + offsetY
 
     const glow = ctx.createRadialGradient(robotX, robotY, 0, robotX, robotY, 18)
     glow.addColorStop(0, 'rgba(239, 68, 68, 0.55)')

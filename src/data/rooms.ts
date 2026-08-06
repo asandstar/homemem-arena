@@ -23,11 +23,11 @@ export const sharedRooms: Record<RoomId, RoomSpec> = {
         targetPosition: { x: 1.85, y: 0, z: 0 },
       },
       {
-        offset: { x: 3.25, y: 0, z: -2.0 },
+        offset: { x: 3.25, y: 0, z: -1.1 },
         width: 1.4,
         height: 2.4,
         connectsTo: 'entrance',
-        targetPosition: { x: -0.95, y: 0, z: -0.375 },
+        targetPosition: { x: 2.25, y: 0, z: -1.1 },
       },
       {
         offset: { x: 0, y: 0, z: -2.75 },
@@ -91,11 +91,11 @@ export const sharedRooms: Record<RoomId, RoomSpec> = {
     wallColor: '#ecfdf5',
     doorways: [
       {
-        offset: { x: -1.5, y: 0, z: -0.375 },
+        offset: { x: -1.5, y: 0, z: 0.525 },
         width: 1.4,
         height: 2.4,
         connectsTo: 'living',
-        targetPosition: { x: 2.7, y: 0, z: -2.0 },
+        targetPosition: { x: 3.75, y: 0, z: -1.1 },
       },
     ],
   },
