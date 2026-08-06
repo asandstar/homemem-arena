@@ -31,10 +31,9 @@ const FOLLOW_LERP = 0.12
 const ROOM_SHORT_NAME: Record<string, string> = {
   living: '客厅',
   bedroom: '卧室',
-  kitchen: '厨房',
   entrance: '玄关',
   laundry: '洗衣房',
-  dining: '餐厅',
+  dining: '餐厨',
 }
 
 export function Minimap({
@@ -113,10 +112,12 @@ export function Minimap({
   }, [dimensions, currentRoomSpec])
 
   // 当 room 或 dimensions 变化时重置（相当于 fit）
+  // D12: 加 dimensions 有效性守卫，避免 briefing 阶段尺寸未稳定时
+  // 多次写回 UiStore 触发级联 re-render
   useEffect(() => {
     if (!currentRoomSpec) return
+    if (dimensions.width <= 0 || dimensions.height <= 0) return
     const { zoom, pan } = computeFitZoomCurrentRoom()
-    console.log('[MINIMAP EFFECT FIT] zoom=', zoom.toFixed(3), 'pan=(' + pan.x.toFixed(1) + ',' + pan.y.toFixed(1) + ') manualZoom=', manualZoomRef.current, 'dim=(' + dimensions.width.toFixed(0) + ',' + dimensions.height.toFixed(0) + ') currentRoom=', currentRoom)
     setMinimapZoom(zoom)
     setMinimapPan(pan)
     manualZoomRef.current = false
@@ -130,7 +131,6 @@ export function Minimap({
         const dpr = Math.min(window.devicePixelRatio || 1, 2)
         const newW = rect.width * dpr
         const newH = rect.height * dpr
-        console.log('[MINIMAP EFFECT SIZE] updateSize: rect=', Math.round(rect.width),'x',Math.round(rect.height), '→ newDim=', newW.toFixed(0),'x',newH.toFixed(0), 'panelPx=', panelPx.w, 'x', panelPx.h, 'isFullscreen=', isFullscreen)
         setDimensions({ width: newW, height: newH })
       }
     }
@@ -366,11 +366,34 @@ export function Minimap({
           let bx0 = mx - tw / 2
           let by0 = my - th / 2
           let align: CanvasTextAlign = 'center'
-          // 根据墙侧将文字拉到房间外，避免压在门框上
-          if (g.side === 'west') { bx0 = left - tw - 4; by0 = my - th / 2; align = 'left' }
-          else if (g.side === 'east') { bx0 = right + 4; by0 = my - th / 2; align = 'left' }
-          else if (g.side === 'north') { bx0 = mx - tw / 2; by0 = top - th - 4; align = 'center' }
-          else if (g.side === 'south') { bx0 = mx - tw / 2; by0 = bottom + 4; align = 'center' }
+          // 根据墙侧将文字拉到房间外，避免压在门框上；A1.5 非墙中心门洞（如 living 东墙南移的 entrance）
+          // 当 my 靠近顶/底（或 mx 靠近左/右）会与邻墙角的 doorway 标签撞，这里做防撞内收：
+          const margin = th + 4
+          if (g.side === 'west') {
+            bx0 = left - tw - 4
+            by0 = my - th / 2
+            align = 'left'
+            if (my < top + margin) by0 = top + margin - th / 2             // 靠近北墙 → 向南挪
+            else if (my > bottom - margin) by0 = bottom - margin - th / 2   // 靠近南墙 → 向北挪
+          } else if (g.side === 'east') {
+            bx0 = right + 4
+            by0 = my - th / 2
+            align = 'left'
+            if (my < top + margin) by0 = top + margin - th / 2
+            else if (my > bottom - margin) by0 = bottom - margin - th / 2
+          } else if (g.side === 'north') {
+            bx0 = mx - tw / 2
+            by0 = top - th - 4
+            align = 'center'
+            if (mx < left + margin) bx0 = left + margin - tw / 2            // 靠近西墙 → 向东挪
+            else if (mx > right - margin) bx0 = right - margin - tw / 2      // 靠近东墙 → 向西挪
+          } else if (g.side === 'south') {
+            bx0 = mx - tw / 2
+            by0 = bottom + 4
+            align = 'center'
+            if (mx < left + margin) bx0 = left + margin - tw / 2
+            else if (mx > right - margin) bx0 = right - margin - tw / 2
+          }
           ctx.fillStyle = 'rgba(15, 23, 42, 0.88)'
           ctx.fillRect(bx0, by0, tw, th)
           ctx.strokeStyle = 'rgba(34, 197, 94, 0.85)'
@@ -388,32 +411,60 @@ export function Minimap({
 
     // ============== F1：大号家具简化矩形（只读 decorFurniture 坐标/尺寸，不改任何值）==============
     // 视觉原则：只画 footprint >= 0.8㎡ 的大件，跳过纯墙上挂件（collisionMode==='none'）和极小装饰，避免地图过乱
-    const decorList = (roomDecorFurniture as any)[currentRoom] ?? []
-    for (const dec of decorList) {
-      if (dec.collisionMode === 'none') continue
-      const sx = Number(dec.size?.x ?? 0)
-      const sz = Number(dec.size?.z ?? 0)
-      if (sx < 0.5 || sz < 0.5) continue
-      if (sx * sz < 0.8) continue
-      const cx = Number(dec.position?.x ?? 0) * scale + offsetX
-      const cy = -Number(dec.position?.z ?? 0) * scale + offsetY
-      const w = sx * scale
-      const h = sz * scale
-      ctx.save()
-      ctx.fillStyle = 'rgba(148, 163, 184, 0.18)'
-      ctx.strokeStyle = 'rgba(148, 163, 184, 0.55)'
-      ctx.lineWidth = 1.2
-      ctx.beginPath()
-      ctx.roundRect(cx - w / 2, cy - h / 2, w, h, Math.max(2, scale * 0.25))
-      ctx.fill()
-      ctx.stroke()
-      ctx.restore()
+    // ⚠️ decorFurniture[roomId] 中的 dec.position 是**房间局部坐标**（相对于该 room center），
+    //    需 worldPos = room.center + dec.position 后再乘 scale + offset；currentRoom 容器在默认模式下 pan 抵消 center，
+    //    但全屏/跨房间时必须显式叠加各房间 center 才能画到正确位置。
+    const decorRoomsToDraw: RoomId[] = []
+    if (isFullscreen) {
+      // 全屏模式：所有 roomsToShow 都画家具（避免全是空盒子）
+      for (const [rid] of roomsToShow) decorRoomsToDraw.push(rid)
+    } else {
+      decorRoomsToDraw.push(currentRoom)
+    }
+    for (const rid of decorRoomsToDraw) {
+      const roomSpec = sharedRooms[rid]
+      if (!roomSpec) continue
+      const decorList = roomDecorFurniture[rid] ?? []
+      // 非当前房间家具降低不透明度（视觉层级：当前房间 > 其他已访问房间）
+      const isCur = rid === currentRoom
+      const alpha = isFullscreen ? (isCur ? 0.22 : 0.12) : 0.18
+      const strokeAlpha = isFullscreen ? (isCur ? 0.65 : 0.4) : 0.55
+      for (const dec of decorList) {
+        if (dec.collisionMode === 'none') continue
+        const sx = Number(dec.size?.x ?? 0)
+        const sz = Number(dec.size?.z ?? 0)
+        if (sx < 0.5 || sz < 0.5) continue
+        if (sx * sz < 0.8) continue
+        const worldX = roomSpec.center.x + Number(dec.position?.x ?? 0)
+        const worldZ = roomSpec.center.z + Number(dec.position?.z ?? 0)
+        const cx = worldX * scale + offsetX
+        const cy = -worldZ * scale + offsetY
+        const w = sx * scale
+        const h = sz * scale
+        ctx.save()
+        ctx.fillStyle = `rgba(148, 163, 184, ${alpha.toFixed(3)})`
+        ctx.strokeStyle = `rgba(148, 163, 184, ${strokeAlpha.toFixed(3)})`
+        ctx.lineWidth = isCur ? 1.2 : 0.9
+        ctx.beginPath()
+        ctx.roundRect(cx - w / 2, cy - h / 2, w, h, Math.max(2, scale * 0.25))
+        ctx.fill()
+        ctx.stroke()
+        ctx.restore()
+      }
     }
 
     // ============== F2：关键任务容器图标（只读 task.containers 的坐标/尺寸/目标区标记）==============
+    // ⚠️ task.containers 中 c.position 是**房间局部坐标**（相对于 c.room 中心），所以绘制时需要：
+    //    世界坐标 = sharedRooms[c.room].center + c.position。currentRoom 容器因为 pan 抵消了 center（见 computeFitZoom），
+    //    叠加/不叠加 看起来都对；但跨房间容器必须显式叠加，否则会被"画在 currentRoom 中心附近"。
     for (const c of roomContainers) {
-      const cx = Number(c.position?.x ?? 0) * scale + offsetX
-      const cy = -Number(c.position?.z ?? 0) * scale + offsetY
+      const roomSpec = sharedRooms[c.room as RoomId]
+      const roomCenterX = roomSpec?.center.x ?? 0
+      const roomCenterZ = roomSpec?.center.z ?? 0
+      const worldX = roomCenterX + Number(c.position?.x ?? 0)
+      const worldZ = roomCenterZ + Number(c.position?.z ?? 0)
+      const cx = worldX * scale + offsetX
+      const cy = -worldZ * scale + offsetY
       const sx = Number(c.size?.x ?? 0)
       const sz = Number(c.size?.z ?? 0)
       const w = Math.max(8, sx * scale)

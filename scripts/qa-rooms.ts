@@ -1,7 +1,7 @@
 import { sharedRooms } from '../src/data/rooms'
 import { taskTemplates } from '../src/data/tasks'
 import { pass, fail, summarize, printSummary, exitWithCode, formatTable } from './qa-shared'
-import type { QaResult, Severity } from './qa-shared'
+import type { QaResult } from './qa-shared'
 import type { RoomId, RoomSpec } from '../src/types/room'
 
 const CATEGORY = 'rooms'
@@ -12,7 +12,7 @@ function checkUniqueIds(rooms: Record<string, RoomSpec>): QaResult {
   if (ids.length === unique.size) {
     return pass(CATEGORY, 'unique-ids', `所有 ${ids.length} 个房间 ID 唯一`)
   }
-  return fail('blocker' as Severity, CATEGORY, 'unique-ids', '存在重复的房间 ID')
+  return fail('blocker', CATEGORY, 'unique-ids', '存在重复的房间 ID')
 }
 
 function checkSizeValid(rooms: Record<string, RoomSpec>): QaResult[] {
@@ -29,7 +29,9 @@ function checkSizeValid(rooms: Record<string, RoomSpec>): QaResult[] {
   return results
 }
 
-function roomsOverlap(a: RoomSpec, b: RoomSpec): boolean {
+const ROOM_EPSILON = 0.01 // 共享墙/浮点误差容差，小于该厚度不算真实重叠
+
+export function roomsOverlap(a: RoomSpec, b: RoomSpec): boolean {
   const ax1 = a.center.x - a.size.x / 2
   const ax2 = a.center.x + a.size.x / 2
   const az1 = a.center.z - a.size.z / 2
@@ -38,7 +40,10 @@ function roomsOverlap(a: RoomSpec, b: RoomSpec): boolean {
   const bx2 = b.center.x + b.size.x / 2
   const bz1 = b.center.z - b.size.z / 2
   const bz2 = b.center.z + b.size.z / 2
-  return ax1 < bx2 && ax2 > bx1 && az1 < bz2 && az2 > bz1
+  // AABB 严格重叠：交叠厚度必须 > ROOM_EPSILON 才算真实重叠
+  const xOverlap = Math.max(0, Math.min(ax2, bx2) - Math.max(ax1, bx1))
+  const zOverlap = Math.max(0, Math.min(az2, bz2) - Math.max(az1, bz1))
+  return xOverlap > ROOM_EPSILON && zOverlap > ROOM_EPSILON
 }
 
 function checkNoOverlap(rooms: Record<string, RoomSpec>): QaResult[] {
@@ -144,17 +149,16 @@ function checkLevel1Requirements(): QaResult[] {
 
 function checkLevel2Requirements(): QaResult[] {
   const results: QaResult[] = []
-  const diningLevels = taskTemplates.filter((t) =>
-    t.rooms.includes('dining' as RoomId) && t.rooms.includes('kitchen' as RoomId),
-  )
+  // A1.5 后合并 kitchen 与 dining 为一个 dining（餐厨），只要包含 dining 即视为同时有餐厨能力
+  const diningLevels = taskTemplates.filter((t) => t.rooms.includes('dining' as RoomId))
 
   if (diningLevels.length === 0) {
-    results.push(fail('critical', CATEGORY, 'dining-level', '没有同时包含餐厅+厨房的关卡'))
+    results.push(fail('critical', CATEGORY, 'dining-level', '没有包含餐厨（dining）的关卡'))
     return results
   }
 
   for (const task of diningLevels) {
-    results.push(pass(CATEGORY, 'dining-kitchen', `${task.id} 同时包含 dining 和 kitchen`))
+    results.push(pass(CATEGORY, 'dining-kitchen', `${task.id} 包含 dining（餐厨一体）`))
   }
 
   return results
@@ -220,7 +224,9 @@ function runRoomsCheck(): QaResult[] {
   return results
 }
 
-const results = runRoomsCheck()
-const summary = summarize(results)
-printSummary(summary, 'QA: Rooms Check')
-exitWithCode(summary)
+if (typeof process !== 'undefined' && process.env.VITEST !== 'true') {
+  const results = runRoomsCheck()
+  const summary = summarize(results)
+  printSummary(summary, 'QA: Rooms Check')
+  exitWithCode(summary)
+}

@@ -415,7 +415,7 @@ describe('collision - 统一碰撞系统', () => {
   describe('sharedRooms 集成测试', () => {
 
     it('所有房间门洞通行测试', () => {
-      const rooms: RoomId[] = ['living', 'bedroom', 'kitchen', 'entrance', 'dining', 'laundry']
+      const rooms: RoomId[] = ['living', 'bedroom', 'entrance', 'dining', 'laundry']
       for (const roomId of rooms) {
         const r = sharedRooms[roomId]
         for (const door of r.doorways) {
@@ -449,7 +449,7 @@ describe('collision - 统一碰撞系统', () => {
     })
 
     it('随机 1000 次移动都不会穿墙（非门洞区域）', () => {
-      const rooms: RoomId[] = ['living', 'bedroom', 'kitchen', 'entrance', 'dining', 'laundry']
+      const rooms: RoomId[] = ['living', 'bedroom', 'entrance', 'dining', 'laundry']
       let passCount = 0
 
       for (const roomId of rooms) {
@@ -500,7 +500,7 @@ describe('collision - 统一碰撞系统', () => {
           passCount++
         }
       }
-      expect(passCount).toBe(1200)
+      expect(passCount).toBe(1000)
     })
   })
 

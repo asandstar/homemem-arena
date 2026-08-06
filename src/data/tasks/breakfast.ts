@@ -7,7 +7,7 @@ import type { EntityStateSnapshot, StageContext, TaskConfig } from '../../types/
 const STAGE_ID_PREPARE_FRIDGE_CABINET = 'stage-prepare-fridge-cabinet'
 const STAGE_ID_SERVE_BREAKFAST = 'stage-serve-breakfast'
 const STAGE_ID_RETURN_MILK_CEREAL = 'stage-return-milk-cereal'
-const STAGE_ID_FINALIZE_KITCHEN = 'stage-finalize-kitchen'
+const STAGE_ID_FINALIZE = 'stage-finalize-kitchen'
 
 function entityPlacedIn(entities: EntityStateSnapshot[], configId: string, containerId: string): boolean {
   const e = entities.find((x) => x.configId === configId)
@@ -58,7 +58,7 @@ export const breakfastTask: TaskConfig = {
   description: '⏰ 深夜十一点，厨房的闹钟突然响了...早餐闹钟又被困在时间循环里了！它必须每天重复同样的早餐流程才能安心。在 120 秒内完成早餐准备和归位，帮它从循环里解脱出来吧！',
   memoryTypes: ['procedural', 'spatial', 'object', 'temporal'],
   difficulty: 'hard',
-  rooms: ['kitchen', 'dining'],
+  rooms: ['dining'],
   iconKey: 'breakfast',
   tags: ['限时挑战', '早餐闹钟', '流程陷阱', '扣分机制', '记忆大师'],
   timeLimit: 120,
@@ -86,10 +86,10 @@ export const breakfastTask: TaskConfig = {
       playerObjective: '麦片跑上层橱柜了！把牛奶回冰箱、麦片回橱柜。',
       entryCondition: (ctx: StageContext) => allFourOnTable(ctx),
       completionCondition: (ctx: StageContext) => milkReturned(ctx) && cerealReturned(ctx),
-      nextStage: STAGE_ID_FINALIZE_KITCHEN,
+      nextStage: STAGE_ID_FINALIZE,
     },
     {
-      id: STAGE_ID_FINALIZE_KITCHEN,
+      id: STAGE_ID_FINALIZE,
       playerObjective: '杯碗放洗碗机，冰箱和橱柜全部关好。',
       entryCondition: (ctx: StageContext) => milkReturned(ctx) && cerealReturned(ctx),
       completionCondition: (ctx: StageContext) => {
@@ -121,8 +121,8 @@ export const breakfastTask: TaskConfig = {
       id: 'obj-milk',
       name: '牛奶',
       category: 'milk',
-      initialRoom: 'kitchen',
-      initialPosition: { x: 2.5, y: 0.6, z: 0 },
+      initialRoom: 'dining',
+      initialPosition: { x: 1.9, y: 0.6, z: 0 },
       size: { x: 0.12, y: 0.25, z: 0.1 },
       color: '#e5e7eb',
       hiddenInContainer: 'cnt-fridge',
@@ -133,8 +133,8 @@ export const breakfastTask: TaskConfig = {
       id: 'obj-cereal',
       name: '麦片',
       category: 'cereal',
-      initialRoom: 'kitchen',
-      initialPosition: { x: 3.0, y: 0.6, z: 0 },
+      initialRoom: 'dining',
+      initialPosition: { x: 1.9, y: 0.6, z: 0.15 },
       size: { x: 0.2, y: 0.3, z: 0.1 },
       color: '#f59e0b',
       hiddenInContainer: 'cnt-cabinet-lower',
@@ -145,8 +145,8 @@ export const breakfastTask: TaskConfig = {
       id: 'obj-cup',
       name: '杯子',
       category: 'cup',
-      initialRoom: 'kitchen',
-      initialPosition: { x: 2.8, y: 0.6, z: 0.2 },
+      initialRoom: 'dining',
+      initialPosition: { x: 1.9, y: 0.6, z: -0.1 },
       size: { x: 0.1, y: 0.12, z: 0.1 },
       color: '#60a5fa',
       hiddenInContainer: 'cnt-cabinet-lower',
@@ -157,8 +157,8 @@ export const breakfastTask: TaskConfig = {
       id: 'obj-bowl',
       name: '碗',
       category: 'bowl',
-      initialRoom: 'kitchen',
-      initialPosition: { x: 2.9, y: 0.6, z: 0.4 },
+      initialRoom: 'dining',
+      initialPosition: { x: 1.9, y: 0.6, z: 0.2 },
       size: { x: 0.15, y: 0.08, z: 0.15 },
       color: '#fbbf24',
       hiddenInContainer: 'cnt-cabinet-lower',
@@ -178,12 +178,12 @@ export const breakfastTask: TaskConfig = {
   ],
 
   containers: [
-    // 厨房 - 冰箱
+    // 厨房 - 冰箱（西南角，远离东墙 laundry 门洞）
     {
       id: 'cnt-fridge',
       name: '冰箱',
-      room: 'kitchen',
-      position: { x: 2.2, y: 0.9, z: 0 },
+      room: 'dining',
+      position: { x: -2.0, y: 0.9, z: -1.8 },
       size: { x: 0.7, y: 1.8, z: 0.7 },
       surfaceHeight: 1.8,
       color: '#e5e7eb',
@@ -195,8 +195,8 @@ export const breakfastTask: TaskConfig = {
     {
       id: 'cnt-cabinet-upper',
       name: '上层橱柜',
-      room: 'kitchen',
-      position: { x: 2.3, y: 1.8, z: 0 },
+      room: 'dining',
+      position: { x: 1.9, y: 1.8, z: 0 },
       size: { x: 0.8, y: 0.5, z: 0.4 },
       surfaceHeight: 2.05,
       color: '#a16207',
@@ -208,8 +208,8 @@ export const breakfastTask: TaskConfig = {
     {
       id: 'cnt-cabinet-lower',
       name: '下层橱柜',
-      room: 'kitchen',
-      position: { x: 2.3, y: 0.6, z: 0 },
+      room: 'dining',
+      position: { x: 1.9, y: 0.6, z: 0 },
       size: { x: 0.8, y: 0.6, z: 0.4 },
       surfaceHeight: 1.2,
       color: '#a16207',
@@ -217,36 +217,36 @@ export const breakfastTask: TaskConfig = {
       acceptedCategories: ['cup', 'bowl', 'cereal'],
       containsObjectIds: ['obj-cereal', 'obj-cup', 'obj-bowl'],
     },
-    // 厨房 - 台面
+    // 厨房 - 台面（沿南墙内侧，z=-1.9 半宽 0.3 → -2.2~-1.6 ∈ [-2.25,2.25]）
     {
       id: 'cnt-kitchen-counter',
       name: '厨房台面',
-      room: 'kitchen',
-      position: { x: 2.8, y: 0.5, z: -2.0 },
+      room: 'dining',
+      position: { x: 0.8, y: 0.5, z: -1.9 },
       size: { x: 1.5, y: 0.7, z: 0.6 },
       surfaceHeight: 0.7,
       color: '#94a3b8',
       initialOpen: true,
       acceptedCategories: ['milk', 'cereal'],
     },
-    // 厨房 - 水槽
+    // 厨房 - 水槽（台面东侧紧挨）
     {
       id: 'cnt-sink',
       name: '水槽',
-      room: 'kitchen',
-      position: { x: 2.0, y: 0.45, z: -2.0 },
+      room: 'dining',
+      position: { x: 1.85, y: 0.45, z: -1.9 },
       size: { x: 0.5, y: 0.7, z: 0.5 },
       surfaceHeight: 0.72,
       color: '#9ca3af',
       initialOpen: true,
       acceptedCategories: ['cup', 'bowl'],
     },
-    // 厨房 - 洗碗机（餐具归位目标）
+    // 厨房 - 洗碗机（沿北墙内侧，z=1.9 半宽 0.3 → 1.6~2.2 ∈ [-2.25,2.25]）
     {
       id: 'cnt-dishwasher',
       name: '洗碗机',
-      room: 'kitchen',
-      position: { x: 3.0, y: 0.4, z: 2.0 },
+      room: 'dining',
+      position: { x: 1.7, y: 0.4, z: 1.9 },
       size: { x: 0.6, y: 0.8, z: 0.6 },
       surfaceHeight: 0.82,
       color: '#a3a3a3',
@@ -255,12 +255,12 @@ export const breakfastTask: TaskConfig = {
       isTargetZone: true,
       targetLabel: '洗碗机（餐具归位区）',
     },
-    // 厨房 - 垃圾桶
+    // 厨房 - 垃圾桶（北墙最东角，距洗碗机中心 0.7m，AABB 无重叠）
     {
       id: 'cnt-trash-bin',
       name: '垃圾桶',
-      room: 'kitchen',
-      position: { x: 2.5, y: 0.2, z: 2.0 },
+      room: 'dining',
+      position: { x: 2.15, y: 0.2, z: 1.1 },
       size: { x: 0.3, y: 0.4, z: 0.3 },
       surfaceHeight: 0.42,
       color: '#1f2937',
@@ -458,7 +458,7 @@ export const breakfastTask: TaskConfig = {
       trigger: (step) => step === 8,
       type: 'move-entity',
       targetId: 'obj-cereal',
-      targetPosition: { room: 'kitchen', x: 3.2, y: 1.5, z: 0 },
+      targetPosition: { room: 'dining', x: 1.9, y: 1.5, z: 0 },
       message: '⏰ 叮铃——麦片盒跑到上层橱柜去了！（早餐闹钟：放错地方了！应该在这里！）',
       description: '早餐闹钟把麦片移动到了上层橱柜',
       memoryType: 'spatial',

@@ -425,19 +425,21 @@ describe('useGameStore - 核心状态流转测试', () => {
 
   describe('房间切换', () => {
     beforeEach(() => {
-      useGameStore.getState().initializeTask('task-clean-table')
+      useGameStore.getState().initializeTask('task-leave-home')
     })
 
     it('可以切换房间', () => {
       const state = useGameStore.getState()
       const startRoom = state.currentRoom
-      state.moveToRoom('kitchen', { x: 0, y: 0, z: 0 })
-      expect(useGameStore.getState().currentRoom).toBe('kitchen')
+      // leave-home spawns in living (rooms[0]), switch to bedroom which is in rooms list
+      const targetRoom = startRoom === 'living' ? 'bedroom' : 'living'
+      state.moveToRoom(targetRoom, { x: 0, y: 0, z: 0 })
+      expect(useGameStore.getState().currentRoom).toBe(targetRoom)
       expect(useGameStore.getState().currentRoom).not.toBe(startRoom)
     })
 
     it('切换房间时位置更新', () => {
-      useGameStore.getState().moveToRoom('kitchen', { x: 1, y: 2, z: 3 })
+      useGameStore.getState().moveToRoom('entrance', { x: 1, y: 2, z: 3 })
       const pos = useGameStore.getState().robotPosition
       expect(pos.x).toBe(1)
       expect(pos.y).toBe(2)
@@ -450,10 +452,10 @@ describe('useGameStore - 核心状态流转测试', () => {
       if (!freeObj) return
 
       state.pickEntity(freeObj.id)
-      state.moveToRoom('kitchen', { x: 0, y: 0, z: 0 })
+      state.moveToRoom('dining', { x: 0, y: 0, z: 0 })
 
       const held = useGameStore.getState().entities.find(e => e.id === freeObj.id)
-      expect(held?.currentRoom).toBe('kitchen')
+      expect(held?.currentRoom).toBe('dining')
     })
   })
 

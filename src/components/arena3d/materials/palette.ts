@@ -80,11 +80,7 @@ export const PALETTE = {
       floor: '#d4c5a8',
       accent: '#ff8a65',
     },
-    kitchen: {
-      wall: '#e0f7fa',
-      floor: '#b2dfdb',
-      accent: '#26a69a',
-    },
+    // §A1.5: kitchen merged into dining — palette entry removed
     bedroom: {
       wall: '#fce4ec',
       floor: '#d4c5a8',

@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import {
-  getEntityVisualHeight,
   getEntityModelScale,
   getContainerSurfaceY,
   getObjectGroundY,
@@ -76,18 +75,6 @@ describe('placement - 压力/边界测试', () => {
     it('未知类别回退到 cup 模型高度', () => {
       const e = makeEntity({ category: 'unknown' as any })
       expect(getEntityHalfHeight(e)).toBe(MODEL_HEIGHTS.cup / 2)
-    })
-  })
-
-  describe('getEntityVisualHeight', () => {
-    it('返回模型注册表中的高度', () => {
-      const e = makeEntity({ category: 'cup' })
-      expect(getEntityVisualHeight(e)).toBe(MODEL_HEIGHTS.cup)
-    })
-
-    it('未知类别回退到 cup 模型高度', () => {
-      const e = makeEntity({ category: 'unknown' as any })
-      expect(getEntityVisualHeight(e)).toBe(MODEL_HEIGHTS.cup)
     })
   })
 
@@ -398,7 +385,7 @@ describe('placement - 压力/边界测试', () => {
     })
 
     it('不同房间 - 初始位置基于房间中心', () => {
-      const rooms: RoomId[] = ['living', 'bedroom', 'kitchen', 'entrance', 'dining', 'laundry']
+      const rooms: RoomId[] = ['living', 'bedroom', 'entrance', 'dining', 'laundry']
       for (const room of rooms) {
         const obj: ObjectSpec = {
           id: 'obj-1',

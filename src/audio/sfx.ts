@@ -406,14 +406,6 @@ export function playSfx(sfxId: SfxId, options: PlaySfxOptions = {}): void {
     .catch(() => {})
 }
 
-/**
- * @deprecated 已与 playSfx 合并为同一内部实现 playSfxInternal。
- * 保留此签名用于兼容旧调用方，语义与 playSfx 完全一致。
- */
-export function playSfxWithControl(sfxId: SfxId): void {
-  playSfxInternal(sfxId)
-}
-
 export function stopAllSfxInstances(): void {
   const ctx = audioContext
   const now = ctx?.currentTime ?? 0
@@ -662,77 +654,9 @@ export function playFootstep(speed: number): void {
 
 let roomAmbientOscillator: OscillatorNode | null = null
 let roomAmbientGain: GainNode | null = null
-let currentRoomType: string | null = null
 let roomAmbientTimer: ReturnType<typeof setTimeout> | null = null
-let isRoomAmbientStopped = false
-
-const ROOM_AMBIENT_CONFIG: Record<string, { freq: number; volume: number; type: OscillatorType }> = {
-  living: { freq: 440, volume: 0.03, type: 'sine' },
-  bedroom: { freq: 330, volume: 0.02, type: 'sine' },
-  kitchen: { freq: 523, volume: 0.04, type: 'triangle' },
-  dining: { freq: 392, volume: 0.03, type: 'sine' },
-  entrance: { freq: 440, volume: 0.025, type: 'sine' },
-  laundry: { freq: 494, volume: 0.035, type: 'triangle' },
-}
-
-/**
- * 旧版 Room Ambient（与 ambient.ts 新版重复）。
- * @deprecated 本函数保留仅为兼容旧实现，生产代码不应再调用。
- *             生产路径的 Room Ambient 应仅使用 src/audio/ambient.ts。
- *             建议逐步移除 HUD useEffect(updateRoomAmbient) 的调用。
- */
-export function updateRoomAmbient(roomId: string): void {
-  if (isRoomAmbientStopped) return
-  if (!isEnabled) return
-  try { initAudio() } catch { /* ignore */ }
-  if (!audioContext) return
-  if (currentRoomType === roomId) return
-
-  const config = ROOM_AMBIENT_CONFIG[roomId] || ROOM_AMBIENT_CONFIG.living
-
-  if (roomAmbientTimer) {
-    clearTimeout(roomAmbientTimer)
-    roomAmbientTimer = null
-  }
-
-  if (roomAmbientOscillator) {
-    const now = audioContext.currentTime
-    if (roomAmbientGain) {
-      roomAmbientGain.gain.cancelScheduledValues(now)
-      roomAmbientGain.gain.setValueAtTime(0, now)
-    }
-    roomAmbientOscillator.stop()
-    roomAmbientOscillator.disconnect()
-    roomAmbientOscillator = null
-    if (roomAmbientGain) {
-      roomAmbientGain.disconnect()
-      roomAmbientGain = null
-    }
-  }
-
-  startRoomAmbient(config)
-  currentRoomType = roomId
-}
-
-function startRoomAmbient(config: { freq: number; volume: number; type: OscillatorType }): void {
-  if (!audioContext || isRoomAmbientStopped) return
-  roomAmbientOscillator = audioContext.createOscillator()
-  roomAmbientGain = audioContext.createGain()
-
-  roomAmbientOscillator.type = config.type
-  roomAmbientOscillator.frequency.value = config.freq
-
-  roomAmbientGain.gain.value = 0
-  roomAmbientGain.gain.linearRampToValueAtTime(config.volume, audioContext.currentTime + 1)
-
-  roomAmbientOscillator.connect(roomAmbientGain)
-  roomAmbientGain.connect(audioContext.destination)
-
-  roomAmbientOscillator.start()
-}
 
 export function stopRoomAmbient(): void {
-  isRoomAmbientStopped = true
   if (roomAmbientTimer) {
     clearTimeout(roomAmbientTimer)
     roomAmbientTimer = null
@@ -759,11 +683,11 @@ export function stopRoomAmbient(): void {
     }
     roomAmbientGain = null
   }
-  currentRoomType = null
 }
 
 export function resetRoomAmbientFlag(): void {
-  isRoomAmbientStopped = false
+  // 旧版 room ambient 已停用（startRoomAmbient 已删除）；
+  // 保留函数供外部调用方（useUiStore / ArenaPage / e2eTestApi）无需改动。
 }
 
 /**

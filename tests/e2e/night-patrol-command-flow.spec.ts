@@ -104,7 +104,7 @@ test.describe('(A类) Night-Patrol Command-backed 流程验证', () => {
     await pickAndPlaceCrossRoom(
       page,
       'obj-phone',
-      'kitchen',
+      'dining',
       'bedroom',
       'cnt-patrol-nightstand',
     )
@@ -118,7 +118,7 @@ test.describe('(A类) Night-Patrol Command-backed 流程验证', () => {
       await pickAndPlaceCrossRoom(
         page,
         'obj-phone',
-        (phoneState?.currentRoom as any) ?? 'kitchen',
+        (phoneState?.currentRoom as any) ?? 'dining',
         'bedroom',
         'cnt-patrol-nightstand',
       )
@@ -134,7 +134,7 @@ test.describe('(A类) Night-Patrol Command-backed 流程验证', () => {
       page,
       'obj-bowl',
       'dining',
-      'kitchen',
+      'dining',
       'cnt-patrol-kitchen-counter',
     )
     const entsAfterBowl = await readState<
@@ -148,7 +148,7 @@ test.describe('(A类) Night-Patrol Command-backed 流程验证', () => {
         page,
         'obj-bowl',
         (bowlState?.currentRoom as any) ?? 'dining',
-        'kitchen',
+        'dining',
         'cnt-patrol-kitchen-counter',
       )
     }
@@ -238,8 +238,8 @@ test.describe('(A类) Night-Patrol Command-backed 流程验证', () => {
     // 先处理遥控器、手机、碗，消耗 step 到 >= 9（让 se-window-rattle 有机会触发）
     const dummyOps = [
       () => pickAndPlaceCrossRoom(page, 'obj-remote', 'bedroom', 'living', 'cnt-patrol-coffee-table'),
-      () => pickAndPlaceCrossRoom(page, 'obj-phone', 'kitchen', 'bedroom', 'cnt-patrol-nightstand'),
-      () => pickAndPlaceCrossRoom(page, 'obj-bowl', 'dining', 'kitchen', 'cnt-patrol-kitchen-counter'),
+      () => pickAndPlaceCrossRoom(page, 'obj-phone', 'dining', 'bedroom', 'cnt-patrol-nightstand'),
+      () => pickAndPlaceCrossRoom(page, 'obj-bowl', 'dining', 'dining', 'cnt-patrol-kitchen-counter'),
     ]
     for (const op of dummyOps) {
       await op()

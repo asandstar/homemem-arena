@@ -455,7 +455,16 @@ export function ArenaPage() {
       </Suspense>
 
       {/* HUD 覆盖层：只有 task ready + briefing 关闭后 再渲染，避免 briefing 阶段 HUD/Minimap 内部更新 UiStore → 循环
-          TODO: 修复 Minimap/UiStore 循环后改为：phase !== 'ended' && task */}
+          D12 调查结论（2026-08-06）：
+          - 非模块级循环导入，而是 render-time 写回循环：Minimap 的 fit effect
+            （Minimap.tsx ~L115-122）在 dimensions/currentRoom 变化时调用
+            setMinimapZoom/setMinimapPan 写回 UiStore，触发订阅链重渲染。
+          - briefing 阶段容器尺寸未稳定（多次 setDimensions），每次变更级联
+            effect→UiStore update→re-render，叠加其他 briefing 订阅可能触发
+            "Maximum update depth exceeded" 或 WebGL Context Lost。
+          - 已加 dimensions 有效性守卫（width/height > 0 才执行 fit）减轻级联。
+          - 完全修复需将 fit 计算改为 lazy/derived（不写回 store），属 P1 后续工作。
+          - 修复后方可将本条件改为：phase !== 'ended' && task */}
       {task && !briefingOpen && !isCalibrationMode && (
         <Suspense fallback={null}>
           <HUD />

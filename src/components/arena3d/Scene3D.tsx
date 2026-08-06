@@ -10,6 +10,7 @@ import { Container3D } from './Container3D'
 import { FirstPersonControls } from './FirstPersonControls'
 import { ChaosEffect } from './ChaosEffect'
 import { isInFieldOfView } from '../../utils/format'
+import { IS_DEV, IS_E2E } from '../../utils/env'
 import { PALETTE, ROOM_AMBIENT_COLORS } from './colors'
 import { CatPrintsEffect } from './feedback/CatPrintsEffect'
 import { CatShadowEffect } from './feedback/CatShadowEffect'
@@ -21,22 +22,18 @@ import { PixelationPass } from './effects/PixelationPass'
 import { subscribeModelLoad, type ModelLoadStats, resetModelLoadStats } from './models/ModelAsset'
 import * as THREE from 'three'
 import { AssetCalibrationView, shouldShowAssetCalibration } from '../dev/AssetCalibrationView'
+import {
+  getRenderReady,
+  setRenderReady,
+  patchRenderReady,
+  getModelStatsSnap,
+  type HommemRenderReady,
+} from '../../utils/renderDebug'
 
 // === DEV-only 就绪信号 + WebGL context 监控 ===
-interface HommemRenderReady {
-  sceneMounted: boolean
-  firstFrameRendered: boolean
-  modelTotal: number
-  modelPending: number
-  modelLoaded: number
-  modelFailed: number
-  fallbackCount: number
-  webglContextLost: boolean
-}
 function initRenderReadySignal() {
+  if (!IS_DEV || typeof window === 'undefined') return
   try {
-    const env = (import.meta as any)?.env
-    if (!env?.DEV || typeof window === 'undefined') return
     const initial: HommemRenderReady = {
       sceneMounted: false,
       firstFrameRendered: false,
@@ -48,7 +45,7 @@ function initRenderReadySignal() {
       webglContextLost: false,
     }
     // HMR 友好：如果已经存在则仅补全缺失字段，保留已经在状态中的模型统计
-    const existing = (window as any).__HOMEMEM_RENDER_READY__
+    const existing = getRenderReady()
     if (existing && typeof existing === 'object') {
       const merged: HommemRenderReady = { ...initial }
       const keys = Object.keys(initial) as (keyof HommemRenderReady)[]
@@ -58,19 +55,17 @@ function initRenderReadySignal() {
           ;(merged as any)[k] = existing[k]
         }
       }
-      ;(window as any).__HOMEMEM_RENDER_READY__ = merged
+      setRenderReady(merged)
     } else {
-      ;(window as any).__HOMEMEM_RENDER_READY__ = { ...initial }
+      setRenderReady({ ...initial })
     }
   } catch { /* ignore */ }
 }
 initRenderReadySignal()
 function setReadyPartial(patch: Partial<HommemRenderReady>) {
+  if (!IS_DEV || typeof window === 'undefined') return
   try {
-    const env = (import.meta as any)?.env
-    if (!env?.DEV || typeof window === 'undefined') return
-    const cur = (window as any).__HOMEMEM_RENDER_READY__ || {}
-    ;(window as any).__HOMEMEM_RENDER_READY__ = { ...cur, ...patch }
+    patchRenderReady(patch)
   } catch { /* ignore */ }
 }
 
@@ -83,7 +78,7 @@ function RoomLights({ rooms, currentRoom }: { rooms: typeof sharedRooms; current
   const roomLightConfig: Record<RoomId, { color: string; intensity: number; positionOffset: [number, number, number]; distance: number }> = {
     living: { color: ROOM_AMBIENT_COLORS.living, intensity: 0.5, positionOffset: [0, 2.8, 0], distance: 12 },
     bedroom: { color: ROOM_AMBIENT_COLORS.bedroom, intensity: 0.4, positionOffset: [0, 2.8, 0], distance: 10 },
-    kitchen: { color: ROOM_AMBIENT_COLORS.kitchen, intensity: 0.45, positionOffset: [0, 2.8, 0], distance: 12 },
+    // §A1.5: kitchen merged into dining — light config removed
     entrance: { color: ROOM_AMBIENT_COLORS.entrance, intensity: 0.35, positionOffset: [0, 2.5, 0], distance: 8 },
     laundry: { color: ROOM_AMBIENT_COLORS.laundry, intensity: 0.45, positionOffset: [0, 2.8, 0], distance: 15 },
     dining: { color: ROOM_AMBIENT_COLORS.dining, intensity: 0.8, positionOffset: [0, 2.8, 0], distance: 12 },
@@ -398,16 +393,7 @@ function PlayingSceneContents({ onEntityClick, onContainerClick }: Scene3DProps)
       <FirstPersonControls />
       <ChaosEffect active={chaosEffectActive} chaosValue={chaosValue} />
       <ParticleRenderer />
-      {!(
-        (() => {
-          try {
-            const env = (import.meta as any)?.env
-            return env?.MODE === 'e2e' || String(env?.VITE_E2E ?? '') === 'true'
-          } catch {
-            return false
-          }
-        })()
-      ) && <PixelationPass pixelSize={4} />}
+      {!IS_E2E && <PixelationPass pixelSize={4} />}
       <FirstFrameTracker />
     </>
   )
@@ -448,8 +434,7 @@ function FirstFrameTracker() {
       lostDebounceRef.current = null
     }
     try {
-      const env = (import.meta as any)?.env
-      if (env?.DEV) {
+      if (IS_DEV) {
         // mount 时仅重置 webglContextLost，不重置 sceneMounted/firstFrameRendered
         // 因为 BriefingScene → PlayingSceneContents 切换（同 Canvas 内 FirstFrameTracker 实例替换）
         // 时，如果在 BriefingScene cleanup 里先写 false，再由新 useFrame 设为 true 过程中存在窗口；
@@ -474,12 +459,7 @@ function FirstFrameTracker() {
 
   // 1. WebGL context 事件监控（挂在 canvas 元素上，useEffect 异步，不阻塞首帧）
   useEffect(() => {
-    let isDev = false
-    try {
-      const env = (import.meta as any)?.env
-      isDev = !!env?.DEV
-    } catch { /* ignore */ }
-    if (!isDev) return
+    if (!IS_DEV) return
     const canvas = gl.domElement as HTMLCanvasElement
     if (!canvas) return
 
@@ -515,8 +495,7 @@ function FirstFrameTracker() {
       sceneMountedFiredRef.current = false
       firstFrameFiredRef.current = false
       try {
-        const env2 = (import.meta as any)?.env
-        if (env2?.DEV) {
+        if (IS_DEV) {
           // 乐观标记 sceneMounted=true，避免 useFrame 下一次触发前有 1-2 帧窗口错过就绪检查
           setReadyPartial({ webglContextLost: false, sceneMounted: true })
         }
@@ -554,12 +533,7 @@ function FirstFrameTracker() {
 
   // 2. 模型加载统计订阅 → 写入 ready signal
   useEffect(() => {
-    let isDev = false
-    try {
-      const env = (import.meta as any)?.env
-      isDev = !!env?.DEV
-    } catch { /* ignore */ }
-    if (!isDev) return
+    if (!IS_DEV) return
     const unsub = subscribeModelLoad((s) => {
       statsRef.current = s
       setReadyPartial({
@@ -570,7 +544,7 @@ function FirstFrameTracker() {
       })
     })
     try {
-      const init = (window as any).__HOMEMEM_MODEL_STATS_SNAP__
+      const init = getModelStatsSnap()
       if (init) {
         setReadyPartial({
           modelTotal: init.total || 0,
@@ -740,9 +714,6 @@ function ModelLoadProgressHud() {
     return () => clearTimeout(t)
   }, [settled])
 
-  const IS_DEV = (() => {
-    try { return !!((import.meta as any)?.env?.DEV) } catch { return false }
-  })()
   const hasProgress = stats.total > 0
   const stillLoading = stats.inflight > 0 || stats.failed > 0
   const shouldShow = forceShown || (hasProgress && (stillLoading || IS_DEV))

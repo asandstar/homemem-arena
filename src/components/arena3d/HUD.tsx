@@ -134,11 +134,13 @@ export function HUD() {
     }
   }, [])
 
-  // ---------- F 子包：当前房间容器（不改坐标，仅筛选透传） ----------
+  // ---------- F 子包：任务房间容器（不改坐标，仅筛选透传；全屏模式下其他任务房间容器也会画出来
+  // 坐标/尺寸都是房间局部坐标，Minimap 里会按 c.room 叠加对应房间中心得到世界坐标）----------
   const roomContainersForMinimap: ContainerSpec[] = useMemo(() => {
     if (!task?.containers) return []
-    return task.containers.filter((c: ContainerSpec) => c.room === currentRoom)
-  }, [task?.containers, currentRoom])
+    const rooms = new Set(task.rooms)
+    return task.containers.filter((c: ContainerSpec) => rooms.has(c.room))
+  }, [task?.containers, task?.rooms])
 
   useEffect(() => {
     const checkCompact = () => {

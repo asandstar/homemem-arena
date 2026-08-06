@@ -399,7 +399,7 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
     </group>
   )
 
-  const renderKitchen = () => (
+  const renderDiningKitchen = () => (
     <group>
       <RoomDecorPiece modelId="rug" color="#7a7a7a">
         <group position={[center.x, 0, center.z - 0.5]} receiveShadow>
@@ -917,14 +917,18 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
       return renderEntrance()
     case 'living':
       return renderLiving()
-    case 'kitchen':
-      return renderKitchen()
     case 'bedroom':
       return renderBedroom()
     case 'laundry':
       return renderLaundry()
     case 'dining':
-      return renderDining()
+      // §A1.5: kitchen merged into dining — render both dining and kitchen visual elements
+      return (
+        <group>
+          {renderDining()}
+          {renderDiningKitchen()}
+        </group>
+      )
     default:
       return null
   }

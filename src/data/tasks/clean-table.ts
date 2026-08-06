@@ -24,7 +24,7 @@ export const cleanTableTask: TaskConfig = {
   iconKey: 'dish',
   tags: ['新手入门', '教学关卡'],
   timeLimit: 180,
-  spawnPosition: { x: 0, z: -2.5 },
+  spawnPosition: { x: 0, z: -2.0 },
   spawnRotation: Math.PI,
   initialStageId: STAGE_ID_OBSERVE_TABLE,
 
@@ -130,7 +130,7 @@ MEM-07：「你好，我是 MEM-07。我的记忆模块出了故障，只能同�
       id: 'cnt-dishwasher',
       name: '洗碗机',
       room: 'dining',
-      position: { x: 2.0, y: 0.4, z: 0 },
+      position: { x: 1.8, y: 0.4, z: 1.8 }, // 北墙，远离东墙门洞（东墙门洞 z∈[-0.95, 0.45]）
       size: { x: 0.6, y: 0.8, z: 0.6 },
       surfaceHeight: 0.82,
       color: '#a3a3a3',
@@ -143,7 +143,7 @@ MEM-07：「你好，我是 MEM-07。我的记忆模块出了故障，只能同�
       id: 'cnt-trash-bin',
       name: '垃圾桶',
       room: 'dining',
-      position: { x: -2.0, y: 0.2, z: 0 },
+      position: { x: 2.1, y: 0.2, z: 1.1 }, // 东北角，远离门洞
       size: { x: 0.3, y: 0.4, z: 0.3 },
       surfaceHeight: 0.42,
       color: '#1f2937',
@@ -156,7 +156,7 @@ MEM-07：「你好，我是 MEM-07。我的记忆模块出了故障，只能同�
       id: 'cnt-utensil-rack',
       name: '餐具架',
       room: 'dining',
-      position: { x: -1.5, y: 0.4, z: 0 },
+      position: { x: -1.2, y: 0.4, z: 1.0 }, // 北墙西段
       size: { x: 0.4, y: 0.6, z: 0.3 },
       surfaceHeight: 0.62,
       color: '#f59e0b',

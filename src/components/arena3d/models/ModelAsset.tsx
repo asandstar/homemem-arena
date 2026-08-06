@@ -6,16 +6,11 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MODEL_REGISTRY, getModelConfig } from './ModelRegistry'
 import { MATERIAL_CONFIG, PALETTE } from '../colors'
 import { resolveAssetUrl } from './resolveAssetUrl'
+import { IS_DEV, BASE_URL } from '../../../utils/env'
+import { defineModelStatsGetter, setModelStatsSnap } from '../../../utils/renderDebug'
 
 // === 缓存（B2：缓存治理，key 包含 BASE_URL，避免 basename 污染；FIFO 限制 <=50 条目） ===
-const CACHE_KEY_PREFIX: string = (() => {
-  try {
-    const base = String((import.meta as any).env?.BASE_URL || '/')
-    return `cache::${base}::`
-  } catch {
-    return 'cache::/::'
-  }
-})();
+const CACHE_KEY_PREFIX: string = `cache::${BASE_URL}::`
 
 const MODEL_TEXTURE_CACHE = new Map<string, Promise<any>>()
 const MODEL_CACHE_FIFO_KEYS: string[] = []
@@ -38,9 +33,6 @@ function evictCacheIfNeeded() {
 // === 失败可观测（A1：防抖 30s，只在 DEV 打 warn；PROD 不污染用户控制台） ===
 const WARN_COOLDOWN_MS = 30_000
 const lastWarnAtByPath = new Map<string, number>()
-// 加 try/catch 守卫：避免 SyntaxError: Cannot use 'import.meta' outside a module
-let IS_DEV = false
-try { IS_DEV = !!(import.meta as any)?.env?.DEV } catch { /* ignore */ }
 
 function _rateLimitedWarn(modelId: string, path: string, message: string, err?: unknown) {
   const now = Date.now()
@@ -150,19 +142,14 @@ export function resetModelLoadStats() {
 
 // === 暴露到 window（DEV-only，供就绪信号/浏览器调试读取） ===
 ;(function EXPOSE_MODEL_STATS_TO_WINDOW() {
+  if (!IS_DEV || typeof window === 'undefined') return
   try {
-    const env = (import.meta as any)?.env
-    if (!env?.DEV || typeof window === 'undefined') return
     const snap = () => cloneStats()
-    Object.defineProperty(window, '__HOMEMEM_MODEL_STATS__', {
-      configurable: true,
-      enumerable: true,
-      get: snap,
-    })
+    defineModelStatsGetter(snap)
     // 同时订阅变化时更新一个简单副本（便于直接 JSON.stringify）
-    ;(window as any).__HOMEMEM_MODEL_STATS_SNAP__ = snap()
+    setModelStatsSnap({ ...snap(), failedIds: snap().failedIds.slice() })
     subscribeModelLoad((s) => {
-      ;(window as any).__HOMEMEM_MODEL_STATS_SNAP__ = { ...s, failedIds: s.failedIds.slice() }
+      setModelStatsSnap({ ...s, failedIds: s.failedIds.slice() })
     })
   } catch { /* ignore */ }
 })();

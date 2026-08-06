@@ -206,7 +206,7 @@ describe('playerMovement - 压力/边界测试', () => {
     })
 
     it('所有房间 - 随机 1000 次移动都不会穿墙', () => {
-      const rooms: RoomId[] = ['living', 'bedroom', 'kitchen', 'entrance', 'dining', 'laundry']
+      const rooms: RoomId[] = ['living', 'bedroom', 'entrance', 'dining', 'laundry']
       let passCount = 0
 
       for (const room of rooms) {
@@ -225,7 +225,7 @@ describe('playerMovement - 压力/边界测试', () => {
           }
 
           const result = resolveRoomCollision(pos, desired, room, PLAYER_RADIUS, [
-            'living', 'bedroom', 'kitchen', 'entrance', 'dining', 'laundry',
+            'living', 'bedroom', 'entrance', 'dining', 'laundry',
           ])
 
           const localX = result.x - r.center.x
@@ -262,7 +262,7 @@ describe('playerMovement - 压力/边界测试', () => {
           passCount++
         }
       }
-      expect(passCount).toBe(1200)
+      expect(passCount).toBe(1000)
     })
 
     it('allowedRoomIds 限制 - 不可达房间的门洞应该被挡住', () => {
@@ -278,7 +278,7 @@ describe('playerMovement - 压力/边界测试', () => {
         y: 1.6,
         z: r.center.z,
       }
-      const result = resolveRoomCollision(pos, desired, room, PLAYER_RADIUS, ['dining', 'kitchen'])
+      const result = resolveRoomCollision(pos, desired, room, PLAYER_RADIUS, ['dining'])
       const localX = result.x - r.center.x
       expect(localX).toBeLessThanOrEqual(r.size.x / 2 - PLAYER_RADIUS + 0.05)
     })
@@ -320,7 +320,7 @@ describe('playerMovement - 压力/边界测试', () => {
         z: r.center.z,
       }
       const result = checkDoorwayTransition(doorPos, 'living', Date.now() + 10000, [
-        'living', 'kitchen',
+        'living', 'entrance',
       ])
       expect(result).toBeNull()
     })
@@ -328,13 +328,11 @@ describe('playerMovement - 压力/边界测试', () => {
     it('所有房间 - 靠近门洞外侧时触发切换', () => {
       const testCases: { from: RoomId; to: RoomId; doorIndex: number }[] = [
         { from: 'living', to: 'bedroom', doorIndex: 0 },
-        { from: 'living', to: 'kitchen', doorIndex: 1 },
-        { from: 'living', to: 'entrance', doorIndex: 2 },
+        { from: 'living', to: 'entrance', doorIndex: 1 },
+        { from: 'living', to: 'dining', doorIndex: 2 },
         { from: 'bedroom', to: 'living', doorIndex: 0 },
-        { from: 'kitchen', to: 'living', doorIndex: 0 },
-        { from: 'kitchen', to: 'dining', doorIndex: 1 },
         { from: 'entrance', to: 'living', doorIndex: 0 },
-        { from: 'dining', to: 'kitchen', doorIndex: 0 },
+        { from: 'dining', to: 'living', doorIndex: 0 },
         { from: 'dining', to: 'laundry', doorIndex: 1 },
         { from: 'laundry', to: 'dining', doorIndex: 0 },
       ]
@@ -369,22 +367,27 @@ describe('playerMovement - 压力/边界测试', () => {
         y: 1.6,
         z: r.center.z + door.offset.z,
       }
-      const result = checkDoorwayTransition(pos, 'dining', 0, ['dining', 'kitchen'])
+      const result = checkDoorwayTransition(pos, 'dining', 0, ['dining'])
       expect(result).toBeNull()
     })
 
     it('切换后的目标位置在目标房间内', () => {
       const r = sharedRooms['living']
-      const door = r.doorways[1]
+      const door = r.doorways[2] // living→dining, Z-directional south wall (dx=0, dz=-2.75)
+      const isXWall = Math.abs(door.offset.x) > Math.abs(door.offset.z)
       const pos: Vec3 = {
-        x: r.center.x + door.offset.x + Math.sign(door.offset.x) * PLAYER_RADIUS * 0.8,
+        x: isXWall
+          ? r.center.x + door.offset.x + Math.sign(door.offset.x) * PLAYER_RADIUS * 0.8
+          : r.center.x + door.offset.x,
         y: 1.6,
-        z: r.center.z + door.offset.z,
+        z: isXWall
+          ? r.center.z + door.offset.z
+          : r.center.z + door.offset.z + Math.sign(door.offset.z) * PLAYER_RADIUS * 0.8,
       }
-      const result = checkDoorwayTransition(pos, 'living', 0, ['living', 'kitchen'])
+      const result = checkDoorwayTransition(pos, 'living', 0, ['living', 'dining'])
       expect(result).not.toBeNull()
       const target = result!.targetPosition
-      const tr = sharedRooms['kitchen']
+      const tr = sharedRooms['dining']
       expect(Math.abs(target.x - tr.center.x)).toBeLessThan(tr.size.x / 2)
       expect(Math.abs(target.z - tr.center.z)).toBeLessThan(tr.size.z / 2)
     })

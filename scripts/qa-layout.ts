@@ -69,11 +69,22 @@ export function boxesOverlap2D(
   )
 }
 
-function doorwayBoxes(roomId: RoomId, clearanceHalfThickness = 0.3) {
+export function doorwayBoxes(roomId: RoomId, clearanceHalfThickness = 0.3) {
   const room = sharedRooms[roomId]
   return room.doorways.map((door) => {
     const c = door.offset
     const width = door.width
+    const isXWall = Math.abs(c.x) > Math.abs(c.z) // 东/西墙门洞（沿 Z 方向排列宽度）
+    if (isXWall) {
+      // 宽度沿 Z 轴展开，厚度沿 X 轴
+      return {
+        x1: c.x - clearanceHalfThickness,
+        x2: c.x + clearanceHalfThickness,
+        z1: c.z - width / 2,
+        z2: c.z + width / 2,
+      }
+    }
+    // 北/南墙门洞（沿 X 方向排列宽度）
     return {
       x1: c.x - width / 2,
       x2: c.x + width / 2,

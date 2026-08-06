@@ -57,7 +57,7 @@ test.describe('(A类) Breakfast Command-backed 流程验证', () => {
   async function pickFromRoom(
     page: import('@playwright/test').Page,
     objId: string,
-    room: 'kitchen' | 'dining',
+    room: 'dining' | 'dining',
   ) {
     void (await callCommand(page, 'releaseHeldEntity'))
     await advanceStageTransitions(page, 1)
@@ -81,7 +81,7 @@ test.describe('(A类) Breakfast Command-backed 流程验证', () => {
 
     // ===== 第一阶段：开冰箱 → 取牛奶 =====
     await openContainer(page, 'cnt-fridge')
-    await pickFromRoom(page, 'obj-milk', 'kitchen')
+    await pickFromRoom(page, 'obj-milk', 'dining')
 
     const milkAfterPick = await readState<
       Array<{ configId?: string; status?: string; placedIn?: string }>
@@ -98,31 +98,31 @@ test.describe('(A类) Breakfast Command-backed 流程验证', () => {
     await advanceStageTransitions(page, 2)
 
     // 取麦片 → 放台面（acceptedCategories 含 cereal）
-    await pickFromRoom(page, 'obj-cereal', 'kitchen')
+    await pickFromRoom(page, 'obj-cereal', 'dining')
     void (await placeIntoContainerStable(page, 'cnt-kitchen-counter'))
     await advanceStageTransitions(page, 2)
 
     // 取碗 → 不放置（台面不接受 bowl 类），直接释放为 kitchen 房间 free
-    await pickFromRoom(page, 'obj-bowl', 'kitchen')
+    await pickFromRoom(page, 'obj-bowl', 'dining')
     void (await callCommand(page, 'releaseHeldEntity'))
     await advanceStageTransitions(page, 2)
 
     // 取杯子 → 不放置（台面不接受 cup 类），直接释放为 kitchen 房间 free
-    await pickFromRoom(page, 'obj-cup', 'kitchen')
+    await pickFromRoom(page, 'obj-cup', 'dining')
     void (await callCommand(page, 'releaseHeldEntity'))
     await advanceStageTransitions(page, 2)
 
     // ===== 放餐桌（顺序宽松：牛奶→麦片→碗→杯子，允许顺序不同） =====
     const diningPlaceOrder = ['obj-milk', 'obj-cereal', 'obj-bowl', 'obj-cup']
     for (const id of diningPlaceOrder) {
-      await pickFromRoom(page, id, 'kitchen')
+      await pickFromRoom(page, id, 'dining')
       // 转到 dining 房间放餐桌
       void (await callCommand(page, 'transitionToRoom', 'dining'))
       await advanceStageTransitions(page, 2)
       const placeDining = await placeIntoContainerStable(page, 'cnt-dining-table')
       void placeDining
       await advanceStageTransitions(page, 2)
-      void (await callCommand(page, 'transitionToRoom', 'kitchen'))
+      void (await callCommand(page, 'transitionToRoom', 'dining'))
       await advanceStageTransitions(page, 2)
     }
 
@@ -134,9 +134,9 @@ test.describe('(A类) Breakfast Command-backed 流程验证', () => {
       const e = entitiesAfterDining.find((x) => x.configId === id)
       if (e?.placedIn !== 'cnt-dining-table') {
         // 宽松兜底：重新 pick+place 一次
-        void (await callCommand(page, 'transitionToRoom', e?.currentRoom === 'dining' ? 'dining' : 'kitchen'))
+        void (await callCommand(page, 'transitionToRoom', e?.currentRoom === 'dining' ? 'dining' : 'dining'))
         await advanceStageTransitions(page, 2)
-        await pickFromRoom(page, id, (e?.currentRoom as any) ?? 'kitchen')
+        await pickFromRoom(page, id, (e?.currentRoom as any) ?? 'dining')
         void (await callCommand(page, 'transitionToRoom', 'dining'))
         await advanceStageTransitions(page, 2)
         const placeRetry = await placeIntoContainerStable(page, 'cnt-dining-table')
@@ -170,7 +170,7 @@ test.describe('(A类) Breakfast Command-backed 流程验证', () => {
     void (await callCommand(page, 'transitionToRoom', 'dining'))
     await advanceStageTransitions(page, 2)
     await pickFromRoom(page, 'obj-milk', 'dining')
-    void (await callCommand(page, 'transitionToRoom', 'kitchen'))
+    void (await callCommand(page, 'transitionToRoom', 'dining'))
     await advanceStageTransitions(page, 2)
     await openContainer(page, 'cnt-fridge')
     const placeFridge = await placeIntoContainerStable(page, 'cnt-fridge')
@@ -184,7 +184,7 @@ test.describe('(A类) Breakfast Command-backed 流程验证', () => {
     void (await callCommand(page, 'transitionToRoom', 'dining'))
     await advanceStageTransitions(page, 2)
     await pickFromRoom(page, 'obj-cereal', 'dining')
-    void (await callCommand(page, 'transitionToRoom', 'kitchen'))
+    void (await callCommand(page, 'transitionToRoom', 'dining'))
     await advanceStageTransitions(page, 2)
     // 先用上层橱柜（宽松：下层也可）
     await openContainer(page, 'cnt-cabinet-upper')
@@ -208,7 +208,7 @@ test.describe('(A类) Breakfast Command-backed 流程验证', () => {
       void (await callCommand(page, 'transitionToRoom', 'dining'))
       await advanceStageTransitions(page, 2)
       await pickFromRoom(page, id, 'dining')
-      void (await callCommand(page, 'transitionToRoom', 'kitchen'))
+      void (await callCommand(page, 'transitionToRoom', 'dining'))
       await advanceStageTransitions(page, 2)
       const placeDishwasher = await placeIntoContainerStable(page, 'cnt-dishwasher')
       void placeDishwasher
@@ -307,7 +307,7 @@ test.describe('(A类) Breakfast Command-backed 流程验证', () => {
 
     // 先把牛奶取出来放在外面（不回冰箱）
     await openContainer(page, 'cnt-fridge')
-    await pickFromRoom(page, 'obj-milk', 'kitchen')
+    await pickFromRoom(page, 'obj-milk', 'dining')
     void (await placeIntoContainerStable(page, 'cnt-kitchen-counter'))
     await advanceStageTransitions(page, 2)
 
@@ -321,7 +321,7 @@ test.describe('(A类) Breakfast Command-backed 流程验证', () => {
       await advanceStageTransitions(page, 2)
       void (await callCommand(page, 'transitionToRoom', 'dining'))
       await advanceStageTransitions(page, 2)
-      void (await callCommand(page, 'transitionToRoom', 'kitchen'))
+      void (await callCommand(page, 'transitionToRoom', 'dining'))
       await advanceStageTransitions(page, 2)
       stepNow = await readState<number>(page, 'getStepCount')
       safety += 1
@@ -359,7 +359,7 @@ test.describe('(A类) Breakfast Command-backed 流程验证', () => {
 
     // 开下层橱柜取麦片，把 step 推到 >= 8
     await openContainer(page, 'cnt-cabinet-lower')
-    await pickFromRoom(page, 'obj-cereal', 'kitchen')
+    await pickFromRoom(page, 'obj-cereal', 'dining')
     void (await placeIntoContainerStable(page, 'cnt-kitchen-counter'))
     await advanceStageTransitions(page, 2)
 
@@ -369,7 +369,7 @@ test.describe('(A类) Breakfast Command-backed 流程验证', () => {
     while (stepNow < 9 && safety < 20) {
       void (await callCommand(page, 'transitionToRoom', 'dining'))
       await advanceStageTransitions(page, 2)
-      void (await callCommand(page, 'transitionToRoom', 'kitchen'))
+      void (await callCommand(page, 'transitionToRoom', 'dining'))
       await advanceStageTransitions(page, 2)
       void (await callCommand(page, 'toggleContainer', 'cnt-cabinet-upper'))
       await advanceStageTransitions(page, 2)
@@ -393,12 +393,12 @@ test.describe('(A类) Breakfast Command-backed 流程验证', () => {
 
     // 麦片应该已经被事件移动到上层橱柜位置 (kitchen, x=3.2, y=1.5, z=0)
     // callNearbyEntityCommand 会自动找当前位置并移动玩家过去 pick
-    const pickCerealUpper = await callNearbyEntityCommand(page, 'pickByConfigId', 'obj-cereal', 'kitchen')
+    const pickCerealUpper = await callNearbyEntityCommand(page, 'pickByConfigId', 'obj-cereal', 'dining')
     if (!pickCerealUpper.success) {
       // 兜底：如果在下层橱柜位置（事件没触发），也去那里 pick
       void (await callCommand(page, 'releaseHeldEntity'))
       await advanceStageTransitions(page, 1)
-      void (await callNearbyEntityCommand(page, 'pickByConfigId', 'obj-cereal', 'kitchen'))
+      void (await callNearbyEntityCommand(page, 'pickByConfigId', 'obj-cereal', 'dining'))
     }
 
     // 断言：手里拿着麦片（或麦片在 free 状态至少 pick 命令执行过）

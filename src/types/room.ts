@@ -2,7 +2,7 @@
 // 单位：米
 // Y 轴向上，X-Z 平面为地面
 
-export type RoomId = 'living' | 'kitchen' | 'bedroom' | 'entrance' | 'laundry' | 'dining'
+export type RoomId = 'living' | 'bedroom' | 'entrance' | 'laundry' | 'dining'
 
 export interface Vec3 {
   x: number
@@ -30,7 +30,7 @@ export interface RoomSpec {
 export interface DoorwaySpec {
   /** 门中心位置 (相对房间中心) */
   offset: Vec3
-  /** 门宽 (X 方向) */
+  /** 门宽（沿墙方向展开：X 墙→Z 轴，Z 墙→X 轴；判定依据 |offset.x| vs |offset.z|） */
   width: number
   /** 门高 (Y 方向) */
   height: number

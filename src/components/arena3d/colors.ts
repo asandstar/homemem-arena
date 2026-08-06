@@ -94,7 +94,7 @@ export const CATEGORY_MATERIAL_MAP: Record<string, keyof typeof MATERIAL_CONFIG>
 export const ROOM_AMBIENT_COLORS: Record<string, string> = {
   living: '#ffecd2',
   bedroom: '#fce7f3',
-  kitchen: '#e0f7fa',
+  // §A1.5: kitchen merged into dining
   entrance: '#d1fae5',
   laundry: '#e0e7ff',
   dining: '#fef3c7',

@@ -78,14 +78,7 @@ const ROOM_AMBIENT: Record<string, AmbientConfig> = {
     modulationDepth: 20,
     noiseVolume: 0.03,
   },
-  kitchen: {
-    frequency: 200,
-    volume: 0.1,
-    waveType: 'sine',
-    modulationFrequency: 0.3,
-    modulationDepth: 25,
-    noiseVolume: 0.04,
-  },
+  // §A1.5: kitchen merged into dining — kitchen ambient config removed
   entrance: {
     frequency: 90,
     volume: 0.05,

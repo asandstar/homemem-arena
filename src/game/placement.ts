@@ -52,11 +52,6 @@ export function getEntityHalfHeight(entity: EntityState): number {
   return getModelApproxHeight(modelId) / 2
 }
 
-/** @deprecated Use getEntityHalfHeight instead */
-export function getEntityVisualHeight(entity: EntityState): number {
-  return getModelApproxHeight(getModelIdFromEntity(entity))
-}
-
 /** 模型缩放比例：对应 PropModel 中的 modelScale */
 export function getEntityModelScale(entity: EntityState): number {
   const size = entity.size
