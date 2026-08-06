@@ -188,11 +188,12 @@ export const MODEL_OVERRIDES: ModelOverrideMap = {
     status: 'provisional',
   },
   // target: 高 0.5–0.9m；rawAabb=(0.496,0.906,0.44) → ry 已符合，仅略收紧
+  // L3 Laundry: 用作衣物篮的临时替代，等比放大至 0.8m 宽
   'furniture/trashcan': {
-    uniformScale: 0.95,
-    pivotOffset: { x: 0.011494, y: 0, z: 0 },
-    effectiveAabb: { x: 0.471, y: 0.861, z: 0.418 },
-    collisionSize: { x: 0.44, y: 0.861, z: 0.4 },
+    uniformScale: 1.65,
+    pivotOffset: { x: 0.01996, y: 0, z: 0 },
+    effectiveAabb: { x: 0.779, y: 1.427, z: 0.726 },
+    collisionSize: { x: 0.74, y: 1.42, z: 0.7 },
     floorAligned: true,
     status: 'provisional',
   },
@@ -267,19 +268,48 @@ export const MODEL_OVERRIDES: ModelOverrideMap = {
 
   // —— 辅助视觉 ——
   // pillow  rawAabb=(0.23,0.222,0.088)
+  // L3 Laundry: 用作衣物/毛巾的临时替代，等比放大至 0.5-0.6m 宽
   'furniture/pillow': {
-    uniformScale: 1.6,
-    pivotOffset: { x: -0.115, y: 0, z: 0.044242 },
-    effectiveAabb: { x: 0.368, y: 0.355, z: 0.142 },
+    uniformScale: 2.2,
+    pivotOffset: { x: -0.253, y: 0, z: 0.097 },
+    effectiveAabb: { x: 0.506, y: 0.489, z: 0.313 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // bear rawAabb=(0.389711,0.45,0.2475) 玩具熊，目标高度 ~0.36m（手持级别）
+  'furniture/bear': {
+    uniformScale: 0.8,
+    pivotOffset: { x: 0, y: 0, z: 0 },
+    effectiveAabb: { x: 0.312, y: 0.36, z: 0.198 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // pillowBlue rawAabb=(0.23,0.128512,0.06339) 蓝色枕头，参照 pillow 沿用 scale=2.2
+  'furniture/pillowBlue': {
+    uniformScale: 2.2,
+    pivotOffset: { x: 0, y: 0, z: 0 },
+    effectiveAabb: { x: 0.506, y: 0.283, z: 0.139 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // pillowLong rawAabb=(0.386576,0.222163,0.088484) 长条枕，目标长度 ~0.5m
+  'furniture/pillowLong': {
+    uniformScale: 1.3,
+    pivotOffset: { x: 0, y: 0, z: 0 },
+    effectiveAabb: { x: 0.503, y: 0.289, z: 0.115 },
     collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
     floorAligned: true,
     status: 'provisional',
   },
   // books rawAabb=(0.15,0.104,0.095)
+  // L3 Laundry: 用作袜子/小件物品的临时替代，保持小巧
   'furniture/books': {
-    uniformScale: 1.6,
-    pivotOffset: { x: -0.075224, y: 0, z: 0.04725 },
-    effectiveAabb: { x: 0.241, y: 0.166, z: 0.151 },
+    uniformScale: 1.2,
+    pivotOffset: { x: -0.09, y: 0, z: 0.057 },
+    effectiveAabb: { x: 0.181, y: 0.125, z: 0.181 },
     collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
     floorAligned: true,
     status: 'provisional',
