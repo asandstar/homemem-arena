@@ -1,3 +1,5 @@
+import { BASE_URL } from '../../../utils/env'
+
 export function resolveAssetUrl(registryPath: string): string {
   const raw = String(registryPath || '')
   if (!raw) return ''
@@ -6,13 +8,7 @@ export function resolveAssetUrl(registryPath: string): string {
     return raw
   }
 
-  let baseUrl = '/'
-  try {
-    baseUrl = String((import.meta as any).env?.BASE_URL || '/')
-  } catch {
-    baseUrl = '/'
-  }
-  const normalizedBase = baseUrl.replace(/\/+$/, '') + '/'
+  const normalizedBase = BASE_URL.replace(/\/+$/, '') + '/'
 
   if (raw.startsWith(normalizedBase)) {
     return raw

@@ -331,13 +331,17 @@ describe('三关后端模拟实玩 & 证据链', () => {
       'obj-towel-2': 'cnt-towel-basket',
     }
 
-    // ========== 阶段 1：规则编码（STAGE_RULES）—— save 一个记忆推进到 STAGE_SORT ==========
+    // ========== 阶段 1：规则编码（STAGE_RULES）—— save 1 个记忆 → 离开后墙推进到 STAGE_SWAP → 回任意篮子推进到 STAGE_SORT ==========
     const firstObserve = 'obj-white-1'
     di(`L3-1-move-${firstObserve}`, setRobotAt(task, cfgLocal[firstObserve]))
     di(`L3-1-save-${firstObserve}`, saveByCfg(firstObserve))
     evalAndCheck('L3-1-AFTER-OBSERVE')
     expect(useGameStore.getState().memorySlots.some((s) => s !== null)).toBe(true)
-    // STAGE_RULES 完成条件：保存了记忆 → 推进到 STAGE_SORT
+    // save + 在 z=1.0（已离开后墙编码区）→ 推进到 STAGE_SWAP
+    expect(useGameStore.getState().currentStageId).toBe('stage-baskets-swapped')
+    // 回白篮附近 → 推进到 STAGE_SORT 准备分类
+    di('L3-1b-move-to-white-basket', setRobotAtContainer(task, 'cnt-white-basket'))
+    evalAndCheck('L3-1b-AFTER-RETURN-TO-BASKET')
     expect(useGameStore.getState().currentStageId).toBe('stage-sort-six-items')
 
     // ========== 阶段 2：错误类别拒绝场景 ==========

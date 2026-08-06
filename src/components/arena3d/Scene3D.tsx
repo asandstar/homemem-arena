@@ -21,6 +21,7 @@ import { RegisteredModel } from './RegisteredModel'
 import { CATEGORY_TO_MODEL_ID } from './modelIds'
 import { getModelAsset } from '../../data/assets/modelRegistry'
 import { PixelationPass } from './effects/PixelationPass'
+import { MemoryModulationPass } from './effects/MemoryModulationPass'
 import { subscribeModelLoad, type ModelLoadStats, resetModelLoadStats } from './models/ModelAsset'
 import * as THREE from 'three'
 import { AssetCalibrationView, shouldShowAssetCalibration } from '../dev/AssetCalibrationView'
@@ -265,16 +266,26 @@ function PlayingSceneContents({ onEntityClick, onContainerClick }: Scene3DProps)
   const chaosEffectActive = useGameStore((s) => s.chaosEffectActive)
   const activeEventEffects = useGameStore((s) => s.activeEventEffects)
   const tickElapsed = useGameStore((s) => s.tickElapsed)
+  const sweepExpiredDemoHighlights = useGameStore((s) => s.sweepExpiredDemoHighlights)
   const lastMoveAnimation = useGameStore((s) => s.lastMoveAnimation)
   const chaosValue = useGameStore((s) => s.chaosValue)
   const addEvent = useSessionStore((s) => s.addEvent)
+  // PixelationPass → MemoryModulationPass 共享 RT
+  const postFxTextureRef = useRef<THREE.Texture | null>(null)
 
   const observationTimer = useRef(0)
+  const sweepTimer = useRef(0)
   const lastObservedIds = useRef<Set<string>>(new Set())
 
   useFrame((_, delta) => {
     tickElapsed(delta * 1000)
     observationTimer.current += delta
+    sweepTimer.current += delta
+    // ~每 150ms 扫一次过期的示范高亮（1.5~2s 寿命，精度要求不高，扫太多浪费）
+    if (sweepTimer.current >= 0.15) {
+      sweepTimer.current = 0
+      sweepExpiredDemoHighlights()
+    }
     if (observationTimer.current >= 2.0 && task) {
       observationTimer.current = 0
 
@@ -428,7 +439,25 @@ function PlayingSceneContents({ onEntityClick, onContainerClick }: Scene3DProps)
       <FirstPersonControls />
       <ChaosEffect active={chaosEffectActive} chaosValue={chaosValue} />
       <ParticleRenderer />
-      {!IS_E2E && <PixelationPass pixelSize={4} />}
+      {/*
+        后处理管线：PixelationPass 先把 scene → RT（不画最后一棒到屏幕，因为 MemoryModulationPass 要再叠一层调制）；
+        MemoryModulationPass 直接采样 PixelationPass 的 outputTexture，叠加 Memory-as-Modulator 后再画到屏幕。
+        IS_E2E：两者都走 PixelationPass，MemoryModulationPass 禁用，避免影响截图对比。
+      */}
+      {!IS_E2E && (
+        <PixelationPass
+          pixelSize={4}
+          outputTextureRef={postFxTextureRef}
+          drawToScreen={false}
+        />
+      )}
+      {IS_E2E && <PixelationPass pixelSize={4} />}
+      {!IS_E2E && (
+        <MemoryModulationPass
+          enabled
+          sourceTextureRef={postFxTextureRef}
+        />
+      )}
       <FirstFrameTracker />
     </>
   )

@@ -1,14 +1,17 @@
 // 关卡 3：洗衣分拣（Integrated Memory 整合记忆）
 // 目标：六件衣物三类分拣——浅色 → 白篮 / 深色 → 蓝篮 / 毛巾 → 橙篮
-// 记忆类型：物体记忆 + 空间记忆（规则编码 → 分类 → Probe）
-// EXECUTION OVERRIDES：篮子交换本轮 DEFERRED（基础分类是必须项）
+// 记忆类型：物体记忆 + 空间记忆（规则编码 → 位置交换干扰 → 分类 → Probe）
+// EXECUTION OVERRIDES：本轮启用篮子交换干扰
 
 import type { EntityStateSnapshot, StageContext, TaskConfig } from '../../types/task'
+import { sharedRooms } from '../rooms'
+import type { RoomId } from '../../types/room'
+
+const LAUNDRY_ROOM_ID: RoomId = 'laundry'
 
 const STAGE_RULES = 'stage-rules-encoding'
+const STAGE_SWAP = 'stage-baskets-swapped'
 const STAGE_SORT = 'stage-sort-six-items'
-
-// L3_INTERFERENCE_DEFERRED: 篮子交换干扰本轮不实现，仅保留基础六件分类
 
 const WHITE_IDS = ['obj-white-1', 'obj-white-2'] as const
 const DARK_IDS = ['obj-dark-1', 'obj-dark-2'] as const
@@ -46,16 +49,57 @@ function anyItemPlaced(ctx: StageContext): boolean {
   return all.some((id) => entityPlacedIn(ctx.entities, id, bucketOf[id]))
 }
 
+/**
+ * 转换玩家世界坐标 → laundry room 本地坐标。
+ * 所有容器 position / spawnPosition 都是房间本地坐标，
+ * 但 StageContext.playerPosition 给的是世界坐标，统一转到本地后再判定距离/区域。
+ */
+function toLaundryLocal(world: { x?: number; y?: number; z?: number } | undefined | null): { x: number; y: number; z: number } {
+  const base = sharedRooms[LAUNDRY_ROOM_ID]?.center ?? { x: 0, y: 0, z: 0 }
+  return {
+    x: (world?.x ?? 0) - (base.x ?? 0),
+    y: (world?.y ?? 0) - (base.y ?? 0),
+    z: (world?.z ?? 0) - (base.z ?? 0),
+  }
+}
+
+/** 是否离开后墙编码区（laundry 房间本地坐标）：spawn (0,1.5)；后墙篮子在 z≈-1.3；本地 z>=-0.2 就算已经走到靠门口一侧。 */
+function leftBackEncodingZone(ctx: StageContext): boolean {
+  const local = toLaundryLocal(ctx.playerPosition ?? null)
+  return local.z >= -0.2
+}
+
+/** 与任一个目标篮距离 <=1.6m（本地坐标）；优先读取 ctx.containerOverrides 记录的运行时位置（也是本地） */
+function nearAnyTargetBasket(ctx: StageContext): boolean {
+  if (!ctx.playerPosition) return false
+  const local = toLaundryLocal(ctx.playerPosition)
+  const positions = [
+    { x: -1.1, z: -1.3 }, // 白篮原始
+    { x: 0, z: -1.3 }, // 深篮原始
+    { x: 1.1, z: -1.3 }, // 毛巾篮原始
+  ] as const
+  const ids = [WHITE_BASKET, DARK_BASKET, TOWEL_BASKET] as const
+  for (let i = 0; i < 3; i++) {
+    const id = ids[i]
+    const override = ctx.containerOverrides?.[id]?.position
+    const p = override ?? positions[i]
+    const dx = local.x - p.x
+    const dz = local.z - p.z
+    if (Math.sqrt(dx * dx + dz * dz) <= 1.6) return true
+  }
+  return false
+}
+
 export const laundrySortTask: TaskConfig = {
   id: 'task-laundry-sort',
   name: '洗衣分拣',
-  description: '🧺 整合记忆挑战：六件衣物、三类分拣。先观察三个篮子的规则（浅色→白篮，深色→蓝篮，毛巾→橙篮），再把六件衣物正确归位。错误类别会被篮子拒绝！',
+  description: '🧺 整合记忆挑战：六件衣物、三类分拣。先观察三个篮子的规则（浅色→白篮，深色→蓝篮，毛巾→橙篮）。⚠️ 注意：分类前去做别的事（靠近门口等待），篮子会被移动！请记住最初篮子的身份，而不是只记当前位置。错误类别会被篮子拒绝！',
   memoryTypes: ['object', 'spatial'],
   difficulty: 'medium',
   rooms: ['laundry'],
   iconKey: 'shirt',
-  tags: ['整合记忆', '分类'],
-  timeLimit: 240,
+  tags: ['整合记忆', '分类', '位置交换干扰'],
+  timeLimit: 300,
   spawnPosition: { x: 0, z: 1.5 },
   spawnRotation: Math.PI,
   initialStageId: STAGE_RULES,
@@ -63,17 +107,24 @@ export const laundrySortTask: TaskConfig = {
   stages: [
     {
       id: STAGE_RULES,
-      playerObjective: '观察三个篮子的分类规则：浅色→白篮，深色→蓝篮，毛巾→橙篮。可按 E 保存规则记忆。',
+      playerObjective: '📋 规则编码：靠近后墙三个篮子，按 E 记住它们的身份（白/蓝/橙）。完成后，走到门口（z>=0）让时间推进，触发洗衣篮位置交换。',
       entryCondition: () => true,
       completionCondition: (ctx: StageContext) =>
-        ctx.memorySlots.some((s) => s !== null) || anyItemPlaced(ctx),
+        (ctx.memorySlots.some((s) => s !== null) || anyItemPlaced(ctx)) && leftBackEncodingZone(ctx),
+      nextStage: STAGE_SWAP,
+    },
+    {
+      id: STAGE_SWAP,
+      playerObjective: '😲 篮子被挪动了！回到后墙看看现在哪个篮子在哪，重新确认规则对应的篮子位置。',
+      entryCondition: (ctx: StageContext) =>
+        (ctx.memorySlots.some((s) => s !== null) || anyItemPlaced(ctx)) && leftBackEncodingZone(ctx),
+      completionCondition: nearAnyTargetBasket,
       nextStage: STAGE_SORT,
     },
     {
       id: STAGE_SORT,
-      playerObjective: '把六件衣物分类到对应的篮子。',
-      entryCondition: (ctx: StageContext) =>
-        ctx.memorySlots.some((s) => s !== null) || anyItemPlaced(ctx),
+      playerObjective: '把六件衣物分类到对应的篮子。记住：白篮=浅色衣物，蓝篮=深色衣物，橙篮=毛巾。',
+      entryCondition: nearAnyTargetBasket,
       completionCondition: (ctx: StageContext) =>
         whiteAllPlaced(ctx) && darkAllPlaced(ctx) && towelAllPlaced(ctx),
       nextStage: null,
@@ -275,6 +326,20 @@ export const laundrySortTask: TaskConfig = {
       description: '玩家手持物品时提示对应篮子颜色',
       memoryType: 'spatial',
       toastType: 'info' as const,
+    },
+    // ========== 容器位置交换干扰（白篮 ↔ 深蓝篮） ==========
+    // 触发条件：进入 STAGE_SWAP（编码完成 + 玩家离开后墙 z>=-0.2）后的第 1 步（step 阈值）
+    {
+      id: 'se-baskets-swap',
+      trigger: (_step, _entities, _room, _rooms, ctx) =>
+        !!ctx && ctx.currentStageId === STAGE_SWAP,
+      type: 'swap-containers',
+      swapContainerIds: [WHITE_BASKET, DARK_BASKET],
+      message: '🔀 咦？洗衣篮被挪动了！白篮和蓝篮的位置被交换了。小心不要只记"左中右"哦，要靠篮子本身的颜色判断身份！',
+      description: '干扰：白篮与深蓝篮交换位置，制造"位置记忆 vs 身份记忆"冲突',
+      memoryType: 'spatial',
+      toastType: 'warning' as const,
+      eventEffect: 'container-swap',
     },
   ],
 

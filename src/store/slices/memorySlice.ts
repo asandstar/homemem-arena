@@ -79,6 +79,8 @@ export const createMemorySlice = (set: any, get: any): MemorySliceState => ({
 
       get().addFloatingText(`+${DEFAULT_LEVEL_BALANCE.memoryUpdateScore}`, 'memory', entity.position.x, entity.position.y + 1)
       get().triggerMemorySaveEffect(existingIndex)
+      // Memory-as-Modulator: 清晰脉冲回冲（saveMemory 画面短暂"变清晰"一下）
+      if (typeof (get() as any).triggerMemoryClearPulse === 'function') (get() as any).triggerMemoryClearPulse()
       return { success: true, slotIndex: existingIndex, isUpdate: true }
     }
 
@@ -109,6 +111,8 @@ export const createMemorySlice = (set: any, get: any): MemorySliceState => ({
         memoryType,
         content: `${entity.name} in ${roomName}`,
       })
+      // Memory-as-Modulator: 清晰脉冲回冲（空槽新写入）
+      if (typeof (get() as any).triggerMemoryClearPulse === 'function') (get() as any).triggerMemoryClearPulse()
       return { success: true, slotIndex: emptyIndex, isUpdate: false }
     }
 
@@ -129,6 +133,8 @@ export const createMemorySlice = (set: any, get: any): MemorySliceState => ({
 
       get().addFloatingText('记忆已覆盖', 'memory', entity.position.x, entity.position.y + 1)
       playSfx('memory_save')
+      // Memory-as-Modulator: 清晰脉冲回冲（覆盖写入）
+      if (typeof (get() as any).triggerMemoryClearPulse === 'function') (get() as any).triggerMemoryClearPulse()
       return { success: true, slotIndex: overwriteIndex, isUpdate: false }
     }
 

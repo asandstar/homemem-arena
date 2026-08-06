@@ -71,3 +71,18 @@ export interface FeedbackState {
   combo?: number
   eventData?: any
 }
+
+/** L2 示范高亮：scriptedEvent.highlightDemo 触发后被推入 activeDemoHighlights；
+ *  Object3D / Container3D 检测命中即显示强化发光环。 */
+export interface DemoHighlight {
+  /** 唯一 id（通常就是 scriptedEvent id） */
+  id: string
+  /** 高亮对应物体 configId（obj-books 等） */
+  objectConfigId?: string
+  /** 高亮对应容器 id（cnt-bookcase 等） */
+  containerId?: string
+  /** 高亮颜色（默认琥珀色 #f59e0b） */
+  color: string
+  /** 过期绝对时间（Date.now()+durationMs）；sweepExpiredDemoHighlights 清理 */
+  expireAt: number
+}

@@ -82,8 +82,8 @@ export interface ScriptedEventSpec {
         rooms?: Record<string, { id: RoomId; name?: string; center?: { x: number; z?: number; y?: number } }>,
         ctx?: StageContext,
       ) => boolean)
-  /** 事件类型 */
-  type: 'move-entity' | 'hide-entity' | 'show-entity' | 'message'
+  /** 事件类型 — swap-containers 新增：用于 L3 洗衣分拣容器位置交换干扰 */
+  type: 'move-entity' | 'hide-entity' | 'show-entity' | 'message' | 'swap-containers'
   /** 目标物体 ID（移动/隐藏/显示 时使用） */
   targetId?: string
   /** 移动目标位置（move-entity 时） */
@@ -102,6 +102,15 @@ export interface ScriptedEventSpec {
   roomHint?: string
   /** Toast 类型覆盖（优先于自动判断） */
   toastType?: 'cat' | 'phone' | 'warning' | 'event' | 'info' | 'success'
+  /** L2 睡前仪式示范高亮：触发时把指定物体/容器在 3D 中高亮 1.5s，用于替代纯文字 Toast 示范 */
+  highlightDemo?: {
+    targetObjectId?: string
+    targetContainerId?: string
+    color?: string
+    durationMs?: number
+  }
+  /** L3 洗衣分拣干扰：交换两个 task-container 的位置（仅 swap-containers 类型时生效；两容器必须同房间） */
+  swapContainerIds?: [string, string]
 }
 
 /** 记忆测试题 */
@@ -158,8 +167,12 @@ export interface StageContext {
   outdatedMemoryCount: number
   heldEntityConfigId: string | null
   containerStates: Record<string, { open: boolean; containedIds: string[] }>
+  /** L3 洗衣分拣：运行时容器位置覆盖（containerOverrides）快照，用于阶段判定靠近新位置 */
+  containerOverrides: Readonly<Record<string, Readonly<{ position?: { x: number; y: number; z: number } }>>>
   /** 距离最近的可交互实体的 configId（范围内 maxDistance=2.0）；null 代表当前无可交互 */
   nearbyEntityConfigId: string | null
+  /** 当前阶段 id（仅任务有 stages 时非空），用于 scriptedEvent 触发按阶段判断 */
+  currentStageId: string | null
   /**
    * 程序记忆（Perceptual Memory）进度快照：goalId → 当前进度。
    * 用于 procedural goal 的 predicate 判断动作序列是否已按序完成。

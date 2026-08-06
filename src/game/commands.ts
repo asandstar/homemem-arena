@@ -78,10 +78,18 @@ export function executePick(entityId: string): GameCommandResult {
   const entity = before.entities.find((item) => item.id === entityId)
   if (!entity) return { success: false, reason: '物体不存在', action: 'pick' }
 
-  // P1 L1：task-clean-table 教学阶段，未保存任务物体记忆前，禁止拾取三个任务物体（obj-dirty-cup/obj-tissue/obj-fork）
-  // 避免形成长期锁定：只要当前阶段已经不是 stage-observe-table（即至少曾经保存过任何任务记忆）就永久放行
-  if (before.task?.id === 'task-clean-table' && before.currentStageId === 'stage-observe-table') {
-    const taskObjectIds = ['obj-dirty-cup', 'obj-tissue', 'obj-fork']
+  // L1 教学阶段：task-clean-table 的第一阶段（通常 stage-observe），
+  // 未保存任何任务物体记忆前，禁止拾取 task.objects 中定义的任务物体，强制玩家先学 E。
+  // 长期锁避免：只要当前阶段不是 stages[0] 就放行。
+  const task = before.task
+  const observeStageId = task?.stages?.[0]?.id
+  const taskObjectIds = task?.objects?.map((o) => o.id) ?? []
+  if (
+    task?.id === 'task-clean-table' &&
+    observeStageId &&
+    before.currentStageId === observeStageId &&
+    taskObjectIds.length > 0
+  ) {
     if (taskObjectIds.includes(entity.configId)) {
       const anyTaskMemorySaved = before.memorySlots.some(
         (s) => s !== null && taskObjectIds.includes(s.entityConfigId),

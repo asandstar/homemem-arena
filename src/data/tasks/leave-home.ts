@@ -215,7 +215,7 @@ export const leaveHomeTask: TaskConfig = {
   ],
 
   scriptedEvents: [
-    // ========== 轻量示范（仅 scriptedEvent 消息，OVERRIDES 禁止 NPC/Timeline/摄像机演出） ==========
+    // ========== 轻量示范（仅 scriptedEvent 消息 + 3D 高亮，OVERRIDES 禁止 NPC/Timeline/摄像机演出） ==========
     // 每步 1-2 秒，通过 step 计数触发，示范后物体仍在茶几上（无需重置）。
     {
       id: 'se-ritual-demo-1',
@@ -225,6 +225,12 @@ export const leaveHomeTask: TaskConfig = {
       description: '睡前仪式示范第 1 步：书→书架',
       memoryType: 'procedural',
       toastType: 'info',
+      highlightDemo: {
+        targetObjectId: 'obj-books',
+        targetContainerId: 'cnt-bookcase',
+        color: '#f59e0b',
+        durationMs: 1800,
+      },
     },
     {
       id: 'se-ritual-demo-2',
@@ -234,6 +240,12 @@ export const leaveHomeTask: TaskConfig = {
       description: '睡前仪式示范第 2 步：杯子→床头柜',
       memoryType: 'procedural',
       toastType: 'info',
+      highlightDemo: {
+        targetObjectId: 'obj-mug',
+        targetContainerId: 'cnt-nightstand',
+        color: '#60a5fa',
+        durationMs: 1800,
+      },
     },
     {
       id: 'se-ritual-demo-3',
@@ -243,6 +255,12 @@ export const leaveHomeTask: TaskConfig = {
       description: '睡前仪式示范第 3 步：小熊→床',
       memoryType: 'procedural',
       toastType: 'info',
+      highlightDemo: {
+        targetObjectId: 'obj-bear',
+        targetContainerId: 'cnt-bed',
+        color: '#f472b6',
+        durationMs: 1800,
+      },
     },
     {
       id: 'se-ritual-demo-done',

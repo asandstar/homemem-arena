@@ -1,5 +1,6 @@
 import { Component } from 'react'
 import type { ReactNode, ErrorInfo } from 'react'
+import { BASE_URL } from '../utils/env'
 
 interface Props {
   children: ReactNode
@@ -34,13 +35,8 @@ export class GlobalErrorBoundary extends Component<Props, State> {
 
   handleGoHome = () => {
     this.setState({ hasError: false, error: null })
-    try {
-      const baseUrl = String((import.meta as any)?.env?.BASE_URL || '/')
-      const cleanBase = baseUrl.replace(/\/$/, '')
-      window.location.href = window.location.origin + cleanBase + '/'
-    } catch {
-      window.location.href = '/'
-    }
+    const cleanBase = BASE_URL.replace(/\/$/, '')
+    window.location.href = window.location.origin + cleanBase + '/'
   }
 
   render() {

@@ -52,6 +52,9 @@ const CATEGORY_LABELS: Record<string, string> = {
 export function Object3D({ entity, onClick, isHeld }: Object3DProps) {
   const groupRef = useRef<THREE.Group>(null)
   const idleTime = useRef(Math.random() * Math.PI * 2)
+  const demoTRef = useRef(0)
+  const demoRingRef = useRef<THREE.Mesh>(null)
+  const demoLightRef = useRef<THREE.PointLight>(null)
   const [hovered, setHovered] = useState(false)
   const [shakeTime, setShakeTime] = useState(0)
   const [successPulse, setSuccessPulse] = useState(false)
@@ -63,6 +66,10 @@ export function Object3D({ entity, onClick, isHeld }: Object3DProps) {
   const heldEntityId = useGameStore((s) => s.heldEntityId)
   const task = useGameStore((s) => s.task)
   const achievedGoalIds = useGameStore((s) => s.achievedGoalIds)
+  // L2 示范高亮：命中 entity.configId
+  const demoHighlight = useGameStore((s) =>
+    s.activeDemoHighlights.find((h) => h.objectConfigId === entity.configId) ?? null,
+  )
   const isShaking = shakingEntityId === entity.id
 
   const isTaskTarget = useMemo(() => {
@@ -137,6 +144,26 @@ export function Object3D({ entity, onClick, isHeld }: Object3DProps) {
     }
 
     idleTime.current += delta
+    demoTRef.current += delta
+
+    // 示范高亮：脉动（比普通 proximity 更明显）
+    if (demoRingRef.current) {
+      const scale = 1 + Math.sin(demoTRef.current * 9) * 0.22
+      demoRingRef.current.scale.setScalar(scale)
+      demoRingRef.current.visible = !!demoHighlight
+      const m = demoRingRef.current.material as THREE.MeshBasicMaterial
+      if (m && !Array.isArray(m) && demoHighlight) {
+        m.color.set(demoHighlight.color)
+        m.opacity = 0.6 + Math.sin(demoTRef.current * 9) * 0.3
+      }
+    }
+    if (demoLightRef.current) {
+      demoLightRef.current.visible = !!demoHighlight
+      if (demoHighlight) {
+        demoLightRef.current.color.set(demoHighlight.color)
+        demoLightRef.current.intensity = 2.2 + Math.sin(demoTRef.current * 8) * 0.8
+      }
+    }
   })
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
@@ -277,6 +304,30 @@ export function Object3D({ entity, onClick, isHeld }: Object3DProps) {
           />
         </>
       )}
+
+      {/* L2 示范高亮：物体在 activeDemoHighlights 中时，加大型快速脉动环 + 强点光源 */}
+      <mesh
+        ref={demoRingRef as any}
+        position={[0, -halfHeight - 0.02, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        visible={false}
+      >
+        <ringGeometry args={[0.32, 0.48, 32]} />
+        <meshBasicMaterial
+          color={demoHighlight?.color ?? '#f59e0b'}
+          transparent
+          opacity={0}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      <pointLight
+        ref={demoLightRef as any}
+        position={[0, 0, 0]}
+        color={demoHighlight?.color ?? '#f59e0b'}
+        intensity={0}
+        distance={2}
+        visible={false}
+      />
 
       {hovered && (
         <Billboard position={[0, halfHeight + 0.2, 0]}>

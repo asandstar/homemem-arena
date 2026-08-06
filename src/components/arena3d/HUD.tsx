@@ -202,26 +202,25 @@ export function HUD() {
   const stageProgress1Based = stageIndex >= 0 ? Math.min(totalStages, stageIndex + 1) : 0
 
   // Sprint B.1: E/F 上下文提示按阶段定制
-  // task-leave-home 已重写为"睡前仪式"，旧出门大作战硬编码（obj-key/stage-observe-fetch 等）已移除。
-  const isLeaveHome = task?.id === 'task-leave-home'
-
-  // P1 L1 教学：task-clean-table 规则（§五 定制 E/F 提示：不同时显示 E 和 F 教学；先突出 E 再突出 F）
-  const isCleanTable = task?.id === 'task-clean-table'
-  const taskObjectIdsCleanTable = ['obj-dirty-cup', 'obj-tissue', 'obj-fork']
-  const anyTaskMemorySavedCleanTable = memorySlots.some(
-    (s) => s !== null && taskObjectIdsCleanTable.includes(s.entityConfigId),
+  // 旧的 task-leave-home / task-clean-table 硬编码已改成通用：
+  //   - 教学阶段 ID 取 stages[0].id（L1 即 stage-observe）
+  //   - 任务物体 ID 取 task.objects 全部 objectConfigId 列表
+  const firstStageId = stages[0]?.id ?? '__none__'
+  const taskObjectIds = task?.objects?.map((o) => o.id) ?? []
+  const anyTaskMemorySaved = memorySlots.some(
+    (s) => s !== null && taskObjectIds.includes(s.entityConfigId),
   )
-  // L1 阶段 1（observe-table）：玩家尚未保存任务物体记忆时，只显示 E 不显示 F 拾取教学
-  const cleanTableStage1 = isCleanTable && currentStageId === 'stage-observe-table' && !anyTaskMemorySavedCleanTable
-  // L1 阶段 2+：已经至少保存了一条任务记忆 → 不显示 E 教学，只显示 F 拾取/放置（自然过渡）
-  const cleanTableStage2 = isCleanTable && (currentStageId !== 'stage-observe-table' || anyTaskMemorySavedCleanTable)
+  // L1 教学：第一阶段（观察）且玩家尚未保存任何任务物体记忆 → 只显示 E 不显示 F 拾取教学
+  const l1TeachStage = task?.id === 'task-clean-table' && currentStageId === firstStageId && !anyTaskMemorySaved
+  // L1 教学：已至少保存 1 条任务记忆，或已离开观察阶段 → 不显示 E 教学，只显示 F 拾取/放置
+  const l1PastTeachStage = task?.id === 'task-clean-table' && (currentStageId !== firstStageId || anyTaskMemorySaved)
 
   // [E] 记忆动作文案 + 原因
   let memoryActionLabel: string | null = null
   let memoryActionDisabledReason: string | null = null
-  // P1 L1：L1 阶段 2+（已至少保存 1 条任务记忆）→ 隐藏 E 教学提示（不展示 E）
-  const cleanTableShouldHideMemoryHint = cleanTableStage2
-  if (!cleanTableShouldHideMemoryHint && nearbyEntity) {
+  // L1 教学：已过教学阶段 → 隐藏 E 教学提示（仅不再强提示 E 本身，实际 E 键仍可用）
+  const shouldHideMemoryHint = l1PastTeachStage
+  if (!shouldHideMemoryHint && nearbyEntity) {
     if (memorySlots.some(s => s?.objectName === nearbyEntity.name && s.outdated)) {
       memoryActionLabel = `更新 ${nearbyEntity.name} 的记忆`
     } else {
@@ -231,13 +230,13 @@ export function HUD() {
   // [F] 交互动作文案 + 原因
   let itemActionLabel: string | null = null
   let itemActionDisabledReason: string | null = null
-  // P1 L1：L1 阶段 1（尚未保存任何任务记忆）→ 隐藏 F 拾取教学提示，避免 E 和 F 同时出现
-  const cleanTableShouldHideInteractHint = cleanTableStage1
-  if (!cleanTableShouldHideInteractHint) {
+  // L1 教学：教学阶段（尚未保存任何任务记忆）→ 隐藏 F 拾取教学提示，避免 E 和 F 同时出现
+  const shouldHideInteractHint = l1TeachStage
+  if (!shouldHideInteractHint) {
     if (heldEntity && nearbyContainer) {
       itemActionLabel = `放入 ${nearbyContainer.name}`
     } else if (!heldEntity && nearbyEntity) {
-      if (isCleanTable && currentStageId === 'stage-observe-table' && !anyTaskMemorySavedCleanTable && taskObjectIdsCleanTable.includes(nearbyEntity.configId)) {
+      if (l1TeachStage && taskObjectIds.includes(nearbyEntity.configId)) {
         itemActionLabel = `拾取 ${nearbyEntity.name}`
         itemActionDisabledReason = '先按 E 记住它的位置'
       } else {
@@ -247,7 +246,6 @@ export function HUD() {
       itemActionLabel = `${containerStates[nearbyContainer.id]?.open ? '关闭' : '打开'} ${nearbyContainer.name}`
     }
   }
-  void isLeaveHome
 
   const roomUncollectedItems = entities.filter(e =>
     e.type === 'object' &&

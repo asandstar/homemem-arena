@@ -93,11 +93,14 @@ export function Container3D({
   const pulseRingRef = useRef<THREE.Mesh>(null)
   const pulseRing2Ref = useRef<THREE.Mesh>(null)
   const pulseLightRef = useRef<THREE.PointLight>(null)
+  const demoRingRef = useRef<THREE.Mesh>(null)
+  const demoLightRef = useRef<THREE.PointLight>(null)
   const [hovered, setHovered] = useState(false)
   // ⚠️ pulseTime / openProgress 改 ref，之前每帧 setState 触发每个 Container3D 实例每帧 re-render（~60fps）
   // 容器多时是性能瓶颈，间接增加 WebGL Context Lost 风险。
   const pulseTimeRef = useRef(0)
   const openProgressRef = useRef(isOpen ? 1 : 0)
+  const demoTRef = useRef(0)
   // ⚠️ 仅当开/关动画进度真的变化时，才 setState 触发一次重渲染，
   // 让 <group> 的 scale/position / 内部物品位置 在下一帧能读到最新值。
   // 收敛后（next === prev）停止更新，不再有多余 re-render。
@@ -106,6 +109,12 @@ export function Container3D({
   // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
   const robotPosition = useGameStore((s) => s.robotPosition)
   const heldEntityId = useGameStore((s) => s.heldEntityId)
+  // L3 容器位置 swap：containerOverrides[spec.id].position 覆盖 task.containers 原始 position
+  const overridePosition = useGameStore((s) => s.containerOverrides[spec.id]?.position)
+  // L2 示范高亮：当前容器是否在 activeDemoHighlights 中
+  const demoHighlight = useGameStore((s) =>
+    s.activeDemoHighlights.find((h) => h.containerId === spec.id) ?? null,
+  )
 
   // isOpen 变化时同步目标值（ref + 强制下次 useFrame 插值进入新值）
   useEffect(() => {
@@ -114,6 +123,7 @@ export function Container3D({
 
   useFrame((_, delta) => {
     pulseTimeRef.current += delta
+    demoTRef.current += delta
     const prev = openProgressRef.current
     const target = isOpen ? 1 : 0
     const speed = 6
@@ -137,15 +147,37 @@ export function Container3D({
     if (pulseLightRef.current) {
       pulseLightRef.current.intensity = 0.6 + sin3 * 0.2
     }
+    // 示范高亮的脉冲环（更粗、更亮、快速脉动）
+    if (demoRingRef.current) {
+      const scale = 1 + Math.sin(demoTRef.current * 7) * 0.18
+      demoRingRef.current.scale.setScalar(scale)
+      demoRingRef.current.visible = !!demoHighlight
+      const m = demoRingRef.current.material as THREE.MeshBasicMaterial
+      if (m && !Array.isArray(m) && demoHighlight) {
+        m.color.set(demoHighlight.color)
+        m.opacity = 0.55 + Math.sin(demoTRef.current * 7) * 0.25
+      }
+    }
+    if (demoLightRef.current) {
+      demoLightRef.current.visible = !!demoHighlight
+      if (demoHighlight) {
+        demoLightRef.current.color.set(demoHighlight.color)
+        demoLightRef.current.intensity = 2.6 + Math.sin(demoTRef.current * 6) * 0.8
+      }
+    }
   })
 
   const roomSpec = sharedRooms[room]
+  // 合并 L3 容器位置覆盖：override 存在时使用 override，否则用 spec.position
+  const localPosX = overridePosition ? overridePosition.x : spec.position.x
+  const localPosY = overridePosition ? overridePosition.y : spec.position.y
+  const localPosZ = overridePosition ? overridePosition.z : spec.position.z
   // furniture bottom is spec.position.y; FurnitureModel offsets geometry down by size.y/2
   const worldPos = useMemo<[number, number, number]>(() => [
-    roomSpec.center.x + spec.position.x,
-    spec.position.y,
-    roomSpec.center.z + spec.position.z,
-  ], [roomSpec.center.x, roomSpec.center.z, spec.position.x, spec.position.y, spec.position.z])
+    roomSpec.center.x + localPosX,
+    localPosY,
+    roomSpec.center.z + localPosZ,
+  ], [roomSpec.center.x, roomSpec.center.z, localPosX, localPosY, localPosZ])
   const distance = useMemo(() => {
     const dx = worldPos[0] - robotPosition.x
     const dz = worldPos[2] - robotPosition.z
@@ -252,6 +284,30 @@ export function Container3D({
           />
         </>
       )}
+
+      {/* L2 示范高亮：所有容器（非仅 targetZone）均可被 demoHighlight 命中；环更大更亮 */}
+      <mesh
+        ref={demoRingRef as any}
+        position={[0, surfaceLocalY + 0.12, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        visible={false}
+      >
+        <ringGeometry args={[0.55, 0.75, 40]} />
+        <meshBasicMaterial
+          color={demoHighlight?.color ?? '#f59e0b'}
+          transparent
+          opacity={0}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      <pointLight
+        ref={demoLightRef as any}
+        position={[0, surfaceLocalY + 0.35, 0]}
+        color={demoHighlight?.color ?? '#f59e0b'}
+        intensity={0}
+        distance={3.5}
+        visible={false}
+      />
 
       {(hovered || spec.isTargetZone) && (
         <Billboard position={[0, surfaceLocalY + 0.25, 0]}>

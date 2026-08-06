@@ -9,15 +9,9 @@ import {
   getStopAllAudioCallCount,
 } from './audio/audioManager'
 import { useUiStore } from './store/useUiStore'
+import { BASE_URL, IS_E2E } from './utils/env'
 
-// 加 try/catch 守卫：避免 SyntaxError: Cannot use 'import.meta' outside a module
-let _basename = '/'
-try {
-  const baseUrl = String((import.meta as any)?.env?.BASE_URL || '/')
-  _basename = baseUrl.replace(/\/$/, '') || '/'
-} catch {
-  /* ignore */
-}
+const _basename = BASE_URL.replace(/\/$/, '') || '/'
 
 /**
  * 说明：GitHub Pages 404 fallback 的「stored 路径恢复」已经交给 index.html 的 inline script 处理：
@@ -44,11 +38,9 @@ const router = createBrowserRouter(_routes, { basename: _basename })
 try {
   // 调试暴露：便于 Playwright 验证运行时 basename 与 vite.config.ts 的 base 是否一致。
   // 生产构建时 tree-shake 不影响运行。
-  let envBaseUrl = '/'
-  try { envBaseUrl = String((import.meta as any)?.env?.BASE_URL || '/') } catch { /* ignore */ }
   ;(window as unknown as { __SPA_FALLBACK_DEBUG__?: unknown }).__SPA_FALLBACK_DEBUG__ = {
     basename: _basename,
-    BASE_URL: envBaseUrl,
+    BASE_URL,
   }
 } catch {
   /* ignore */
@@ -62,10 +54,7 @@ try {
  */
 function ensureE2eAudioDiagnosticsOnce(): void {
   if (typeof window === 'undefined') return
-  // 加 try/catch 守卫：避免 SyntaxError: Cannot use 'import.meta' outside a module
-  let isE2e = false
-  try { isE2e = (import.meta as any)?.env?.MODE === 'e2e' } catch { /* ignore */ }
-  if (!isE2e) return
+  if (!IS_E2E) return
   const w = window as any
   if (w.__AUD_DIAG__) return
   w.__AUD_DIAG__ = Object.freeze({

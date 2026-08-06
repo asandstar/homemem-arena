@@ -128,19 +128,21 @@ function checkTaskRooms(): QaResult[] {
 
 function checkLevel1Requirements(): QaResult[] {
   const results: QaResult[] = []
-  const level1 = taskTemplates.find((t) => t.id === 'task-leave-home')
+  // Three-level MVP: L1 餐桌整理 / task-clean-table（Symbolic Memory 教学关，只需 dining 餐厨）
+  const level1 = taskTemplates.find((t) => t.id === 'task-clean-table')
 
   if (!level1) {
-    results.push(fail('critical', CATEGORY, 'level1-exists', '找不到第一关 task-leave-home'))
+    results.push(fail('critical', CATEGORY, 'level1-exists', '找不到 L1 餐桌整理（task-clean-table）'))
     return results
   }
+  results.push(pass(CATEGORY, 'level1-exists', `L1 餐桌整理已找到（id=${level1.id}, name=${level1.name}）`))
 
-  const required = ['living', 'bedroom', 'entrance']
+  const required: string[] = ['dining']
   for (const roomId of required) {
     if (level1.rooms.includes(roomId as RoomId)) {
-      results.push(pass(CATEGORY, 'level1-room', `第一关包含 ${roomId}`))
+      results.push(pass(CATEGORY, 'level1-room', `L1 餐桌整理包含 ${roomId}`))
     } else {
-      results.push(fail('critical', CATEGORY, 'level1-room', `第一关缺少房间: ${roomId}`))
+      results.push(fail('critical', CATEGORY, 'level1-room', `L1 餐桌整理缺少房间: ${roomId}`))
     }
   }
 
@@ -149,7 +151,31 @@ function checkLevel1Requirements(): QaResult[] {
 
 function checkLevel2Requirements(): QaResult[] {
   const results: QaResult[] = []
-  // A1.5 后合并 kitchen 与 dining 为一个 dining（餐厨），只要包含 dining 即视为同时有餐厨能力
+  // Three-level MVP: L2 睡前仪式 / task-leave-home（Perceptual + Procedural 旗舰关，仅 living + bedroom，不要求 entrance）
+  const level2 = taskTemplates.find((t) => t.id === 'task-leave-home')
+
+  if (!level2) {
+    results.push(fail('critical', CATEGORY, 'level2-exists', '找不到 L2 睡前仪式（task-leave-home）'))
+    // 后续餐厨一体检查仍然执行，直接返回
+  } else {
+    results.push(pass(CATEGORY, 'level2-exists', `L2 睡前仪式已找到（id=${level2.id}, name=${level2.name}）`))
+    const required: string[] = ['living', 'bedroom']
+    for (const roomId of required) {
+      if (level2.rooms.includes(roomId as RoomId)) {
+        results.push(pass(CATEGORY, 'level2-room', `L2 睡前仪式包含 ${roomId}`))
+      } else {
+        results.push(fail('critical', CATEGORY, 'level2-room', `L2 睡前仪式缺少房间: ${roomId}`))
+      }
+    }
+    // 显式验证不要求 entrance
+    if (level2.rooms.includes('entrance' as RoomId)) {
+      results.push(fail('major', CATEGORY, 'level2-no-entrance', `L2 睡前仪式被标记为需要 entrance，但当前 MVP 不要求 entrance`))
+    } else {
+      results.push(pass(CATEGORY, 'level2-no-entrance', `L2 睡前仪式不依赖 entrance（符合新 MVP：仅 living + bedroom）`))
+    }
+  }
+
+  // A1.5 后合并 kitchen 与 dining 为一个 dining（餐厨一体），只要包含 dining 即视为同时有餐厨能力
   const diningLevels = taskTemplates.filter((t) => t.rooms.includes('dining' as RoomId))
 
   if (diningLevels.length === 0) {
@@ -159,6 +185,29 @@ function checkLevel2Requirements(): QaResult[] {
 
   for (const task of diningLevels) {
     results.push(pass(CATEGORY, 'dining-kitchen', `${task.id} 包含 dining（餐厨一体）`))
+  }
+
+  return results
+}
+
+function checkLevel3Requirements(): QaResult[] {
+  const results: QaResult[] = []
+  // Three-level MVP: L3 洗衣分拣 / task-laundry-sort（Integrated Memory 整合记忆，只需 laundry 洗衣房）
+  const level3 = taskTemplates.find((t) => t.id === 'task-laundry-sort')
+
+  if (!level3) {
+    results.push(fail('critical', CATEGORY, 'level3-exists', '找不到 L3 洗衣分拣（task-laundry-sort）'))
+    return results
+  }
+  results.push(pass(CATEGORY, 'level3-exists', `L3 洗衣分拣已找到（id=${level3.id}, name=${level3.name}）`))
+
+  const required: string[] = ['laundry']
+  for (const roomId of required) {
+    if (level3.rooms.includes(roomId as RoomId)) {
+      results.push(pass(CATEGORY, 'level3-room', `L3 洗衣分拣包含 ${roomId}`))
+    } else {
+      results.push(fail('critical', CATEGORY, 'level3-room', `L3 洗衣分拣缺少房间: ${roomId}`))
+    }
   }
 
   return results
@@ -215,6 +264,9 @@ function runRoomsCheck(): QaResult[] {
 
   console.log('🔍 检查第二关要求...')
   results.push(...checkLevel2Requirements())
+
+  console.log('🔍 检查第三关要求...')
+  results.push(...checkLevel3Requirements())
 
   console.log('🔍 检查洗衣房位置...')
   results.push(...checkLaundryNoLivingOverlap())

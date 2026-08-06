@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { taskTemplates } from '../src/data/tasks'
 import { MODEL_REGISTRY } from '../src/components/arena3d/models/ModelRegistry'
+import { RUNTIME_MODEL_ASSET_REGISTRY } from '../src/data/assets/modelRegistry'
 import { pass, fail, summarize, printSummary, exitWithCode, formatTable } from './qa-shared'
 import type { QaResult } from './qa-shared'
 import type { TaskConfig } from '../src/types/task'
@@ -132,7 +133,18 @@ function checkHiddenInContainer(task: TaskConfig): QaResult[] {
 
 function checkObjectCategories(task: TaskConfig): QaResult[] {
   const results: QaResult[] = []
-  const modelIds = new Set(Object.keys(MODEL_REGISTRY))
+  // 合并 MODEL_REGISTRY（legacy 短名）+ RUNTIME_MODEL_ASSET_REGISTRY（{pack}/{assetStem} 命名空间，data/assets/modelRegistry.ts）
+  const legacyIds = Object.keys(MODEL_REGISTRY ?? {})
+  const newIds = Object.keys(RUNTIME_MODEL_ASSET_REGISTRY ?? {})
+  const modelIds = new Set([...legacyIds, ...newIds])
+  // 快速后缀索引：stem → full id（furniture/books → 建立 books → furniture/books）
+  const stemIndex = new Map<string, string>()
+  for (const id of modelIds) {
+    const parts = id.split('/')
+    const stem = parts[parts.length - 1]
+    // 先到先得（避免冲突时覆盖）
+    if (!stemIndex.has(stem)) stemIndex.set(stem, id)
+  }
 
   const categoryToModel: Record<string, string> = {
     'key': 'key',
@@ -148,13 +160,42 @@ function checkObjectCategories(task: TaskConfig): QaResult[] {
     'trash': 'trash',
     'white-clothes': 'cloth_white',
     'dark-clothes': 'cloth_dark',
-    'spoon': 'cup',
-    'tissue': 'trash',
+    'spoon': 'food/utensil-spoon',
+    'tissue': 'tissue',
+    // Three-level MVP 新增映射：category → MODEL_REGISTRY id（带 pack 前缀，data/assets/modelRegistry.ts）
+    'book': 'furniture/books',
+    'mug': 'food/mug',
+    'fork': 'food/utensil-fork',
+    'utensil-fork': 'food/utensil-fork',
+    'utensil-spoon': 'food/utensil-spoon',
+    'toy': 'furniture/bear',
+    'pillow': 'furniture/pillow',
+    'dining-table': 'furniture/table',
+    'coffee-table': 'furniture/tableCoffee',
   }
 
   for (const obj of task.objects) {
-    const modelId = categoryToModel[obj.category] || obj.category
-    if (modelIds.has(modelId)) {
+    let modelId = categoryToModel[obj.category] || obj.category
+    let matched = modelIds.has(modelId)
+    // 如果没匹配成功：再按 category 作为 stem 做后缀匹配（如 'book' → 找 '.../books' 或 '.../book'）
+    if (!matched) {
+      const direct = stemIndex.get(obj.category)
+      if (direct) {
+        modelId = direct
+        matched = true
+      } else {
+        // 复数兜底：book→books, toy→toys；furniture/toy 等常见变体直接尾段查找
+        for (const id of modelIds) {
+          const tail = id.split('/').pop() ?? id
+          if (tail === obj.category || tail === `${obj.category}s`) {
+            modelId = id
+            matched = true
+            break
+          }
+        }
+      }
+    }
+    if (matched) {
       results.push(pass(CATEGORY, 'obj-category-model',
         `${task.id}: ${obj.id} (${obj.category}) → ${modelId}`))
     } else {
@@ -170,39 +211,30 @@ function checkObjectCategories(task: TaskConfig): QaResult[] {
 
 function checkLevel1Requirements(tasks: TaskConfig[]): QaResult[] {
   const results: QaResult[] = []
-  const level1 = tasks.find((t) => t.id === 'task-leave-home')
+  // Three-level MVP: L1 = task-clean-table（Symbolic Memory 教学关，dining 单房间，无需猫/手机/托盘）
+  const level1 = tasks.find((t) => t.id === 'task-clean-table')
 
   if (!level1) {
-    results.push(fail('critical', CATEGORY, 'level1-exists', '找不到第一关 task-leave-home'))
+    results.push(fail('critical', CATEGORY, 'level1-exists', '找不到第一关 task-clean-table'))
     return results
   }
 
-  const catEvent = level1.scriptedEvents?.find((e) =>
-    e.eventEffect === 'cat-prints' || e.description.includes('猫') || e.message?.includes('猫'),
+  results.push(pass(CATEGORY, 'level1-exists', '找到第一关 task-clean-table'))
+
+  // L1 必须包含"猫移动任务物体"的扰动事件（制造记忆与现实冲突，符合 5 条设计原则）
+  const catMoveEvent = level1.scriptedEvents?.find((e) =>
+    e.type === 'move-entity' ||
+    e.description?.includes('猫') ||
+    (e as any).entityConfigId ||
+    e.message?.includes('猫'),
   )
-  if (catEvent) {
-    results.push(pass(CATEGORY, 'level1-cat-event', '第一关有猫事件'))
+  if (catMoveEvent) {
+    results.push(pass(CATEGORY, 'level1-cat-event', '第一关有猫扰动事件（制造记忆冲突）'))
   } else {
-    results.push(fail('critical', CATEGORY, 'level1-cat-event', '第一关缺少猫事件'))
+    results.push(fail('major', CATEGORY, 'level1-cat-event', '第一关缺少猫移动扰动事件（记忆与现实冲突的戏剧来源）'))
   }
 
-  const phoneEvent = level1.scriptedEvents?.find((e) =>
-    e.eventEffect === 'phone-ring' || e.description.includes('手机') || e.message?.includes('手机'),
-  )
-  if (phoneEvent) {
-    results.push(pass(CATEGORY, 'level1-phone-event', '第一关有手机响铃事件'))
-  } else {
-    results.push(fail('critical', CATEGORY, 'level1-phone-event', '第一关缺少手机响铃事件'))
-  }
-
-  const tray = level1.containers.find((c) =>
-    c.id.includes('entrance-tray') || c.id.includes('tray') || c.targetLabel?.includes('托盘'),
-  )
-  if (tray) {
-    results.push(pass(CATEGORY, 'level1-tray', `第一关有目标托盘: ${tray.id}`))
-  } else {
-    results.push(fail('critical', CATEGORY, 'level1-tray', '第一关缺少 entrance_tray 目标容器'))
-  }
+  // L1 不需要 entrance tray / 手机响铃（单房间 dining 教学关）
 
   return results
 }

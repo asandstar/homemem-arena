@@ -3,6 +3,7 @@ import type { EntityState } from '../../types/object'
 import type { RoomId, Vec3 } from '../../types/room'
 import type { ContainerSpec, ObjectSpec } from '../../types/object'
 import type { RoomSpec } from '../../types/room'
+import type { DemoHighlight } from '../gameTypes'
 import { useSessionStore } from '../useSessionStore'
 import { useUiStore } from '../useUiStore'
 import { getTaskById, PUBLIC_LEVEL_ORDER } from '../../data/tasks'
@@ -92,8 +93,10 @@ export function buildStageContext(get: any): StageContext {
     outdatedMemoryCount: s.outdatedMemoryCount ?? 0,
     heldEntityConfigId: heldEntity?.configId ?? null,
     containerStates: s.containerStates ?? {},
+    containerOverrides: s.containerOverrides ?? {},
     nearbyEntityConfigId: nearby,
     proceduralProgress: s.proceduralProgress ?? {},
+    currentStageId: s.currentStageId ?? null,
   }
 }
 
@@ -113,6 +116,12 @@ export interface TaskSlice {
   currentStageId: string | null
   currentObjective: string | null
   isPaused: boolean
+  /** L2 示范阶段的高亮队列（物体/容器脉冲），active */
+  activeDemoHighlights: DemoHighlight[]
+  /** 容器位置/尺寸的运行时覆写（L3 交换篮子等场景） */
+  containerOverrides: Record<string, { position?: Vec3; size?: Vec3 }>
+  /** 记忆清空/更新脉冲触发时间（Memory-as-Modulator 画脉冲用） */
+  memoryClearPulseMs: number
 
   initializeTask: (taskId: string) => void
   resetTask: () => void
@@ -131,6 +140,18 @@ export interface TaskSlice {
   setStage: (stageId: string) => void
   setPaused: (paused: boolean) => void
   togglePause: () => void
+  /** 推入一个示范高亮（objectConfigId 或 containerId 至少 1 个）；一段时间后自动过期移除 */
+  pushDemoHighlight: (hl: { id: string; objectConfigId?: string; containerId?: string; color?: string; durationMs?: number }) => void
+  /** 按 id 移除某示范高亮 */
+  clearDemoHighlight: (id: string) => void
+  /** 每帧清理 expireAt <= now 的高亮；由 Scene3D 的 useFrame 调用 */
+  sweepExpiredDemoHighlights: () => void
+  /** 交换 task.containers 中两个同房间容器的 position（L3 交换篮子干扰） */
+  swapContainers: (a: string, b: string) => { success: boolean; reason?: string }
+  /** 触发一次画面脉冲：记忆保存/更新/清空时调用，MemoryModulationPass 读取后回弹清晰脉冲 */
+  triggerMemoryClearPulse: () => void
+  /** 订阅式事件：ChaosEffect / Feedback 订阅使用，当前仅简单触发可订阅 key 更新，用于触发视觉 sound/Chaos 等 */
+  triggerEventEffect?: (name: string) => void
 }
 
 export function createTaskSlice(set: any, get: any): TaskSlice {
@@ -149,6 +170,9 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
     proceduralProgress: {},
     currentStageId: null,
     currentObjective: null,
+    activeDemoHighlights: [],
+    containerOverrides: {},
+    memoryClearPulseMs: 0,
     isPaused: false,
 
     setPaused: (paused: boolean) => {
@@ -278,6 +302,9 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
           currentObjective: task.stages?.length
             ? (task.stages.find((s) => s.id === (task.initialStageId ?? task.stages![0].id))?.playerObjective ?? null)
             : null,
+          activeDemoHighlights: [],
+          containerOverrides: {},
+          memoryClearPulseMs: 0,
         })
 
         // 验证 state.task 真的设置成功（Zustand 在某些 strict mode 下可能出现问题）
@@ -469,6 +496,37 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
                 })
               }
               break
+            case 'swap-containers':
+              if (
+                Array.isArray(event.swapContainerIds) &&
+                event.swapContainerIds.length === 2
+              ) {
+                const [a, b] = event.swapContainerIds as [string, string]
+                const res = get().swapContainers(a, b)
+                if (!res.success) {
+                  console.warn('[triggerScriptedEvents] swap-containers failed:', res.reason)
+                }
+              }
+              break
+          }
+
+          // L2 示范高亮：若事件带 highlightDemo 字段，则推入 activeDemoHighlights
+          if ('highlightDemo' in event && event.highlightDemo) {
+            const { targetObjectId, targetContainerId, color, durationMs } = event.highlightDemo as {
+              targetObjectId?: string
+              targetContainerId?: string
+              color?: string
+              durationMs?: number
+            }
+            if (targetObjectId || targetContainerId) {
+              get().pushDemoHighlight({
+                id: `demo-${event.id}`,
+                objectConfigId: targetObjectId,
+                containerId: targetContainerId,
+                color: color ?? '#f59e0b',
+                durationMs: durationMs ?? 1800,
+              })
+            }
           }
 
           if (event.message) {
@@ -684,6 +742,59 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
         currentStageId: stageId,
         currentObjective: resolved.playerObjective,
       })
+    },
+
+    pushDemoHighlight: (hl) => {
+      const duration = (hl as any).durationMs ?? 1800
+      const expireAt = Date.now() + duration
+      const clean: any = {
+        id: hl.id,
+        objectConfigId: (hl as any).objectConfigId,
+        containerId: (hl as any).containerId,
+        color: (hl as any).color ?? '#f59e0b',
+        expireAt,
+      }
+      set(((s: any) => ({
+        activeDemoHighlights: [
+          ...s.activeDemoHighlights.filter((x: any) => x.id !== clean.id),
+          clean,
+        ],
+      })) as any)
+    },
+    clearDemoHighlight: (id: string) => {
+      set(((s: any) => ({
+        activeDemoHighlights: s.activeDemoHighlights.filter((x: any) => x.id !== id),
+      })) as any)
+    },
+    sweepExpiredDemoHighlights: () => {
+      const now = Date.now()
+      set((s: any) => {
+        const filtered = s.activeDemoHighlights.filter((x: any) => x.expireAt > now)
+        if (filtered.length === s.activeDemoHighlights.length) return null as any
+        return { activeDemoHighlights: filtered }
+      }) as any
+    },
+
+    swapContainers: (a, b) => {
+      const { task } = get()
+      if (!task) return { success: false, reason: 'task not started' }
+      const specA = task.containers.find((c: any) => c.id === a)
+      const specB = task.containers.find((c: any) => c.id === b)
+      if (!specA || !specB) return { success: false, reason: 'container not found' }
+      if (specA.room !== specB.room) return { success: false, reason: 'containers not same room' }
+      const overrides = { ...(get().containerOverrides ?? {}) }
+      const curA = { x: 0, y: 0, z: 0, ...(overrides[a]?.position ?? {}), ...(specA.position ?? {}) }
+      const curB = { x: 0, y: 0, z: 0, ...(overrides[b]?.position ?? {}), ...(specB.position ?? {}) }
+      overrides[a] = { ...(overrides[a] ?? {}), position: { x: curB.x, y: curB.y ?? 0, z: curB.z } }
+      overrides[b] = { ...(overrides[b] ?? {}), position: { x: curA.x, y: curA.y ?? 0, z: curA.z } }
+      set({ containerOverrides: overrides })
+      // 触发轻微事件总线：Chaos/Sound 可选，这里仅触发 eventEffect 名
+      const ee = (get() as any).triggerEventEffect
+      if (typeof ee === 'function') ee('container-swap')
+      return { success: true }
+    },
+    triggerMemoryClearPulse: () => {
+      set({ memoryClearPulseMs: Date.now() })
     },
   }
 }

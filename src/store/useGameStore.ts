@@ -24,6 +24,7 @@ import type {
   EventToastType,
   MoveAnimation,
   FeedbackState,
+  DemoHighlight,
 } from './gameTypes'
 import type { ProceduralProgress } from '../game/proceduralMemory'
 import type { ProgressState } from './slices/progressSlice'
@@ -94,6 +95,12 @@ export interface GameState {
   currentStageId: string | null
   /** 当前阶段玩家目标文案（直接来自 stages[].playerObjective 或 fallback 自动生成） */
   currentObjective: string | null
+  /** L2 睡前仪式示范高亮集合：每个 id+objectConfigId/containerId+颜色+过期时间，Object3D/Container3D 订阅后做强化发光 */
+  activeDemoHighlights: DemoHighlight[]
+  /** L3 洗衣分拣容器位置交换：containerId → 覆盖后的 position（task.containers 渲染时先 merge 本映射） */
+  containerOverrides: Record<string, { position?: Vec3 }>
+  /** saveMemory 后触发的"清晰回冲"效果（Memory Modulator 用）：时间戳 ms，0 表示未触发 */
+  memoryClearPulseMs: number
 }
 
 export interface GameStats {
@@ -186,6 +193,16 @@ interface GameStore extends GameState, ProgressState {
   evaluateStageTransitions: (hint?: { afterEventId?: string; afterMemoryForEntityId?: string }) => void
   /** 强制推进到给定阶段（仅用于 leave-home 等任务内部脚本事件） */
   setStage: (stageId: string) => void
+  /** L2 示范高亮：推入或覆盖一条示范高亮（带过期时间），durationMs 后自动清除 */
+  pushDemoHighlight: (hl: Omit<DemoHighlight, 'expireAt'> & { durationMs?: number }) => void
+  /** 清除指定 id 的示范高亮 */
+  clearDemoHighlight: (id: string) => void
+  /** 每帧清理过期的示范高亮 */
+  sweepExpiredDemoHighlights: () => void
+  /** L3 洗衣分拣：交换两个 task-container 的 position（同时交换 acceptedCategories 对应映射，便于 acceptedCategories 校验与放置后分类一致） */
+  swapContainers: (a: string, b: string) => { success: boolean; reason?: string }
+  /** Memory Modulator：触发一次"清晰回冲"脉冲（saveMemory 调用） */
+  triggerMemoryClearPulse: () => void
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
