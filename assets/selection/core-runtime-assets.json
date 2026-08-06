@@ -1,0 +1,241 @@
+{
+  "generatedAt": "2026-08-06",
+  "version": "R1",
+  "note": "ROUND R1 §四 第一批核心资产清单。本地 stem 不存在时 status=MISSING。",
+  "selection": [
+    {
+      "id": "furniture/loungeSofa",
+      "category": "furniture",
+      "stem": "loungeSofa",
+      "runtimeSubdir": "furniture",
+      "purpose": "Living 主沙发（已接入，纳入生成清单）",
+      "replacementPolicy": "required",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/tableCoffee",
+      "category": "furniture",
+      "stem": "tableCoffee",
+      "runtimeSubdir": "furniture",
+      "purpose": "Living 茶几（已接入）",
+      "replacementPolicy": "required",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/cabinetTelevision",
+      "category": "furniture",
+      "stem": "cabinetTelevision",
+      "runtimeSubdir": "furniture",
+      "purpose": "Living 电视柜（已接入）",
+      "replacementPolicy": "required",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/televisionModern",
+      "category": "furniture",
+      "stem": "televisionModern",
+      "runtimeSubdir": "furniture",
+      "purpose": "Living 电视（已接入）",
+      "replacementPolicy": "required",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/bookcaseOpen",
+      "category": "furniture",
+      "stem": "bookcaseOpen",
+      "runtimeSubdir": "furniture",
+      "purpose": "Living 书架（已接入）",
+      "replacementPolicy": "required",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/bedDouble",
+      "category": "furniture",
+      "stem": "bedDouble",
+      "runtimeSubdir": "furniture",
+      "purpose": "Bedroom 双人床",
+      "replacementPolicy": "required",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/cabinetBedDrawer",
+      "category": "furniture",
+      "stem": "cabinetBedDrawer",
+      "runtimeSubdir": "furniture",
+      "purpose": "Bedroom 床头柜（cnt-nightstand task-container）",
+      "replacementPolicy": "required",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/rugRectangle",
+      "category": "furniture",
+      "stem": "rugRectangle",
+      "runtimeSubdir": "furniture",
+      "purpose": "Bedroom 地毯",
+      "replacementPolicy": "required",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/lampRoundTable",
+      "category": "furniture",
+      "stem": "lampRoundTable",
+      "runtimeSubdir": "furniture",
+      "purpose": "Bedroom 台灯（仅注册，本轮暂不放置）",
+      "replacementPolicy": "optional",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/rugDoormat",
+      "category": "furniture",
+      "stem": "rugDoormat",
+      "runtimeSubdir": "furniture",
+      "purpose": "Entrance 门垫",
+      "replacementPolicy": "required",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/coatRackStanding",
+      "category": "furniture",
+      "stem": "coatRackStanding",
+      "runtimeSubdir": "furniture",
+      "purpose": "Entrance 衣帽架（仅注册，本轮暂不放置）",
+      "replacementPolicy": "optional",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/table",
+      "category": "furniture",
+      "stem": "table",
+      "runtimeSubdir": "furniture",
+      "purpose": "Dining 餐桌（仅注册，本轮暂不布局）",
+      "replacementPolicy": "required_future",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/chair",
+      "category": "furniture",
+      "stem": "chair",
+      "runtimeSubdir": "furniture",
+      "purpose": "Dining 餐椅（仅注册）",
+      "replacementPolicy": "required_future",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/kitchenCabinetDrawer",
+      "category": "furniture",
+      "stem": "kitchenCabinetDrawer",
+      "runtimeSubdir": "furniture",
+      "purpose": "Dining 厨房抽屉柜 + Laundry 抽屉（仅注册）",
+      "replacementPolicy": "required_future",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/kitchenSink",
+      "category": "furniture",
+      "stem": "kitchenSink",
+      "runtimeSubdir": "furniture",
+      "purpose": "Dining 厨房水槽（仅注册）",
+      "replacementPolicy": "required_future",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/trashcan",
+      "category": "furniture",
+      "stem": "trashcan",
+      "runtimeSubdir": "furniture",
+      "purpose": "Dining 垃圾桶（仅注册）",
+      "replacementPolicy": "required_future",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/washer",
+      "category": "furniture",
+      "stem": "washer",
+      "runtimeSubdir": "furniture",
+      "purpose": "Laundry 洗衣机（仅注册）",
+      "replacementPolicy": "required_future",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/dryer",
+      "category": "furniture",
+      "stem": "dryer",
+      "runtimeSubdir": "furniture",
+      "purpose": "Laundry 烘干机（仅注册）",
+      "replacementPolicy": "required_future",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/bookcaseOpenLow",
+      "category": "furniture",
+      "stem": "bookcaseOpenLow",
+      "runtimeSubdir": "furniture",
+      "purpose": "Laundry 矮书架（仅注册）",
+      "replacementPolicy": "optional_future",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "food/mug",
+      "category": "food",
+      "stem": "mug",
+      "runtimeSubdir": "food",
+      "purpose": "L1 脏杯子（仅注册，rawAabb 2m³ 疑似 kit 默认包围盒，需后续校准）",
+      "replacementPolicy": "required_future",
+      "status": "EXISTS_IN_LOCAL_INDEX_SCALE_CALIBRATION_REQUIRED"
+    },
+    {
+      "id": "food/plate",
+      "category": "food",
+      "stem": "plate",
+      "runtimeSubdir": "food",
+      "purpose": "L1 脏盘子（仅注册，需 scale 校准）",
+      "replacementPolicy": "required_future",
+      "status": "EXISTS_IN_LOCAL_INDEX_SCALE_CALIBRATION_REQUIRED"
+    },
+    {
+      "id": "food/utensil-fork",
+      "category": "food",
+      "stem": "utensil-fork",
+      "runtimeSubdir": "food",
+      "purpose": "L1 叉子（仅注册，需 scale 校准）",
+      "replacementPolicy": "required_future",
+      "status": "EXISTS_IN_LOCAL_INDEX_SCALE_CALIBRATION_REQUIRED"
+    },
+    {
+      "id": "food/utensil-spoon",
+      "category": "food",
+      "stem": "utensil-spoon",
+      "runtimeSubdir": "food",
+      "purpose": "L1 勺子（仅注册，需 scale 校准）",
+      "replacementPolicy": "optional_future",
+      "status": "EXISTS_IN_LOCAL_INDEX_SCALE_CALIBRATION_REQUIRED"
+    },
+    {
+      "id": "furniture/pillow",
+      "category": "furniture",
+      "stem": "pillow",
+      "runtimeSubdir": "furniture",
+      "purpose": "辅助视觉：沙发/床枕头（仅注册）",
+      "replacementPolicy": "optional",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/books",
+      "category": "furniture",
+      "stem": "books",
+      "runtimeSubdir": "furniture",
+      "purpose": "辅助视觉：书架书本（仅注册）",
+      "replacementPolicy": "optional",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    },
+    {
+      "id": "furniture/pottedPlant",
+      "category": "furniture",
+      "stem": "pottedPlant",
+      "runtimeSubdir": "furniture",
+      "purpose": "辅助视觉：盆景盆栽（仅注册，Clean Slice 默认不放置）",
+      "replacementPolicy": "optional",
+      "status": "EXISTS_IN_LOCAL_INDEX"
+    }
+  ]
+}
