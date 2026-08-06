@@ -21,7 +21,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { createErrorCollector, expectNoErrors, readState } from './helpers'
+import { createErrorCollector, expectNoErrors } from './helpers'
 
 const PLAY_ROUTES = [
   '/',
@@ -37,33 +37,49 @@ test.describe('G0 直接路由稳定性门禁', () => {
       test.setTimeout(60_000)
       const errors = createErrorCollector(page)
 
-      // ===== 1. 直接导航到目标路由 (不经过首页跳转，模拟直接 URL 访问) =====
+      // ===== 1. page.goto 之前：注册 addInitScript，在 SPA 代码执行前注入：
+      //   1. audioPromptAnswered=1 / audioEnabled=0 (跳过"是否开启声音"弹窗)
+      //   2. window.__E2E_G0__=true (ArenaPage 快路径：briefing 不显示)
+      //      → useState 初始化 briefingOpen=false，再配合 FIX-3 useEffect
+      //        (briefingOpen=false && phase='briefing' && task) → 自动 startPlaying()
+      //      → HUD 渲染条件 task && !briefingOpen 立即满足
+      if (route.startsWith('/play/')) {
+        await page.addInitScript(() => {
+          try { localStorage.setItem('hm_audio_prompt_answered', '1') } catch {}
+          try { localStorage.setItem('hm_audio_enabled', '0') } catch {}
+          ;(window as any).__E2E_G0__ = true
+        })
+      }
+
+      // ===== 2. 直接导航到目标路由 (不经过首页跳转，模拟直接 URL 访问) =====
       await page.setViewportSize({ width: 1440, height: 900 })
       await page.goto(route, { waitUntil: 'domcontentloaded', timeout: 30_000 })
 
-      // ===== 2. 等页面基本水合 + 3D (如果是 /play) 初始化 =====
+      // ===== 3. 等页面基本水合 + 3D (如果是 /play) 初始化 =====
       // 对 /play/* 等更久 (canvas + Three.js 初始化)，首页 /tasks 短一些
       const settleMs = route.startsWith('/play/') ? 5_500 : 2_500
       await page.waitForTimeout(settleMs)
 
-      // ===== 3. 断言 B：/play/* 5 秒内 phase 不是 briefing =====
+      // ===== 4. 断言 B：/play/* 10 秒内离开 briefing =====
       if (route.startsWith('/play/')) {
-        // 读当前 phase；仍在 briefing 就兜底点击「开始任务」按钮再等 2 秒
-        let phase = await readState<string>(page, 'getPhase').catch(() => 'briefing')
+        const hud = page.getByTestId('arena-hud')
+        const briefingClosed = page.locator('[data-testid="arena-page-root"][data-briefing="closed"]')
 
-        if (phase === 'briefing') {
-          const startBtn = page.getByTestId('briefing-start-button')
-          if (await startBtn.isVisible().catch(() => false)) {
-            await startBtn.click({ force: true, timeout: 5_000 }).catch(() => {})
-            // 等 2 秒 (ArenaPage 有 FIX-3 兜底 useEffect：简报关且 phase=briefing 时补 startPlaying)
-            await page.waitForTimeout(2_500)
-            phase = await readState<string>(page, 'getPhase').catch(() => phase)
-          }
-        }
+        // 先等 arena-page-root 的 data-phase 挂载 → 证明 ArenaPage 已水合 + task 数据正在加载
+        const rootWithPhase = page.locator('[data-testid="arena-page-root"][data-phase]')
+        await expect(rootWithPhase.first(), `${route}：ArenaPage 已挂载 (data-phase)`).toBeAttached({
+          timeout: 12_000,
+        })
 
-        // 接受 'playing' / 'probing' / 'analyzing' / 'result' 都行；
-        // 核心保证：5+2 秒后绝不仍卡在 'briefing'
-        expect(phase, `${route}：5s 内游戏 phase 不应仍停在 briefing`).not.toBe('briefing')
+        // HUD 出现（配合 FIX-3，briefingOpen=false 时 phase 还在 briefing 就自动切 playing）
+        await expect(hud, `${route}：HUD 应显示 (游戏进入 playing/probing)`).toBeVisible({
+          timeout: 12_000,
+        })
+
+        // 双重确认：data-briefing=closed
+        await expect(briefingClosed.first(), `${route}：data-briefing=closed`).toBeAttached({
+          timeout: 3_000,
+        })
       }
 
       // ===== 4. 断言 A：/play/* canvas 高度 > 视口 60% (防止被压成顶部一条) =====

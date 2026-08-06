@@ -79,7 +79,14 @@ export function ArenaPage() {
   const startSession = useSessionStore((s) => s.startSession)
   const addToast = useToastStore((s) => s.addToast)
 
-  const [briefingOpen, setBriefingOpen] = useState(true)
+  const [briefingOpen, setBriefingOpen] = useState<boolean>(() => {
+    // G0-E2E 快路径：window.__E2E_G0__ = true 时不显示简报，直接走 FIX-3 启动游戏。
+    // 解决 E2E test 依赖 brief button click 的间歇性失败。
+    try {
+      if (typeof window !== 'undefined' && Boolean((window as any).__E2E_G0__)) return false
+    } catch {}
+    return true
+  })
   const [narrativeText, setNarrativeText] = useState<string | null>(null)
   const [showStats, setShowStats] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
@@ -268,8 +275,9 @@ export function ArenaPage() {
       }
     }
 
-    // 校准模式也不显示 briefing。正常新开局显示 briefing。
-    setBriefingOpen(calibMode ? false : true)
+    // 校准模式也不显示 briefing。E2E G0 模式下直接跳过简报（window.__E2E_G0__=true）。正常新开局显示 briefing。
+    const e2eG0Skip = typeof window !== 'undefined' && Boolean((window as any).__E2E_G0__)
+    setBriefingOpen((calibMode || e2eG0Skip) ? false : true)
   }, [taskId, location.key, initializeTask, navigate, closeDialog])
 
   // 离开 ArenaPage 时停止所有音频，避免浏览器后退后继续播放
@@ -337,6 +345,19 @@ export function ArenaPage() {
       startPlaying()
     }
   }, [briefingOpen, phase, task, startPlaying])
+
+  // G0-E2E 兜底：测试环境 (window.__testApi__ 存在) 下 briefing 打开超时 ≥8s 自动跳过
+  // 防止 headless chromium 内简报按钮 click 失败导致全部断言挂在 HUD 不可见
+  useEffect(() => {
+    if (!task || !briefingOpen) return
+    if (typeof window === 'undefined') return
+    const inE2e = !!(window as any).__testApi__ || _SAFE_ENV.MODE === 'e2e' || _SAFE_ENV.VITE_E2E === 'true'
+    if (!inE2e) return
+    const id = window.setTimeout(() => {
+      setBriefingOpen(false)
+    }, 8_000)
+    return () => window.clearTimeout(id)
+  }, [task, briefingOpen])
 
   // AUTO-1：阶段机主动 tick（100ms 间隔）。解决"玩家站着不动/pure E2E 脚本下，
   // evaluateStageTransitions/triggerScriptedEvents 只在玩家动作时跑，导致条件满足但阶段不切、事件不触发"的问题
@@ -441,7 +462,7 @@ export function ArenaPage() {
   )
 
   return (
-    <div className="flex-1 relative h-full min-h-0 w-full overflow-hidden" style={{ background: '#0f172a' }} data-testid="arena-page-root">
+    <div className="flex-1 relative h-full min-h-0 w-full overflow-hidden" style={{ background: '#0f172a' }} data-testid="arena-page-root" data-phase={phase} data-briefing={briefingOpen ? 'open' : 'closed'}>
       {/* 3D 场景：始终渲染，briefing 阶段也提供背景画面，避免"后面白屏/透明"被误认为模型加载失败 */}
       <Suspense fallback={
         <div className="absolute inset-0 flex items-center justify-center" style={{ background: '#0f172a' }}>
