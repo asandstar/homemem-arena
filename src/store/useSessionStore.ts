@@ -178,8 +178,8 @@ const _rawSessionStore = create<SessionStore>((set, rawGet) => {
     set({
       currentSession: {
         ...session,
-        memories: [...session.memories, fullMemory],
-        memory_updates: [...session.memory_updates, fullMemory],
+        memories: [...(session.memories ?? []), fullMemory],
+        memory_updates: [...(session.memory_updates ?? []), fullMemory],
       },
     })
     return fullMemory

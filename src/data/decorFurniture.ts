@@ -73,6 +73,77 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       rotationY: ROT.FACE_NEG_X,
       modelAssetId: 'furniture/bookcaseOpen',
     },
+    // ========== Living 新增：落地灯 + 休闲椅 + 盆栽 + 圆形地毯 ==========
+    // 落地灯：沙发西侧角落（靠近西墙，沙发左前方），不遮挡 relocated key (-2.6, 1.9)
+    {
+      id: 'decor-floor-lamp',
+      position: { x: -2.8, y: 0, z: 1.0 },
+      size: { x: 0.304, y: 1.72, z: 0.351 },
+      rotationY: ROT.FACE_PLUS_Z,
+      modelAssetId: 'furniture/lampRoundFloor',
+    },
+    // 休闲椅：东墙南侧，面向北看电视
+    {
+      id: 'decor-lounge-chair',
+      position: { x: 2.0, y: 0, z: -1.0 },
+      size: { x: 0.98, y: 0.92, z: 0.82 },
+      rotationY: ROT.FACE_NEG_Z,
+      modelAssetId: 'furniture/loungeChair',
+    },
+    // 圆形地毯：茶几下方（coffee table 在 task 中位置 ~(0, 0, 0.3)）
+    {
+      id: 'decor-living-rug-round',
+      position: { x: 0, y: 0, z: 0.3 },
+      size: { x: 1.84, y: 0.02, z: 1.84 },
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+      modelAssetId: 'furniture/rugRound',
+    },
+    // 小盆栽 1：电视柜西侧角落
+    {
+      id: 'decor-plant-1',
+      position: { x: -3.0, y: 0, z: -2.0 },
+      size: { x: 0.303, y: 0.448, z: 0.303 },
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+      modelAssetId: 'furniture/plantSmall1',
+    },
+    // 小盆栽 2：书架南侧
+    {
+      id: 'decor-plant-2',
+      position: { x: 2.6, y: 0, z: 2.5 },
+      size: { x: 0.303, y: 0.448, z: 0.303 },
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+      modelAssetId: 'furniture/plantSmall2',
+    },
+    // 小盆栽 3：休闲椅旁边
+    {
+      id: 'decor-plant-3',
+      position: { x: 2.8, y: 0, z: -1.8 },
+      size: { x: 0.272, y: 0.464, z: 0.314 },
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+      modelAssetId: 'furniture/plantSmall3',
+    },
+    // 小音箱：电视柜上两侧（西）
+    {
+      id: 'decor-speaker-l',
+      position: { x: -2.8, y: 0.55, z: -2.1 },
+      size: { x: 0.266, y: 0.536, z: 0.24 },
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+      modelAssetId: 'furniture/speakerSmall',
+    },
+    // 小音箱：电视柜上两侧（东）
+    {
+      id: 'decor-speaker-r',
+      position: { x: -1.2, y: 0.55, z: -2.1 },
+      size: { x: 0.266, y: 0.536, z: 0.24 },
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+      modelAssetId: 'furniture/speakerSmall',
+    },
     // ========== 墙饰（collisionMode='none'，不碰撞不覆盖门洞，保留） ==========
     {
       id: 'decor-clock',
@@ -123,6 +194,58 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       collisionMode: 'none',
       modelAssetId: 'furniture/rugRectangle',
     },
+    // ========== Bedroom 新增：大衣柜 + 床头柜×2 + 浴室镜 + 抱枕/玩具 ==========
+    // 大衣柜：贴北墙（z=-2.0），居中偏西
+    {
+      id: 'decor-bedroom-wardrobe',
+      position: { x: -0.8, y: 0, z: -2.0 },
+      size: { x: 1.224, y: 1.073, z: 1.0 },
+      rotationY: ROT.FACE_PLUS_Z,
+      modelAssetId: 'furniture/cabinetBed',
+    },
+    // 床头柜 1：床西侧（x=-1.1, z=-1.8），靠近床头
+    {
+      id: 'decor-nightstand-left',
+      position: { x: -1.15, y: 0, z: -1.85 },
+      size: { x: 0.612, y: 0.605, z: 0.877 },
+      rotationY: ROT.FACE_PLUS_Z,
+      modelAssetId: 'furniture/cabinetBedDrawerTable',
+    },
+    // 床头柜 2：床东侧（x=1.1, z=-1.8），对称放置
+    {
+      id: 'decor-nightstand-right',
+      position: { x: 1.15, y: 0, z: -1.85 },
+      size: { x: 0.612, y: 0.605, z: 0.877 },
+      rotationY: ROT.FACE_PLUS_Z,
+      modelAssetId: 'furniture/cabinetBedDrawerTable',
+    },
+    // 浴室镜：贴西墙（x=-2.2），中部偏上，不碰撞
+    {
+      id: 'decor-bedroom-mirror',
+      position: { x: -2.2, y: 1.4, z: 0.5 },
+      size: { x: 0.603, y: 0.869, z: 0.289 },
+      rotationY: ROT.FACE_PLUS_X,
+      collisionMode: 'none',
+      modelAssetId: 'furniture/bathroomMirror',
+    },
+    // 玩具熊：放在床头（z=-1.6），床上位置，y 约 0.3 高
+    {
+      id: 'decor-toy-bear',
+      position: { x: 0.5, y: 0.58, z: -1.6 },
+      size: { x: 0.312, y: 0.36, z: 0.198 },
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+      modelAssetId: 'furniture/bear',
+    },
+    // 台灯（圆台灯）：放西侧床头柜上
+    {
+      id: 'decor-nightstand-lamp-l',
+      position: { x: -1.15, y: 0.605, z: -1.85 },
+      size: { x: 0.304, y: 0.628, z: 0.351 },
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+      modelAssetId: 'furniture/lampRoundTable',
+    },
   ],
   dining: [
     // ========== ROUND R2A：DiningKitchen 核心模型实际替换 ==========
@@ -171,6 +294,59 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       rotationY: ROT.FACE_PLUS_Z,
       modelAssetId: 'furniture/kitchenCabinetDrawer',
     },
+    // ========== Dining/Kitchen 新增：冰箱 + 灶台 + 微波炉 ==========
+    // 冰箱：贴西墙（x=-2.3），北墙排列（z=-2.1），柜门朝东（+X）
+    {
+      id: 'decor-kit-fridge',
+      position: { x: -2.3, y: 0, z: -2.1 },
+      size: { x: 0.774, y: 1.656, z: 0.57 },
+      rotationY: ROT.FACE_PLUS_X,
+      modelAssetId: 'furniture/kitchenFridge',
+    },
+    // 灶台：北墙 cabinet-2 东侧衔接（x=1.2, z=-2.1）
+    {
+      id: 'decor-kit-stove',
+      position: { x: 1.2, y: 0, z: -2.1 },
+      size: { x: 0.538, y: 0.563, z: 0.6 },
+      rotationY: ROT.FACE_PLUS_Z,
+      modelAssetId: 'furniture/kitchenStove',
+    },
+    // 微波炉：放灶台旁的台面上（y=灶台高 0.563），x=1.9 东墙边
+    {
+      id: 'decor-kit-microwave',
+      position: { x: 2.0, y: 0.563, z: -2.0 },
+      size: { x: 0.522, y: 0.324, z: 0.414 },
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+      modelAssetId: 'furniture/kitchenMicrowave',
+    },
+    // 大盆栽：厨房东南角（x=2.4, z=1.8），装饰
+    {
+      id: 'decor-kit-plant',
+      position: { x: 2.4, y: 0, z: 2.0 },
+      size: { x: 0.408, y: 0.857, z: 0.466 },
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+      modelAssetId: 'furniture/pottedPlant',
+    },
+    // 收音机：放橱柜上方台面，厨房氛围
+    {
+      id: 'decor-kit-radio',
+      position: { x: -1.4, y: 0.563, z: -2.1 },
+      size: { x: 0.567, y: 0.411, z: 0.176 },
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+      modelAssetId: 'furniture/radio',
+    },
+    // 堆叠的书：放橱柜 1 上方台面，生活气息
+    {
+      id: 'decor-kit-books',
+      position: { x: 0.0, y: 0.613, z: -1.7 },
+      size: { x: 0.181, y: 0.125, z: 0.181 },
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+      modelAssetId: 'furniture/books',
+    },
 
     // 墙饰（collisionMode='none'，不碰撞不覆盖门洞）
     {
@@ -212,6 +388,15 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       size: { x: 0.86, y: 0.02, z: 0.47 },
       collisionMode: 'none',
       modelAssetId: 'furniture/rugDoormat',
+    },
+    // ========== Entrance 新增：立式挂衣架 ==========
+    // 挂衣架：玄关西墙侧（x=-0.8），北靠 z=-1.2，不挡门洞动线
+    {
+      id: 'decor-entrance-coatrack',
+      position: { x: -0.8, y: 0, z: -1.2 },
+      size: { x: 0.6, y: 1.694, z: 0.6 },
+      rotationY: ROT.FACE_PLUS_Z,
+      modelAssetId: 'furniture/coatRackStanding',
     },
   ],
   laundry: [

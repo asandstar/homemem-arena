@@ -5,7 +5,7 @@
 
 import { useEffect, useCallback, useState, lazy, Suspense } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { useGameStore, type GameStats } from '../store/useGameStore'
+import { useGameStore, getGameState, type GameStats } from '../store/useGameStore'
 import { SAFE_EMPTY_SET, SAFE_EMPTY_ARRAY } from '../store/safeStore'
 import { useSessionStore } from '../store/useSessionStore'
 import { useToastStore } from '../store/useToastStore'
@@ -283,40 +283,63 @@ export function ArenaPage() {
     if (closeDialog) closeDialog()
     
     // 修复：更健壮的 initializeTask 重试逻辑
+    // 关键：优先用 React selector 获取的 initializeTask（有 withSafeSnapshot 的 EMPTY fallback 保护），
+    // getState() 在 withSafeSnapshot 包装下可能返回 null，只作为 fallback。
     const maxRetries = 10
     let retries = 0
-    
+    let _DIAG = 0
+
     const tryInitialize = () => {
-      const s = useGameStore.getState() as any
-      if (typeof s?.initializeTask === 'function') {
-        console.log('[ARENA EFFECT #1] initializeTask 成功获取并调用')
+      // 路径1: React selector 的 initializeTask（withSafeSnapshot 保护下不会 null 崩溃）
+      if (typeof initializeTask === 'function') {
+        console.log('[ARENA EFFECT #1] initializeTask via selector ✅')
+        initializeTask(taskId)
+        return
+      }
+
+      // 路径2: 用 getGameState() 绕过 withSafeSnapshot 的 getState bug
+      const s = getGameState() as any
+      if (s && typeof s.initializeTask === 'function') {
+        console.log('[ARENA EFFECT #1] initializeTask via getGameState ✅')
         s.initializeTask(taskId)
         return
       }
-      
-      retries++
-      if (retries < maxRetries) {
-        console.warn(`[ARENA EFFECT #1] 第 ${retries} 次重试获取 initializeTask...`)
-        requestAnimationFrame(tryInitialize)
-      } else {
-        console.error('[ARENA EFFECT #1 FATAL] 多次重试后仍无法 initializeTask，尝试强制初始化')
-        // 强制降级：即使初始化失败，也尝试直接设置 phase
-        try {
-          const s2 = useGameStore.getState() as any
-          // 尝试手动设置 phase 为 idle，让 UI 不再卡在"准备中"
-          if (typeof s2?.setGamePhase === 'function') {
-            s2.setGamePhase('idle')
-          }
-          // 手动设置一个基本的 task 状态
-          if (typeof s2?.setTask === 'function') {
-            const taskData = (window as any).__currentTask
-            if (taskData) {
-              s2.setTask(taskData)
+
+      // ⚠️ 路径3 (EMERGENCY RECOVERY): state 被 sweepExpiredDemoHighlights 损坏了
+      // 用 _rawGameStore.setState(getInitialState(), true) 整体替换当前损坏的 state
+      try {
+        const rawStoreRef = (useGameStore as any)
+        const _raw = rawStoreRef?.__rawStore
+          ?? (typeof rawStoreRef?.getInitialState === 'function' ? rawStoreRef : null)
+        if (_raw) {
+          const _init = typeof _raw.getInitialState === 'function' ? _raw.getInitialState() : null
+          if (_init && typeof _init.initializeTask === 'function') {
+            console.warn('[ARENA EFFECT #1] EMERGENCY: state 已损坏，通过 getInitialState 完整重建')
+            const _setState = typeof (rawStoreRef as any)?.setRaw === 'function'
+              ? (rawStoreRef as any).setRaw
+              : typeof (_raw as any).setState === 'function'
+                ? (_raw as any).setState
+                : null
+            if (typeof _setState === 'function') {
+              _setState(_init, true)  // replace=true → 恢复完整 133 keys
+              retries = Math.max(0, retries - 3)
             }
           }
-        } catch (e) {
-          console.error('[ARENA EFFECT #1 FATAL] 强制初始化也失败:', e)
         }
+      } catch (err) {
+        console.warn('[ARENA EFFECT #1] emergency rebuild 尝试失败:', err)
+      }
+
+      if (_DIAG < 2) {
+        _DIAG++
+        console.error('[ARENA DIAG] getGameState type=', typeof s, 'keys=', s ? Object.keys(s).slice(0, 30) : 'null', 'hasInit=', typeof s?.initializeTask, 'selectorInit=', typeof initializeTask)
+      }
+
+      retries++
+      if (retries < maxRetries) {
+        requestAnimationFrame(tryInitialize)
+      } else {
+        console.error('[ARENA EFFECT #1 FATAL] selector 和 getGameState 都无法获取 initializeTask')
       }
     }
     
@@ -330,8 +353,8 @@ export function ArenaPage() {
       if (ok) {
         setBriefingOpen(false)
         // 存档里 phase 若是 briefing/playing，都直接切到 playing（保证玩家"继续"时立刻可操作）
-        const gs = useGameStore.getState()
-        if (gs.phase === 'briefing' || gs.phase === 'playing') {
+        const gs = getGameState() as any
+        if (gs && (gs.phase === 'briefing' || gs.phase === 'playing') && typeof gs.setGamePhase === 'function') {
           gs.setGamePhase('playing')
         }
         return

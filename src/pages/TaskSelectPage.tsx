@@ -5,7 +5,7 @@ import { PUBLIC_LEVEL_ORDER, HIDDEN_TASK_IDS, getPublicTaskTemplates as _getPubl
 import { TaskCard } from '../components/tasks/TaskCard'
 import { useUiStore } from '../store/useUiStore'
 import { hasSavedGame } from '../save/saveSystem'
-import { useGameStore } from '../store/useGameStore'
+import { useGameStore, getGameState } from '../store/useGameStore'
 import { SAFE_EMPTY_OBJECT } from '../store/safeStore'
 
 const timeSlots = [
@@ -71,17 +71,19 @@ export function TaskSelectPage() {
     initializeProgress(publicTaskTemplates.map((t) => t.id))
   }, [initializeProgress, publicTaskTemplates])
 
-  // 新增：用 getState() 获取真实的解锁状态，绕过 React 首帧 null 的问题
+  // 新增：用 getGameState() 获取真实的解锁状态，绕过 withSafeSnapshot 的 getState bug
   useEffect(() => {
-    // 用 getState() 绕过 React 首帧 null 的问题
-    const state = useGameStore.getState()
+    const state = getGameState() as any
+    if (!state || typeof state.isLevelUnlocked !== 'function') {
+      console.warn('[TaskSelectPage] getGameState 无 isLevelUnlocked → 默认全部解锁')
+      const fallbackMap: Record<string, boolean> = {}
+      publicTaskTemplates.forEach((t) => { fallbackMap[t.id] = true })
+      setUnlockedMap(fallbackMap)
+      return
+    }
     const map: Record<string, boolean> = {}
     publicTaskTemplates.forEach((t) => {
-      if (typeof state.isLevelUnlocked === 'function') {
-        map[t.id] = state.isLevelUnlocked(t.id, unlockOrder)
-      } else {
-        map[t.id] = true // 默认解锁
-      }
+      map[t.id] = state.isLevelUnlocked(t.id, unlockOrder)
     })
     setUnlockedMap(map)
   }, [publicTaskTemplates, unlockOrder])

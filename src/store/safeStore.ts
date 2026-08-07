@@ -48,7 +48,31 @@ const _SAFE_ENV: { DEV: boolean } = (() => {
 export function withSafeSnapshot<S>(
   rawStore: UseBoundStore<StoreApi<S>>,
 ): UseBoundStore<StoreApi<S>> {
-  const EMPTY = {} as S
+  /**
+   * ⚠️ ROOT FIX 2026-08-07 v6:
+   * v5 在 withSafeSnapshot 顶层同步调用 rawStore.getInitialState()，
+   * 但在某些模块加载顺序 / React Fast Refresh 下，这个调用会发生在
+   * zustand createStoreImpl 还没把 `initialState` 赋值给 store 时 →
+   * ReferenceError: Cannot access 'initialState' before initialization（TDZ 崩溃）。
+   *
+   * v6 改为「惰性初始化 + 单次缓存」：第一次真正需要 EMPTY 时（首次 selector 执行）
+   * 才调 getInitialState()，此时 createStoreImpl 早已执行完毕，initialState 可用。
+   * 如果极端情况下 getInitialState() 仍然失败（用户在 create 回调里循环引用），
+   * 再 fallback 到空对象（safeSet/safeGet 也会配合兜底）。
+   */
+  let _EMPTY: S | null = null
+  const getEmpty = (): S => {
+    if (_EMPTY !== null) return _EMPTY
+    try {
+      const s = (rawStore as any).getInitialState?.()
+      if (s && typeof s === 'object') {
+        _EMPTY = s as S
+        return _EMPTY
+      }
+    } catch { /* fallthrough */ }
+    _EMPTY = {} as S
+    return _EMPTY
+  }
   const wrapped = function (
     selector?: (state: S) => any,
     equalityFn?: (a: any, b: any) => boolean,
@@ -69,7 +93,7 @@ export function withSafeSnapshot<S>(
     // === 2) stableSelector：纯函数！！！不在内部写任何 ref（React 规则）===
     const stableSelector = useCallback((s: S | null): any => {
       const userSel = userSelectorRef.current
-      const safe = s ?? EMPTY
+      const safe = s ?? getEmpty()
       if (typeof userSel !== 'function') return safe
       return userSel(safe)
     }, [])
@@ -149,9 +173,13 @@ export function withSafeSnapshot<S>(
  * 在 create<> 回调里包装 get() 函数，action 内部跨 slice 读 state 也能安全
  * 避开首次创建期间 getState===null。传给每个 slice 的第二个参数。
  */
+/**
+ * @deprecated 2026-08-07: zustand v5 的 create() 是同步的，rawGet() 永远不会返回 null。
+ * create() 回调里可以直接用 rawGet，不需要这层包装。
+ * 保留此函数以免旧代码调用时编译失败，但不再做 EMPTY 替换（因为那是 bug 源）。
+ */
 export function makeSafeGet<S>(rawGet: () => S): () => S {
-  const EMPTY = {} as S
   return function safeGet(): S {
-    return rawGet() ?? EMPTY
+    return rawGet()
   }
 }

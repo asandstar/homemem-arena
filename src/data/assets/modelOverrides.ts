@@ -323,4 +323,407 @@ export const MODEL_OVERRIDES: ModelOverrideMap = {
     floorAligned: true,
     status: 'provisional',
   },
+
+  // ===================== 新家具 provisional 校准 =====================
+  // lampRoundFloor rawAabb=(0.152,0.86,0.1756) rawMin=(-0.016,0,-0.1478) rawMax=(0.136,0.86,0.0278)
+  // 目标: 落地灯 高 ~1.72m（放大 2x）
+  'furniture/lampRoundFloor': {
+    uniformScale: 2.0,
+    pivotOffset: { x: -0.06, y: 0, z: 0.06 },
+    effectiveAabb: { x: 0.304, y: 1.72, z: 0.351 },
+    collisionSize: { x: 0.28, y: 1.72, z: 0.32 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // lampSquareFloor rawAabb=(0.12,0.86,0.12) rawMin=(0,0,-0.12) rawMax=(0.12,0.86,0)
+  'furniture/lampSquareFloor': {
+    uniformScale: 2.0,
+    pivotOffset: { x: -0.06, y: 0, z: 0.06 },
+    effectiveAabb: { x: 0.24, y: 1.72, z: 0.24 },
+    collisionSize: { x: 0.22, y: 1.72, z: 0.22 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // loungeChair rawAabb=(0.49,0.46,0.41) rawMin=(0,0,-0.41) rawMax=(0.49,0.46,0)
+  // 参照 loungeSofa scale=2 → ~0.92 高 OK
+  'furniture/loungeChair': {
+    uniformScale: 2.0,
+    pivotOffset: { x: -0.245, y: 0, z: 0.205 },
+    effectiveAabb: { x: 0.98, y: 0.92, z: 0.82 },
+    collisionSize: { x: 0.88, y: 0.92, z: 0.74 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // loungeChairRelax rawAabb=(0.49,0.63,0.6747) rawMin=(0,0,-0.6747) rawMax=(0.49,0.63,0)
+  'furniture/loungeChairRelax': {
+    uniformScale: 1.8,
+    pivotOffset: { x: -0.245, y: 0, z: 0.337 },
+    effectiveAabb: { x: 0.882, y: 1.134, z: 1.214 },
+    collisionSize: { x: 0.8, y: 1.134, z: 1.1 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // loungeDesignChair rawAabb=(0.7296,0.4,0.41) rawMin=(0,0,-0.41) rawMax=(0.7296,0.4,0)
+  'furniture/loungeDesignChair': {
+    uniformScale: 2.0,
+    pivotOffset: { x: -0.3648, y: 0, z: 0.205 },
+    effectiveAabb: { x: 1.459, y: 0.8, z: 0.82 },
+    collisionSize: { x: 1.32, y: 0.8, z: 0.74 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // sideTable rawAabb=(0.5345,0.3844,0.22) rawMin=(-0.01,0,-0.21) rawMax=(0.5245,0.3844,0.01)
+  // 参照 coffee table → 约 0.44m 台面高（~1.15x）
+  'furniture/sideTable': {
+    uniformScale: 1.6,
+    pivotOffset: { x: -0.257, y: 0, z: 0.1 },
+    effectiveAabb: { x: 0.855, y: 0.615, z: 0.352 },
+    collisionSize: { x: 0.78, y: 0.615, z: 0.32 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // sideTableDrawers rawAabb=(0.5345,0.3844,0.3863)
+  'furniture/sideTableDrawers': {
+    uniformScale: 1.6,
+    pivotOffset: { x: -0.257, y: 0, z: 0.015 },
+    effectiveAabb: { x: 0.855, y: 0.615, z: 0.618 },
+    collisionSize: { x: 0.78, y: 0.615, z: 0.56 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // plantSmall1/2/3 rawAabb≈(0.19,0.28,0.19) center
+  // 目标 ~0.45m 高（小盆栽，放大 1.6x）
+  'furniture/plantSmall1': {
+    uniformScale: 1.6,
+    pivotOffset: { x: 0, y: 0, z: 0 },
+    effectiveAabb: { x: 0.303, y: 0.448, z: 0.303 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  'furniture/plantSmall2': {
+    uniformScale: 1.6,
+    pivotOffset: { x: 0, y: 0, z: 0 },
+    effectiveAabb: { x: 0.303, y: 0.448, z: 0.303 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  'furniture/plantSmall3': {
+    uniformScale: 1.6,
+    pivotOffset: { x: 0, y: 0, z: 0 },
+    effectiveAabb: { x: 0.272, y: 0.464, z: 0.314 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // rugRound rawAabb=(0.92,0.01,0.92) rawMin=(0,0,-0.92) rawMax=(0.92,0.01,0)
+  // 圆形地毯 ~1.8m 直径，保持比例
+  'furniture/rugRound': {
+    uniformScale: 2.0,
+    pivotOffset: { x: -0.46, y: 0, z: 0.46 },
+    effectiveAabb: { x: 1.84, y: 0.02, z: 1.84 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // rugRounded rawAabb=(1.57,0.01,0.92)  类似 rugRectangle 保持 1x
+  'furniture/rugRounded': {
+    uniformScale: 1.0,
+    pivotOffset: { x: -0.785, y: 0, z: 0.46 },
+    effectiveAabb: { x: 1.57, y: 0.01, z: 0.92 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // speakerSmall rawAabb=(0.148,0.298,0.1332)
+  'furniture/speakerSmall': {
+    uniformScale: 1.8,
+    pivotOffset: { x: -0.074, y: 0, z: 0.0666 },
+    effectiveAabb: { x: 0.266, y: 0.536, z: 0.24 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // radio rawAabb=(0.315,0.2282,0.0975)
+  'furniture/radio': {
+    uniformScale: 1.8,
+    pivotOffset: { x: -0.1575, y: 0, z: 0.04875 },
+    effectiveAabb: { x: 0.567, y: 0.411, z: 0.176 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+
+  // —— Bedroom 新增 ——
+  // cabinetBed rawAabb=(0.266,0.2332,0.2173) rawMin=(-0.01,0,-0.205) rawMax=(0.256,0.2332,0.0123)
+  // 大衣柜：目标 ~1.06 宽 × 1.07 高 （放大 4.6x）
+  'furniture/cabinetBed': {
+    uniformScale: 4.6,
+    pivotOffset: { x: -0.123, y: 0, z: 0.096 },
+    effectiveAabb: { x: 1.224, y: 1.073, z: 1.0 },
+    collisionSize: { x: 1.1, y: 1.073, z: 0.9 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // cabinetBedDrawerTable rawAabb=(0.266,0.2632,0.3813)  同 cabinetBedDrawer scale=2.3
+  'furniture/cabinetBedDrawerTable': {
+    uniformScale: 2.3,
+    pivotOffset: { x: -0.123, y: 0, z: 0.01435 },
+    effectiveAabb: { x: 0.612, y: 0.605, z: 0.877 },
+    collisionSize: { x: 0.58, y: 0.605, z: 0.84 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // bedSingle rawAabb=(1.6232,0.505,1.892)  同 bedDouble scale=1.15
+  'furniture/bedSingle': {
+    uniformScale: 1.15,
+    pivotOffset: { x: -0.753, y: 0.13, z: 0.946 },
+    effectiveAabb: { x: 1.867, y: 0.581, z: 2.176 },
+    collisionSize: { x: 1.867, y: 0.55, z: 2.176 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // bathroomMirror rawAabb=(0.3013,0.4346,0.1444)  不碰撞的墙饰（放大 2x）
+  'furniture/bathroomMirror': {
+    uniformScale: 2.0,
+    pivotOffset: { x: 0, y: 0, z: -0.0234 },
+    effectiveAabb: { x: 0.603, y: 0.869, z: 0.289 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: false,
+    status: 'provisional',
+  },
+
+  // —— Kitchen 新增 ——
+  // kitchenFridge rawAabb=(0.43,0.92,0.3169) rawMin=(0,0,-0.2819) rawMax=(0.43,0.92,0.035)
+  // 冰箱：目标 ~0.76m 宽 × 1.65m 高（放大 1.78x）
+  'furniture/kitchenFridge': {
+    uniformScale: 1.8,
+    pivotOffset: { x: -0.215, y: 0, z: 0.12345 },
+    effectiveAabb: { x: 0.774, y: 1.656, z: 0.57 },
+    collisionSize: { x: 0.74, y: 1.656, z: 0.54 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // kitchenFridgeLarge rawAabb=(0.7932,1.3232,0.3855)
+  'furniture/kitchenFridgeLarge': {
+    uniformScale: 1.25,
+    pivotOffset: { x: -0.26, y: 0.4032, z: 0.149 },
+    effectiveAabb: { x: 0.992, y: 1.654, z: 0.482 },
+    collisionSize: { x: 0.95, y: 1.654, z: 0.46 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // kitchenStove rawAabb=(0.43,0.45,0.48)  同 kitchenCabinetDrawer scale=1.25
+  'furniture/kitchenStove': {
+    uniformScale: 1.25,
+    pivotOffset: { x: -0.215, y: 0, z: 0.21 },
+    effectiveAabb: { x: 0.538, y: 0.563, z: 0.6 },
+    collisionSize: { x: 0.52, y: 0.563, z: 0.58 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // kitchenStoveElectric rawAabb=(0.43,0.45,0.45)
+  'furniture/kitchenStoveElectric': {
+    uniformScale: 1.25,
+    pivotOffset: { x: -0.215, y: 0, z: 0.225 },
+    effectiveAabb: { x: 0.538, y: 0.563, z: 0.563 },
+    collisionSize: { x: 0.52, y: 0.563, z: 0.54 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // kitchenMicrowave rawAabb=(0.29,0.18,0.23) rawMin=(0,0,-0.22) rawMax=(0.29,0.18,0.01)
+  // 微波炉：台上电器，约 0.5 宽
+  'furniture/kitchenMicrowave': {
+    uniformScale: 1.8,
+    pivotOffset: { x: -0.145, y: 0, z: 0.105 },
+    effectiveAabb: { x: 0.522, y: 0.324, z: 0.414 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // kitchenCabinet rawAabb=(0.43,0.45,0.48)  同 kitchenCabinetDrawer
+  'furniture/kitchenCabinet': {
+    uniformScale: 1.25,
+    pivotOffset: { x: -0.215, y: 0, z: 0.21 },
+    effectiveAabb: { x: 0.538, y: 0.563, z: 0.6 },
+    collisionSize: { x: 0.52, y: 0.563, z: 0.58 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // cabinetTelevisionDoors rawAabb=(1.16,0.31,0.28) rawMin=(-0.36,0,-0.25) rawMax=(0.8,0.31,0.03)
+  // 带门电视柜：放大 2x → ~2.32 宽
+  'furniture/cabinetTelevisionDoors': {
+    uniformScale: 2.0,
+    pivotOffset: { x: -0.22, y: 0, z: 0.11 },
+    effectiveAabb: { x: 2.32, y: 0.62, z: 0.56 },
+    collisionSize: { x: 2.1, y: 0.62, z: 0.5 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+
+  // —— Chair 变体（参照 chair scale=2.4） ——
+  'furniture/chairCushion': {
+    uniformScale: 2.4,
+    pivotOffset: { x: -0.1, y: 0, z: 0.1 },
+    effectiveAabb: { x: 0.48, y: 1.104, z: 0.48 },
+    collisionSize: { x: 0.44, y: 1.104, z: 0.44 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  'furniture/chairRounded': {
+    uniformScale: 2.4,
+    pivotOffset: { x: -0.1, y: 0, z: 0.1 },
+    effectiveAabb: { x: 0.48, y: 1.092, z: 0.48 },
+    collisionSize: { x: 0.44, y: 1.092, z: 0.44 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  'furniture/chairModernCushion': {
+    uniformScale: 2.4,
+    pivotOffset: { x: -0.1, y: 0, z: 0.1 },
+    effectiveAabb: { x: 0.48, y: 1.104, z: 0.48 },
+    collisionSize: { x: 0.44, y: 1.104, z: 0.44 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // chairDesk rawAabb=(0.4787,0.4176,0.4432) rawMin=(-0.1675,0,-0.2832) rawMax=(0.3113,0.4176,0.16)
+  // 办公椅（滚轮款，比普通椅子宽大）
+  'furniture/chairDesk': {
+    uniformScale: 2.2,
+    pivotOffset: { x: -0.0719, y: 0, z: 0.0616 },
+    effectiveAabb: { x: 1.053, y: 0.919, z: 0.975 },
+    collisionSize: { x: 0.96, y: 0.919, z: 0.88 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+
+  // —— Bathroom 浴室（装饰用，collision 基本关闭） ——
+  'furniture/bathroomSink': {
+    uniformScale: 2.0,
+    pivotOffset: { x: -0.17, y: 0.4, z: 0.145 },
+    effectiveAabb: { x: 0.68, y: 1.12, z: 0.58 },
+    collisionSize: { x: 0.62, y: 1.12, z: 0.52 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  'furniture/bathroomCabinet': {
+    uniformScale: 2.0,
+    pivotOffset: { x: -0.215, y: 0, z: 0.1 },
+    effectiveAabb: { x: 0.86, y: 0.78, z: 0.44 },
+    collisionSize: { x: 0.8, y: 0.78, z: 0.4 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // bathtub rawAabb=(1.19,0.42,0.56) rawMin=(0,0,-0.56) rawMax=(1.19,0.42,0)
+  'furniture/bathtub': {
+    uniformScale: 1.5,
+    pivotOffset: { x: -0.595, y: 0, z: 0.28 },
+    effectiveAabb: { x: 1.785, y: 0.63, z: 0.84 },
+    collisionSize: { x: 1.62, y: 0.63, z: 0.76 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // toilet rawAabb=(1.0046,0.9494,0.7897) rawMin=(0,0,-0.658) rawMax=(1.0046,0.9494,0.1317)
+  'furniture/toilet': {
+    uniformScale: 1.1,
+    pivotOffset: { x: -0.5023, y: 0, z: 0.2632 },
+    effectiveAabb: { x: 1.105, y: 1.044, z: 0.869 },
+    collisionSize: { x: 1.0, y: 1.044, z: 0.78 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+
+  // —— Desk / Office 办公 ——
+  // desk rawAabb=(0.7345,0.3844,0.5563) rawMin=(-0.01,0,-0.38) rawMax=(0.7245,0.3844,0.1763)
+  // 书桌：约 1.4 宽 × 0.78 高（放大 2x）
+  'furniture/desk': {
+    uniformScale: 2.0,
+    pivotOffset: { x: -0.357, y: 0, z: 0.10185 },
+    effectiveAabb: { x: 1.469, y: 0.769, z: 1.113 },
+    collisionSize: { x: 1.32, y: 0.769, z: 1.0 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // deskCorner rawAabb=(0.9745,0.3844,1.1508) rawMin=(0,0,-0.9745) rawMax=(0.9745,0.3844,0.1763)
+  'furniture/deskCorner': {
+    uniformScale: 2.0,
+    pivotOffset: { x: -0.4872, y: 0, z: 0.3991 },
+    effectiveAabb: { x: 1.949, y: 0.769, z: 2.302 },
+    collisionSize: { x: 1.76, y: 0.769, z: 2.08 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // computerScreen rawAabb=(0.3927,0.2943,0.104)
+  'furniture/computerScreen': {
+    uniformScale: 2.4,
+    pivotOffset: { x: -0.19635, y: 0, z: 0.052 },
+    effectiveAabb: { x: 0.942, y: 0.706, z: 0.25 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // computerKeyboard rawAabb=(0.2822,0.0276,0.1182)
+  'furniture/computerKeyboard': {
+    uniformScale: 2.4,
+    pivotOffset: { x: -0.1411, y: 0, z: 0.0591 },
+    effectiveAabb: { x: 0.677, y: 0.066, z: 0.284 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // computerMouse rawAabb=(0.0497,0.0236,0.0851)
+  'furniture/computerMouse': {
+    uniformScale: 2.4,
+    pivotOffset: { x: 0, y: 0, z: 0.04255 },
+    effectiveAabb: { x: 0.119, y: 0.057, z: 0.204 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // laptop rawAabb=(0.6,0.3677,0.5456) rawMin=(0,0,-0.5456) rawMax=(0.6,0.3677,0)
+  'furniture/laptop': {
+    uniformScale: 1.2,
+    pivotOffset: { x: -0.3, y: 0, z: 0.2728 },
+    effectiveAabb: { x: 0.72, y: 0.441, z: 0.655 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // bookcaseClosed rawAabb=(0.4,0.85,0.25) rawMin=(0,0,-0.25) rawMax=(0.4,0.85,0)
+  'furniture/bookcaseClosed': {
+    uniformScale: 2.0,
+    pivotOffset: { x: -0.2, y: 0, z: 0.125 },
+    effectiveAabb: { x: 0.8, y: 1.7, z: 0.5 },
+    collisionSize: { x: 0.76, y: 1.7, z: 0.46 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // toaster rawAabb=(0.188,0.13,0.1)  台上小家电
+  'furniture/toaster': {
+    uniformScale: 2.0,
+    pivotOffset: { x: 0, y: 0, z: 0 },
+    effectiveAabb: { x: 0.376, y: 0.26, z: 0.2 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // kitchenCoffeeMachine rawAabb=(0.2738,0.3034,0.3301) rawMin=(-0.0338,0,-0.3041) rawMax=(0.24,0.3034,0.026)
+  'furniture/kitchenCoffeeMachine': {
+    uniformScale: 1.8,
+    pivotOffset: { x: -0.1031, y: 0, z: 0.139 },
+    effectiveAabb: { x: 0.493, y: 0.546, z: 0.594 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // kitchenBlender rawAabb=(0.1719,0.16,0.1323)
+  'furniture/kitchenBlender': {
+    uniformScale: 1.8,
+    pivotOffset: { x: -0.076, y: 0, z: 0.066 },
+    effectiveAabb: { x: 0.309, y: 0.288, z: 0.238 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
 }

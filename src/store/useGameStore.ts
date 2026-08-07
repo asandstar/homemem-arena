@@ -213,21 +213,59 @@ interface GameStore extends GameState, ProgressState {
 // - 直接导出原始 store（保留所有静态方法 getState/setState/subscribe 完整可用）
 // - 同时导出 safeGetStore 包装函数用于 React 组件内使用（首帧 null 安全）
 const _rawGameStore = create<GameStore>((set, rawGet, _store) => {
-  // Hotfix 2026-08-07: 代码分包 / 路由懒加载会导致 zustand 内部首次 getSnapshot 返回 null；
-  // 所有 slice 与跨 slice 聚合统一通过 safeGet 访问，避免 "Cannot read properties of null"。
-  const EMPTY_STATE = {} as GameStore
-  const safeGet = (): GameStore => (rawGet() ?? EMPTY_STATE)
+  // ⚠️ ROOT FIX 2026-08-07 (双保险):
+  // 1. safeGet: 读 state null → EMPTY（空对象），避免 rawGet() 返回 null 时解引用崩溃
+  //    注：不能用 _store.getInitialState()，createState 回调执行期间它还没初始化
+  // 2. safeSet: 写 state fn 形式，fn 收到的 state 永远非 null（rawGet 为 null 时传 EMPTY）
+  //    {}.score = undefined，不会崩（null.score 才崩），NaN 最终会被后续 fallback 消化
+  const EMPTY_STATE: GameStore = {} as GameStore
+  const safeGet = (): GameStore => rawGet() ?? EMPTY_STATE
+  const safeSet: any = (partial: any, replace: boolean = false) => {
+    if (typeof partial === 'function') {
+      const actualState = safeGet()
+      const next = partial(actualState)
+      // ⚠️ ROOT FIX 2026-08-07: zustand 约定：set(fn) 的 fn 返回 null/undefined 表示"跳过这次更新"。
+      // 之前的 safeSet 忽略了这个约定，直接 set(null) 把整个 state 清成了 null 或只剩 1 个 key！
+      // 这是 sweepExpiredDemoHighlights 每帧调用 set(fn)，当过滤后 length 相等时 return null
+      // 导致整个 store state 被清空成 {score} 的根因（之前反复出现的 initializeTask undefined 也是它！）
+      if (next === null || next === undefined) return
+      return replace ? set(next, true) : set(next)
+    }
+    // 对象形式：null/undefined 也跳过
+    if (partial === null || partial === undefined) return
+    return replace ? set(partial, true) : set(partial)
+  }
+  const _task = createTaskSlice(safeSet, safeGet)
+  const _player = createPlayerSlice(safeSet, safeGet)
+  const _entity = createEntitySlice(safeSet, safeGet)
+  const _memory = createMemorySlice(safeSet, safeGet)
+  const _chaos = createChaosSlice(safeSet, safeGet)
+  const _score = createScoreSlice(safeSet, safeGet)
+  const _feedback = createFeedbackSlice(safeSet, safeGet)
+  const _anim = createAnimationSlice(safeSet, safeGet)
+  const _flow = createFlowSlice(safeSet, safeGet)
+  const _progress = createProgressSlice(safeSet, safeGet)
+  // 诊断：HMR 下某些 slice 可能返回 undefined
+  if (!_task || !_player || !_entity || !_flow) {
+    console.error('[STORE CREATE DIAG]', {
+      task: _task ? Object.keys(_task).length : 'NULL',
+      player: _player ? Object.keys(_player).length : 'NULL',
+      entity: _entity ? Object.keys(_entity).length : 'NULL',
+      flow: _flow ? Object.keys(_flow).length : 'NULL',
+      hasInit: typeof _task?.initializeTask,
+    })
+  }
   return {
-  ...createTaskSlice(set, safeGet),
-  ...createPlayerSlice(set, safeGet),
-  ...createEntitySlice(set, safeGet),
-  ...createMemorySlice(set, safeGet),
-  ...createChaosSlice(set, safeGet),
-  ...createScoreSlice(set, safeGet),
-  ...createFeedbackSlice(set, safeGet),
-  ...createAnimationSlice(set, safeGet),
-  ...createFlowSlice(set, safeGet),
-  ...createProgressSlice(set, safeGet),
+  ..._task,
+  ..._player,
+  ..._entity,
+  ..._memory,
+  ..._chaos,
+  ..._score,
+  ..._feedback,
+  ..._anim,
+  ..._flow,
+  ..._progress,
 
   // Cross-slice aggregations that don't belong to any single slice
   getGameStats: () => {
@@ -342,3 +380,37 @@ const _rawGameStore = create<GameStore>((set, rawGet, _store) => {
  * 确保非 React 上下文（事件监听、初始化流程等）的 getState() 完整可用。
  */
 export const useGameStore = withSafeSnapshot(_rawGameStore)
+
+// 保护性监控：任何时刻 state 被意外清空为 <5 keys 时报警。
+// 历史根因：safeSet 的 function 返回 null 时 zustand 被整包 set(null)，state 从 133 keys 被清空为 null 或 {score}。
+{
+  let _prevKeys = (_rawGameStore.getState() as any) ? Object.keys(_rawGameStore.getState() as any).length : 0
+  _rawGameStore.subscribe((newState: any) => {
+    const _newKeys = newState ? Object.keys(newState).length : 0
+    if (_newKeys < 5 && _prevKeys >= 10) {
+      console.error('[STORE SAFETY] state 被异常清空! from=', _prevKeys, 'keys to=', _newKeys, 'keys. next=', newState ? Object.keys(newState) : 'null')
+    }
+    _prevKeys = _newKeys
+  })
+}
+
+/**
+ * 直接获取 game store state 的辅助函数。
+ *
+ * 为什么需要这个：withSafeSnapshot 包装器的 getState 静态方法在某些场景下
+ * （组件 remount、React Router 重新挂载）会返回 null，导致非 React 上下文
+ * 的初始化逻辑崩溃。原始 _rawGameStore.getState() 始终正常（诊断已验证），
+ * 所以这里直接委托给原始 store，绕过包装器的 bug。
+ *
+ * 用法：在非 React 上下文（useEffect、事件回调、初始化流程）中
+ *   import { getGameState } from '../store/useGameStore'
+ *   const state = getGameState()  // 永远不会返回 null
+ */
+export function getGameState(): GameStore {
+  return _rawGameStore.getState()
+}
+
+/** 直接调用 setState（绕过 withSafeSnapshot 包装器） */
+export const setGameState: (partial: Partial<GameStore> | ((s: GameStore) => Partial<GameStore>)) => void = (partial) => {
+  _rawGameStore.setState(partial as any)
+}

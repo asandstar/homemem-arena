@@ -43,21 +43,52 @@ interface Room3DProps {
 function RoomDecorations({ spec }: { spec: RoomSpec }) {
   const { id, center, size } = spec
 
-  const renderEntrance = () => (
+  const renderEntrance = () => {
+    const entranceDecor = roomDecorFurniture.entrance
+    const decorWorld = (pos: { x: number; y: number; z: number }): [number, number, number] => [
+      center.x + pos.x,
+      pos.y,
+      center.z + pos.z,
+    ]
+    return (
     <group>
-      <RoomDecorPiece modelId="rug" color="#8b7355">
-        <group position={[center.x, 0, center.z + size.z / 2 - 0.8]} receiveShadow>
-          <RugFallback size={{ x: 2.0, y: 0.04, z: 1.2 }} />
-        </group>
-      </RoomDecorPiece>
+      {/* ============== Entrance 通用 decor 循环（所有带 modelAssetId 的家具，包括地毯+挂衣架） ============== */}
+      {entranceDecor.filter((d) => d.modelAssetId).map((d) => (
+        <RegisteredModel
+          key={d.id}
+          assetId={d.modelAssetId!}
+          position={decorWorld(d.position)}
+          rotationY={d.rotationY ?? 0}
+          fallback={
+            <FallbackColorizer modelId="rug" color="#8b7355">
+              <group position={decorWorld(d.position)} rotation={[0, d.rotationY ?? 0, 0]} receiveShadow>
+                <mesh>
+                  <boxGeometry args={[Math.max(0.1, d.size.x), Math.max(0.05, d.size.y), Math.max(0.1, d.size.z)]} />
+                  <meshStandardMaterial color="#8b7355" roughness={0.85} />
+                </mesh>
+              </group>
+            </FallbackColorizer>
+          }
+        />
+      ))}
 
-      {/* MVP C1: Entrance 只保留 rug。
+      {/* Fallback：如果 entranceDecor 中无任何地毯条目，仍然画一块程序化门垫（避免极端情况全空） */}
+      {entranceDecor.findIndex((d) => d.id.startsWith('decor-entrance-rug')) === -1 ? (
+        <RoomDecorPiece modelId="rug" color="#8b7355">
+          <group position={[center.x, 0, center.z + size.z / 2 - 0.8]} receiveShadow>
+            <RugFallback size={{ x: 2.0, y: 0.04, z: 1.2 }} />
+          </group>
+        </RoomDecorPiece>
+      ) : null}
+
+      {/* MVP C1: Entrance 装饰原则
         - entrance tray → cnt-entrance-tray (Container3D) 唯一渲染
         - umbrella stand → cnt-umbrella-stand (Container3D) 唯一渲染
         - 删除鞋柜、鞋、hook、装饰托盘、2 伞装饰、挂画、时钟、2 植物、墙架
         - 避免与 task container 重复所有者，确保玩家第一眼看到 tray */}
     </group>
-  )
+    )
+  }
 
   const renderLiving = () => {
     // A6 单一数据源：四件核心 static decor 的 transform 来自 decorFurniture.ts
@@ -194,6 +225,28 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </FallbackColorizer>
       ) : null}
 
+      {/* ============== Living 通用 decor 循环（A6 四件已单独渲染，这里渲染其他所有新增家具） ============== */}
+      {livingDecor
+        .filter((d) => d.modelAssetId && !['decor-sofa-main', 'decor-tv-stand', 'decor-tv', 'decor-bookshelf'].includes(d.id))
+        .map((d) => (
+          <RegisteredModel
+            key={d.id}
+            assetId={d.modelAssetId!}
+            position={decorWorld(d.position)}
+            rotationY={d.rotationY ?? 0}
+            fallback={
+              <FallbackColorizer modelId="cabinet" color="#78716c">
+                <group position={decorWorld(d.position)} rotation={[0, d.rotationY ?? 0, 0]} castShadow receiveShadow>
+                  <mesh>
+                    <boxGeometry args={[Math.max(0.1, d.size.x), Math.max(0.05, d.size.y), Math.max(0.1, d.size.z)]} />
+                    <meshStandardMaterial color="#78716c" roughness={0.8} />
+                  </mesh>
+                </group>
+              </FallbackColorizer>
+            }
+          />
+        ))}
+
       {/* MVP C1: 删除非必要落地灯、植物、墙架、挂画、时钟，减少视觉噪声 */}
       {/* decor-chair 已删除（A6：与核心布局无关的旧落地家具） */}
       {/* 第二张 coffee_table 已删除（A6-H7：cnt-coffee-table 唯一视觉所有者） */}
@@ -270,6 +323,28 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.28 }} />
         </group>
       </RoomDecorPiece>
+
+      {/* ============== Bedroom 通用 decor 循环（bed + rug 已单独渲染，这里渲染其他所有新增家具） ============== */}
+      {bedroomDecor
+        .filter((d) => d.modelAssetId && !['decor-bed', 'decor-bedroom-rug'].includes(d.id))
+        .map((d) => (
+          <RegisteredModel
+            key={d.id}
+            assetId={d.modelAssetId!}
+            position={decorWorld(d.position)}
+            rotationY={d.rotationY ?? 0}
+            fallback={
+              <FallbackColorizer modelId="cabinet" color="#a8a29e">
+                <group position={decorWorld(d.position)} rotation={[0, d.rotationY ?? 0, 0]} castShadow receiveShadow>
+                  <mesh>
+                    <boxGeometry args={[Math.max(0.1, d.size.x), Math.max(0.05, d.size.y), Math.max(0.1, d.size.z)]} />
+                    <meshStandardMaterial color="#a8a29e" roughness={0.8} />
+                  </mesh>
+                </group>
+              </FallbackColorizer>
+            }
+          />
+        ))}
 
       {/* MVP C1: 删除非必要家具（2 装饰床头柜、2 灯、书桌、椅子、衣柜、梳妆台、书架、挂画、时钟、2 毛巾、2 植物）*/}
       {/* 床头柜仅由 task container cnt-nightstand (Container3D) 渲染，避免重复所有者 */}

@@ -64,7 +64,8 @@ export const createFeedbackSlice = (set: any, get: any): FeedbackSlice => ({
       floatingTexts: [...state.floatingTexts, { id, text, type, x, y, createdAt: Date.now() }],
     }))
     setTimeout(() => {
-      get().removeFloatingText(id)
+      const s = get()
+      if (typeof s?.removeFloatingText === 'function') s.removeFloatingText(id)
     }, 1500)
   },
 
@@ -98,7 +99,8 @@ export const createFeedbackSlice = (set: any, get: any): FeedbackSlice => ({
       eventToasts: [...state.eventToasts, { id, message: msg, type: toastType, icon: ico, createdAt: Date.now(), duration: dur }],
     }))
     setTimeout(() => {
-      get().removeEventToast(id)
+      const s = get()
+      if (typeof s?.removeEventToast === 'function') s.removeEventToast(id)
     }, dur)
   },
 
