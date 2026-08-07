@@ -18,7 +18,7 @@ export const dialogSequences: DialogSequence[] = [
         id: 'dtut-2',
         speaker: 'system',
         speakerName: 'MEM-07',
-        text: '让我们从简单的任务开始。餐桌上有一个脏杯子和一张餐巾纸。脏杯子放进洗碗机，餐巾纸扔进垃圾桶。就这么简单！',
+        text: '让我们从餐桌整理开始。桌上有 9 件待归位的餐具：2 个马克杯、3 把勺子、2 个盘子、2 把叉子。规则很简单——杯和勺放进厨房水槽，盘和叉放进橱柜。',
       },
       {
         id: 'dtut-3',
@@ -34,7 +34,7 @@ export const dialogSequences: DialogSequence[] = [
           {
             id: 'c-dtut-hint',
             text: '能再解释一下操作吗？',
-            effect: { type: 'hint', value: 'WASD移动，F拾取/放置，E保存记忆。脏杯子→洗碗机（右边），餐巾纸→垃圾桶（左边）' },
+            effect: { type: 'hint', value: 'WASD移动，F拾取/放置，E保存记忆。杯、勺→水槽；盘、叉→橱柜' },
           },
         ],
       },
@@ -43,14 +43,14 @@ export const dialogSequences: DialogSequence[] = [
   {
     id: 'ds-tutorial-goal-cup',
     name: '杯子归位',
-    trigger: { type: 'goalComplete', value: 'g-dirty-cup' },
+    trigger: { type: 'goalComplete', value: 'g-mugs-sink' },
     priority: 8,
     nodes: [
       {
         id: 'dtut-gc-1',
         speaker: 'system',
         speakerName: 'MEM-07',
-        text: '脏杯子已放入洗碗机！干得漂亮。还剩一张餐巾纸需要处理。',
+        text: '杯子已放进水槽！干得漂亮。继续把勺子也送进水槽，盘和叉放进橱柜。',
         autoContinue: true,
         autoContinueDelay: 2000,
       },
@@ -58,15 +58,15 @@ export const dialogSequences: DialogSequence[] = [
   },
   {
     id: 'ds-tutorial-goal-tissue',
-    name: '垃圾清理',
-    trigger: { type: 'goalComplete', value: 'g-tissue' },
+    name: '叉子归位',
+    trigger: { type: 'goalComplete', value: 'g-forks-cabinet' },
     priority: 8,
     nodes: [
       {
         id: 'dtut-gt-1',
         speaker: 'system',
         speakerName: 'MEM-07',
-        text: '垃圾已清理！基础操作全部掌握。接下来会面临更有趣的挑战——不过别担心，你已经准备好了。',
+        text: '叉子也归位了！基础操作全部掌握。接下来会面临更有趣的挑战——不过别担心，你已经准备好了。',
         autoContinue: true,
         autoContinueDelay: 2500,
       },
@@ -287,7 +287,7 @@ export const dialogSequences: DialogSequence[] = [
         id: 'dlh-comp-3',
         speaker: 'system',
         speakerName: 'MEM-07',
-        text: '下一关：餐桌上杯盘狼藉...听说有个餐盘精喜欢把脏盘子偷偷放回去？',
+        text: '下一关：洗衣房里一团糟——钥匙猫把分类标签全撕了，得靠记忆把衣物分到正确的篮子。',
         choices: [
           {
             id: 'c-dlh-next',

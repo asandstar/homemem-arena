@@ -173,7 +173,7 @@ export function TaskSelectPage() {
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             <span className="bg-gradient-to-r from-violet-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-              {isFiveLevelMode ? '五个关卡（含预览）' : '三个递进关卡'}
+              {isFiveLevelMode ? '五个关卡（含预览）' : '三个关卡，全部开放'}
             </span>
           </h1>
           <p className="text-slate-400 text-lg mb-4">
@@ -184,7 +184,7 @@ export function TaskSelectPage() {
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-full text-xs text-violet-300">
               <Sparkles size={12} />
-              按顺序解锁，体验能力递进
+              全部关卡开放，自由选择
             </div>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-slate-800/60 border border-slate-700/50 rounded-full text-xs text-slate-400">
               <span className="text-green-400">{completedCount}</span> / {publicTaskTemplates.length} 已完成

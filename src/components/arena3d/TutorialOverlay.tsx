@@ -133,10 +133,10 @@ export function TutorialOverlay({ taskName, taskGoal, onClose }: TutorialOverlay
           <div className="text-xs text-yellow-200/90 leading-relaxed space-y-1">
             <div>
               <span className="font-semibold text-yellow-300">记忆是通关核心！</span>
-              钥匙猫会偷走并移动物品，没有记忆你将无法找回它们。
+              按 <span className="font-mono text-yellow-300">E</span> 可以保存物品位置，记不住的时候翻翻记忆槽比满屋子乱找快得多。
             </div>
             <div className="text-yellow-200/70">
-              按 <span className="font-mono text-yellow-300">E</span> 保存物品位置 → 物品被移动后记忆变红"过期" → 再次按 <span className="font-mono text-yellow-300">E</span> 更新。养成记忆习惯才能在限时内通关。
+              不同关卡的捣乱方式不一样：有的关物品会被悄悄移动，有的关只是干扰——养成保存记忆的习惯，才能在限时内从容应对。
             </div>
           </div>
         </div>

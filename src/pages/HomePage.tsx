@@ -62,8 +62,8 @@ export function HomePage() {
             <p className="text-slate-300 leading-relaxed text-sm mb-4">
               你是一台记忆模块出了故障的家务机器人 <span className="text-cyan-400 font-bold">MEM-07</span>，
               只能同时记住 <span className="text-purple-400 font-bold">3 件物品</span> 的位置。
-              在一栋"会捣乱"的房子里，你需要限时完成各种家务任务：找钥匙、收拾餐桌、分类衣物、准备早餐...
-              而房子里的猫咪、室友、幽灵甚至时间循环，都会不断干扰你的记忆。
+              在一栋"会捣乱"的房子里，你需要限时完成各种家务任务：收拾餐桌、找回被藏的物品、分类衣物...
+              而房子里的猫咪和袜子幽灵会不断干扰你的记忆。
             </p>
           </div>
 
@@ -77,7 +77,7 @@ export function HomePage() {
             <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/30 text-center hover:border-pink-500/30 hover:-translate-y-1 transition-all duration-300">
               <AlertTriangle className="text-pink-400 w-8 h-8 mx-auto mb-2" />
               <div className="text-sm font-medium text-slate-200 mb-1">捣乱事件</div>
-              <div className="text-xs text-slate-400">猫咪、幽灵、时间循环</div>
+              <div className="text-xs text-slate-400">猫咪、袜子幽灵</div>
             </div>
             <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/30 text-center hover:border-cyan-500/30 hover:-translate-y-1 transition-all duration-300">
               <div className="text-cyan-400 text-2xl mb-2">📈</div>
