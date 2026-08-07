@@ -430,7 +430,7 @@ MEM-07：「整合记忆模块激活。检测到四类记忆需求：
     },
     {
       id: 'p-basket-position',
-      type: 'spatial-relation',
+      type: 'object-id',
       question: '【空间记忆】篮子被挪动后，你应该靠什么判断哪个篮子是白篮？',
       options: ['记住它原来的位置', '看篮子的颜色', '数篮子的顺序', '闻气味'],
       correctAnswer: '看篮子的颜色',
