@@ -26,6 +26,11 @@ function checkHasGoals(task: TaskConfig): QaResult {
 }
 
 function checkTimeLimit(task: TaskConfig): QaResult {
+  // L1 餐桌整理为纯净教程关，设计文档 docs/DESIGN_LEVEL_TASKS.md §3.1.6 明确"无时限"
+  const NO_TIME_LIMIT_TASKS = new Set(['task-clean-table'])
+  if (NO_TIME_LIMIT_TASKS.has(task.id)) {
+    return pass(CATEGORY, 'time-limit', `${task.id} 为教程关，无时限（符合设计文档 §3.1.6）`)
+  }
   if (task.timeLimit === undefined) {
     return fail('critical', CATEGORY, 'time-limit', `${task.id} 没有设置 timeLimit`)
   }
@@ -221,7 +226,8 @@ function checkLevel1Requirements(tasks: TaskConfig[]): QaResult[] {
 
   results.push(pass(CATEGORY, 'level1-exists', '找到第一关 task-clean-table'))
 
-  // L1 必须包含"猫移动任务物体"的扰动事件（制造记忆与现实冲突，符合 5 条设计原则）
+  // L1 为纯净教程关，设计文档 docs/DESIGN_LEVEL_TASKS.md §3.1.8 明确"无混沌效果"，
+  // §六检查清单要求"移除 L1 现有的猫移勺子扰动事件（L1 应为纯净教程）"
   const catMoveEvent = level1.scriptedEvents?.find((e) =>
     e.type === 'move-entity' ||
     e.description?.includes('猫') ||
@@ -229,9 +235,9 @@ function checkLevel1Requirements(tasks: TaskConfig[]): QaResult[] {
     e.message?.includes('猫'),
   )
   if (catMoveEvent) {
-    results.push(pass(CATEGORY, 'level1-cat-event', '第一关有猫扰动事件（制造记忆冲突）'))
+    results.push(fail('major', CATEGORY, 'level1-cat-event', '第一关不应有猫扰动事件（L1 为纯净教程关，见设计文档 §3.1.8）'))
   } else {
-    results.push(fail('major', CATEGORY, 'level1-cat-event', '第一关缺少猫移动扰动事件（记忆与现实冲突的戏剧来源）'))
+    results.push(pass(CATEGORY, 'level1-cat-event', '第一关无猫扰动事件（符合纯净教程设计 §3.1.8）'))
   }
 
   // L1 不需要 entrance tray / 手机响铃（单房间 dining 教学关）

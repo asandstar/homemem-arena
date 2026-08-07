@@ -161,11 +161,11 @@ describe('F4 · buildRoomOccluders — 房间遮挡物构建', () => {
 })
 
 describe('F4 · getEyePosition — 眼睛位置', () => {
-  it('y = 1.6（PLAYER_HEIGHT），x/z 来自 robotPosition', () => {
+  it('y = 1.5（PLAYER_HEIGHT），x/z 来自 robotPosition', () => {
     const robotPos: Vec3 = { x: 3.5, y: 0, z: -2.1 }
     const eye = getEyePosition(robotPos)
     expect(eye.x).toBe(3.5)
-    expect(eye.y).toBe(1.6)
+    expect(eye.y).toBe(1.5)
     expect(eye.z).toBe(-2.1)
   })
 })

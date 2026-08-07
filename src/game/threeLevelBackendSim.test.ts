@@ -102,6 +102,37 @@ function setRobotAtContainer(task: TaskConfig, containerId: string) {
   return { success: true, position }
 }
 
+/** 移动机器人到指定物品的初始房间和位置（跨房间寻物用） */
+function setRobotAtEntity(task: TaskConfig, configId: string) {
+  const objSpec = task.objects.find((o: any) => o.id === configId)
+  if (!objSpec) return { success: false, reason: `no object spec:${configId}` }
+  const roomId = objSpec.initialRoom
+  const room = (sharedRooms as Record<string, any>)[roomId] ?? null
+  if (!room) return { success: false, reason: `room not found:${roomId}` }
+  const base = room.center ?? { x: 0, y: 0, z: 0 }
+  const position = {
+    x: base.x + objSpec.initialPosition.x,
+    y: 0,
+    z: base.z + objSpec.initialPosition.z,
+  }
+  const setFn = (useGameStore as any).setState
+  if (typeof setFn === 'function') setFn({ robotPosition: position })
+  // 如果房间不同，则同步切换房间
+  if (useGameStore.getState().currentRoom !== roomId) {
+    const s = useGameStore.getState()
+    const setFn2 = (useGameStore as any).setState
+    if (typeof setFn2 === 'function') {
+      const newEntities = s.heldEntityId
+        ? s.entities.map((e: any) => (e.id === s.heldEntityId ? { ...e, currentRoom: roomId } : e))
+        : s.entities
+      const newVisited = new Set(s.visitedRooms as Set<string>)
+      newVisited.add(roomId)
+      setFn2({ currentRoom: roomId, entities: newEntities, visitedRooms: newVisited })
+    }
+  }
+  return { success: true, position }
+}
+
 function saveByCfg(cfg: string): { success: boolean; slotIndex?: number; reason?: string } {
   const e = findByCfg(cfg)
   if (!e) return { success: false, reason: `no entity:${cfg}` }
@@ -136,55 +167,49 @@ describe('三关后端模拟实玩 & 证据链', () => {
     useGameStore.getState().resetTask()
   })
 
-  it('L1: task-clean-table —— 观察4件→保存记忆→靠近水槽触发猫移勺子→找回勺子→四件归位→Probe→Result', () => {
+  it('L1: task-clean-table —— 9件餐具归位（杯勺→水槽，盘叉→橱柜）→Probe→Result', () => {
     useGameStore.getState().initializeTask('task-clean-table')
     const task = useGameStore.getState().task!
     useGameStore.getState().startPlaying()
     di('L1-0-INIT', snap(task, 'L1-0-INIT'))
     expect(useGameStore.getState().phase).toBe('playing')
 
-    // 1) 观察四件餐具：靠近餐桌，保存勺子位置记忆（勺子即将被猫移走）
-    di('L1-1-move-to-table', setRobotAt(task, { x: 0, z: 0 }))
-    di('L1-1-saveMemory-spoon', saveByCfg('obj-spoon'))
-    evalAndCheck('L1-1-AFTER-SAVE-MEMORY')
-    expect(useGameStore.getState().memorySlots.some((s) => s !== null)).toBe(true)
+    // 验证 9 件物品 + 4 个容器存在
+    const allConfigs = useGameStore.getState().entities.map((e) => e.configId)
+    di('L1-0-ENTITY-CONFIGS', allConfigs)
+    expect(allConfigs).toEqual(
+      expect.arrayContaining([
+        'obj-mug-1', 'obj-mug-2',
+        'obj-spoon-1', 'obj-spoon-2', 'obj-spoon-3',
+        'obj-plate-1', 'obj-plate-2',
+        'obj-fork-1', 'obj-fork-2',
+      ]),
+    )
+    expect(allConfigs).toHaveLength(9)
 
-    // 2) 保持间隔：离开餐桌去厨房水槽——确定性触发猫移走勺子（OVERRIDES: 保存记忆+靠近水槽）
-    di('L1-2-move-to-kitchen-sink', setRobotAtContainer(task, 'cnt-kitchen-sink'))
-    for (let i = 0; i < 3; i++) evalAndCheck(`L1-2-AFTER-SINK-pass-${i}`)
-    // 验证猫事件已触发 + 阶段切到 stage-perturbed
-    expect(useGameStore.getState().triggeredEvents.has('se-cat-moves-spoon')).toBe(true)
-    expect(useGameStore.getState().currentStageId).toBe('stage-perturbed')
+    // 归位规则：杯勺→cnt-sink，盘叉→cnt-cabinet
+    const sinkItems = ['obj-mug-1', 'obj-mug-2', 'obj-spoon-1', 'obj-spoon-2', 'obj-spoon-3']
+    const cabinetItems = ['obj-plate-1', 'obj-plate-2', 'obj-fork-1', 'obj-fork-2']
 
-    // 3) 验证勺子被移走后仍可拾取（不软锁）：status 仍为 free
-    const spoonAfterMove = findByCfg('obj-spoon')!
-    expect(spoonAfterMove.status).toBe('free')
-    di('L1-3-pick-spoon-from-floor', pickByCfg('obj-spoon'))
-    expect(useGameStore.getState().heldEntityId).toBe(spoonAfterMove.id)
+    // ========== 归位杯勺 → 水槽 ==========
+    for (const cfg of sinkItems) {
+      di(`L1-pick-${cfg}`, pickByCfg(cfg))
+      di(`L1-move-to-sink`, setRobotAtContainer(task, 'cnt-sink'))
+      di(`L1-place-${cfg}-sink`, placeInto('cnt-sink'))
+      evalAndCheck(`L1-AFTER-${cfg}`)
+      expect(useGameStore.getState().heldEntityId).toBeNull()
+    }
 
-    // 4) 勺子 → 水槽（玩家已在水槽旁）
-    di('L1-4-place-spoon-sink', placeInto('cnt-kitchen-sink'))
-    evalAndCheck('L1-4-AFTER-SPOON-SINK')
+    // ========== 归位盘叉 → 橱柜 ==========
+    for (const cfg of cabinetItems) {
+      di(`L1-pick-${cfg}`, pickByCfg(cfg))
+      di(`L1-move-to-cabinet`, setRobotAtContainer(task, 'cnt-cabinet'))
+      di(`L1-place-${cfg}-cabinet`, placeInto('cnt-cabinet'))
+      evalAndCheck(`L1-AFTER-${cfg}`)
+      expect(useGameStore.getState().heldEntityId).toBeNull()
+    }
 
-    // 5) 马克杯 → 水槽（pick 无距离限制，放置需靠近水槽）
-    di('L1-5-pick-mug', pickByCfg('obj-mug'))
-    di('L1-5-move-to-sink', setRobotAtContainer(task, 'cnt-kitchen-sink'))
-    di('L1-5-place-mug-sink', placeInto('cnt-kitchen-sink'))
-    evalAndCheck('L1-5-AFTER-MUG-SINK')
-
-    // 6) 盘子 → 橱柜
-    di('L1-6-pick-plate', pickByCfg('obj-plate'))
-    di('L1-6-move-to-cabinet', setRobotAtContainer(task, 'cnt-cabinet'))
-    di('L1-6-place-plate-cabinet', placeInto('cnt-cabinet'))
-    evalAndCheck('L1-6-AFTER-PLATE-CABINET')
-
-    // 7) 叉子 → 橱柜
-    di('L1-7-pick-fork', pickByCfg('obj-fork'))
-    di('L1-7-move-to-cabinet-2', setRobotAtContainer(task, 'cnt-cabinet'))
-    di('L1-7-place-fork-cabinet', placeInto('cnt-cabinet'))
-    evalAndCheck('L1-7-AFTER-FORK-CABINET')
-
-    // 8) 最终判：四件归位 + 里程碑 g-observe → completion
+    // ========== 最终判定 ==========
     for (let i = 0; i < 5; i++) evalAndCheck(`L1-FINAL-pass-${i}`)
     const finalState = useGameStore.getState()
     di('L1-FINAL', {
@@ -194,10 +219,13 @@ describe('三关后端模拟实玩 & 证据链', () => {
       stageId: finalState.currentStageId,
       phase: finalState.phase,
     })
+    expect(finalState.achievedGoalIds).toEqual(
+      new Set(['g-mugs-sink', 'g-spoons-sink', 'g-plates-cabinet', 'g-forks-cabinet']),
+    )
     expect(finalState.levelCompleted).toBe(true)
   })
 
-  it('L2: task-leave-home —— 观看示范→错误顺序恢复→按序放置书→杯子→小熊（严格断言通关）', () => {
+  it('L2: task-leave-home —— 4件物品跨房间寻回→放回客厅茶几（严格断言通关）', () => {
     useGameStore.getState().initializeTask('task-leave-home')
     const task = useGameStore.getState().task!
     useGameStore.getState().startPlaying()
@@ -209,70 +237,22 @@ describe('三关后端模拟实玩 & 证据链', () => {
     expect(allConfigs).toContain('obj-books')
     expect(allConfigs).toContain('obj-mug')
     expect(allConfigs).toContain('obj-bear')
+    expect(allConfigs).toContain('obj-radio')
     // 旧出门大作战物体已移除
     expect(allConfigs).not.toContain('obj-key')
     expect(allConfigs).not.toContain('obj-phone')
     expect(allConfigs).not.toContain('obj-umbrella')
 
-    // ========== 阶段 1：观看示范（推进 step 触发 4 个示范事件） ==========
-    for (let i = 0; i < 8; i++) {
-      useGameStore.getState().incrementStep()
-      evalAndCheck(`L2-1-DEMO-step-${i + 1}`)
+    // ========== 4 件物品拾取并放回客厅茶几 ==========
+    const allObjects = ['obj-books', 'obj-mug', 'obj-bear', 'obj-radio']
+    for (const cfg of allObjects) {
+      di(`L2-move-to-${cfg}`, setRobotAtEntity(task, cfg))
+      di(`L2-pick-${cfg}`, pickByCfg(cfg))
+      di(`L2-move-to-coffee-table`, setRobotAtContainer(task, 'cnt-coffee-table'))
+      di(`L2-place-${cfg}-table`, placeInto('cnt-coffee-table'))
+      evalAndCheck(`L2-AFTER-${cfg}`)
+      expect(useGameStore.getState().heldEntityId).toBeNull()
     }
-    expect(useGameStore.getState().triggeredEvents.has('se-ritual-demo-1')).toBe(true)
-    expect(useGameStore.getState().triggeredEvents.has('se-ritual-demo-2')).toBe(true)
-    expect(useGameStore.getState().triggeredEvents.has('se-ritual-demo-3')).toBe(true)
-    expect(useGameStore.getState().triggeredEvents.has('se-ritual-demo-done')).toBe(true)
-    expect(useGameStore.getState().currentStageId).toBe('STAGE_REPRODUCE')
-
-    // ========== 阶段 2：错误顺序恢复场景 ==========
-    // 拿起小熊（序列第3步），尝试放到床（目标区）→ 序列当前是第1步 books → 拒绝放置，保持 held
-    di('L2-2-move-to-coffee-table', setRobotAtContainer(task, 'cnt-coffee-table'))
-    di('L2-2-pick-bear', pickByCfg('obj-bear'))
-    evalAndCheck('L2-2-AFTER-BEAR-PICKED')
-    expect(useGameStore.getState().heldEntityId).not.toBeNull()
-
-    di('L2-2b-move-to-bed', setRobotAtContainer(task, 'cnt-bed'))
-    di('L2-2b-place-bed-wrong', placeInto('cnt-bed'))
-    evalAndCheck('L2-2b-AFTER-BEAR-PLACE-WRONG')
-    // 验证：放置被拒绝，仍持有小熊（OVERRIDES：错误顺序拒绝放置并保持 held）
-    expect(useGameStore.getState().heldEntityId).not.toBeNull()
-    const bearHeld = useGameStore.getState().entities.find((e) => e.configId === 'obj-bear')!
-    expect(bearHeld.status).toBe('held')
-
-    // 放回茶几（非目标区，不触发序列检查，成功换手）
-    di('L2-2c-move-to-coffee-table', setRobotAtContainer(task, 'cnt-coffee-table'))
-    di('L2-2c-place-bear-back', placeInto('cnt-coffee-table'))
-    evalAndCheck('L2-2c-AFTER-BEAR-BACK')
-    expect(useGameStore.getState().heldEntityId).toBeNull()
-
-    // ========== 阶段 3：正确按序放置（📖书→☕杯子→🧸小熊） ==========
-    // 第1步：书 → 书架
-    di('L2-3-pick-books', pickByCfg('obj-books'))
-    di('L2-3-move-to-bookcase', setRobotAtContainer(task, 'cnt-bookcase'))
-    di('L2-3-place-bookcase', placeInto('cnt-bookcase'))
-    evalAndCheck('L2-3-AFTER-BOOKS-PLACE')
-    const progressAfterBooks = useGameStore.getState().proceduralProgress['g-ritual-sequence']
-    expect(progressAfterBooks?.currentStepIndex).toBe(1)
-    expect(progressAfterBooks?.completed).toBe(false)
-
-    // 第2步：杯子 → 床头柜
-    di('L2-4-pick-mug', pickByCfg('obj-mug'))
-    di('L2-4-move-to-nightstand', setRobotAtContainer(task, 'cnt-nightstand'))
-    di('L2-4-place-nightstand', placeInto('cnt-nightstand'))
-    evalAndCheck('L2-4-AFTER-MUG-PLACE')
-    const progressAfterMug = useGameStore.getState().proceduralProgress['g-ritual-sequence']
-    expect(progressAfterMug?.currentStepIndex).toBe(2)
-    expect(progressAfterMug?.completed).toBe(false)
-
-    // 第3步：小熊 → 床（小熊在客厅茶几上，需先回客厅拾取再去卧室床边放置）
-    di('L2-5-move-to-coffee-table', setRobotAtContainer(task, 'cnt-coffee-table'))
-    di('L2-5-pick-bear', pickByCfg('obj-bear'))
-    di('L2-5-move-to-bed', setRobotAtContainer(task, 'cnt-bed'))
-    di('L2-5-place-bed', placeInto('cnt-bed'))
-    evalAndCheck('L2-5-AFTER-BEAR-PLACE')
-    const progressAfterBear = useGameStore.getState().proceduralProgress['g-ritual-sequence']
-    expect(progressAfterBear?.completed).toBe(true)
 
     // ========== 最终判定 ==========
     for (let i = 0; i < 5; i++) evalAndCheck(`L2-FINAL-pass-${i}`)
@@ -284,6 +264,9 @@ describe('三关后端模拟实玩 & 证据链', () => {
       stageId: finalState.currentStageId,
       phase: finalState.phase,
     })
+    expect(finalState.achievedGoalIds).toEqual(
+      new Set(['g-books-table', 'g-mug-table', 'g-bear-table', 'g-radio-table']),
+    )
     expect(finalState.levelCompleted).toBe(true)
   })
 

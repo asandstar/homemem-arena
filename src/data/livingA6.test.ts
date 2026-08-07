@@ -25,10 +25,10 @@ import {
 import { furnitureOwnershipRegistry } from './furnitureOwnership'
 
 const LIVING_A6 = {
-  sofa: { id: 'decor-sofa-main', pos: { x: -1.5, y: 0, z: 2.24 }, rot: Math.PI, model: 'furniture/loungeSofa' as ModelAssetId },
-  tvStand: { id: 'decor-tv-stand', pos: { x: -2.0, y: 0, z: -2.1 }, rot: 0, model: 'furniture/cabinetTelevision' as ModelAssetId },
-  tv: { id: 'decor-tv', pos: { x: -2.0, y: 0.62, z: -2.1 }, rot: 0, model: 'furniture/televisionModern' as ModelAssetId },
-  bookshelf: { id: 'decor-bookshelf', pos: { x: 2.75, y: 0, z: 1.5 }, rot: -Math.PI / 2, model: 'furniture/bookcaseOpen' as ModelAssetId },
+  sofa: { id: 'decor-sofa-main', pos: { x: -1.5, y: 0, z: 0.8 }, rot: Math.PI, model: 'furniture/loungeSofa' as ModelAssetId },
+  tvStand: { id: 'decor-tv-stand', pos: { x: -2.25, y: 0, z: -2.4 }, rot: 0, model: 'furniture/cabinetTelevision' as ModelAssetId },
+  tv: { id: 'decor-tv', pos: { x: -2.25, y: 0.62, z: -2.4 }, rot: 0, model: 'furniture/televisionModern' as ModelAssetId },
+  bookshelf: { id: 'decor-bookshelf', pos: { x: 2.9, y: 0, z: 1.5 }, rot: -Math.PI / 2, model: 'furniture/bookcaseOpen' as ModelAssetId },
 }
 
 /**
@@ -37,13 +37,16 @@ const LIVING_A6 = {
  * 而非 decorFurniture.size（碰撞盒，通常比 GLB 大 ~20% 作为碰撞余量）。
  *
  * 注意：rotationY 为 0/π 时 X/Z 不交换；为 ±π/2 时 X/Z 交换。
- * 四件核心 decor 的 rotationY 均为 0/π/±π/2，AABB 对称翻转后 footprint 不变，
- * 故此处直接用 effectiveAabb.x/z 作为 footprint 尺寸（与 A6 文档 §5 一致）。
  */
-function effectiveFootprint(model: ModelAssetId, pos: { x: number; z: number }) {
+function effectiveFootprint(model: ModelAssetId, pos: { x: number; z: number }, rotationY: number) {
   const def = RUNTIME_MODEL_ASSET_REGISTRY[model]
-  const hx = def.effectiveAabb.x / 2
-  const hz = def.effectiveAabb.z / 2
+  let hx = def.effectiveAabb.x / 2
+  let hz = def.effectiveAabb.z / 2
+  // ±π/2 旋转时 X/Z 尺寸交换
+  const rotMod = Math.abs(((rotationY % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI))
+  if (Math.abs(rotMod - Math.PI / 2) < 1e-6 || Math.abs(rotMod - 3 * Math.PI / 2) < 1e-6) {
+    ;[hx, hz] = [hz, hx]
+  }
   return {
     x1: pos.x - hx,
     x2: pos.x + hx,
@@ -76,7 +79,7 @@ describe('LIVING A6 · 定向测试（12 项验证）', () => {
       const EPS = 1e-6
       for (const expected of fourDecors) {
         const spec = roomDecorFurniture.living.find((d) => d.id === expected.id)!
-        const fp = effectiveFootprint(expected.model, { x: spec.position.x, z: spec.position.z })
+        const fp = effectiveFootprint(expected.model, { x: spec.position.x, z: spec.position.z }, spec.rotationY ?? 0)
         const bounds = roomLocalBounds('living', 0.10)
         const inside =
           fp.x1 >= bounds.minX - EPS &&
@@ -153,16 +156,16 @@ describe('LIVING A6 · 定向测试（12 项验证）', () => {
       const m = src.match(/const renderLiving[\s\S]*?(?=\n  const render\w+)/)
       expect(m, '应能定位 renderLiving 函数体').not.toBeNull()
       const livingBody = m![0]
-      // A6 特征坐标硬编码检查：sofa(-1.5,2.24)、tv-stand(-2.0,-2.1)、tv(-2.0,0.62,-2.1)、bookshelf(2.75,1.5)
-      // 这些坐标应通过 sofaSpec.position 等读取，不应直接出现 position={[... -1.5 ... 2.24 ...]}
+      // R3 特征坐标硬编码检查：sofa(-1.5,0.8)、tv-stand(-2.25,-2.4)、tv(-2.25,0.62,-2.4)、bookshelf(3.0,1.5)
+      // 这些坐标应通过 sofaSpec.position 等读取，不应直接出现 position={[... -1.5 ... 0.8 ...]}
       // 允许在注释中出现，所以只检查非注释行
       const lines = livingBody.split('\n').filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('{/*'))
       const hardcoded = lines.filter((l) =>
-        /position=\{\[.*-1\.5.*2\.24/.test(l) ||
-        /position=\{\[.*-2\.0.*-2\.1/.test(l) ||
-        /position=\{\[.*2\.75.*1\.5/.test(l),
+        /position=\{\[.*-1\.5.*0\.8/.test(l) ||
+        /position=\{\[.*-2\.25.*-2\.4/.test(l) ||
+        /position=\{\[.*2\.9.*1\.5/.test(l),
       )
-      expect(hardcoded, `renderLiving 中不应硬编码 A6 坐标，发现：${JSON.stringify(hardcoded)}`).toHaveLength(0)
+      expect(hardcoded, `renderLiving 中不应硬编码 R3 坐标，发现：${JSON.stringify(hardcoded)}`).toHaveLength(0)
     })
 
     it('11. Room3D renderLiving 中无第二张 tableCoffee（CoffeeTableModel 不应在 Living 中独立渲染）', () => {

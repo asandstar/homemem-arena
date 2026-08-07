@@ -151,27 +151,22 @@ function checkLevel1Requirements(): QaResult[] {
 
 function checkLevel2Requirements(): QaResult[] {
   const results: QaResult[] = []
-  // Three-level MVP: L2 睡前仪式 / task-leave-home（Perceptual + Procedural 旗舰关，仅 living + bedroom，不要求 entrance）
+  // L2 钥匙猫的清晨恶作剧 / task-leave-home（Spatial Memory 旗舰关，4 房间跨房间寻物）
+  // 设计文档 docs/DESIGN_LEVEL_TASKS.md §3.2.3：living、bedroom、dining、entrance
   const level2 = taskTemplates.find((t) => t.id === 'task-leave-home')
 
   if (!level2) {
-    results.push(fail('critical', CATEGORY, 'level2-exists', '找不到 L2 睡前仪式（task-leave-home）'))
+    results.push(fail('critical', CATEGORY, 'level2-exists', '找不到 L2 钥匙猫的清晨恶作剧（task-leave-home）'))
     // 后续餐厨一体检查仍然执行，直接返回
   } else {
-    results.push(pass(CATEGORY, 'level2-exists', `L2 睡前仪式已找到（id=${level2.id}, name=${level2.name}）`))
-    const required: string[] = ['living', 'bedroom']
+    results.push(pass(CATEGORY, 'level2-exists', `L2 钥匙猫的清晨恶作剧已找到（id=${level2.id}, name=${level2.name}）`))
+    const required: string[] = ['living', 'bedroom', 'dining', 'entrance']
     for (const roomId of required) {
       if (level2.rooms.includes(roomId as RoomId)) {
-        results.push(pass(CATEGORY, 'level2-room', `L2 睡前仪式包含 ${roomId}`))
+        results.push(pass(CATEGORY, 'level2-room', `L2 钥匙猫的清晨恶作剧包含 ${roomId}`))
       } else {
-        results.push(fail('critical', CATEGORY, 'level2-room', `L2 睡前仪式缺少房间: ${roomId}`))
+        results.push(fail('critical', CATEGORY, 'level2-room', `L2 钥匙猫的清晨恶作剧缺少房间: ${roomId}`))
       }
-    }
-    // 显式验证不要求 entrance
-    if (level2.rooms.includes('entrance' as RoomId)) {
-      results.push(fail('major', CATEGORY, 'level2-no-entrance', `L2 睡前仪式被标记为需要 entrance，但当前 MVP 不要求 entrance`))
-    } else {
-      results.push(pass(CATEGORY, 'level2-no-entrance', `L2 睡前仪式不依赖 entrance（符合新 MVP：仅 living + bedroom）`))
     }
   }
 

@@ -19,9 +19,10 @@ describe('心流辅助', () => {
     const state = useGameStore.getState()
     const goal = findActiveGoal(state.task, state.getEntitySnapshot(), state.achievedGoalIds)
 
-    expect(goal?.id).toBe('g-mug-sink')
+    expect(goal?.id).toBe('g-mugs-sink')
     expect(buildFlowHint(goal!, 1)).toContain(goal!.description)
-    expect(buildFlowHint(goal!, 2)).toContain('物体状态')
+    // g-mugs-sink 的 memoryType 是 procedural，level 2 提示包含 procedural 策略
+    expect(buildFlowHint(goal!, 2)).toContain('把流程拆成一步')
   })
 
   it('20 秒和 45 秒停滞时逐级提示，并写入 Session', () => {
@@ -53,17 +54,19 @@ describe('心流辅助', () => {
       elapsedMs: 30_000,
       lastGoalProgressMs: 0,
       flowHintLevel: 1,
-      activeFlowHint: { goalId: 'g-mug-sink', level: 1, message: 'test' },
+      activeFlowHint: { goalId: 'g-mugs-sink', level: 1, message: 'test' },
     })
 
-    const cup = useGameStore.getState().entities.find((entity) => entity.configId === 'obj-mug')!
+    const cup1 = useGameStore.getState().entities.find((entity) => entity.configId === 'obj-mug-1')!
+    const cup2 = useGameStore.getState().entities.find((entity) => entity.configId === 'obj-mug-2')!
     useGameStore.setState((state) => ({
       phase: 'playing',
-      entities: state.entities.map((entity) => (
-        entity.id === cup.id
-          ? { ...entity, status: 'placed' as const, placedIn: 'cnt-kitchen-sink' }
-          : entity
-      )),
+      entities: state.entities.map((entity) => {
+        if (entity.id === cup1.id || entity.id === cup2.id) {
+          return { ...entity, status: 'placed' as const, placedIn: 'cnt-sink' }
+        }
+        return entity
+      }),
     }))
     useGameStore.getState().checkLevelCompletion()
 
