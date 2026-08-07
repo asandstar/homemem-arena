@@ -100,14 +100,16 @@ export const laundrySortTask: TaskConfig = {
   iconKey: 'shirt',
   tags: ['整合记忆', '分类', '位置交换干扰'],
   timeLimit: 300,
-  spawnPosition: { x: 0, z: 1.5 },
-  spawnRotation: Math.PI,
+  // 出生在 laundry 西北角（距两墙各 0.5m），朝东南对角线方向
+  //   开局即可看到三个洗衣篮、洗衣机/烘干机、置物架，视野覆盖最大化
+  spawnPosition: { x: -1.5, z: -1.7 },
+  spawnRotation: (3 * Math.PI) / 4,
   initialStageId: STAGE_RULES,
 
   stages: [
     {
       id: STAGE_RULES,
-      playerObjective: '📋 规则编码：靠近后墙三个篮子，按 E 记住它们的身份（白/蓝/橙）。完成后，走到门口（z>=0）让时间推进，触发洗衣篮位置交换。',
+      playerObjective: 'MEM-07：「三个篮子在后墙排成一排。靠近每个篮子，按 E 把它的颜色和类别记进记忆槽——白篮放浅色，蓝篮放深色，橙篮放毛巾。记满三条规则后，走到门口（z≥0）让时间推进。」',
       entryCondition: () => true,
       completionCondition: (ctx: StageContext) =>
         (ctx.memorySlots.some((s) => s !== null) || anyItemPlaced(ctx)) && leftBackEncodingZone(ctx),
@@ -115,7 +117,7 @@ export const laundrySortTask: TaskConfig = {
     },
     {
       id: STAGE_SWAP,
-      playerObjective: '😲 篮子被挪动了！回到后墙看看现在哪个篮子在哪，重新确认规则对应的篮子位置。',
+      playerObjective: '钥匙猫「喵~」一声窜过洗衣房，三个篮子被它撞得乱七八糟！MEM-07：「篮子位置已交换——你记忆里的「白篮在左」可能已经失效。回到后墙重新确认，按 E 更新记忆。」',
       entryCondition: (ctx: StageContext) =>
         (ctx.memorySlots.some((s) => s !== null) || anyItemPlaced(ctx)) && leftBackEncodingZone(ctx),
       completionCondition: nearAnyTargetBasket,
@@ -123,7 +125,7 @@ export const laundrySortTask: TaskConfig = {
     },
     {
       id: STAGE_SORT,
-      playerObjective: '把六件衣物分类到对应的篮子。记住：白篮=浅色衣物，蓝篮=深色衣物，橙篮=毛巾。',
+      playerObjective: '主人：「衣服别放错篮子，会染色的！」把六件衣物分类到对应篮子：白篮←浅色，蓝篮←深色，橙篮←毛巾。放错会被篮子拒绝。',
       entryCondition: nearAnyTargetBasket,
       completionCondition: (ctx: StageContext) =>
         whiteAllPlaced(ctx) && darkAllPlaced(ctx) && towelAllPlaced(ctx),
@@ -133,20 +135,25 @@ export const laundrySortTask: TaskConfig = {
 
   briefing: `🧺 洗衣房 · 整合记忆分拣
 
-主人的便签：「这批衣服分三类，浅色 / 深色 / 毛巾——放错会染色，拜托了小橡！」
+下午，主人抱着一堆衣服走进洗衣房，却发现洗衣篮的标签全被撕了——地上还散落着几片嚼烂的纸屑。钥匙猫蹲在洗衣机上，脖子的旧钥匙叮当作响，眼神无辜。
 
-三个篮子摆在洗衣房后墙：
+主人：「小橡，这只猫把我的分类标签全撕了！这批衣服分三类——浅色、深色、毛巾——放错会染色，你帮我分拣。我先把篮子按颜色摆好，你记住哪个篮子放哪类。」
+
+MEM-07：「警告：钥匙猫仍在屋内活动。它可能会在你记完规则后挪动篮子位置——必须用记忆槽锁定规则，否则篮子交换后你将分不清哪个篮子放哪类。」
+
+📋 分拣规则：
   · 白篮 ← 浅色衣物（2 件）
   · 蓝篮 ← 深色衣物（2 件）
   · 橙篮 ← 毛巾（2 条）
 
 💡 提示：
-  · 先观察篮子颜色与对应类别，按 E 保存规则记忆。
-  · 把六件衣物逐一放进对应的篮子。
-  · 错误类别放入篮子会被拒绝——观察篮子颜色与衣物颜色匹配！`,
+  · 先靠近后墙每个篮子，按 E 保存规则记忆（这一步必须做，否则后续篮子被挪走你会迷失）。
+  · 走到门口让时间推进，钥匙猫会趁机交换篮子位置。
+  · 回到后墙重新确认篮子位置，按 E 更新过期记忆。
+  · 把六件衣物逐一放进对应篮子——错误类别会被拒绝。`,
 
-  completionText: '六件衣物分拣完毕。主人回复：「完美！小橡比洗衣机还好用！」\n（篮子交换干扰本轮 DEFERRED——基础分类达成。）',
-  failureText: '时间到了，衣物还是乱成一堆。主人：「算了，我送干洗店吧...」',
+  completionText: '六件衣物分拣完毕，主人回来检查：「完美！小橡比洗衣机还好用，还不会把红袜子洗进白衬衫里。」\n钥匙猫：「喵~」（从洗衣机上跳下，似乎对没能制造更多混乱感到失望）\nMEM-07：「整合记忆模块校准完成。规则保持、规则切换、记忆更新——全部通过。」',
+  failureText: '时间到了，衣物还是乱成一堆。主人：「算了，我送干洗店吧……」\nMEM-07：「建议：第一阶段的规则编码不要跳过，篮子被挪走后没有记忆会迷失。」',
   systemPrompt: '【MEM-07 日志】任务：六件衣物三类分拣。策略：编码篮子规则→按颜色匹配归位。整合物体记忆与空间记忆，错误类别将被篮子拒绝。',
 
   objects: [
