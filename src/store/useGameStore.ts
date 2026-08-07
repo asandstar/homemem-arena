@@ -206,7 +206,7 @@ interface GameStore extends GameState, ProgressState {
   triggerMemoryClearPulse: () => void
 }
 
-// Hotfix 2026-08-07: 首帧 getSnapshot=null → 全局 withSafeSnapshot 包装，consumer 层 selector 自动获得 s ?? {}
+// Hotfix 2026-08-07: 首帧 getSnapshot=null → 全局 withSafeSnapshot v2 包装（safeStore.ts useMemo 缓存 selector，不产生 MAX_DEPTH 死循环），consumer 层 selector 自动获得 s ?? {}
 const _rawGameStore = create<GameStore>((set, rawGet, _store) => {
   // Hotfix 2026-08-07: 代码分包 / 路由懒加载会导致 zustand 内部首次 getSnapshot 返回 null；
   // 所有 slice 与跨 slice 聚合统一通过 safeGet 访问，避免 "Cannot read properties of null"。

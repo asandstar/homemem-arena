@@ -1,10 +1,18 @@
+import { useMemo } from 'react'
 import type { UseBoundStore } from 'zustand'
 import type { StoreApi } from 'zustand'
 
 /**
- * Hotfix 2026-08-07: 代码分包 / 路由懒加载 → zustand 内部 useSyncExternalStore 首帧
+ * Hotfix 2026-08-07 v2: 代码分包 / 路由懒加载 → zustand 内部 useSyncExternalStore 首帧
  * getSnapshot 短暂返回 null，组件里任何 selector(s) => s.field 都会抛 "Cannot read
  * properties of null"。统一在 hook 层包装后导出，所有消费者自动获得 null-安全。
+ *
+ * v2 修复 MAX_DEPTH 死循环：不再每次 render 都 inline 创建新 selector 匿名函数传
+ * 给 zustand（会导致 useSyncExternalStoreWithSelector 以为"订阅变了 → 取消再订阅 →
+ * forceStoreRerender → 再 render → 再变 → 无限嵌套"），改为用 React.useMemo 把我
+ * 们包的合成 selector 缓存住，dep 只有用户本身传进来的 selector —— 用户自己 inline
+ * `s => s.foo` 每次变引用是 zustand 原生就支持的场景（它内部只比较 selector 返回值
+ * 的 Object.is，不会 loop，我们只保证自己包的那层不再额外制造不稳定引用。
  *
  * 用法：
  *   const _raw = create<MyStore>(...)
@@ -21,11 +29,14 @@ export function withSafeSnapshot<S>(
     selector?: (state: S) => any,
     equalityFn?: (a: any, b: any) => boolean,
   ): any {
-    if (typeof selector !== 'function') {
-      // zustand 4 默认无 selector 等价于返回整个 state（identity）
-      return (rawStore as any)((s: S | null) => (s ?? EMPTY), equalityFn)
-    }
-    return (rawStore as any)((s: S | null) => selector(s ?? EMPTY), equalityFn)
+    const safeSelector = useMemo(() => {
+      if (typeof selector !== 'function') {
+        // zustand 4 默认无 selector 等价于返回整个 state（identity）
+        return (s: S | null): S => (s ?? EMPTY)
+      }
+      return (s: S | null): any => selector(s ?? EMPTY)
+    }, [selector])
+    return (rawStore as any)(safeSelector, equalityFn)
   } as UseBoundStore<StoreApi<S>>
 
   // 复制所有静态方法（getState / setState / subscribe / getInitialState / …），

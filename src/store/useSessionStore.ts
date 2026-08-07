@@ -23,7 +23,7 @@ interface SessionStore {
   _unsubscribeEventBus?: () => void
 }
 
-// Hotfix 2026-08-07: 首帧 getSnapshot=null 全局兜底（详见 safeStore.ts）；
+// Hotfix 2026-08-07 v2: 首帧 getSnapshot=null 全局兜底（safeStore.ts withSafeSnapshot v2，useMemo 缓存 selector 避免 MAX_DEPTH 死循环）；
 // 同时 action 内的跨 slice 读 state 通过 makeSafeGet(rawGet) 避免 rawGet() 返回 null。
 const _rawSessionStore = create<SessionStore>((set, rawGet) => {
   const get = makeSafeGet(rawGet)
