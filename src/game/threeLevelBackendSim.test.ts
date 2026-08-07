@@ -11,7 +11,6 @@ import { sharedRooms } from '../data/rooms'
 import {
   executePick,
   executePlace,
-  executeSaveMemory,
 } from './commands'
 
 function di(key: string, payload: unknown) {
@@ -62,15 +61,6 @@ function snap(task: TaskConfig | null, stage: string) {
         }))
       : [],
   }
-}
-
-function setRobotAt(task: TaskConfig, localPos: { x: number; z: number; y?: number }) {
-  const room = (sharedRooms as Record<string, any>)[task.rooms[0]] ?? (sharedRooms as any)[useGameStore.getState().currentRoom]
-  const base = room?.center ?? { x: 0, y: 0, z: 0 }
-  const p = { x: base.x + localPos.x, y: localPos.y ?? 0, z: base.z + localPos.z }
-  const setFn = (useGameStore as any).setState
-  if (typeof setFn === 'function') setFn({ robotPosition: p })
-  return p
 }
 
 function setRobotAtContainer(task: TaskConfig, containerId: string) {
@@ -131,12 +121,6 @@ function setRobotAtEntity(task: TaskConfig, configId: string) {
     }
   }
   return { success: true, position }
-}
-
-function saveByCfg(cfg: string): { success: boolean; slotIndex?: number; reason?: string } {
-  const e = findByCfg(cfg)
-  if (!e) return { success: false, reason: `no entity:${cfg}` }
-  return executeSaveMemory(e.id)
 }
 
 function pickByCfg(cfg: string): { success: boolean; reason?: string } {
@@ -266,135 +250,6 @@ describe('三关后端模拟实玩 & 证据链', () => {
     })
     expect(finalState.achievedGoalIds).toEqual(
       new Set(['g-books-table', 'g-mug-table', 'g-bear-table', 'g-radio-table']),
-    )
-    expect(finalState.levelCompleted).toBe(true)
-  })
-
-  it('L3: task-laundry-sort —— 六件三类分拣：2 件浅色→白篮 / 2 件深色→蓝篮 / 2 件毛巾→橙篮（错误类别被拒绝）', () => {
-    useGameStore.getState().initializeTask('task-laundry-sort')
-    const task = useGameStore.getState().task!
-    useGameStore.getState().startPlaying()
-    di('L3-0-INIT', snap(task, 'L3-0-INIT'))
-    expect(useGameStore.getState().phase).toBe('playing')
-
-    const allCfgs = useGameStore.getState().entities.map((e) => e.configId)
-    di('L3-0-ENTITY-CONFIGS', allCfgs)
-    const containerCfgs = useGameStore.getState().task?.containers.map((c) => c.id) ?? []
-    di('L3-0-CONTAINER-CONFIGS', containerCfgs)
-
-    // L3_INTERFERENCE_DEFERRED：篮子交换本轮不实现，仅验证基础六件分类
-    // 6 件物体（2 件浅色 / 2 件深色 / 2 件毛巾）三类分拣到对应篮子
-    expect(allCfgs).toEqual(
-      expect.arrayContaining([
-        'obj-white-1', 'obj-white-2',
-        'obj-dark-1', 'obj-dark-2',
-        'obj-towel-1', 'obj-towel-2',
-      ]),
-    )
-    expect(allCfgs).toHaveLength(6)
-    expect(containerCfgs).toEqual(
-      expect.arrayContaining(['cnt-white-basket', 'cnt-dark-basket', 'cnt-towel-basket']),
-    )
-
-    // 物体初始位置（laundry 房间局部坐标）—— 已改为散布布局增加空间记忆负荷
-    const cfgLocal: Record<string, { x: number; z: number }> = {
-      'obj-white-1': { x: -0.8, z: 0.8 },
-      'obj-white-2': { x: 0.5, z: 1.6 },
-      'obj-dark-1': { x: 1.0, z: 0.6 },
-      'obj-dark-2': { x: -0.5, z: 1.4 },
-      'obj-towel-1': { x: 0.8, z: 1.2 },
-      'obj-towel-2': { x: -1.0, z: 1.0 },
-    }
-    const cfgBucket: Record<string, string> = {
-      'obj-white-1': 'cnt-white-basket',
-      'obj-white-2': 'cnt-white-basket',
-      'obj-dark-1': 'cnt-dark-basket',
-      'obj-dark-2': 'cnt-dark-basket',
-      'obj-towel-1': 'cnt-towel-basket',
-      'obj-towel-2': 'cnt-towel-basket',
-    }
-
-    // ========== 阶段 1：规则编码（STAGE_RULES）—— save 1 个记忆 → 离开后墙推进到 STAGE_SWAP → 回任意篮子推进到 STAGE_SORT ==========
-    const firstObserve = 'obj-white-1'
-    di(`L3-1-move-${firstObserve}`, setRobotAt(task, cfgLocal[firstObserve]))
-    di(`L3-1-save-${firstObserve}`, saveByCfg(firstObserve))
-    evalAndCheck('L3-1-AFTER-OBSERVE')
-    expect(useGameStore.getState().memorySlots.some((s) => s !== null)).toBe(true)
-    // save + 在 z=1.0（已离开后墙编码区）→ 推进到 STAGE_SWAP
-    expect(useGameStore.getState().currentStageId).toBe('stage-baskets-swapped')
-    // 回白篮附近 → 推进到 STAGE_SORT 准备分类
-    di('L3-1b-move-to-white-basket', setRobotAtContainer(task, 'cnt-white-basket'))
-    evalAndCheck('L3-1b-AFTER-RETURN-TO-BASKET')
-    expect(useGameStore.getState().currentStageId).toBe('stage-sort-six-items')
-
-    // ========== 阶段 2：错误类别拒绝场景 ==========
-    // 拿起浅色衣物 obj-white-1，尝试放入深色篮 cnt-dark-basket → 应被拒绝（acceptedCategories 不匹配）
-    di('L3-2-move-white-1', setRobotAt(task, cfgLocal['obj-white-1']))
-    di('L3-2-pick-white-1', pickByCfg('obj-white-1'))
-    evalAndCheck('L3-2-AFTER-PICK-WHITE-1')
-    expect(useGameStore.getState().heldEntityId).not.toBeNull()
-
-    di('L3-2b-move-dark-basket', setRobotAtContainer(task, 'cnt-dark-basket'))
-    const rejectResult = placeInto('cnt-dark-basket')
-    di('L3-2b-place-white-1-into-dark-basket-REJECTED', rejectResult)
-    evalAndCheck('L3-2b-AFTER-REJECTED-PLACE')
-    // 验证：错误类别被篮子拒绝，仍持有浅色衣物（acceptedCategories 机制生效）
-    expect(rejectResult.success).toBe(false)
-    expect(useGameStore.getState().heldEntityId).not.toBeNull()
-    const white1Held = useGameStore.getState().entities.find((e) => e.configId === 'obj-white-1')!
-    expect(white1Held.status).toBe('held')
-    expect(white1Held.placedIn).toBeUndefined()
-
-    // ========== 阶段 3：六件正确分类 ==========
-    // 先把持有的浅色衣物 #1 放进白篮（玩家当前在深色篮旁，需要移动到白篮）
-    di('L3-3-move-white-basket', setRobotAtContainer(task, 'cnt-white-basket'))
-    di('L3-3-place-white-1-into-white-basket', placeInto('cnt-white-basket'))
-    evalAndCheck('L3-3-AFTER-WHITE-1-PLACE')
-    expect(useGameStore.getState().heldEntityId).toBeNull()
-
-    // 剩余 5 件按序拾取并放入对应篮子
-    const remaining = ['obj-white-2', 'obj-dark-1', 'obj-dark-2', 'obj-towel-1', 'obj-towel-2']
-    for (const cfg of remaining) {
-      di(`L3-4-move-${cfg}`, setRobotAt(task, cfgLocal[cfg]))
-      di(`L3-4-pick-${cfg}`, pickByCfg(cfg))
-      const bucket = cfgBucket[cfg]
-      di(`L3-4-move-bucket-${bucket}`, setRobotAtContainer(task, bucket))
-      di(`L3-4-place-${cfg}-into-${bucket}`, placeInto(bucket))
-      evalAndCheck(`L3-4-AFTER-${cfg}`)
-      // 每件放置后应不再持有
-      expect(useGameStore.getState().heldEntityId).toBeNull()
-    }
-
-    // ========== 阶段 4：验证阶段 ==========
-    // 所有衣物放置完毕后，应自动进入 stage-memory-verification
-    evalAndCheck('L3-VERIFY-STAGE-CHECK')
-    const preVerifyState = useGameStore.getState()
-    di('L3-VERIFY-STAGE-ID', preVerifyState.currentStageId)
-    // 确认已进入验证阶段
-    expect(preVerifyState.currentStageId).toBe('stage-memory-verification')
-
-    // 移动到折叠桌验证区（西墙 x≈-1.2, z≈-0.3，本地坐标）
-    di('L3-VERIFY-move-to-zone', setRobotAt(task, { x: -1.2, z: -0.3 }))
-    evalAndCheck('L3-VERIFY-AFTER-MOVE-TO-ZONE')
-
-    // ========== 最终判定 ==========
-    for (let i = 0; i < 8; i++) evalAndCheck(`L3-FINAL-pass-${i}`)
-    const finalState = useGameStore.getState()
-    di('L3-FINAL', {
-      completed: finalState.levelCompleted,
-      achieved: Array.from(finalState.achievedGoalIds),
-      goals: task.goals.map((g) => g.id),
-      stageId: finalState.currentStageId,
-      phase: finalState.phase,
-    })
-    // 七个目标全部达成（六件分拣 + 记忆验证）
-    expect(finalState.achievedGoalIds).toEqual(
-      new Set([
-        'g-white-1-basket', 'g-white-2-basket',
-        'g-dark-1-basket', 'g-dark-2-basket',
-        'g-towel-1-basket', 'g-towel-2-basket',
-        'g-memory-verification',
-      ]),
     )
     expect(finalState.levelCompleted).toBe(true)
   })

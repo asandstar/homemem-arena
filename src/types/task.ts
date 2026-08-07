@@ -88,6 +88,8 @@ export interface ScriptedEventSpec {
   targetId?: string
   /** 移动目标位置（move-entity 时） */
   targetPosition?: { room: RoomId; x: number; y: number; z: number }
+  /** 移动后放入的目标容器 ID（move-entity 时可选；动画完成后将实体设为 hidden 在此容器内） */
+  targetContainerId?: string
   /** 消息内容（message 时） */
   message?: string
   /** 自然语言描述（写入记忆） */
@@ -214,7 +216,7 @@ export interface TaskConfig {
   /** 标签 - 用于任务卡片展示 */
   tags?: string[]
   /** 任务图标 key */
-  iconKey?: 'door' | 'dish' | 'shirt' | 'breakfast'
+  iconKey?: 'door' | 'dish' | 'shirt'
   /** 关卡时间限制（秒） */
   timeLimit?: number
   /** 玩家初始位置（房间局部坐标，可选），不填则为房间中心 */

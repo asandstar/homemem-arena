@@ -40,7 +40,7 @@ describe('任务一致性测试', () => {
   })
 
   it('关卡总数为 taskTemplates.length', () => {
-    expect(taskTemplates.length).toBe(5)
+    expect(taskTemplates.length).toBe(3)
   })
 
   it('每个任务都有有效的 presentation 配置', () => {
@@ -69,8 +69,6 @@ describe('任务一致性测试', () => {
       'task-clean-table',
       'task-leave-home',
       'task-laundry-sort',
-      'task-breakfast',
-      'task-night-patrol',
     ]
     const actualOrder = taskTemplates.map(t => t.id)
     expect(actualOrder).toEqual(expectedOrder)

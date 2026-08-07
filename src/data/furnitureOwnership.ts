@@ -76,10 +76,6 @@ export const furnitureOwnershipRegistry: FurnitureOwnershipEntry[] = [
   { key: 'dining::cnt-sink', roomId: 'dining', containerId: 'cnt-sink', ownership: 'task-container', note: 'L1 水槽交互区，视觉由 decor-kit-sink 承担（无 modelAssetId）' },
   { key: 'dining::cnt-cabinet', roomId: 'dining', containerId: 'cnt-cabinet', ownership: 'task-container', note: 'L1 橱柜交互区，视觉由 decor-kit-cabinet-1 承担（无 modelAssetId）' },
   { key: 'dining::cnt-trashcan', roomId: 'dining', containerId: 'cnt-trashcan', ownership: 'task-container', note: 'L1 垃圾桶（教学开关容器），自渲染 GLB' },
-  // breakfast（隐藏任务）task-containers
-  { key: 'dining::cnt-fridge', roomId: 'dining', containerId: 'cnt-fridge', ownership: 'task-container', note: 'breakfast 冰箱交互' },
-  { key: 'dining::cnt-cabinet-upper', roomId: 'dining', containerId: 'cnt-cabinet-upper', ownership: 'task-container', note: 'breakfast 上层吊柜' },
-  { key: 'dining::cnt-cabinet-lower', roomId: 'dining', containerId: 'cnt-cabinet-lower', ownership: 'task-container', note: 'breakfast 下层柜' },
   // 4 把餐椅：static-decor
   { key: 'dining::decor-chair-1', roomId: 'dining', decorId: 'decor-chair-1', ownership: 'static-decor' },
   { key: 'dining::decor-chair-2', roomId: 'dining', decorId: 'decor-chair-2', ownership: 'static-decor' },

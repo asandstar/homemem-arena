@@ -20,8 +20,6 @@ const PUBLIC_LEVEL_CAPTION: Record<string, string> = {
   'task-clean-table': '第一章 · 失忆管家初次启动',
   'task-leave-home': '第二章 · 钥匙猫的清晨恶作剧',
   'task-laundry-sort': '第三章 · 洗衣房的袜子幽灵',
-  'task-breakfast': '🔬 内部测试 · 时间循环与流程顺序（DEV 预览）',
-  'task-night-patrol': '🔬 内部测试 · 黑暗中的多房间巡查（DEV 预览）',
 }
 
 interface SaveInfo {
@@ -66,7 +64,7 @@ export function TaskSelectPage() {
   }, [])
 
   useEffect(() => {
-    // 初始化所有显示关卡的 progress（包括 5 关模式下的 breakfast/night-patrol）
+    // 初始化所有显示关卡的 progress
     if (typeof initializeProgress !== 'function') return
     initializeProgress(publicTaskTemplates.map((t) => t.id))
   }, [initializeProgress, publicTaskTemplates])

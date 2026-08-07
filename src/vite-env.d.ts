@@ -14,8 +14,6 @@ interface ImportMetaEnv {
   readonly PROD: boolean
   /** §十一：true=DEV 环境下 Living 用 Kenney GLB 替换 5 个视觉家具；false（默认）= 保持现有程序化家具 */
   readonly VITE_USE_KENNEY_LIVING_ASSETS?: 'true' | 'false' | '1' | '0' | ''
-  /** 预留：DEV 环境下是否解锁 breakfast / night-patrol 两个隐藏关卡（默认 false，不公开）；生产环境始终忽略 */
-  readonly VITE_UNLOCK_HIDDEN_LEVELS?: 'true' | 'false' | '1' | '0' | ''
   readonly VITE_E2E?: string
   readonly [key: string]: unknown
 }

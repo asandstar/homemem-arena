@@ -178,8 +178,7 @@ export function createProgressSlice(set: any, get: any): ProgressState {
   },
 
   isLevelUnlocked: (_taskId: string, _allTasks: string[]) => {
-    // 2026-08-07 修复：所有公开关卡默认解锁，不再要求前置关卡完成。
-    // 仅隐藏关卡（如 breakfast/night-patrol）可能需要特殊解锁。
+    // 所有公开关卡默认解锁，不再要求前置关卡完成。
     return true
   },
 

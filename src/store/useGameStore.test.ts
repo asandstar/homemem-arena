@@ -353,38 +353,6 @@ describe('useGameStore - 核心状态流转测试', () => {
   })
 
   describe('目标里程碑与脚本状态一致性', () => {
-    it('早餐准备里程碑完成后可以在归位状态下完成关卡', () => {
-      useGameStore.getState().initializeTask('task-breakfast')
-      useGameStore.getState().startPlaying()
-      const milestoneIds = [
-        'g-open-fridge',
-        'g-open-cabinet',
-        'g-get-milk',
-        'g-get-cup',
-        'g-get-bowl',
-        'g-get-cereal',
-        'g-prepare-breakfast',
-      ]
-      useGameStore.setState((state) => ({
-        achievedGoalIds: new Set(milestoneIds),
-        entities: state.entities.map((entity) => {
-          if (entity.configId === 'obj-milk') return { ...entity, status: 'hidden' as const, placedIn: 'cnt-fridge' }
-          if (entity.configId === 'obj-cereal') return { ...entity, status: 'hidden' as const, placedIn: 'cnt-cabinet-upper' }
-          if (entity.configId === 'obj-cup' || entity.configId === 'obj-bowl') {
-            return { ...entity, status: 'placed' as const, placedIn: 'cnt-dishwasher' }
-          }
-          return entity
-        }),
-      }))
-
-      useGameStore.getState().checkLevelCompletion()
-
-      expect(useGameStore.getState().levelCompleted).toBe(true)
-      // BUG-P1-2：终局 phase 统一为 result
-      expect(useGameStore.getState().phase).toBe('result')
-      expect(useGameStore.getState().achievedGoalIds.has('g-close-containers')).toBe(true)
-    })
-
     it('脚本移动已放置物体时清除旧 placedIn 和容器成员关系', () => {
       useGameStore.getState().initializeTask('task-clean-table')
       const entity = useGameStore.getState().entities.find((item) => item.configId === 'obj-mug-1')!

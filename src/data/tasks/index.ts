@@ -3,8 +3,6 @@ import type { TaskConfig } from '../../types/task'
 import { leaveHomeTask } from './leave-home'
 import { cleanTableTask } from './clean-table'
 import { laundrySortTask } from './laundry-sort'
-import { breakfastTask } from './breakfast'
-import { nightPatrolTask } from './night-patrol'
 
 export const PUBLIC_LEVEL_ORDER = [
   'task-clean-table',
@@ -13,29 +11,14 @@ export const PUBLIC_LEVEL_ORDER = [
 ] as const
 
 export type PublicTaskId = typeof PUBLIC_LEVEL_ORDER[number]
-export const HIDDEN_TASK_IDS = ['task-breakfast', 'task-night-patrol'] as const
+export const HIDDEN_TASK_IDS = [] as const
 export type HiddenTaskId = typeof HIDDEN_TASK_IDS[number]
 
 /**
- * DEV-only 预留：VITE_UNLOCK_HIDDEN_LEVELS=true/'1' 时把 breakfast / night-patrol 也放进
- *  显示列表（TaskSelectPage 会用），但仍通过 isHiddenTaskId 守卫生产路由，保证 PRD 禁令不变。
- *  生产环境 / 未设置 flag：始终只显示 3 个公开关卡。
+ * 全部 5 关均公开显示，无需通关解锁。
  */
 export function getPublicTaskTemplates(): TaskConfig[] {
-  const hiddenEnabled = (() => {
-    try {
-      const env = (import.meta as any)?.env
-      if (!env?.DEV) return false
-      const flag = String(env.VITE_UNLOCK_HIDDEN_LEVELS ?? '')
-      return flag === 'true' || flag === '1'
-    } catch {
-      return false
-    }
-  })()
-  if (hiddenEnabled) {
-    return taskTemplates.slice() // 5 关全部
-  }
-  return taskTemplates.filter((t) => isPublicTaskId(t.id)) // 默认 3 关
+  return taskTemplates.slice()
 }
 
 export function isPublicTaskId(id: string): id is PublicTaskId {
@@ -58,8 +41,6 @@ export const taskTemplates: TaskConfig[] = [
   cleanTableTask,
   leaveHomeTask,
   laundrySortTask,
-  breakfastTask,
-  nightPatrolTask,
 ]
 
 export function getTaskById(id: string): TaskConfig | undefined {
@@ -94,18 +75,6 @@ export const taskPresentationById: Record<string, TaskPresentation> = {
     estimatedMinutes: 5,
     emoji: '👕',
   },
-  'task-breakfast': {
-    role: 'challenge',
-    shortDescription: '困在时间循环里的早餐，按正确流程准备再归位',
-    estimatedMinutes: 5,
-    emoji: '⏰',
-  },
-  'task-night-patrol': {
-    role: 'challenge',
-    shortDescription: '深夜巡逻，黑暗中巡查各个房间，应对夜间扰动',
-    estimatedMinutes: 6,
-    emoji: '🌙',
-  },
 }
 
 export const tutorialTaskId = 'task-clean-table'
@@ -115,6 +84,4 @@ export {
   leaveHomeTask,
   cleanTableTask,
   laundrySortTask,
-  breakfastTask,
-  nightPatrolTask,
 }
