@@ -27,7 +27,7 @@ export interface FurnitureOwnershipEntry {
 
 export const furnitureOwnershipRegistry: FurnitureOwnershipEntry[] = [
   // ===================== 客厅 living =====================
-  // 茶几：task-container 接管 → 删除 Room3D 内联 CoffeeTable + decor deprecated
+  // 茶几：task-container 接管（L2 唯一目标区）
   {
     key: 'living::cnt-coffee-table',
     roomId: 'living',
@@ -36,519 +36,91 @@ export const furnitureOwnershipRegistry: FurnitureOwnershipEntry[] = [
     ownership: 'task-container',
     note: '沙发组中心家具，唯一真身为 Container3D(cnt-coffee-table)，自带 hover/target/放置逻辑',
   },
-  // 主沙发 / 侧沙发：static-decor
-  {
-    key: 'living::decor-sofa-main',
-    roomId: 'living',
-    decorId: 'decor-sofa-main',
-    ownership: 'static-decor',
-    note: '北墙靠墙大件沙发',
-  },
-  {
-    key: 'living::decor-sofa-side',
-    roomId: 'living',
-    decorId: 'decor-sofa-side',
-    ownership: 'static-decor',
-  },
-  // 电视柜 + 电视：static-decor
-  {
-    key: 'living::decor-tv-stand',
-    roomId: 'living',
-    decorId: 'decor-tv-stand',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'living::decor-tv',
-    roomId: 'living',
-    decorId: 'decor-tv',
-    ownership: 'static-decor',
-  },
-  // 书架 / 边柜 / 挂画 / 时钟 / 落地灯 / 绿植 / 边几 / 椅子
-  {
-    key: 'living::decor-bookshelf',
-    roomId: 'living',
-    decorId: 'decor-bookshelf',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'living::decor-shelf',
-    roomId: 'living',
-    decorId: 'decor-shelf',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'living::decor-painting',
-    roomId: 'living',
-    decorId: 'decor-painting',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'living::decor-clock',
-    roomId: 'living',
-    decorId: 'decor-clock',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'living::decor-floor-lamp-1',
-    roomId: 'living',
-    decorId: 'decor-floor-lamp-1',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'living::decor-plant-1',
-    roomId: 'living',
-    decorId: 'decor-plant-1',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'living::decor-plant-2',
-    roomId: 'living',
-    decorId: 'decor-plant-2',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'living::decor-chair',
-    roomId: 'living',
-    decorId: 'decor-chair',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'living::decor-side-table',
-    roomId: 'living',
-    decorId: 'decor-side-table',
-    ownership: 'static-decor',
-  },
-
-  // ===================== 玄关 entrance =====================
-  // 玄关桌 = static-base，托盘 cnt-entrance-tray = task-container 放桌面上方
-  {
-    key: 'entrance::decor-entrance-table-base',
-    roomId: 'entrance',
-    decorId: 'decor-entrance-table-base',
-    ownership: 'static-decor',
-    note: '玄关桌面静态底座 1.4×0.8×0.45，其上方托盘由 task-container 渲染',
-  },
-  {
-    key: 'entrance::cnt-entrance-tray',
-    roomId: 'entrance',
-    containerId: 'cnt-entrance-tray',
-    ownership: 'task-container',
-    note: '玄关托盘（目标区），钥匙/手机/雨伞归位用',
-  },
-  {
-    key: 'entrance::cnt-umbrella-stand',
-    roomId: 'entrance',
-    containerId: 'cnt-umbrella-stand',
-    ownership: 'task-container',
-    note: '伞架（任务交互容器）',
-  },
-  {
-    key: 'entrance::decor-shoe-cabinet',
-    roomId: 'entrance',
-    decorId: 'decor-shoe-cabinet',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'entrance::decor-shoes',
-    roomId: 'entrance',
-    decorId: 'decor-shoes',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'entrance::decor-hook',
-    roomId: 'entrance',
-    decorId: 'decor-hook',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'entrance::decor-painting',
-    roomId: 'entrance',
-    decorId: 'decor-painting',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'entrance::decor-clock',
-    roomId: 'entrance',
-    decorId: 'decor-clock',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'entrance::decor-plant-1',
-    roomId: 'entrance',
-    decorId: 'decor-plant-1',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'entrance::decor-plant-2',
-    roomId: 'entrance',
-    decorId: 'decor-plant-2',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'entrance::decor-shelf',
-    roomId: 'entrance',
-    decorId: 'decor-shelf',
-    ownership: 'static-decor',
-  },
-
-  // ===================== 餐厅 dining =====================
-  // 餐桌：task-container 接管 → 删除 Room3D 内联 dining-table & decor deprecated
-  {
-    key: 'dining::cnt-dining-table',
-    roomId: 'dining',
-    containerId: 'cnt-dining-table',
-    decorId: '__DEPRECATED_BY_CONTAINER__dining-table',
-    ownership: 'task-container',
-    note: '餐厅核心家具，唯一真身为 Container3D(cnt-dining-table)，放 L1 脏碗 & L4 早餐',
-  },
-  // 三件套：洗碗机/垃圾桶/餐具架
-  {
-    key: 'dining::cnt-dishwasher',
-    roomId: 'dining',
-    containerId: 'cnt-dishwasher',
-    ownership: 'task-container',
-  },
-  {
-    key: 'dining::cnt-trash-bin',
-    roomId: 'dining',
-    containerId: 'cnt-trash-bin',
-    ownership: 'task-container',
-  },
-  {
-    key: 'dining::cnt-utensil-rack',
-    roomId: 'dining',
-    containerId: 'cnt-utensil-rack',
-    ownership: 'task-container',
-  },
-  // 4 把椅子围绕餐桌（static-decor，因为没有打开/放置逻辑）
-  {
-    key: 'dining::decor-chair-1',
-    roomId: 'dining',
-    decorId: 'decor-chair-1',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-chair-2',
-    roomId: 'dining',
-    decorId: 'decor-chair-2',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-chair-3',
-    roomId: 'dining',
-    decorId: 'decor-chair-3',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-chair-4',
-    roomId: 'dining',
-    decorId: 'decor-chair-4',
-    ownership: 'static-decor',
-  },
-  // 西墙边柜、小边架、挂画、时钟、绿植
-  {
-    key: 'dining::decor-cabinet',
-    roomId: 'dining',
-    decorId: 'decor-cabinet',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-shelf',
-    roomId: 'dining',
-    decorId: 'decor-shelf',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-painting',
-    roomId: 'dining',
-    decorId: 'decor-painting',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-clock',
-    roomId: 'dining',
-    decorId: 'decor-clock',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-plant-1',
-    roomId: 'dining',
-    decorId: 'decor-plant-1',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-plant-2',
-    roomId: 'dining',
-    decorId: 'decor-plant-2',
-    ownership: 'static-decor',
-  },
+  // 主沙发：static-decor
+  { key: 'living::decor-sofa-main', roomId: 'living', decorId: 'decor-sofa-main', ownership: 'static-decor' },
+  // 电视柜 + 电视 + 音箱：static-decor
+  { key: 'living::decor-tv-stand', roomId: 'living', decorId: 'decor-tv-stand', ownership: 'static-decor' },
+  { key: 'living::decor-tv', roomId: 'living', decorId: 'decor-tv', ownership: 'static-decor' },
+  { key: 'living::decor-speaker-l', roomId: 'living', decorId: 'decor-speaker-l', ownership: 'static-decor' },
+  { key: 'living::decor-speaker-r', roomId: 'living', decorId: 'decor-speaker-r', ownership: 'static-decor' },
+  // 地毯 / 书架 / 落地灯 / 休闲椅：static-decor
+  { key: 'living::decor-living-rug-round', roomId: 'living', decorId: 'decor-living-rug-round', ownership: 'static-decor' },
+  { key: 'living::decor-bookshelf', roomId: 'living', decorId: 'decor-bookshelf', ownership: 'static-decor' },
+  { key: 'living::decor-floor-lamp', roomId: 'living', decorId: 'decor-floor-lamp', ownership: 'static-decor' },
+  { key: 'living::decor-lounge-chair', roomId: 'living', decorId: 'decor-lounge-chair', ownership: 'static-decor' },
+  // 盆栽 ×3：static-decor
+  { key: 'living::decor-plant-1', roomId: 'living', decorId: 'decor-plant-1', ownership: 'static-decor' },
+  { key: 'living::decor-plant-2', roomId: 'living', decorId: 'decor-plant-2', ownership: 'static-decor' },
+  { key: 'living::decor-plant-3', roomId: 'living', decorId: 'decor-plant-3', ownership: 'static-decor' },
+  // 墙饰：挂画 / 挂钟
+  { key: 'living::decor-painting', roomId: 'living', decorId: 'decor-painting', ownership: 'static-decor' },
+  { key: 'living::decor-clock', roomId: 'living', decorId: 'decor-clock', ownership: 'static-decor' },
+  // deprecated 记录：decor-sofa-side 已从 decorFurniture 移除（A6 布局重构）
+  { key: 'living::decor-sofa-side', roomId: 'living', decorId: 'decor-sofa-side', ownership: 'static-decor', note: 'DEPRECATED: A6 移除，decorFurniture.living 已无此条目' },
 
   // ===================== 卧室 bedroom =====================
-  // 床头柜（抽屉）：task-container 接管
-  {
-    key: 'bedroom::cnt-nightstand',
-    roomId: 'bedroom',
-    containerId: 'cnt-nightstand',
-    decorId: 'decor-nightstand-left',
-    ownership: 'task-container',
-    note: 'L2 找手机场景抽屉；原 decor-nightstand-left 标记为 deprecated，仅 Container3D 渲染',
-  },
-  {
-    key: 'bedroom::decor-bed',
-    roomId: 'bedroom',
-    decorId: 'decor-bed',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'bedroom::decor-desk',
-    roomId: 'bedroom',
-    decorId: 'decor-desk',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'bedroom::decor-wardrobe',
-    roomId: 'bedroom',
-    decorId: 'decor-wardrobe',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'bedroom::decor-dresser',
-    roomId: 'bedroom',
-    decorId: 'decor-dresser',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'bedroom::decor-bookshelf',
-    roomId: 'bedroom',
-    decorId: 'decor-bookshelf',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'bedroom::decor-painting',
-    roomId: 'bedroom',
-    decorId: 'decor-painting',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'bedroom::decor-clock',
-    roomId: 'bedroom',
-    decorId: 'decor-clock',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'bedroom::decor-chair',
-    roomId: 'bedroom',
-    decorId: 'decor-chair',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'bedroom::decor-plant',
-    roomId: 'bedroom',
-    decorId: 'decor-plant',
-    ownership: 'static-decor',
-  },
+  // 卧室无 task-container（L2 物品放在房间内但不使用容器交互）
+  { key: 'bedroom::decor-bed', roomId: 'bedroom', decorId: 'decor-bed', ownership: 'static-decor' },
+  { key: 'bedroom::decor-bedroom-wardrobe', roomId: 'bedroom', decorId: 'decor-bedroom-wardrobe', ownership: 'static-decor' },
+  { key: 'bedroom::decor-nightstand-left', roomId: 'bedroom', decorId: 'decor-nightstand-left', ownership: 'static-decor' },
+  { key: 'bedroom::decor-nightstand-right', roomId: 'bedroom', decorId: 'decor-nightstand-right', ownership: 'static-decor' },
+  { key: 'bedroom::decor-nightstand-lamp-l', roomId: 'bedroom', decorId: 'decor-nightstand-lamp-l', ownership: 'static-decor' },
+  { key: 'bedroom::decor-nightstand-lamp-r', roomId: 'bedroom', decorId: 'decor-nightstand-lamp-r', ownership: 'static-decor' },
+  { key: 'bedroom::decor-toy-bear', roomId: 'bedroom', decorId: 'decor-toy-bear', ownership: 'static-decor' },
+  { key: 'bedroom::decor-bedroom-rug', roomId: 'bedroom', decorId: 'decor-bedroom-rug', ownership: 'static-decor' },
+  { key: 'bedroom::decor-bedroom-mirror', roomId: 'bedroom', decorId: 'decor-bedroom-mirror', ownership: 'static-decor' },
 
   // ===================== 餐厨 dining =====================
-  // 冰箱（早餐任务）：位置在西墙中段，取代同位置的 decor-cabinet-2 和 decor-fridge（北角那个）
-  {
-    key: 'dining::cnt-fridge',
-    roomId: 'dining',
-    containerId: 'cnt-fridge',
-    decorId: 'decor-cabinet-2',
-    ownership: 'task-container',
-    note: '早餐任务拿牛奶；取代西墙原下柜 decor-cabinet-2 位置渲染/碰撞',
-  },
-  {
-    key: 'dining::cnt-sink',
-    roomId: 'dining',
-    containerId: 'cnt-sink',
-    ownership: 'task-container',
-  },
-  {
-    key: 'dining::cnt-dishwasher',
-    roomId: 'dining',
-    containerId: 'cnt-dishwasher',
-    ownership: 'task-container',
-  },
-  // 下层橱柜（早餐任务放麦片/杯碗）：南墙中段，取代 decor-cabinet-4
-  {
-    key: 'dining::cnt-cabinet-lower',
-    roomId: 'dining',
-    containerId: 'cnt-cabinet-lower',
-    decorId: 'decor-cabinet-4',
-    ownership: 'task-container',
-    note: '早餐任务下层柜体（放麦片/杯碗）；直接接管南墙中柜 decor-cabinet-4',
-  },
-  // 上层橱柜（早餐任务麦片最终归位）：吊柜非落地，不与 decor 冲突
-  {
-    key: 'dining::cnt-cabinet-upper',
-    roomId: 'dining',
-    containerId: 'cnt-cabinet-upper',
-    ownership: 'task-container',
-    note: '早餐任务上层吊柜，非落地家具（size.z<0.15），不参与地面重叠',
-  },
-  // 下柜 1/3/5/6 保留 static-decor（2/4 被 task-container 接管）
-  {
-    key: 'dining::decor-cabinet-1',
-    roomId: 'dining',
-    decorId: 'decor-cabinet-1',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-cabinet-3',
-    roomId: 'dining',
-    decorId: 'decor-cabinet-3',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-cabinet-5',
-    roomId: 'dining',
-    decorId: 'decor-cabinet-5',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-cabinet-6',
-    roomId: 'dining',
-    decorId: 'decor-cabinet-6',
-    ownership: 'static-decor',
-  },
-  // 备注：原 decor-fridge（东北角）和 decor-cabinet-2（西墙中段）已由 cnt-fridge 所有权取代，
-  // 但 decor-fridge id 未注册 active 所以 getActiveDecorIdsForRoom 会自动剔除。保留一条 deprecated
-  // 标记的说明性条目（不注册 ownership，即可被过滤掉）：无需额外写。
-  {
-    key: 'dining::decor-cabinet-5',
-    roomId: 'dining',
-    decorId: 'decor-cabinet-5',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-cabinet-6',
-    roomId: 'dining',
-    decorId: 'decor-cabinet-6',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-sink',
-    roomId: 'dining',
-    decorId: 'decor-sink',
-    ownership: 'static-decor',
-    note: '仅水槽上半部分视觉；下柜交互由 cnt-sink 接管',
-  },
-  {
-    key: 'dining::decor-stove',
-    roomId: 'dining',
-    decorId: 'decor-stove',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-microwave',
-    roomId: 'dining',
-    decorId: 'decor-microwave',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-trash',
-    roomId: 'dining',
-    decorId: 'decor-trash',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-shelf',
-    roomId: 'dining',
-    decorId: 'decor-shelf',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-plant',
-    roomId: 'dining',
-    decorId: 'decor-plant',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'dining::decor-chair',
-    roomId: 'dining',
-    decorId: 'decor-chair',
-    ownership: 'static-decor',
-  },
+  // L1 task-containers
+  { key: 'dining::cnt-dining-table', roomId: 'dining', containerId: 'cnt-dining-table', decorId: '__DEPRECATED_BY_CONTAINER__dining-table', ownership: 'task-container', note: 'L1 餐桌，唯一真身为 Container3D' },
+  { key: 'dining::cnt-sink', roomId: 'dining', containerId: 'cnt-sink', ownership: 'task-container', note: 'L1 水槽交互区，视觉由 decor-kit-sink 承担（无 modelAssetId）' },
+  { key: 'dining::cnt-cabinet', roomId: 'dining', containerId: 'cnt-cabinet', ownership: 'task-container', note: 'L1 橱柜交互区，视觉由 decor-kit-cabinet-1 承担（无 modelAssetId）' },
+  { key: 'dining::cnt-trashcan', roomId: 'dining', containerId: 'cnt-trashcan', ownership: 'task-container', note: 'L1 垃圾桶（教学开关容器），自渲染 GLB' },
+  // breakfast（隐藏任务）task-containers
+  { key: 'dining::cnt-fridge', roomId: 'dining', containerId: 'cnt-fridge', ownership: 'task-container', note: 'breakfast 冰箱交互' },
+  { key: 'dining::cnt-cabinet-upper', roomId: 'dining', containerId: 'cnt-cabinet-upper', ownership: 'task-container', note: 'breakfast 上层吊柜' },
+  { key: 'dining::cnt-cabinet-lower', roomId: 'dining', containerId: 'cnt-cabinet-lower', ownership: 'task-container', note: 'breakfast 下层柜' },
+  // 4 把餐椅：static-decor
+  { key: 'dining::decor-chair-1', roomId: 'dining', decorId: 'decor-chair-1', ownership: 'static-decor' },
+  { key: 'dining::decor-chair-2', roomId: 'dining', decorId: 'decor-chair-2', ownership: 'static-decor' },
+  { key: 'dining::decor-chair-3', roomId: 'dining', decorId: 'decor-chair-3', ownership: 'static-decor' },
+  { key: 'dining::decor-chair-4', roomId: 'dining', decorId: 'decor-chair-4', ownership: 'static-decor' },
+  // 厨房工作区：冰箱 / 橱柜 / 水槽 / 灶台：static-decor
+  { key: 'dining::decor-kit-fridge', roomId: 'dining', decorId: 'decor-kit-fridge', ownership: 'static-decor' },
+  { key: 'dining::decor-kit-cabinet-1', roomId: 'dining', decorId: 'decor-kit-cabinet-1', ownership: 'static-decor' },
+  { key: 'dining::decor-kit-sink', roomId: 'dining', decorId: 'decor-kit-sink', ownership: 'static-decor' },
+  { key: 'dining::decor-kit-cabinet-2', roomId: 'dining', decorId: 'decor-kit-cabinet-2', ownership: 'static-decor' },
+  { key: 'dining::decor-kit-stove', roomId: 'dining', decorId: 'decor-kit-stove', ownership: 'static-decor' },
+  // 台上物品：收音机 / 微波炉 / 书堆：static-decor
+  { key: 'dining::decor-kit-radio', roomId: 'dining', decorId: 'decor-kit-radio', ownership: 'static-decor' },
+  { key: 'dining::decor-kit-microwave', roomId: 'dining', decorId: 'decor-kit-microwave', ownership: 'static-decor' },
+  { key: 'dining::decor-kit-books', roomId: 'dining', decorId: 'decor-kit-books', ownership: 'static-decor' },
+  // 大盆栽 / 墙饰
+  { key: 'dining::decor-kit-plant', roomId: 'dining', decorId: 'decor-kit-plant', ownership: 'static-decor' },
+  { key: 'dining::decor-painting', roomId: 'dining', decorId: 'decor-painting', ownership: 'static-decor' },
+  { key: 'dining::decor-clock', roomId: 'dining', decorId: 'decor-clock', ownership: 'static-decor' },
+
+  // ===================== 玄关 entrance =====================
+  // 玄关无 task-container（L2 物品放在鞋柜上但不使用容器交互）
+  { key: 'entrance::decor-entrance-rug', roomId: 'entrance', decorId: 'decor-entrance-rug', ownership: 'static-decor' },
+  { key: 'entrance::decor-entrance-coatrack', roomId: 'entrance', decorId: 'decor-entrance-coatrack', ownership: 'static-decor' },
+  { key: 'entrance::decor-entrance-shoe-cabinet', roomId: 'entrance', decorId: 'decor-entrance-shoe-cabinet', ownership: 'static-decor' },
+  { key: 'entrance::decor-entrance-mirror', roomId: 'entrance', decorId: 'decor-entrance-mirror', ownership: 'static-decor' },
+  { key: 'entrance::decor-entrance-plant', roomId: 'entrance', decorId: 'decor-entrance-plant', ownership: 'static-decor' },
+  { key: 'entrance::decor-entrance-painting', roomId: 'entrance', decorId: 'decor-entrance-painting', ownership: 'static-decor' },
 
   // ===================== 洗衣房 laundry =====================
-  // 三洗衣篮：task-containers 接管，原 decor-basket-* 全部 deprecated
-  {
-    key: 'laundry::cnt-basket-white',
-    roomId: 'laundry',
-    containerId: 'cnt-basket-white',
-    decorId: 'decor-basket-red',
-    ownership: 'task-container',
-    note: 'L3 三篮之一；原 decor 三个全部在 task-container 之上替换渲染',
-  },
-  {
-    key: 'laundry::cnt-basket-dark',
-    roomId: 'laundry',
-    containerId: 'cnt-basket-dark',
-    decorId: 'decor-basket-blue',
-    ownership: 'task-container',
-  },
-  {
-    key: 'laundry::cnt-basket-towel',
-    roomId: 'laundry',
-    containerId: 'cnt-basket-towel',
-    decorId: 'decor-basket-green',
-    ownership: 'task-container',
-  },
-  {
-    key: 'laundry::decor-washer-left',
-    roomId: 'laundry',
-    decorId: 'decor-washer-left',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'laundry::decor-washer-right',
-    roomId: 'laundry',
-    decorId: 'decor-washer-right',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'laundry::decor-towel-rack',
-    roomId: 'laundry',
-    decorId: 'decor-towel-rack',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'laundry::decor-cabinet-1',
-    roomId: 'laundry',
-    decorId: 'decor-cabinet-1',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'laundry::decor-cabinet-2',
-    roomId: 'laundry',
-    decorId: 'decor-cabinet-2',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'laundry::decor-cabinet-3',
-    roomId: 'laundry',
-    decorId: 'decor-cabinet-3',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'laundry::decor-shelf',
-    roomId: 'laundry',
-    decorId: 'decor-shelf',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'laundry::decor-trash',
-    roomId: 'laundry',
-    decorId: 'decor-trash',
-    ownership: 'static-decor',
-  },
-  {
-    key: 'laundry::decor-plant',
-    roomId: 'laundry',
-    decorId: 'decor-plant',
-    ownership: 'static-decor',
-  },
+  // L3 三个洗衣篮：task-container（程序化几何体，颜色编码辨识）
+  { key: 'laundry::cnt-white-basket', roomId: 'laundry', containerId: 'cnt-white-basket', ownership: 'task-container' },
+  { key: 'laundry::cnt-dark-basket', roomId: 'laundry', containerId: 'cnt-dark-basket', ownership: 'task-container' },
+  { key: 'laundry::cnt-towel-basket', roomId: 'laundry', containerId: 'cnt-towel-basket', ownership: 'task-container' },
+  // 洗衣机 / 烘干机 / 置物架 / 储物柜：static-decor
+  { key: 'laundry::decor-washer', roomId: 'laundry', decorId: 'decor-washer', ownership: 'static-decor' },
+  { key: 'laundry::decor-dryer', roomId: 'laundry', decorId: 'decor-dryer', ownership: 'static-decor' },
+  { key: 'laundry::decor-utility-shelf', roomId: 'laundry', decorId: 'decor-utility-shelf', ownership: 'static-decor' },
+  { key: 'laundry::decor-laundry-cabinet', roomId: 'laundry', decorId: 'decor-laundry-cabinet', ownership: 'static-decor' },
+  { key: 'laundry::decor-laundry-plant', roomId: 'laundry', decorId: 'decor-laundry-plant', ownership: 'static-decor' },
+  { key: 'laundry::decor-laundry-clock', roomId: 'laundry', decorId: 'decor-laundry-clock', ownership: 'static-decor' },
 ]
 
 /**

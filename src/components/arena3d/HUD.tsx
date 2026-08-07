@@ -422,8 +422,9 @@ export function HUD() {
                   )}
                 </span>
               </div>
-              {/* Always-visible: show current active goal or next unchecked goal */}
+              {/* Always-visible: 折叠态显示已完成目标打勾 + 下一个目标 */}
               {!taskPanelOpen && (() => {
+                const achievedGoalsList = task.goals.filter((g: GoalSpec) => isGoalAchieved(g))
                 const nextGoal = task.goals.find((g: GoalSpec) => !isGoalAchieved(g))
                 if (!nextGoal) {
                   return (
@@ -434,12 +435,33 @@ export function HUD() {
                   )
                 }
                 return (
-                  <div className="px-2 py-1.5 rounded-lg bg-slate-800/60 border border-slate-600/40">
-                    <div className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">
-                      下一个目标
-                    </div>
-                    <div className="text-xs text-white leading-snug line-clamp-1">
-                      {nextGoal.description}
+                  <div className="space-y-1">
+                    {/* 已完成目标打勾（最多显示 2 条，超出显示 +N） */}
+                    {achievedGoalsList.length > 0 && (
+                      <div className="space-y-0.5">
+                        {achievedGoalsList.slice(-2).map((goal: GoalSpec) => (
+                          <div key={goal.id} className="flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-green-500/5">
+                            <CheckCircle2 size={11} className="text-green-400 flex-shrink-0" />
+                            <span className="text-[10px] text-green-400/70 line-through truncate flex-1">
+                              {goal.description}
+                            </span>
+                          </div>
+                        ))}
+                        {achievedGoalsList.length > 2 && (
+                          <div className="text-[9px] text-green-400/50 px-1.5">
+                            +{achievedGoalsList.length - 2} 已完成
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {/* 下一个目标 */}
+                    <div className="px-2 py-1.5 rounded-lg bg-slate-800/60 border border-slate-600/40">
+                      <div className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">
+                        下一个目标
+                      </div>
+                      <div className="text-xs text-white leading-snug line-clamp-1">
+                        {nextGoal.description}
+                      </div>
                     </div>
                   </div>
                 )
@@ -501,45 +523,88 @@ export function HUD() {
       </div>
 
       <div className={`absolute ${isMobile ? 'top-16' : 'top-4'} left-1/2 -translate-x-1/2 pointer-events-auto z-10`}>
-        <div className={`bg-slate-900/90 backdrop-blur-md rounded-xl shadow-xl border border-slate-700/50 w-full ${isMobile ? 'max-w-[280px] p-2' : 'max-w-[400px] p-4'}`}>
-          <div className={`flex items-center justify-between mb-2 ${isMobile ? 'gap-1' : 'mb-3 gap-3'}`}>
-            <div className="flex items-center gap-2">
-              <div className="text-center">
+        <div className={`bg-slate-900/90 backdrop-blur-md rounded-xl shadow-xl border border-slate-700/50 w-full ${isMobile ? 'max-w-[320px] p-2' : 'max-w-[440px] p-3'}`}>
+          {/* 第一行：得分 / 评级 / 时间 / 位置 / COMBO（信息展示，无操作按钮，避免溢出） */}
+          <div className={`flex items-center justify-between mb-2 ${isMobile ? 'gap-1' : 'gap-3'}`}>
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="text-center flex-shrink-0">
                 <div className={`${isMobile ? 'text-[8px]' : 'text-[10px]'} text-slate-400`}>得分</div>
                 <div className={`font-bold text-white ${isMobile ? 'text-lg' : 'text-2xl'}`}>{score}</div>
               </div>
-              <div className={`w-px bg-slate-700 ${isMobile ? 'h-6' : 'h-8'}`} />
-              <div className="text-center">
+              <div className={`w-px bg-slate-700 flex-shrink-0 ${isMobile ? 'h-6' : 'h-8'}`} />
+              <div className="text-center flex-shrink-0">
                 <div className={`${isMobile ? 'text-[8px]' : 'text-[10px]'} text-slate-400`}>评级</div>
                 <div className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'} ${getRating(score) === 'S' ? 'text-yellow-400' : getRating(score) === 'A' ? 'text-green-400' : getRating(score) === 'B' ? 'text-blue-400' : getRating(score) === 'C' ? 'text-purple-400' : 'text-slate-400'}`}>
                   {getRating(score)}
                 </div>
               </div>
-              <div className={`w-px bg-slate-700 ${isMobile ? 'h-6' : 'h-8'}`} />
-              <div className="text-center">
+              <div className={`w-px bg-slate-700 flex-shrink-0 ${isMobile ? 'h-6' : 'h-8'}`} />
+              <div className="text-center flex-shrink-0">
                 <div className={`${isMobile ? 'text-[8px]' : 'text-[10px]'} text-slate-400`}>时间</div>
                 <TimeDisplay isMobile={isMobile} />
               </div>
               {!isMobile && (
                 <>
-                  <div className="w-px h-8 bg-slate-700" />
-                  <div className="text-center">
+                  <div className="w-px h-8 bg-slate-700 flex-shrink-0" />
+                  <div className="text-center flex-shrink-0">
                     <div className="text-[10px] text-slate-400">位置</div>
                     <div className="text-sm font-semibold text-purple-300">{currentRoom}</div>
                   </div>
                 </>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              {combo > 0 && (
+            {combo > 0 && (
+              <div
+                key={combo}
+                className="flex items-center gap-1 bg-yellow-500/20 px-3 py-1.5 rounded-full animate-combo-pop flex-shrink-0"
+              >
+                <Zap size={14} className="text-yellow-400" />
+                <span className="text-yellow-400 font-bold text-sm whitespace-nowrap">{combo} COMBO!</span>
+              </div>
+            )}
+          </div>
+          {/* 第二行：混乱值 + 任务进度 + 暂停/音频按钮（操作按钮移到此处，避免溢出） */}
+          <div className="flex items-center gap-2 mb-2">
+            <div
+              className="flex items-center gap-1.5 cursor-help relative flex-1 min-w-0"
+              data-testid="chaos-meter"
+              onMouseEnter={() => setChaosTooltipOpen(true)}
+              onMouseLeave={() => setChaosTooltipOpen(false)}
+              onClick={() => {
+                setChaosTooltipOpen(false)
+                openHelp('chaos')
+              }}
+            >
+              <AlertTriangle size={12} className={chaosValue > 70 ? 'text-red-400 animate-pulse' : chaosValue > 40 ? 'text-yellow-400' : 'text-green-400'} />
+              <span className="text-[10px] font-semibold text-white whitespace-nowrap">混乱</span>
+              <span className={`text-[10px] font-bold ${chaosValue > 70 ? 'text-red-400' : chaosValue > 40 ? 'text-yellow-400' : 'text-green-400'}`}>
+                {Math.floor(chaosValue)}%
+              </span>
+              <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden min-w-0">
                 <div
-                  key={combo}
-                  className="flex items-center gap-1 bg-yellow-500/20 px-3 py-1.5 rounded-full animate-combo-pop"
-                >
-                  <Zap size={14} className="text-yellow-400" />
-                  <span className="text-yellow-400 font-bold text-sm">{combo} COMBO!</span>
+                  className={`h-full bg-gradient-to-r ${chaosColor} transition-all duration-300`}
+                  style={{ width: `${chaosValue}%` }}
+                />
+              </div>
+              {chaosTooltipOpen && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-slate-800/95 border border-red-500/30 rounded-lg p-3 shadow-xl z-20">
+                  <p className="text-xs text-white font-medium mb-2">⚠️ 混乱值</p>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    代表系统的失控程度。越高物品越容易被移动，记忆也越容易过期。
+                  </p>
                 </div>
               )}
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <div className="flex items-center gap-1">
+                <div className="w-12 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-slate-400 whitespace-nowrap">{achievedGoals}/{totalGoals}</span>
+              </div>
               <button
                 onClick={() => setPaused(true)}
                 title="暂停游戏（重新开始 / 返回关卡选择）"
@@ -547,7 +612,7 @@ export function HUD() {
                 data-testid="pause-btn"
                 aria-label="暂停游戏"
               >
-                <Pause size={isMobile ? 14 : 16} />
+                <Pause size={isMobile ? 12 : 14} />
               </button>
               <button
                 onClick={toggleAudioEnabled}
@@ -559,52 +624,8 @@ export function HUD() {
                 }`}
                 data-testid="audio-toggle-btn"
               >
-                {audioEnabled ? <Volume2 size={isMobile ? 14 : 16} /> : <VolumeX size={isMobile ? 14 : 16} />}
+                {audioEnabled ? <Volume2 size={isMobile ? 12 : 14} /> : <VolumeX size={isMobile ? 12 : 14} />}
               </button>
-            </div>
-          </div>
-          <div
-            className="flex items-center justify-between mb-2 cursor-help relative"
-            data-testid="chaos-meter"
-            onMouseEnter={() => setChaosTooltipOpen(true)}
-            onMouseLeave={() => setChaosTooltipOpen(false)}
-            onClick={() => {
-              setChaosTooltipOpen(false)
-              openHelp('chaos')
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={14} className={chaosValue > 70 ? 'text-red-400 animate-pulse' : chaosValue > 40 ? 'text-yellow-400' : 'text-green-400'} />
-              <span className="text-xs font-semibold text-white">混乱值</span>
-              <HelpCircle size={10} className="text-slate-500" />
-            </div>
-            <span className={`text-xs font-bold ${chaosValue > 70 ? 'text-red-400' : chaosValue > 40 ? 'text-yellow-400' : 'text-green-400'}`}>
-              {Math.floor(chaosValue)}%
-            </span>
-            {chaosTooltipOpen && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-slate-800/95 border border-red-500/30 rounded-lg p-3 shadow-xl z-20">
-                <p className="text-xs text-white font-medium mb-2">⚠️ 混乱值</p>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  代表系统的失控程度。越高物品越容易被移动，记忆也越容易过期。
-                </p>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
-              <div
-                className={`h-full bg-gradient-to-r ${chaosColor} transition-all duration-300`}
-                style={{ width: `${chaosValue}%` }}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-16 h-2 bg-slate-700 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <span className="text-xs text-slate-400">{achievedGoals}/{totalGoals}</span>
             </div>
           </div>
         </div>
@@ -720,8 +741,8 @@ export function HUD() {
                 <span className="text-slate-400">移动</span>
               </div>
               <div className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">拖动</kbd>
-                <span className="text-slate-400">视角</span>
+                <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">点击画面</kbd>
+                <span className="text-slate-400">锁定视角</span>
               </div>
               <div className="flex items-center gap-1">
                 <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">V</kbd>
@@ -729,7 +750,7 @@ export function HUD() {
               </div>
               <div className="flex items-center gap-1">
                 <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">Tab</kbd>
-                <span className="text-slate-400">任务</span>
+                <span className="text-slate-400">任务面板</span>
               </div>
               <div className="flex items-center gap-1">
                 <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">E</kbd>
@@ -737,19 +758,19 @@ export function HUD() {
               </div>
               <div className="flex items-center gap-1">
                 <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">F</kbd>
-                <span className="text-slate-400">交互</span>
+                <span className="text-slate-400">拾取·开门·交互</span>
               </div>
               <div className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">H</kbd>
-                <span className="text-slate-400">隐藏UI</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">R</kbd>
-                <span className="text-slate-400">日志</span>
+                <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">ESC</kbd>
+                <span className="text-slate-400">释放视角</span>
               </div>
               <div className="flex items-center gap-1">
                 <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">ESC×2</kbd>
                 <span className="text-slate-400">暂停菜单</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-white text-[10px] font-mono">H / R</kbd>
+                <span className="text-slate-400">隐藏UI · 日志</span>
               </div>
             </div>
           </div>
@@ -759,10 +780,11 @@ export function HUD() {
       {memoryBarOpen && (
         <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-auto z-10`}>
           <div className="bg-slate-900/90 backdrop-blur-md rounded-xl p-3 shadow-xl border border-slate-700/50">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <Brain size={14} className="text-purple-400" />
                 <span className="text-xs text-slate-400">记忆槽</span>
+                <span className="text-[9px] text-slate-500">记住物品位置 · 猫会偷走物品导致记忆过期</span>
               </div>
               <div className="flex items-center gap-1">
                 <button
@@ -773,6 +795,9 @@ export function HUD() {
                   <HelpCircle size={12} />
                 </button>
               </div>
+            </div>
+            <div className="text-[9px] text-slate-500 mb-2 leading-relaxed">
+              按 <kbd className="px-1 bg-slate-700 rounded text-[8px] text-purple-300">E</kbd> 记住眼前物品的位置 · 红色"已过期"表示物品可能被移动 · 按 <kbd className="px-1 bg-slate-700 rounded text-[8px] text-purple-300">E</kbd> 再次查看可更新记忆
             </div>
             <div className="flex gap-2" data-testid="memory-slots">
               {memorySlots.map((slot, index) => {
