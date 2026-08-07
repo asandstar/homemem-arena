@@ -179,15 +179,6 @@ export const MODEL_OVERRIDES: ModelOverrideMap = {
     floorAligned: true,
     status: 'provisional',
   },
-  // kitchenCabinetUpper rawAabb=(0.538,0.563,0.600) 同 kitchenCabinetDrawer
-  'furniture/kitchenCabinetUpper': {
-    uniformScale: 1.25,
-    pivotOffset: { x: -0.215, y: 0, z: 0.21 },
-    effectiveAabb: { x: 0.538, y: 0.563, z: 0.600 },
-    collisionSize: { x: 0.52, y: 0.563, z: 0.58 },
-    floorAligned: true,
-    status: 'provisional',
-  },
   'furniture/kitchenSink': {
     uniformScale: 1.25,
     pivotOffset: { x: -0.215, y: 0, z: 0.21 },
@@ -271,33 +262,6 @@ export const MODEL_OVERRIDES: ModelOverrideMap = {
     pivotOffset: { x: 0, y: 0.1, z: 0 },
     effectiveAabb: { x: 0.073, y: 0.2, z: 0.061 },
     collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
-    floorAligned: true,
-    status: 'provisional',
-  },
-  // carton rawAabb=[2,2,2] 麦片盒目标 ~0.2x0.3x0.1m，等比 scale=0.06
-  'food/carton': {
-    uniformScale: 0.06,
-    pivotOffset: { x: 0, y: 0.06, z: 0 },
-    effectiveAabb: { x: 0.12, y: 0.12, z: 0.12 },
-    collisionSize: { x: 0.1, y: 0.12, z: 0.08 },
-    floorAligned: true,
-    status: 'provisional',
-  },
-  // bowl rawAabb=[2,2,2] 碗目标 ~0.15x0.08x0.15m，等比 scale=0.04
-  'food/bowl': {
-    uniformScale: 0.04,
-    pivotOffset: { x: 0, y: 0.04, z: 0 },
-    effectiveAabb: { x: 0.08, y: 0.08, z: 0.08 },
-    collisionSize: { x: 0.07, y: 0.06, z: 0.07 },
-    floorAligned: true,
-    status: 'provisional',
-  },
-  // cup rawAabb=[2,2,2] 杯子目标 ~0.1x0.12x0.1m，等比 scale=0.05
-  'food/cup': {
-    uniformScale: 0.05,
-    pivotOffset: { x: 0, y: 0.05, z: 0 },
-    effectiveAabb: { x: 0.1, y: 0.1, z: 0.1 },
-    collisionSize: { x: 0.08, y: 0.1, z: 0.08 },
     floorAligned: true,
     status: 'provisional',
   },
