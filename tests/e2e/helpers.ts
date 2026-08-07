@@ -384,12 +384,16 @@ export async function teleportToContainer(page: Page, containerId: string): Prom
     return (window as any).__testApi__?.getContainerWorldPosition?.(cid) ?? null
   }, containerId)
   if (!pos) return
-  // 先切房间（确保 currentRoom 一致，distance check 能生效）
-  await page.evaluate(
-    (rid) => (window as any).__testApi__?.transitionToRoom?.(rid),
-    pos.room,
-  )
-  await page.waitForTimeout(80)
+  // 仅在确实跨房间时切换。对同一房间重复调用 transitionToRoom 会被游戏
+  // 记为“重复搜索/离开未关容器”，从而让测试凭空增加混乱值。
+  const currentRoom = await readState<string>(page, 'getCurrentRoom')
+  if (currentRoom !== pos.room) {
+    await page.evaluate(
+      (rid) => (window as any).__testApi__?.transitionToRoom?.(rid),
+      pos.room,
+    )
+    await page.waitForTimeout(80)
+  }
   // 传送到容器世界坐标点（距离判定 2.5 内）
   await page.evaluate(
     (p) => (window as any).__testApi__?.setRobotPositionInRoom?.(p),
