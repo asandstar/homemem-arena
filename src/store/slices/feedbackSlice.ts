@@ -11,7 +11,7 @@ export interface FloatingText {
   createdAt: number
 }
 
-export type EventToastType = 'info' | 'warning' | 'event' | 'cat' | 'phone'
+export type EventToastType = 'info' | 'success' | 'warning' | 'event' | 'cat' | 'phone'
 
 export interface EventToast {
   id: string
@@ -87,7 +87,7 @@ export const createFeedbackSlice = (set: any, get: any): FeedbackSlice => ({
     if (typeof message === 'object' && message !== null) {
       const obj = message as any
       msg = String(obj.message ?? obj.msg ?? obj.text ?? JSON.stringify(obj).slice(0, 200))
-      if (obj.type && typeof obj.type === 'string' && ['info','warning','event','cat','phone'].includes(obj.type)) {
+      if (obj.type && typeof obj.type === 'string' && ['info','success','warning','event','cat','phone'].includes(obj.type)) {
         toastType = obj.type as EventToastType
       }
       if (typeof obj.duration === 'number') dur = obj.duration

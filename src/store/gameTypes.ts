@@ -41,7 +41,7 @@ export interface FloatingText {
   createdAt: number
 }
 
-export type EventToastType = 'info' | 'warning' | 'event' | 'cat' | 'phone'
+export type EventToastType = 'info' | 'success' | 'warning' | 'event' | 'cat' | 'phone'
 
 export interface EventToast {
   id: string

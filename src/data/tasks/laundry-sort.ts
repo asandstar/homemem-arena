@@ -1,454 +1,404 @@
-// 关卡 3：洗衣分拣（Integrated Memory 整合记忆）
-// 目标：六件衣物三类分拣 + 记忆验证
-// 记忆类型：工作记忆(规则保持) + 物体记忆(身份对应) + 空间记忆(位置追踪) + 程序记忆(执行序列)
-// EXECUTION OVERRIDES：本轮启用篮子交换干扰 + 记忆验证阶段
+// 关卡 3：过期的早餐记忆（UPDATE / stale object-location memory）
+//
+// 保留历史 task id `task-laundry-sort`，避免破坏公开关卡顺序、存档和路由；
+// 展示内容与玩法按 docs/L3_FINAL_DESIGN.md 重做。
 
 import type { EntityStateSnapshot, StageContext, TaskConfig } from '../../types/task'
 import { sharedRooms } from '../rooms'
-import type { RoomId } from '../../types/room'
 
-const LAUNDRY_ROOM_ID: RoomId = 'laundry'
+const STAGE_ENCODE = 'stage-encode-cereal'
+const STAGE_DISTRACTOR = 'stage-set-table'
+const STAGE_STALE = 'stage-stale-memory'
+const STAGE_UPDATE = 'stage-update-memory'
+const STAGE_SERVE = 'stage-serve-cereal'
+const STAGE_CLEANUP = 'stage-breakfast-cleanup'
 
-const STAGE_RULES = 'stage-rules-encoding'
-const STAGE_SWAP = 'stage-baskets-swapped'
-const STAGE_SORT = 'stage-sort-six-items'
-const STAGE_VERIFY = 'stage-memory-verification'
+const LOWER_CABINET = 'cnt-cabinet-lower'
+const UPPER_CABINET = 'cnt-cabinet-upper'
+const DINING_TABLE = 'cnt-breakfast-table'
+const SINK = 'cnt-breakfast-sink'
 
-const WHITE_IDS = ['obj-white-1', 'obj-white-2'] as const
-const DARK_IDS = ['obj-dark-1', 'obj-dark-2'] as const
-const TOWEL_IDS = ['obj-towel-1', 'obj-towel-2'] as const
+const CEREAL = 'obj-cereal'
+const BOWL = 'obj-breakfast-bowl'
+const CUP = 'obj-breakfast-cup'
+const SPOON = 'obj-breakfast-spoon'
 
-const WHITE_BASKET = 'cnt-white-basket'
-const DARK_BASKET = 'cnt-dark-basket'
-const TOWEL_BASKET = 'cnt-towel-basket'
+const DINING_CENTER = sharedRooms.dining.center
+const UPPER_LOCAL = { x: 1.0, y: 0.9, z: -1.9 }
+const UPPER_WORLD = {
+  room: 'dining' as const,
+  x: DINING_CENTER.x + UPPER_LOCAL.x,
+  y: UPPER_LOCAL.y + 0.55,
+  z: DINING_CENTER.z + UPPER_LOCAL.z,
+}
 
 function entityPlacedIn(entities: EntityStateSnapshot[], configId: string, containerId: string): boolean {
-  const e = entities.find((x) => x.configId === configId)
-  return !!e && e.placedIn === containerId && e.status === 'placed'
+  const entity = entities.find((candidate) => candidate.configId === configId)
+  return entity?.status === 'placed' && entity.placedIn === containerId
 }
 
-function whiteAllPlaced(ctx: StageContext): boolean {
-  return WHITE_IDS.every((id) => entityPlacedIn(ctx.entities, id, WHITE_BASKET))
-}
-function darkAllPlaced(ctx: StageContext): boolean {
-  return DARK_IDS.every((id) => entityPlacedIn(ctx.entities, id, DARK_BASKET))
-}
-function towelAllPlaced(ctx: StageContext): boolean {
-  return TOWEL_IDS.every((id) => entityPlacedIn(ctx.entities, id, TOWEL_BASKET))
-}
-function allItemsPlaced(ctx: StageContext): boolean {
-  return whiteAllPlaced(ctx) && darkAllPlaced(ctx) && towelAllPlaced(ctx)
+function tableIsSet(ctx: StageContext): boolean {
+  return [BOWL, CUP, SPOON].every((id) => entityPlacedIn(ctx.entities, id, DINING_TABLE))
 }
 
-function anyItemPlaced(ctx: StageContext): boolean {
-  const all = [...WHITE_IDS, ...DARK_IDS, ...TOWEL_IDS]
-  const bucketOf: Record<string, string> = {
-    'obj-white-1': WHITE_BASKET,
-    'obj-white-2': WHITE_BASKET,
-    'obj-dark-1': DARK_BASKET,
-    'obj-dark-2': DARK_BASKET,
-    'obj-towel-1': TOWEL_BASKET,
-    'obj-towel-2': TOWEL_BASKET,
-  }
-  return all.some((id) => entityPlacedIn(ctx.entities, id, bucketOf[id]))
+function cleanupFinished(ctx: StageContext): boolean {
+  return entityPlacedIn(ctx.entities, BOWL, SINK)
+    && entityPlacedIn(ctx.entities, CUP, SINK)
+    && entityPlacedIn(ctx.entities, SPOON, DINING_TABLE)
 }
 
-/**
- * 转换玩家世界坐标 → laundry room 本地坐标。
- */
-function toLaundryLocal(world: { x?: number; y?: number; z?: number } | undefined | null): { x: number; y: number; z: number } {
-  const base = sharedRooms[LAUNDRY_ROOM_ID]?.center ?? { x: 0, y: 0, z: 0 }
+function cerealMemory(ctx: StageContext) {
+  return ctx.memorySlots.find((slot) => slot?.entityConfigId === CEREAL) ?? null
+}
+
+function hasFreshCerealMemory(ctx: StageContext): boolean {
+  const memory = cerealMemory(ctx)
+  return !!memory && !memory.outdated
+}
+
+function hasStaleCerealMemory(ctx: StageContext): boolean {
+  return cerealMemory(ctx)?.outdated === true
+}
+
+function toDiningLocal(position: StageContext['playerPosition']) {
   return {
-    x: (world?.x ?? 0) - (base.x ?? 0),
-    y: (world?.y ?? 0) - (base.y ?? 0),
-    z: (world?.z ?? 0) - (base.z ?? 0),
+    x: position.x - DINING_CENTER.x,
+    z: position.z - DINING_CENTER.z,
   }
 }
 
-/** 是否离开后墙编码区：本地 z>=-0.2 靠门口一侧。 */
-function leftBackEncodingZone(ctx: StageContext): boolean {
-  const local = toLaundryLocal(ctx.playerPosition ?? null)
-  return local.z >= -0.2
+function nearLocal(ctx: StageContext, target: { x: number; z: number }, distance = 1.15): boolean {
+  const local = toDiningLocal(ctx.playerPosition)
+  return Math.hypot(local.x - target.x, local.z - target.z) <= distance
 }
 
-/** 与任一个目标篮距离 <=1.6m（本地坐标）；优先读取 containerOverrides 记录的运行时位置 */
-function nearAnyTargetBasket(ctx: StageContext): boolean {
-  if (!ctx.playerPosition) return false
-  const local = toLaundryLocal(ctx.playerPosition)
-  const positions = [
-    { x: -1.1, z: -1.3 },
-    { x: 0, z: -1.3 },
-    { x: 1.1, z: -1.3 },
-  ] as const
-  const ids = [WHITE_BASKET, DARK_BASKET, TOWEL_BASKET] as const
-  for (let i = 0; i < 3; i++) {
-    const id = ids[i]
-    const override = ctx.containerOverrides?.[id]?.position
-    const p = override ?? positions[i]
-    const dx = local.x - p.x
-    const dz = local.z - p.z
-    if (Math.sqrt(dx * dx + dz * dz) <= 1.6) return true
-  }
-  return false
-}
-
-/** 靠近折叠桌验证区（西墙 x≈-1.2, z≈-0.3） */
-function nearVerificationZone(ctx: StageContext): boolean {
-  if (!ctx.playerPosition) return false
-  const local = toLaundryLocal(ctx.playerPosition)
-  const dx = local.x - (-1.2)
-  const dz = local.z - (-0.3)
-  return Math.sqrt(dx * dx + dz * dz) <= 1.2
+function cerealMovedToUpper(ctx: StageContext): boolean {
+  const cereal = ctx.entities.find((entity) => entity.configId === CEREAL)
+  return cereal?.placedIn === UPPER_CABINET && cereal.status === 'hidden'
 }
 
 export const laundrySortTask: TaskConfig = {
   id: 'task-laundry-sort',
-  name: '洗衣分拣',
-  description: '🧺 整合记忆挑战：六件衣物、三类分拣。先观察三个篮子的规则（浅色→白篮，深色→蓝篮，毛巾→橙篮）。⚠️ 注意：分类前去做别的事（靠近门口等待），篮子会被移动！请记住最初篮子的身份，而不是只记当前位置。错误类别会被篮子拒绝！',
-  memoryTypes: ['temporal', 'object', 'spatial', 'procedural'],
-  difficulty: 'hard',
-  rooms: ['laundry'],
-  iconKey: 'shirt',
-  tags: ['整合记忆', '工作记忆', '空间记忆', '程序记忆', '分类', '位置交换干扰'],
-  timeLimit: 300,
-  // 出生在 laundry 中央偏南，面向北墙三个任务篮，让第一眼直接对应“观察篮子规则”的当前目标。
-  // collision-free：离所有家具 AABB >= 0.3m，离门洞 2m+
-  spawnPosition: { x: 0, z: 0.8 },
+  name: '过期的早餐记忆',
+  description: '🥣 记住麦片在下层橱柜，摆餐具后再回来取。环境会悄悄变化：旧记忆失效时，你必须发现冲突、重新观察并按 E 更新记忆。',
+  memoryTypes: ['object', 'spatial', 'temporal'],
+  difficulty: 'medium-hard',
+  rooms: ['dining'],
+  iconKey: 'dish',
+  tags: ['记忆更新', '过期记忆', '单房间', '早餐任务'],
+  timeLimit: 240,
+  spawnPosition: { x: 0, z: 1.9 },
   spawnRotation: 0,
-  initialStageId: STAGE_RULES,
+  initialStageId: STAGE_ENCODE,
 
   stages: [
     {
-      id: STAGE_RULES,
-      playerObjective: '【工作记忆 · 规则编码】三个篮子在后墙排成一排。靠近每个篮子，按 E 把它的颜色和类别记进记忆槽——白篮放浅色，蓝篮放深色，橙篮放毛巾。你必须同时在工作记忆中保持这三条规则。记满三条规则后，走到门口（z≥0）让时间推进。',
+      id: STAGE_ENCODE,
+      playerObjective: '【形成记忆】打开北墙左侧的下层橱柜，找到麦片；靠近麦片按 E，记住它现在的位置。',
       entryCondition: () => true,
-      completionCondition: (ctx: StageContext) =>
-        (ctx.memorySlots.some((s) => s !== null) || anyItemPlaced(ctx)) && leftBackEncodingZone(ctx),
-      nextStage: STAGE_SWAP,
+      completionCondition: hasFreshCerealMemory,
+      nextStage: STAGE_DISTRACTOR,
     },
     {
-      id: STAGE_SWAP,
-      playerObjective: '【空间记忆 · 规则切换】钥匙猫「喵~」一声窜过洗衣房，白篮和蓝篮被它撞得互换位置！你的工作记忆中"左白中蓝右橙"的空间布局已失效——必须依靠每个篮子的颜色（身份记忆）而非位置（空间记忆）来判断。回到后墙重新确认，按 E 更新过期记忆。',
-      entryCondition: (ctx: StageContext) =>
-        (ctx.memorySlots.some((s) => s !== null) || anyItemPlaced(ctx)) && leftBackEncodingZone(ctx),
-      completionCondition: nearAnyTargetBasket,
-      nextStage: STAGE_SORT,
+      id: STAGE_DISTRACTOR,
+      playerObjective: '【分散注意】把碗、杯子和勺子放到餐桌上。先不要拿麦片——让注意力离开刚才的位置。',
+      entryCondition: hasFreshCerealMemory,
+      completionCondition: tableIsSet,
+      nextStage: STAGE_STALE,
     },
     {
-      id: STAGE_SORT,
-      playerObjective: '【程序记忆 · 执行序列】主人：「衣服别放错篮子，会染色的！」按正确的分类逻辑将六件衣物逐一归位——每放入一件都要验证你的工作记忆规则是否仍然正确。放错会被篮子拒绝，连续错误会扣分。',
-      entryCondition: nearAnyTargetBasket,
-      completionCondition: allItemsPlaced,
-      nextStage: STAGE_VERIFY,
+      id: STAGE_STALE,
+      playerObjective: '【旧记忆冲突】现在去取麦片。先按记忆回到下层橱柜；如果那里空了，说明这个记忆已经过期。',
+      entryCondition: tableIsSet,
+      completionCondition: (ctx) => ctx.triggeredEvents.has('se-conflict-detected'),
+      nextStage: STAGE_UPDATE,
     },
     {
-      id: STAGE_VERIFY,
-      playerObjective: '【验证 · 记忆巩固】所有衣物已分拣完毕。走到西侧折叠桌旁（按 F 互动），确认你对分拣规则的记忆是否仍然准确——这将验证你的整合记忆模块是否真正"记住了"而不只是"做对了"。',
-      entryCondition: allItemsPlaced,
-      completionCondition: nearVerificationZone,
+      id: STAGE_UPDATE,
+      playerObjective: '【重新观察并更新】环顾北墙，找到被移动的麦片。打开旁边较高的柜子，靠近麦片按 E 更新记忆，再按 F 拾取。',
+      entryCondition: (ctx) => ctx.triggeredEvents.has('se-conflict-detected'),
+      completionCondition: (ctx) => hasFreshCerealMemory(ctx) && ctx.memoryUpdateCount >= 1,
+      nextStage: STAGE_SERVE,
+    },
+    {
+      id: STAGE_SERVE,
+      playerObjective: '【应用新记忆】按更新后的位置拿到麦片，把它放到餐桌上。',
+      entryCondition: (ctx) => hasFreshCerealMemory(ctx) && ctx.memoryUpdateCount >= 1,
+      completionCondition: (ctx) => entityPlacedIn(ctx.entities, CEREAL, DINING_TABLE),
+      nextStage: STAGE_CLEANUP,
+    },
+    {
+      id: STAGE_CLEANUP,
+      playerObjective: '【收尾】早餐准备好了。把碗和杯子放进水槽，勺子留在餐桌上，完成任务。',
+      entryCondition: (ctx) => entityPlacedIn(ctx.entities, CEREAL, DINING_TABLE),
+      completionCondition: cleanupFinished,
       nextStage: null,
     },
   ],
 
-  briefing: `🧺 洗衣房 · 整合记忆分拣（第三关）
+  briefing: `🥣 记忆宅邸 · 第三关（UPDATE：过期记忆更新）
 
-下午，主人抱着一堆衣服冲进洗衣房——昨晚聚餐的餐桌布混着今天换的衬衫、浴巾和深色牛仔裤。更糟的是：洗衣篮的分类标签全被撕了，地上还散落着几片嚼烂的纸屑。钥匙猫蹲在洗衣机上，脖子的旧钥匙叮当作响，眼神无辜得像从没见过任何篮子。
+主人准备早餐时临时接到电话，请 MEM-07 帮忙摆桌。麦片、碗和杯子都在北墙的下层橱柜里，勺子已经在餐桌上。
 
-主人：「小橡，这只猫把我的分类标签全撕了！这批衣服分三类——浅色、深色、毛巾——放错会染色，你帮我分拣。」
+这次真正考验的不是“找东西”，而是判断记忆是否仍然可信：
+  ① 打开下层橱柜，找到麦片并按 E 保存位置记忆
+  ② 先把碗、杯子、勺子摆上餐桌
+  ③ 回来取麦片时，旧位置可能已经变空
+  ④ 发现冲突后重新观察，找到麦片并按 E 更新记忆
+  ⑤ 把麦片放到餐桌，最后把碗和杯子收进水槽
 
-MEM-07：「整合记忆模块激活。检测到四类记忆需求：
-  ① 工作记忆：同时保持三条分类规则（白篮←浅色、蓝篮←深色、橙篮←毛巾）
-  ② 物体记忆：记住每件衣物的类别属性
-  ③ 空间记忆：追踪篮子位置（钥匙猫可能随时挪动）
-  ④ 程序记忆：按正确序列执行分拣
+⚠️ 小地图和 HUD 不会告诉你麦片的新位置。旧记忆变红不是失败，而是在提醒你：现实已经变化。`,
 
-警告：钥匙猫仍在屋内活动。它可能会在你记完规则后挪动篮子位置——必须用记忆槽锁定身份，不要只记位置。」
-
-📋 分拣规则（请全部记住）：
-  · 白篮 ← 浅色衣物（2 件，枕头模型）
-  · 蓝篮 ← 深色衣物（2 件，蓝色枕头模型）
-  · 橙篮 ← 毛巾（2 条，长枕头模型）
-
-💡 多记忆协同策略：
-  · 先靠近后墙每个篮子，按 E 保存规则记忆（物体记忆）
-  · 同时在脑中保持三条规则（工作记忆）
-  · 走到门口让时间推进，钥匙猫会交换篮子位置
-  · 回来后靠篮子颜色而非位置判断身份（空间记忆 + 物体记忆）
-  · 逐件分拣时，每放入一件验证规则是否正确（程序记忆）`,
-
-  completionText: '六件衣物分拣完毕，主人回来检查：「完美！小橡比洗衣机还好用，还不会把红袜子洗进白衬衫里。」\n钥匙猫：「喵~」（从洗衣机上跳下，似乎对没能制造更多混乱感到失望）\nMEM-07：「整合记忆模块校准完成。\n  · 工作记忆：三条规则保持完整 ✓\n  · 物体记忆：6/6 件物品身份识别正确 ✓\n  · 空间记忆：篮子位移后仍能定位 ✓\n  · 程序记忆：执行序列无错误 ✓\n综合评价：A级 · 长期记忆策略已验证。」',
-
-  failureText: '时间到了，衣物还是乱成一堆。主人：「算了，我送干洗店吧……」\n钥匙猫：「喵呜~」（得意地蜷在洗衣机上）\nMEM-07：「记忆模块诊断：工作记忆过载导致规则遗忘；空间记忆与物体记忆发生冲突。\n建议策略：\n  ① 先逐一靠近篮子保存记忆（建立物体-位置绑定）\n  ② 用记忆槽锁定身份，不要只依赖视觉位置\n  ③ 分拣时每放入一件回溯规则，确认无误后再处理下一件」',
-
-  systemPrompt: '【MEM-07 日志】任务：六件衣物三类分拣 + 记忆验证。策略：四型记忆协同——工作记忆保持规则、物体记忆绑定身份、空间记忆追踪位置、程序记忆执行序列。错误类别将被篮子拒绝。',
+  completionText: '✅ 早餐和清理都完成了！\nMEM-07：「旧记忆不是答案，只是一次有时间戳的观察。发现冲突、重新观察、更新后再行动——UPDATE 模块校准完成。」',
+  failureText: '⏰ 时间到了，但这次失败不会清空你的思路。\n提示：先用 E 记住麦片；摆好餐具后回下层柜确认冲突，再在附近重新观察并用 E 更新。',
+  systemPrompt: '【MEM-07 日志】L3 UPDATE。唯一会移动的核心对象是麦片：下层橱柜 → 邻近的较高橱柜。必须先保存旧记忆，环境变化后发现冲突，再保存一次新记忆，才能完成。',
 
   objects: [
     {
-      id: 'obj-white-1',
-      name: '浅色衣物',
-      category: 'white-clothes',
-      initialRoom: 'laundry',
-      initialPosition: { x: -0.8, y: 0.05, z: 0.8 },
-      size: { x: 0.4, y: 0.05, z: 0.5 },
-      color: '#f9fafb',
-      modelAssetId: 'furniture/pillow',
+      id: CEREAL,
+      name: '麦片盒',
+      category: 'cereal',
+      initialRoom: 'dining',
+      initialPosition: { x: -1.0, y: 0.6, z: -1.9 },
+      hiddenInContainer: LOWER_CABINET,
+      size: { x: 0.28, y: 0.42, z: 0.18 },
+      color: '#f59e0b',
     },
     {
-      id: 'obj-white-2',
-      name: '浅色衣物',
-      category: 'white-clothes',
-      initialRoom: 'laundry',
-      initialPosition: { x: 0.5, y: 0.05, z: 1.6 },
-      size: { x: 0.4, y: 0.05, z: 0.5 },
-      color: '#f9fafb',
-      modelAssetId: 'furniture/pillow',
+      id: BOWL,
+      name: '早餐碗',
+      category: 'bowl',
+      initialRoom: 'dining',
+      initialPosition: { x: -1.0, y: 0.6, z: -1.9 },
+      hiddenInContainer: LOWER_CABINET,
+      size: { x: 0.24, y: 0.1, z: 0.24 },
+      color: '#f8fafc',
     },
     {
-      id: 'obj-dark-1',
-      name: '深色衣物',
-      category: 'dark-clothes',
-      initialRoom: 'laundry',
-      initialPosition: { x: 1.0, y: 0.05, z: 0.6 },
-      size: { x: 0.4, y: 0.05, z: 0.5 },
-      color: '#1e3a5f',
-      modelAssetId: 'furniture/pillowBlue',
+      id: CUP,
+      name: '早餐杯',
+      category: 'cup',
+      initialRoom: 'dining',
+      initialPosition: { x: -1.0, y: 0.6, z: -1.9 },
+      hiddenInContainer: LOWER_CABINET,
+      size: { x: 0.14, y: 0.16, z: 0.14 },
+      color: '#60a5fa',
     },
     {
-      id: 'obj-dark-2',
-      name: '深色衣物',
-      category: 'dark-clothes',
-      initialRoom: 'laundry',
-      initialPosition: { x: -0.5, y: 0.05, z: 1.4 },
-      size: { x: 0.4, y: 0.05, z: 0.5 },
-      color: '#1e3a5f',
-      modelAssetId: 'furniture/pillowBlue',
-    },
-    {
-      id: 'obj-towel-1',
-      name: '毛巾',
-      category: 'towel',
-      initialRoom: 'laundry',
-      initialPosition: { x: 0.8, y: 0.05, z: 1.2 },
-      size: { x: 0.5, y: 0.05, z: 0.3 },
-      color: '#d97706',
-      modelAssetId: 'furniture/pillowLong',
-    },
-    {
-      id: 'obj-towel-2',
-      name: '毛巾',
-      category: 'towel',
-      initialRoom: 'laundry',
-      initialPosition: { x: -1.0, y: 0.05, z: 1.0 },
-      size: { x: 0.5, y: 0.05, z: 0.3 },
-      color: '#d97706',
-      modelAssetId: 'furniture/pillowLong',
+      id: SPOON,
+      name: '早餐勺',
+      category: 'spoon',
+      initialRoom: 'dining',
+      initialPosition: { x: 0.45, y: 0, z: 0 },
+      surfaceContainerId: DINING_TABLE,
+      size: { x: 0.073, y: 0.2, z: 0.061 },
+      color: '#cbd5e1',
+      modelAssetId: 'food/utensil-spoon',
     },
   ],
 
   containers: [
     {
-      id: WHITE_BASKET,
-      name: '白色衣物篮',
-      room: 'laundry',
-      position: { x: -1.1, y: 0.25, z: -1.3 },
-      size: { x: 0.8, y: 0.5, z: 0.6 },
-      surfaceHeight: 0.55,
-      color: '#f9fafb',
-      initialOpen: true,
-      acceptedCategories: ['white-clothes'],
-      isTargetZone: true,
-      targetLabel: '白色衣物篮',
-      modelAssetId: 'furniture/trashcan',
+      id: LOWER_CABINET,
+      name: '下层橱柜',
+      room: 'dining',
+      position: { x: -1.0, y: 0, z: -1.9 },
+      size: { x: 0.8, y: 0.56, z: 0.45 },
+      surfaceHeight: 0.56,
+      color: '#92400e',
+      initialOpen: false,
+      containsObjectIds: [CEREAL, BOWL, CUP],
+      acceptedCategories: [],
+      acceptAny: false,
+      modelAssetId: 'furniture/kitchenCabinetDrawer',
     },
     {
-      id: DARK_BASKET,
-      name: '深色衣物篮',
-      room: 'laundry',
-      position: { x: 0, y: 0.25, z: -1.3 },
-      size: { x: 0.8, y: 0.5, z: 0.6 },
-      surfaceHeight: 0.55,
-      color: '#1e3a5f',
-      initialOpen: true,
-      acceptedCategories: ['dark-clothes'],
-      isTargetZone: true,
-      targetLabel: '深色衣物篮',
-      modelAssetId: 'furniture/trashcan',
+      id: UPPER_CABINET,
+      name: '较高的橱柜',
+      room: 'dining',
+      position: UPPER_LOCAL,
+      size: { x: 0.8, y: 0.56, z: 0.45 },
+      surfaceHeight: 1.46,
+      color: '#a16207',
+      initialOpen: false,
+      containsObjectIds: [],
+      acceptedCategories: [],
+      acceptAny: false,
+      modelAssetId: 'furniture/kitchenCabinet',
     },
     {
-      id: TOWEL_BASKET,
-      name: '毛巾篮',
-      room: 'laundry',
-      position: { x: 1.1, y: 0.25, z: -1.3 },
-      size: { x: 0.8, y: 0.5, z: 0.6 },
-      surfaceHeight: 0.55,
-      color: '#d97706',
+      id: DINING_TABLE,
+      name: '早餐餐桌',
+      room: 'dining',
+      position: { x: 0, y: 0, z: 0 },
+      size: { x: 1.683, y: 0.653, z: 0.895 },
+      surfaceHeight: 0.653,
+      color: '#92400e',
       initialOpen: true,
-      acceptedCategories: ['towel'],
+      acceptedCategories: ['cereal', 'bowl', 'cup', 'spoon'],
       isTargetZone: true,
-      targetLabel: '毛巾篮',
-      modelAssetId: 'furniture/trashcan',
+      targetLabel: '早餐餐桌',
+      modelAssetId: 'furniture/table',
+    },
+    {
+      id: SINK,
+      name: '厨房水槽',
+      room: 'dining',
+      position: { x: 0, y: 0, z: -1.95 },
+      size: { x: 0.55, y: 0.72, z: 0.45 },
+      surfaceHeight: 0.72,
+      color: '#94a3b8',
+      initialOpen: true,
+      acceptedCategories: ['bowl', 'cup'],
+      isTargetZone: true,
+      targetLabel: '水槽（碗、杯收这里）',
+      modelAssetId: 'furniture/kitchenSink',
     },
   ],
 
   goals: [
     {
-      id: 'g-white-1-basket',
-      description: '浅色衣物 #1 放入白色衣物篮',
+      id: 'g-encode-cereal-memory',
+      description: '记住麦片最初在下层橱柜',
+      kind: 'milestone',
       memoryType: 'object',
-      relatedObjectIds: ['obj-white-1'],
-      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-white-1', WHITE_BASKET),
-      achievedMessage: '浅色衣物 #1 归位',
+      relatedObjectIds: [CEREAL],
+      predicate: (_entities, _snapshot, ctx) => !!ctx && hasFreshCerealMemory(ctx),
+      achievedMessage: '✓ 已形成记忆：麦片在下层橱柜',
     },
     {
-      id: 'g-white-2-basket',
-      description: '浅色衣物 #2 放入白色衣物篮',
-      memoryType: 'object',
-      relatedObjectIds: ['obj-white-2'],
-      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-white-2', WHITE_BASKET),
-      achievedMessage: '浅色衣物 #2 归位',
-    },
-    {
-      id: 'g-dark-1-basket',
-      description: '深色衣物 #1 放入深色衣物篮',
-      memoryType: 'object',
-      relatedObjectIds: ['obj-dark-1'],
-      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-dark-1', DARK_BASKET),
-      achievedMessage: '深色衣物 #1 归位',
-    },
-    {
-      id: 'g-dark-2-basket',
-      description: '深色衣物 #2 放入深色衣物篮',
-      memoryType: 'object',
-      relatedObjectIds: ['obj-dark-2'],
-      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-dark-2', DARK_BASKET),
-      achievedMessage: '深色衣物 #2 归位',
-    },
-    {
-      id: 'g-towel-1-basket',
-      description: '毛巾 #1 放入毛巾篮',
-      memoryType: 'object',
-      relatedObjectIds: ['obj-towel-1'],
-      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-towel-1', TOWEL_BASKET),
-      achievedMessage: '毛巾 #1 归位',
-    },
-    {
-      id: 'g-towel-2-basket',
-      description: '毛巾 #2 放入毛巾篮',
-      memoryType: 'object',
-      relatedObjectIds: ['obj-towel-2'],
-      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-towel-2', TOWEL_BASKET),
-      achievedMessage: '毛巾 #2 归位',
-    },
-    {
-      id: 'g-memory-verification',
-      description: '走到折叠桌旁验证记忆（确认你能回忆起三条分类规则）',
+      id: 'g-set-breakfast-table',
+      description: '碗、杯子、勺子摆到餐桌',
+      kind: 'milestone',
+      dependsOnGoalIds: ['g-encode-cereal-memory'],
       memoryType: 'procedural',
-      relatedObjectIds: [],
-      predicate: (entities: EntityStateSnapshot[]) =>
-        WHITE_IDS.every((id) => entityPlacedIn(entities, id, WHITE_BASKET)) &&
-        DARK_IDS.every((id) => entityPlacedIn(entities, id, DARK_BASKET)) &&
-        TOWEL_IDS.every((id) => entityPlacedIn(entities, id, TOWEL_BASKET)),
-      achievedMessage: '整合记忆验证完成',
+      relatedObjectIds: [BOWL, CUP, SPOON],
+      predicate: (_entities, _snapshot, ctx) => !!ctx && tableIsSet(ctx),
+      achievedMessage: '✓ 餐具已经摆好',
+    },
+    {
+      id: 'g-detect-stale-memory',
+      description: '回到下层橱柜，发现旧记忆已过期',
+      kind: 'milestone',
+      dependsOnGoalIds: ['g-set-breakfast-table'],
+      memoryType: 'temporal',
+      relatedObjectIds: [CEREAL],
+      predicate: (_entities, _snapshot, ctx) => !!ctx?.triggeredEvents.has('se-conflict-detected'),
+      achievedMessage: '✓ 发现现实与旧记忆冲突',
+    },
+    {
+      id: 'g-update-cereal-memory',
+      description: '找到麦片并按 E 更新位置记忆',
+      kind: 'milestone',
+      dependsOnGoalIds: ['g-detect-stale-memory'],
+      memoryType: 'spatial',
+      relatedObjectIds: [CEREAL],
+      predicate: (_entities, _snapshot, ctx) => !!ctx && hasFreshCerealMemory(ctx) && ctx.memoryUpdateCount >= 1,
+      achievedMessage: '✓ 记忆已更新：麦片的新位置已保存',
+    },
+    {
+      id: 'g-serve-cereal',
+      description: '麦片放到早餐餐桌',
+      kind: 'terminal-constraint',
+      dependsOnGoalIds: ['g-update-cereal-memory'],
+      memoryType: 'spatial',
+      relatedObjectIds: [CEREAL],
+      predicate: (entities) => entityPlacedIn(entities, CEREAL, DINING_TABLE),
+      achievedMessage: '✓ 麦片已经上桌',
+    },
+    {
+      id: 'g-clean-breakfast-dishes',
+      description: '碗和杯子放进水槽，勺子留在餐桌',
+      kind: 'terminal-constraint',
+      dependsOnGoalIds: ['g-serve-cereal'],
+      memoryType: 'procedural',
+      relatedObjectIds: [BOWL, CUP, SPOON],
+      predicate: (_entities, _snapshot, ctx) => !!ctx && cleanupFinished(ctx),
+      achievedMessage: '✓ 早餐收尾完成',
     },
   ],
 
   scriptedEvents: [
     {
-      id: 'se-rules-display',
+      id: 'se-encode-cereal',
       trigger: 1,
       type: 'message',
-      message: '📋 三型记忆协同启动：\n  · 工作记忆：保持三条规则同时在线\n  · 物体记忆：E 键保存每个篮子的身份\n  · 空间记忆：追踪篮子位置变化\n  · 程序记忆：按序分拣不跳步\n先靠近后墙篮子，按 E 保存规则！',
-      description: '展示四型记忆协同框架',
+      message: '📦 先打开下层橱柜，靠近麦片按 E。只有保存过旧位置，之后才谈得上“更新记忆”。',
+      description: '提示玩家形成麦片的初始位置记忆',
+      memoryType: 'object',
+      toastType: 'info',
+      highlightDemo: { targetContainerId: LOWER_CABINET, color: '#f59e0b', durationMs: 2200 },
+    },
+    {
+      id: 'se-cereal-moved',
+      trigger: (_step, _entities, _room, _rooms, ctx) => !!ctx && ctx.currentStageId === STAGE_STALE,
+      type: 'move-entity',
+      targetId: CEREAL,
+      targetPosition: UPPER_WORLD,
+      targetContainerId: UPPER_CABINET,
+      markMemoryOutdated: CEREAL,
+      message: '🐱 身后传来一声轻响。你关于麦片的记忆变红了——它可能已经不再可靠。',
+      description: '麦片从下层橱柜被移动到邻近的较高橱柜，旧记忆过期',
       memoryType: 'temporal',
-      toastType: 'info' as const,
+      toastType: 'warning',
+      eventEffect: 'cat-prints',
     },
     {
-      id: 'se-sort-hint',
-      trigger: (step, _entities, _room, _rooms, ctx) =>
-        step >= 2 && !!ctx?.heldEntityConfigId,
+      id: 'se-conflict-detected',
+      trigger: (_step, _entities, _room, _rooms, ctx) => !!ctx
+        && ctx.currentStageId === STAGE_STALE
+        && hasStaleCerealMemory(ctx)
+        && cerealMovedToUpper(ctx)
+        && nearLocal(ctx, { x: -1.0, z: -1.9 }),
       type: 'message',
-      message: '💡 程序记忆提示：确认手中物品的类别 → 回忆对应规则 → 找到正确篮子 → 放入。每一步都在验证你的工作记忆是否准确。',
-      description: '玩家手持物品时触发程序记忆提示',
-      memoryType: 'procedural',
-      toastType: 'info' as const,
+      message: '⚠️ 下层橱柜空了。你没有记错——是这个记忆已经过期。重新观察附近，但系统不会直接告诉你新位置。',
+      description: '玩家回到旧位置并发现记忆与现实冲突',
+      memoryType: 'temporal',
+      toastType: 'warning',
     },
     {
-      id: 'se-baskets-swap',
-      trigger: (_step, _entities, _room, _rooms, ctx) =>
-        !!ctx && ctx.currentStageId === STAGE_SWAP,
-      type: 'swap-containers',
-      swapContainerIds: [WHITE_BASKET, DARK_BASKET],
-      message: '🔀 空间记忆干扰！钥匙猫把白篮和蓝篮的位置互换了。你记忆中"左白中蓝"的空间布局已失效。现在必须靠篮子颜色（物体记忆）而非位置（空间记忆）来判断身份——这就是整合记忆的核心挑战！',
-      description: '干扰：白篮与深蓝篮交换位置，制造"空间记忆 vs 物体记忆"冲突',
+      id: 'se-memory-updated',
+      trigger: (_step, _entities, _room, _rooms, ctx) => !!ctx
+        && ctx.currentStageId === STAGE_UPDATE
+        && hasFreshCerealMemory(ctx)
+        && ctx.memoryUpdateCount >= 1,
+      type: 'message',
+      message: '✓ 记忆已更新：麦片的新位置已写入。现在可以相信这条新记忆并完成早餐。',
+      description: '玩家重新观察并主动更新麦片记忆',
       memoryType: 'spatial',
-      toastType: 'warning' as const,
-      eventEffect: 'container-swap',
-    },
-    {
-      id: 'se-verification-hint',
-      trigger: (_step, _entities, _room, _rooms, ctx) =>
-        !!ctx && ctx.currentStageId === STAGE_VERIFY,
-      type: 'message',
-      message: '✅ 分拣完成！现在走到西侧折叠桌旁验证你的记忆——这将检测你是否真的"记住了"规则，而不仅仅是"做对了"。',
-      description: '进入验证阶段时提示玩家',
-      memoryType: 'temporal',
-      toastType: 'info' as const,
+      toastType: 'success',
     },
   ],
 
   probes: [
     {
-      id: 'p-sort-white',
-      type: 'object-id',
-      question: '【物体记忆】浅色衣物应该放进哪个篮子？',
-      options: ['白篮', '蓝篮', '橙篮'],
-      correctAnswer: '白篮',
+      id: 'p-cereal-old-location',
+      type: 'location',
+      question: '麦片最初在哪里？',
+      options: ['下层橱柜', '较高的橱柜', '冰箱', '餐桌'],
+      correctAnswer: '下层橱柜',
       dependsOnMemoryType: 'object',
       difficulty: 'easy',
+      relatedObjectIds: [CEREAL],
     },
     {
-      id: 'p-sort-dark',
-      type: 'object-id',
-      question: '【物体记忆】深色衣物应该放进哪个篮子？',
-      options: ['白篮', '蓝篮', '橙篮'],
-      correctAnswer: '蓝篮',
-      dependsOnMemoryType: 'object',
-      difficulty: 'easy',
-    },
-    {
-      id: 'p-sort-towel',
-      type: 'object-id',
-      question: '【物体记忆】毛巾应该放进哪个篮子？',
-      options: ['白篮', '蓝篮', '橙篮'],
-      correctAnswer: '橙篮',
-      dependsOnMemoryType: 'object',
-      difficulty: 'easy',
-    },
-    {
-      id: 'p-count-items',
-      type: 'count',
-      question: '【工作记忆】一共有几件衣物需要分类？',
-      options: ['3', '4', '5', '6'],
-      correctAnswer: '6',
-      dependsOnMemoryType: 'temporal',
-      difficulty: 'easy',
-    },
-    {
-      id: 'p-basket-position',
-      type: 'object-id',
-      question: '【空间记忆】篮子被挪动后，你应该靠什么判断哪个篮子是白篮？',
-      options: ['记住它原来的位置', '看篮子的颜色', '数篮子的顺序', '闻气味'],
-      correctAnswer: '看篮子的颜色',
+      id: 'p-cereal-new-location',
+      type: 'location',
+      question: '环境变化后，你在哪里重新找到了麦片？',
+      options: ['下层橱柜', '较高的橱柜', '水槽', '地面'],
+      correctAnswer: '较高的橱柜',
       dependsOnMemoryType: 'spatial',
-      difficulty: 'medium',
+      difficulty: 'easy',
+      relatedObjectIds: [CEREAL],
+      relatedEventIds: ['se-cereal-moved'],
     },
     {
-      id: 'p-sequence',
+      id: 'p-stale-response',
       type: 'sequence',
-      question: '【程序记忆】正确的分拣执行顺序是什么？',
-      options: ['随意拿', '先分拣浅色，再深色，最后毛巾', '先分拣毛巾，再浅色，最后深色', '同时拿多件'],
-      correctAnswer: '先分拣浅色，再深色，最后毛巾',
-      dependsOnMemoryType: 'procedural',
+      question: '发现记忆与现实冲突时，正确做法是什么？',
+      options: ['坚持旧记忆', '重新观察并更新记忆', '直接看小地图答案', '跳过任务'],
+      correctAnswer: '重新观察并更新记忆',
+      dependsOnMemoryType: 'temporal',
       difficulty: 'medium',
     },
   ],

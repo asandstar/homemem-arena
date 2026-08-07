@@ -11,6 +11,8 @@ import { sharedRooms } from '../data/rooms'
 import {
   executePick,
   executePlace,
+  executeSaveMemory,
+  executeToggleContainer,
 } from './commands'
 
 function di(key: string, payload: unknown) {
@@ -134,6 +136,25 @@ function placeInto(containerId: string) {
   return executePlace(containerId)
 }
 
+function saveByCfg(cfg: string): { success: boolean; reason?: string } {
+  const entity = findByCfg(cfg)
+  if (!entity) return { success: false, reason: `no entity:${cfg}` }
+  return executeSaveMemory(entity.id)
+}
+
+function finishMoveAnimations() {
+  const state = useGameStore.getState()
+  const setFn = (useGameStore as any).setState
+  if (typeof setFn !== 'function' || state.moveAnimations.length === 0) return
+  setFn({
+    moveAnimations: state.moveAnimations.map((animation) => ({
+      ...animation,
+      startTime: Date.now() - animation.duration - 10,
+    })),
+  })
+  useGameStore.getState().updateMoveAnimations()
+}
+
 function evalAndCheck(label: string) {
   const s = useGameStore.getState() as any
   for (let i = 0; i < 3; i++) {
@@ -204,7 +225,12 @@ describe('三关后端模拟实玩 & 证据链', () => {
       phase: finalState.phase,
     })
     expect(finalState.achievedGoalIds).toEqual(
-      new Set(['g-mugs-sink', 'g-spoons-sink', 'g-plates-cabinet', 'g-forks-cabinet']),
+      new Set([
+        'g-mug-1-sink', 'g-mug-2-sink',
+        'g-spoon-1-sink', 'g-spoon-2-sink', 'g-spoon-3-sink',
+        'g-plate-1-cabinet', 'g-plate-2-cabinet',
+        'g-fork-1-cabinet', 'g-fork-2-cabinet',
+      ]),
     )
     expect(finalState.levelCompleted).toBe(true)
   })
@@ -251,6 +277,82 @@ describe('三关后端模拟实玩 & 证据链', () => {
     expect(finalState.achievedGoalIds).toEqual(
       new Set(['g-books-table', 'g-mug-table', 'g-bear-table', 'g-radio-table']),
     )
+    expect(finalState.levelCompleted).toBe(true)
+  })
+
+  it('L3: task-laundry-sort —— 保存旧位置→发现过期→更新记忆→完成早餐（严格断言通关）', () => {
+    useGameStore.getState().initializeTask('task-laundry-sort')
+    const task = useGameStore.getState().task!
+    useGameStore.getState().startPlaying()
+
+    expect(task.name).toBe('过期的早餐记忆')
+    expect(task.rooms).toEqual(['dining'])
+    expect(useGameStore.getState().currentStageId).toBe('stage-encode-cereal')
+
+    // ENCODE：打开下层柜并保存麦片旧位置。
+    expect(setRobotAtContainer(task, 'cnt-cabinet-lower').success).toBe(true)
+    expect(executeToggleContainer('cnt-cabinet-lower').success).toBe(true)
+    expect(saveByCfg('obj-cereal').success).toBe(true)
+    evalAndCheck('L3-ENCODED')
+    expect(useGameStore.getState().achievedGoalIds.has('g-encode-cereal-memory')).toBe(true)
+
+    // DISTRACTOR：摆好碗、杯、勺，迫使注意力离开麦片位置。
+    for (const cfg of ['obj-breakfast-bowl', 'obj-breakfast-cup', 'obj-breakfast-spoon']) {
+      expect(setRobotAtEntity(task, cfg).success).toBe(true)
+      // bowl/cup 打开下层柜后已在柜面；spoon 初始就在餐桌。
+      if (cfg === 'obj-breakfast-spoon') expect(setRobotAtContainer(task, 'cnt-breakfast-table').success).toBe(true)
+      expect(pickByCfg(cfg).success).toBe(true)
+      expect(setRobotAtContainer(task, 'cnt-breakfast-table').success).toBe(true)
+      expect(placeInto('cnt-breakfast-table').success).toBe(true)
+      evalAndCheck(`L3-TABLE-${cfg}`)
+    }
+    expect(useGameStore.getState().currentStageId).toBe('stage-stale-memory')
+
+    // 环境变化：脚本把麦片移到较高橱柜，并把旧记忆标成 outdated。
+    useGameStore.getState().triggerScriptedEvents()
+    finishMoveAnimations()
+    evalAndCheck('L3-CEREAL-MOVED')
+    expect(useGameStore.getState().memorySlots.find((slot) => slot?.entityConfigId === 'obj-cereal')?.outdated).toBe(true)
+    expect(findByCfg('obj-cereal')?.placedIn).toBe('cnt-cabinet-upper')
+
+    // CONFLICT：回到旧柜前，发现现实与旧记忆冲突。
+    expect(setRobotAtContainer(task, 'cnt-cabinet-lower').success).toBe(true)
+    evalAndCheck('L3-CONFLICT')
+    expect(useGameStore.getState().triggeredEvents.has('se-conflict-detected')).toBe(true)
+    expect(useGameStore.getState().achievedGoalIds.has('g-detect-stale-memory')).toBe(true)
+
+    // UPDATE：打开较高柜，按 E 刷新同一条麦片记忆。
+    expect(setRobotAtContainer(task, 'cnt-cabinet-upper').success).toBe(true)
+    expect(executeToggleContainer('cnt-cabinet-upper').success).toBe(true)
+    expect(saveByCfg('obj-cereal').success).toBe(true)
+    evalAndCheck('L3-UPDATED')
+    expect(useGameStore.getState().memoryUpdateCount).toBeGreaterThanOrEqual(1)
+    expect(useGameStore.getState().achievedGoalIds.has('g-update-cereal-memory')).toBe(true)
+
+    // APPLY：麦片上桌。
+    expect(pickByCfg('obj-cereal').success).toBe(true)
+    expect(setRobotAtContainer(task, 'cnt-breakfast-table').success).toBe(true)
+    expect(placeInto('cnt-breakfast-table').success).toBe(true)
+    evalAndCheck('L3-CEREAL-SERVED')
+
+    // CLEANUP：碗与杯进入水槽，勺子留在桌上。
+    for (const cfg of ['obj-breakfast-bowl', 'obj-breakfast-cup']) {
+      expect(setRobotAtContainer(task, 'cnt-breakfast-table').success).toBe(true)
+      expect(pickByCfg(cfg).success).toBe(true)
+      expect(setRobotAtContainer(task, 'cnt-breakfast-sink').success).toBe(true)
+      expect(placeInto('cnt-breakfast-sink').success).toBe(true)
+      evalAndCheck(`L3-CLEAN-${cfg}`)
+    }
+
+    const finalState = useGameStore.getState()
+    expect(finalState.achievedGoalIds).toEqual(new Set([
+      'g-encode-cereal-memory',
+      'g-set-breakfast-table',
+      'g-detect-stale-memory',
+      'g-update-cereal-memory',
+      'g-serve-cereal',
+      'g-clean-breakfast-dishes',
+    ]))
     expect(finalState.levelCompleted).toBe(true)
   })
 })

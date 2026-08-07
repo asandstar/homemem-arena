@@ -43,14 +43,14 @@ export const dialogSequences: DialogSequence[] = [
   {
     id: 'ds-tutorial-goal-cup',
     name: '杯子归位',
-    trigger: { type: 'goalComplete', value: 'g-mugs-sink' },
+    trigger: { type: 'goalComplete', value: 'g-mug-1-sink' },
     priority: 8,
     nodes: [
       {
         id: 'dtut-gc-1',
         speaker: 'system',
         speakerName: 'MEM-07',
-        text: '杯子已放进水槽！干得漂亮。继续把勺子也送进水槽，盘和叉放进橱柜。',
+        text: '第一个杯子已经打勾！之后每放对一件，任务面板和画面中央都会立刻给出 ✓。',
         autoContinue: true,
         autoContinueDelay: 2000,
       },
@@ -59,7 +59,7 @@ export const dialogSequences: DialogSequence[] = [
   {
     id: 'ds-tutorial-goal-tissue',
     name: '叉子归位',
-    trigger: { type: 'goalComplete', value: 'g-forks-cabinet' },
+    trigger: { type: 'goalComplete', value: 'g-fork-2-cabinet' },
     priority: 8,
     nodes: [
       {
@@ -287,7 +287,7 @@ export const dialogSequences: DialogSequence[] = [
         id: 'dlh-comp-3',
         speaker: 'system',
         speakerName: 'MEM-07',
-        text: '下一关：洗衣房里一团糟——钥匙猫把分类标签全撕了，得靠记忆把衣物分到正确的篮子。',
+        text: '下一关：早餐要准备好了，但一个原本正确的位置记忆会突然失效。你得发现冲突并主动更新它。',
         choices: [
           {
             id: 'c-dlh-next',
@@ -299,10 +299,10 @@ export const dialogSequences: DialogSequence[] = [
     ],
   },
 
-  // ===== 洗衣幽灵 =====
+  // ===== 过期的早餐记忆 =====
   {
     id: 'ds-laundry-sort-start',
-    name: '洗衣幽灵开场',
+    name: '过期的早餐记忆开场',
     trigger: { type: 'start', value: 'task-laundry-sort' },
     priority: 10,
     nodes: [
@@ -310,25 +310,25 @@ export const dialogSequences: DialogSequence[] = [
         id: 'dls-1',
         speaker: 'narrator',
         speakerName: '记忆宅邸',
-        text: '👻 洗衣房里传来窸窸窣窣的声音...三只篮子整齐地排成一排，空气中似乎漂浮着什么。',
+        text: '🥣 餐厨里飘着早餐的香气。麦片、碗和杯子收在北墙橱柜里，餐桌还空着。',
         autoContinue: true,
         autoContinueDelay: 2500,
       },
       {
         id: 'dls-2',
-        speaker: 'character',
-        speakerName: '袜子幽灵',
-        text: '嘿！新来的帮手？这些衣服我可是藏了好久呢~ 白色、深色、毛巾，分错了会染色的哦！',
+        speaker: 'system',
+        speakerName: 'MEM-07',
+        text: '这次要校准 UPDATE 模块：先按 E 记住麦片的位置，再去摆餐具。如果回来时现实和记忆冲突，不要慌——重新观察并更新记忆。',
         choices: [
           {
             id: 'c-dls-ready',
-            text: '我来挑战！开始分类！',
+            text: '明白了，开始准备早餐！',
             effect: { type: 'score', value: 50 },
           },
           {
             id: 'c-dls-hint',
-            text: '能给我一些提示吗？',
-            effect: { type: 'hint', value: '白衣服放白篮子，深色放黑篮子，毛巾放黄篮子。注意那件彩色衬衫也算白色衣物！' },
+            text: '怎么判断记忆过期？',
+            effect: { type: 'hint', value: '回到旧位置发现东西不在了，就是现实与记忆发生冲突。去附近重新观察，找到后按 E 更新。' },
           },
         ],
       },
@@ -336,21 +336,21 @@ export const dialogSequences: DialogSequence[] = [
   },
   {
     id: 'ds-laundry-sort-event-moves-clothes',
-    name: '袜子幽灵移动衣物',
-    trigger: { type: 'event', value: 'se-cat-moves-clothes' },
+    name: '麦片位置变化',
+    trigger: { type: 'event', value: 'se-cereal-moved' },
     priority: 10,
     nodes: [
       {
         id: 'dls-event-1',
-        speaker: 'character',
-        speakerName: '袜子幽灵',
-        text: '嘿嘿嘿！袜子我藏起来了！你记得它原来在哪里吗？',
+        speaker: 'system',
+        speakerName: 'MEM-07',
+        text: '警告：刚才保存的麦片记忆已经变成过期状态。先去旧位置核对现实。',
       },
       {
         id: 'dls-event-2',
         speaker: 'narrator',
         speakerName: '记忆宅邸',
-        text: '一道白色的影子一闪而过，白袜子消失在了毛巾篮附近...',
+        text: '你身后传来很轻的柜门声，但没有人告诉你麦片的新位置。',
         autoContinue: true,
         autoContinueDelay: 2000,
       },
@@ -358,21 +358,21 @@ export const dialogSequences: DialogSequence[] = [
   },
   {
     id: 'ds-laundry-sort-complete',
-    name: '洗衣幽灵完成',
+    name: '过期记忆更新完成',
     trigger: { type: 'event', value: 'level_complete_task-laundry-sort' },
     priority: 15,
     nodes: [
       {
         id: 'dls-comp-1',
-        speaker: 'character',
-        speakerName: '袜子幽灵',
-        text: '呜...所有衣服都分类好了！我的游戏输了...下次我会把所有袜子都藏起来！哈哈哈！',
+        speaker: 'system',
+        speakerName: 'MEM-07',
+        text: 'UPDATE 校准完成：旧记忆失效时，你没有盲信它，而是用现实证据更新了记忆。',
       },
       {
         id: 'dls-comp-2',
         speaker: 'narrator',
         speakerName: '记忆宅邸',
-        text: '三只篮子整整齐齐，洗衣房终于恢复了平静...',
+        text: '麦片已经上桌，碗和杯子也收进水槽。早餐任务完整结束。',
         autoContinue: true,
         autoContinueDelay: 2500,
       },

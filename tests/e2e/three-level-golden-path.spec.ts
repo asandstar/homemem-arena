@@ -8,6 +8,7 @@ import {
   getTestApi,
   placeIntoContainerStable,
   readState,
+  teleportToContainer,
 } from './helpers'
 
 type ItemGoal = {
@@ -45,14 +46,7 @@ const LEVELS: ReadonlyArray<{
   },
   {
     taskId: 'task-laundry-sort',
-    items: [
-      { id: 'obj-white-1', room: 'laundry', containerId: 'cnt-white-basket' },
-      { id: 'obj-white-2', room: 'laundry', containerId: 'cnt-white-basket' },
-      { id: 'obj-dark-1', room: 'laundry', containerId: 'cnt-dark-basket' },
-      { id: 'obj-dark-2', room: 'laundry', containerId: 'cnt-dark-basket' },
-      { id: 'obj-towel-1', room: 'laundry', containerId: 'cnt-towel-basket' },
-      { id: 'obj-towel-2', room: 'laundry', containerId: 'cnt-towel-basket' },
-    ],
+    items: [],
   },
 ]
 
@@ -109,6 +103,40 @@ async function assertLevelCompleted(page: Page, level: (typeof LEVELS)[number]):
   await expect.poll(() => readState<boolean>(page, 'getLevelCompleted')).toBe(true)
 }
 
+async function completeThirdLevel(page: Page): Promise<void> {
+  await teleportToContainer(page, 'cnt-cabinet-lower')
+  expect((await callCommand(page, 'toggleContainer', 'cnt-cabinet-lower')).success).toBe(true)
+  expect((await callNearbyEntityCommand(page, 'saveMemoryByConfigId', 'obj-cereal', 'dining')).success).toBe(true)
+  await advanceStageTransitions(page, 2)
+
+  for (const item of [
+    { id: 'obj-breakfast-bowl', room: 'dining', containerId: 'cnt-breakfast-table' },
+    { id: 'obj-breakfast-cup', room: 'dining', containerId: 'cnt-breakfast-table' },
+    { id: 'obj-breakfast-spoon', room: 'dining', containerId: 'cnt-breakfast-table' },
+  ]) {
+    await pickAndPlace(page, item)
+  }
+
+  await expect.poll(() => readState<string>(page, 'getCurrentStageId')).toBe('stage-stale-memory')
+  await advanceStageTransitions(page, 10)
+  await teleportToContainer(page, 'cnt-cabinet-lower')
+  await advanceStageTransitions(page, 2)
+  await expect.poll(() => readState<string>(page, 'getCurrentStageId')).toBe('stage-update-memory')
+
+  await teleportToContainer(page, 'cnt-cabinet-upper')
+  expect((await callCommand(page, 'toggleContainer', 'cnt-cabinet-upper')).success).toBe(true)
+  expect((await callNearbyEntityCommand(page, 'saveMemoryByConfigId', 'obj-cereal', 'dining')).success).toBe(true)
+  await advanceStageTransitions(page, 2)
+
+  for (const item of [
+    { id: 'obj-cereal', room: 'dining', containerId: 'cnt-breakfast-table' },
+    { id: 'obj-breakfast-bowl', room: 'dining', containerId: 'cnt-breakfast-sink' },
+    { id: 'obj-breakfast-cup', room: 'dining', containerId: 'cnt-breakfast-sink' },
+  ]) {
+    await pickAndPlace(page, item)
+  }
+}
+
 async function openStrictResult(page: Page, taskId: string): Promise<void> {
   const resultButton = page.getByRole('button', { name: '查看分析结果' })
   await expect(resultButton).toBeVisible({ timeout: 12_000 })
@@ -146,8 +174,15 @@ test('当前公开版可以从第一关连续完成到第三关最终结算', as
       await advanceStageTransitions(page, 1)
     }
 
-    for (const item of level.items) {
-      await pickAndPlace(page, item)
+    if (level.taskId === 'task-laundry-sort') {
+      await completeThirdLevel(page)
+    } else {
+      for (const [itemIndex, item] of level.items.entries()) {
+        await pickAndPlace(page, item)
+        if (level.taskId === 'task-clean-table' && itemIndex === 0) {
+          await expect(page.getByTestId('goal-completion-banner')).toContainText('马克杯 #1 放入水槽')
+        }
+      }
     }
 
     await assertLevelCompleted(page, level)

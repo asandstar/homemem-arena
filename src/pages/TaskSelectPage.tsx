@@ -19,7 +19,7 @@ const timeSlots = [
 const PUBLIC_LEVEL_CAPTION: Record<string, string> = {
   'task-clean-table': '第一章 · 失忆管家初次启动',
   'task-leave-home': '第二章 · 钥匙猫的清晨恶作剧',
-  'task-laundry-sort': '第三章 · 洗衣房的袜子幽灵',
+  'task-laundry-sort': '第三章 · 过期的早餐记忆',
 }
 
 interface SaveInfo {

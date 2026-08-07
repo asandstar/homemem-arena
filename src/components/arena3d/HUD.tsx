@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState, useMemo } from 'react'
+import { useEffect, useCallback, useState, useMemo, useRef } from 'react'
 import { useGameStore } from '../../store/useGameStore'
 import { useUiStore } from '../../store/useUiStore'
 import { Target, Clock, CheckCircle2, AlertTriangle, Zap, Package, Keyboard, Brain, Lock, Unlock, Trash2, ChevronDown, ChevronUp, Skull, AlertCircle, X, Cat, Smartphone, HelpCircle, Eye, EyeOff, MapPin, Box, History, Play, Pause, Volume2, VolumeX } from 'lucide-react'
@@ -117,6 +117,41 @@ export function HUD() {
   const [isMobile, setIsMobile] = useState(false)
   const [viewportWidth, setViewportWidth] = useState(1920)
   const [minimapFullscreen, setMinimapFullscreen] = useState(false)
+  const [completedGoalBanner, setCompletedGoalBanner] = useState<{ taskId: string; id: string; description: string } | null>(null)
+  const seenGoalIdsRef = useRef<Set<string>>(new Set())
+  const seenGoalTaskIdRef = useRef<string | null>(task?.id ?? null)
+  const goalBannerTimerRef = useRef<number | null>(null)
+
+  // 目标完成反馈不能只依赖左上角的小图标：玩家正在操作 3D 场景时很容易错过。
+  // 每次 achievedGoalIds 新增目标，都在视野中央展示短暂的大号 ✓；所有关卡共用。
+  // 任务切换必须在 render 阶段同步重置“已见集合”。若放在 effect 里，玩家/测试在 HUD
+  // 初次挂载后立刻完成第一个目标时，初始化 effect 可能后执行并把新目标误吞成旧状态。
+  if (seenGoalTaskIdRef.current !== (task?.id ?? null)) {
+    seenGoalTaskIdRef.current = task?.id ?? null
+    seenGoalIdsRef.current = new Set(achievedGoalIds)
+  }
+
+  useEffect(() => {
+    const newlyAchieved = Array.from(achievedGoalIds).filter((id) => !seenGoalIdsRef.current.has(id))
+    seenGoalIdsRef.current = new Set(achievedGoalIds)
+    const latestGoalId = newlyAchieved.at(-1)
+    if (!latestGoalId) return
+    const taskId = task?.id
+    if (!taskId) return
+    const goal = task?.goals.find((candidate) => candidate.id === latestGoalId)
+    if (!goal) return
+
+    setCompletedGoalBanner({ taskId, id: goal.id, description: goal.description.replace(/^✓\s*/, '') })
+    if (goalBannerTimerRef.current !== null) window.clearTimeout(goalBannerTimerRef.current)
+    goalBannerTimerRef.current = window.setTimeout(() => {
+      setCompletedGoalBanner(null)
+      goalBannerTimerRef.current = null
+    }, 2600)
+  }, [achievedGoalIds, task])
+
+  useEffect(() => () => {
+    if (goalBannerTimerRef.current !== null) window.clearTimeout(goalBannerTimerRef.current)
+  }, [])
 
   // ---------- E 子包：DEV-only 模型模式指示（不改生产行为） ----------
   const modelModeLabel = useMemo<{ active: boolean; label: string; hint: string } | null>(() => {
@@ -956,6 +991,27 @@ export function HUD() {
         </div>
       )}
 
+      {completedGoalBanner && completedGoalBanner.taskId === task?.id && (
+        <div
+          data-testid="goal-completion-banner"
+          className="absolute top-[22%] left-1/2 -translate-x-1/2 pointer-events-none z-40 animate-event-popup"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="min-w-[300px] max-w-[min(560px,90vw)] rounded-2xl border-2 border-emerald-300/80 bg-emerald-950/95 px-5 py-4 shadow-2xl shadow-emerald-500/30 backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-emerald-400 text-emerald-950 shadow-lg shadow-emerald-400/40">
+                <CheckCircle2 size={28} strokeWidth={3} />
+              </span>
+              <div>
+                <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">目标完成</div>
+                <div className="mt-0.5 text-base font-bold leading-snug text-white">{completedGoalBanner.description}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {(feedback?.type === 'success' || feedback?.type === 'error') && (
         <div className={`absolute inset-0 pointer-events-none animate-flash z-30 ${
           feedback.type === 'success' ? 'bg-green-500/20' : 'bg-red-500/20'
@@ -1000,6 +1056,8 @@ export function HUD() {
                   ? 'bg-blue-900/80 border border-blue-500/50'
                   : toast.type === 'warning'
                     ? 'bg-red-900/80 border border-red-500/50'
+                    : toast.type === 'success'
+                      ? 'bg-emerald-900/90 border border-emerald-400/60'
                     : 'bg-slate-900/80 border border-slate-600/50'
             }`}
           >

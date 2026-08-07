@@ -187,21 +187,21 @@ function checkLevel2Requirements(): QaResult[] {
 
 function checkLevel3Requirements(): QaResult[] {
   const results: QaResult[] = []
-  // Three-level MVP: L3 洗衣分拣 / task-laundry-sort（Integrated Memory 整合记忆，只需 laundry 洗衣房）
+  // Three-level MVP: L3 保留历史 task id 兼容存档与路由，玩法按最新文档改为 dining 内的过期早餐记忆。
   const level3 = taskTemplates.find((t) => t.id === 'task-laundry-sort')
 
   if (!level3) {
-    results.push(fail('critical', CATEGORY, 'level3-exists', '找不到 L3 洗衣分拣（task-laundry-sort）'))
+    results.push(fail('critical', CATEGORY, 'level3-exists', '找不到 L3 过期早餐记忆（task-laundry-sort）'))
     return results
   }
-  results.push(pass(CATEGORY, 'level3-exists', `L3 洗衣分拣已找到（id=${level3.id}, name=${level3.name}）`))
+  results.push(pass(CATEGORY, 'level3-exists', `L3 过期早餐记忆已找到（id=${level3.id}, name=${level3.name}）`))
 
-  const required: string[] = ['laundry']
+  const required: string[] = ['dining']
   for (const roomId of required) {
     if (level3.rooms.includes(roomId as RoomId)) {
-      results.push(pass(CATEGORY, 'level3-room', `L3 洗衣分拣包含 ${roomId}`))
+      results.push(pass(CATEGORY, 'level3-room', `L3 过期早餐记忆包含 ${roomId}`))
     } else {
-      results.push(fail('critical', CATEGORY, 'level3-room', `L3 洗衣分拣缺少房间: ${roomId}`))
+      results.push(fail('critical', CATEGORY, 'level3-room', `L3 过期早餐记忆缺少房间: ${roomId}`))
     }
   }
 

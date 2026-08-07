@@ -71,9 +71,9 @@ export const taskPresentationById: Record<string, TaskPresentation> = {
   },
   'task-laundry-sort': {
     role: 'challenge',
-    shortDescription: '六件衣物三类分拣，篮子会被交换位置——靠颜色而非位置记忆',
-    estimatedMinutes: 5,
-    emoji: '👕',
+    shortDescription: '记住麦片旧位置，发现冲突后重新观察并更新记忆',
+    estimatedMinutes: 3,
+    emoji: '🥣',
   },
 }
 

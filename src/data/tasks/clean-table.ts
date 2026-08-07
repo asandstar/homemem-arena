@@ -24,16 +24,6 @@ function entityPlacedIn(entities: EntityStateSnapshot[], configId: string, conta
   return !!e && e.placedIn === containerId && e.status === 'placed'
 }
 
-/** 指定 ID 集合中所有物品是否都已放入指定容器 */
-function allPlacedIn(entities: EntityStateSnapshot[], ids: string[], containerId: string): boolean {
-  return ids.every((id) => entityPlacedIn(entities, id, containerId))
-}
-
-const MUG_IDS = ['obj-mug-1', 'obj-mug-2']
-const SPOON_IDS = ['obj-spoon-1', 'obj-spoon-2', 'obj-spoon-3']
-const PLATE_IDS = ['obj-plate-1', 'obj-plate-2']
-const FORK_IDS = ['obj-fork-1', 'obj-fork-2']
-
 export const cleanTableTask: TaskConfig = {
   id: 'task-clean-table',
   name: '餐桌整理',
@@ -245,36 +235,76 @@ MEM-07：「校准进度 87%……动作序列模块已就绪。移动、拾取�
 
   goals: [
     {
-      id: 'g-mugs-sink',
-      description: '2 个马克杯放入水槽',
+      id: 'g-mug-1-sink',
+      description: '马克杯 #1 放入水槽',
       memoryType: 'procedural',
-      relatedObjectIds: MUG_IDS,
-      predicate: (entities: EntityStateSnapshot[]) => allPlacedIn(entities, MUG_IDS, 'cnt-sink'),
-      achievedMessage: '马克杯已放入水槽！',
+      relatedObjectIds: ['obj-mug-1'],
+      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-mug-1', 'cnt-sink'),
+      achievedMessage: '✓ 马克杯 #1 已放入水槽',
     },
     {
-      id: 'g-spoons-sink',
-      description: '3 把勺子放入水槽',
+      id: 'g-mug-2-sink',
+      description: '马克杯 #2 放入水槽',
       memoryType: 'procedural',
-      relatedObjectIds: SPOON_IDS,
-      predicate: (entities: EntityStateSnapshot[]) => allPlacedIn(entities, SPOON_IDS, 'cnt-sink'),
-      achievedMessage: '勺子已放入水槽！',
+      relatedObjectIds: ['obj-mug-2'],
+      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-mug-2', 'cnt-sink'),
+      achievedMessage: '✓ 马克杯 #2 已放入水槽',
     },
     {
-      id: 'g-plates-cabinet',
-      description: '2 个盘子放入橱柜',
+      id: 'g-spoon-1-sink',
+      description: '勺子 #1 放入水槽',
       memoryType: 'procedural',
-      relatedObjectIds: PLATE_IDS,
-      predicate: (entities: EntityStateSnapshot[]) => allPlacedIn(entities, PLATE_IDS, 'cnt-cabinet'),
-      achievedMessage: '盘子已放入橱柜！',
+      relatedObjectIds: ['obj-spoon-1'],
+      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-spoon-1', 'cnt-sink'),
+      achievedMessage: '✓ 勺子 #1 已放入水槽',
     },
     {
-      id: 'g-forks-cabinet',
-      description: '2 把叉子放入橱柜',
+      id: 'g-spoon-2-sink',
+      description: '勺子 #2 放入水槽',
       memoryType: 'procedural',
-      relatedObjectIds: FORK_IDS,
-      predicate: (entities: EntityStateSnapshot[]) => allPlacedIn(entities, FORK_IDS, 'cnt-cabinet'),
-      achievedMessage: '叉子已放入橱柜！',
+      relatedObjectIds: ['obj-spoon-2'],
+      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-spoon-2', 'cnt-sink'),
+      achievedMessage: '✓ 勺子 #2 已放入水槽',
+    },
+    {
+      id: 'g-spoon-3-sink',
+      description: '勺子 #3 放入水槽',
+      memoryType: 'procedural',
+      relatedObjectIds: ['obj-spoon-3'],
+      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-spoon-3', 'cnt-sink'),
+      achievedMessage: '✓ 勺子 #3 已放入水槽',
+    },
+    {
+      id: 'g-plate-1-cabinet',
+      description: '盘子 #1 放入橱柜',
+      memoryType: 'procedural',
+      relatedObjectIds: ['obj-plate-1'],
+      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-plate-1', 'cnt-cabinet'),
+      achievedMessage: '✓ 盘子 #1 已放入橱柜',
+    },
+    {
+      id: 'g-plate-2-cabinet',
+      description: '盘子 #2 放入橱柜',
+      memoryType: 'procedural',
+      relatedObjectIds: ['obj-plate-2'],
+      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-plate-2', 'cnt-cabinet'),
+      achievedMessage: '✓ 盘子 #2 已放入橱柜',
+    },
+    {
+      id: 'g-fork-1-cabinet',
+      description: '叉子 #1 放入橱柜',
+      memoryType: 'procedural',
+      relatedObjectIds: ['obj-fork-1'],
+      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-fork-1', 'cnt-cabinet'),
+      achievedMessage: '✓ 叉子 #1 已放入橱柜',
+    },
+    {
+      id: 'g-fork-2-cabinet',
+      description: '叉子 #2 放入橱柜',
+      memoryType: 'procedural',
+      relatedObjectIds: ['obj-fork-2'],
+      predicate: (entities: EntityStateSnapshot[]) => entityPlacedIn(entities, 'obj-fork-2', 'cnt-cabinet'),
+      achievedMessage: '✓ 叉子 #2 已放入橱柜',
     },
   ],
 

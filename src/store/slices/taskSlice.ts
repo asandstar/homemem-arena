@@ -401,7 +401,7 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
           achievedGoalIds.add(goal.id)
           const message = goal.achievedMessage || `目标完成：${goal.description}`
           const stepCount = get().stepCount
-          get().addEventToast(message, 'info', 3000)
+          get().addEventToast(`✓ ${message.replace(/^✓\s*/, '')}`, 'success', 3000)
           get().addFloatingText(message, 'info', 0, 0)
           get().addScore(DEFAULT_LEVEL_BALANCE.validMemoryUseScore)
           const { robotPosition } = get()

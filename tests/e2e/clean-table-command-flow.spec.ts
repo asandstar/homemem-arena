@@ -440,10 +440,10 @@ test.describe('(A类) Clean-Table Command-backed 流程验证', () => {
     expectNoErrors(errors)
   })
 
-  test('(P1L1§7.6) L2 (task-laundry-sort) / L3 (task-leave-home)：拾取行为不受 L1 规则影响', async ({ page }) => {
+  test('(P1L1§7.6) L2 (task-leave-home) / L3 (task-laundry-sort)：拾取行为不受 L1 专属规则影响', async ({ page }) => {
     const errors = createErrorCollector(page)
 
-    // ===== 1. L2：task-laundry-sort =====
+    // ===== 1. L3：task-laundry-sort =====
     // 不通过 UI 首页→任务列表（点击不稳），直接进入 play URL 初始化任务简报
     await page.goto('/play/task-laundry-sort', { waitUntil: 'domcontentloaded' })
     await page.waitForTimeout(400)
@@ -460,12 +460,12 @@ test.describe('(A类) Clean-Table Command-backed 流程验证', () => {
 
     const phaseL2 = await readState<string>(page, 'getPhase').catch(() => null)
     if (phaseL2 === 'playing') {
-      // L2 任务物体不是 task-clean-table 三件，所以即便记忆槽为空，也应该能正常拾取
+      // L3 任务物体不应被 task-clean-table 的“首次拾取前必须按 E”专属规则误伤
       const entitiesL2 = await readState<Array<{ configId?: string; currentRoom?: string; status?: string }>>(page, 'getEntities').catch(() => [])
       const pickableL2 = entitiesL2.find(e => (e as any).type === 'object' && e.status === 'placed') || entitiesL2.find(e => e.status === 'placed')
       if (pickableL2 && pickableL2.configId) {
         const pickResL2 = await callNearbyEntityCommand(page, 'pickByConfigId', pickableL2.configId, pickableL2.currentRoom ?? (pickableL2 as any).currentRoom)
-        // L2 不应被 L1 专属规则拦截（success=true 或 reason 不是"先按 E"）
+        // L3 不应被 L1 专属规则拦截（success=true 或 reason 不是"先按 E"）
         if (!pickResL2.success && pickResL2.reason) {
           expect(pickResL2.reason).not.toContain('先按 E 记住它的位置')
         }
@@ -473,7 +473,7 @@ test.describe('(A类) Clean-Table Command-backed 流程验证', () => {
       }
     }
 
-    // ===== 2. L3：task-leave-home =====
+    // ===== 2. L2：task-leave-home =====
     // 同样直接跳 play URL，绕开不稳定的首页 UI 导航
     await page.goto('/play/task-leave-home', { waitUntil: 'domcontentloaded' })
     await page.waitForTimeout(400)
@@ -493,7 +493,7 @@ test.describe('(A类) Clean-Table Command-backed 流程验证', () => {
       if (objL3 && objL3.configId) {
         const pickResL3 = await callNearbyEntityCommand(page, 'pickByConfigId', objL3.configId, objL3.currentRoom)
         if (!pickResL3.success && pickResL3.reason) {
-          // L3 不能因为 L1 规则而被"先按 E 记住"拦截
+          // L2 不能因为 L1 规则而被"先按 E 记住"拦截
           expect(pickResL3.reason).not.toContain('先按 E 记住它的位置')
         }
         void (await callCommand(page, 'releaseHeldEntity').catch(() => ({ success: false })))

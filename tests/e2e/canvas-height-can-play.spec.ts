@@ -6,7 +6,7 @@
  *   2. /tasks                     (任务选择)
  *   3. /play/task-clean-table     (L1 初次整理)
  *   4. /play/task-leave-home      (L2 出门大作战)
- *   5. /play/task-laundry-sort    (L3 洗衣幽灵)
+ *   5. /play/task-laundry-sort    (L3 过期的早餐记忆)
  *
  * 每条 URL 断言 3 条：
  *   A. 对 /play/* 页面，canvas.getBoundingClientRect().height / vpH > 0.6
