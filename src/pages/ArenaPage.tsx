@@ -25,7 +25,6 @@ import { subscribeEvent } from '../engine/eventBus'
 const Scene3D = lazy(() => import('../components/arena3d/Scene3D').then((m) => ({ default: m.Scene3D })))
 const HUD = lazy(() => import('../components/arena3d/HUD').then((m) => ({ default: m.HUD })))
 const DialogBox = lazy(() => import('../components/dialog/DialogBox').then((m) => ({ default: m.DialogBox })))
-const ItemHintIndicator = lazy(() => import('../components/arena3d/ItemHintIndicator').then((m) => ({ default: m.ItemHintIndicator })))
 const PauseMenu = lazy(() => import('../components/arena3d/PauseMenu').then((m) => ({ default: m.PauseMenu })))
 const TutorialOverlay = lazy(() => import('../components/arena3d/TutorialOverlay').then((m) => ({ default: m.TutorialOverlay })))
 
@@ -600,12 +599,8 @@ export function ArenaPage() {
         </Suspense>
       )}
 
-      {/* 寻物方向指示器：task ready + briefing closed + playing 时才显示 */}
-      {task && !briefingOpen && phase === 'playing' && !isCalibrationMode && (
-        <Suspense fallback={null}>
-          <ItemHintIndicator />
-        </Suspense>
-      )}
+      {/* 寻物方向指示器已禁用：原 ItemHintIndicator 会泄露未收集物品的房间、距离、方向，
+          破坏 L2/L3 的空间回忆与记忆更新测量。需要时再设计不泄题的提示系统。 */}
 
       {/* 任务简报浮层 - 主人便签风格：
           briefingOpen 时始终渲染（即使 task 还没 ready），task 空时显示骨架卡片。

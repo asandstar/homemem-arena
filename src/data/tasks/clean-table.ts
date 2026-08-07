@@ -44,8 +44,10 @@ export const cleanTableTask: TaskConfig = {
   iconKey: 'dish',
   tags: ['新手入门', '程序记忆', '基础交互'],
   // L1 无时限：鼓励玩家慢慢探索，不设 timeLimit
-  // 出生在 dining 西北角（距两墙各 0.5m），翻转 180° 后朝东南，能看到餐桌+厨房任务区
-  spawnPosition: { x: -2.2, z: -2.1 },
+  // 出生点移出冰箱 AABB（冰箱 local x∈[-2.747,-1.973], z∈[-2.595,-2.025]），
+  // 选 (-1.5, -1.5)：距冰箱东沿 0.47m、南沿 0.53m，>PLAYER_RADIUS(0.3)+padding，
+  // 且不在橱柜/餐桌/餐椅任何 AABB 内；朝 spawnRotation 方向能看到餐桌与厨房工作区通路。
+  spawnPosition: { x: -1.5, z: -1.5 },
   spawnRotation: (3 * Math.PI) / 4,
 
   briefing: `🍽️ 记忆宅邸 · 第一关（程序记忆 · 教程）

@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest'
 import { doorwayBoxes, boxesOverlap2D, localAabbMinMax } from '../../scripts/qa-layout'
 import { roomsOverlap } from '../../scripts/qa-rooms'
 import { sharedRooms } from '../data/rooms'
+import { roomDecorFurniture } from '../data/decorFurniture'
+import { cleanTableTask } from '../data/tasks/clean-table'
+import { PLAYER_RADIUS } from '../game/playerControls'
 import type { RoomSpec } from '../types/room'
 
 describe('doorwayBoxes — A1.5 门洞方向正确性', () => {
@@ -134,5 +137,49 @@ describe('roomsOverlap — A1.5 共享墙容差', () => {
   it('A1.5 实际布局：entrance 与 laundry 共享墙不算重叠', () => {
     // entrance: z=[-3.875, 0.625], laundry: z=[-8.375, -3.875] → z=-3.875 共享边
     expect(roomsOverlap(sharedRooms.entrance, sharedRooms.laundry)).toBe(false)
+  })
+})
+
+describe('spawn-furniture-clearance — 出生点不能与装饰家具 AABB 重叠', () => {
+  it('L1 task-clean-table 出生点不卡在 dining 任何装饰家具内 (含 PLAYER_RADIUS 余量)', () => {
+    const task = cleanTableTask
+    const roomId = task.rooms[0]
+    const spawn = task.spawnPosition
+    expect(spawn, 'L1 必须显式配置 spawnPosition').toBeDefined()
+    // 玩家碰撞圆近似为 2*PLAYER_RADIUS 见方的 AABB（外接）
+    const playerBox = localAabbMinMax(
+      { x: spawn!.x, z: spawn!.z },
+      { x: PLAYER_RADIUS * 2, z: PLAYER_RADIUS * 2 },
+    )
+    const decor = roomDecorFurniture[roomId] ?? []
+    const collidable = decor.filter((d) => (d.collisionMode ?? 'self') !== 'none')
+    const overlaps = collidable
+      .filter((d) =>
+        boxesOverlap2D(
+          playerBox,
+          localAabbMinMax({ x: d.position.x, z: d.position.z }, { x: d.size.x, z: d.size.z }),
+          0,
+        ),
+      )
+      .map((d) => d.id)
+    expect(overlaps, `出生点 ${JSON.stringify(spawn)} 与家具重叠：${overlaps.join(', ')}`).toEqual([])
+  })
+
+  it('L1 旧出生点 (-2.2,-2.1) 会被该检查捕获（回归保护）', () => {
+    // 原 L1 spawn 落在 decor-kit-fridge AABB 内（x∈[-2.747,-1.973], z∈[-2.595,-2.025]）
+    const playerBox = localAabbMinMax(
+      { x: -2.2, z: -2.1 },
+      { x: PLAYER_RADIUS * 2, z: PLAYER_RADIUS * 2 },
+    )
+    const decor = roomDecorFurniture['dining'] ?? []
+    const collidable = decor.filter((d) => (d.collisionMode ?? 'self') !== 'none')
+    const overlaps = collidable.filter((d) =>
+      boxesOverlap2D(
+        playerBox,
+        localAabbMinMax({ x: d.position.x, z: d.position.z }, { x: d.size.x, z: d.size.z }),
+        0,
+      ),
+    )
+    expect(overlaps.map((d) => d.id)).toContain('decor-kit-fridge')
   })
 })

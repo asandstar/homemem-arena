@@ -1,5 +1,6 @@
 import { taskTemplates } from '../src/data/tasks'
 import { sharedRooms } from '../src/data/rooms'
+import { roomDecorFurniture } from '../src/data/decorFurniture'
 import {
   pass,
   fail,
@@ -15,6 +16,8 @@ import type { ContainerSpec, ObjectSpec } from '../src/types/object'
 
 const CATEGORY = 'layout'
 const WALL_MARGIN = 0.35
+// 玩家碰撞半径（与 src/game/playerControls.ts PLAYER_RADIUS 对齐）+ 0.05m padding
+const SPAWN_FURNITURE_CLEARANCE = 0.35
 const _SURFACE_HEIGHT_TOLERANCE = 0.08
 void _SURFACE_HEIGHT_TOLERANCE
 
@@ -131,6 +134,52 @@ function checkTaskSpawn(task: TaskConfig): QaResult {
     'spawn-inside-room',
     `${task.id}: spawn ${formatPos(task.spawnPosition)} 越出房间 ${roomId}（允许 x: [${bounds.minX.toFixed(2)}, ${bounds.maxX.toFixed(2)}], z: [${bounds.minZ.toFixed(2)}, ${bounds.maxZ.toFixed(2)}]）`,
   )
+}
+
+/**
+ * 出生点不能与装饰家具 AABB 重叠（含玩家碰撞半径余量）。
+ * 至少覆盖 L1：原 L1 spawn (-2.2,-2.1) 落在 decor-kit-fridge AABB 内，导致玩家卡在冰箱里。
+ * 这里对所有 public task 检查；collisionMode='none' 的装饰（高位小物件）跳过。
+ */
+function checkSpawnFurnitureClearance(task: TaskConfig): QaResult[] {
+  const results: QaResult[] = []
+  const roomId = findSpawnRoom(task)
+  if (!roomId || !task.spawnPosition) return results
+  const spawn = task.spawnPosition
+  // 玩家碰撞圆近似为 2*SPAWN_FURNITURE_CLEARANCE 见方的 AABB（半径 + padding）
+  const playerBox = localAabbMinMax(
+    { x: spawn.x, z: spawn.z },
+    { x: SPAWN_FURNITURE_CLEARANCE * 2, z: SPAWN_FURNITURE_CLEARANCE * 2 },
+  )
+  const decor = roomDecorFurniture[roomId] ?? []
+  const collidable = decor.filter((d) => (d.collisionMode ?? 'self') !== 'none')
+  const overlaps = collidable.filter((d) =>
+    boxesOverlap2D(
+      playerBox,
+      localAabbMinMax({ x: d.position.x, z: d.position.z }, { x: d.size.x, z: d.size.z }),
+      0,
+    ),
+  )
+  if (overlaps.length === 0) {
+    results.push(
+      pass(
+        CATEGORY,
+        'spawn-furniture-clearance',
+        `${task.id}: spawn ${formatPos(spawn)} 不与 ${roomId} 内任何装饰家具 AABB 重叠`,
+      ),
+    )
+  } else {
+    const names = overlaps.map((d) => `${d.id}@(${d.position.x.toFixed(2)},${d.position.z.toFixed(2)})`).join(', ')
+    results.push(
+      fail(
+        'blocker',
+        CATEGORY,
+        'spawn-furniture-clearance',
+        `${task.id}: spawn ${formatPos(spawn)} 与装饰家具 AABB 重叠：${names}`,
+      ),
+    )
+  }
+  return results
 }
 
 function checkObjectInsideRoom(task: TaskConfig, obj: ObjectSpec): QaResult {
@@ -519,6 +568,7 @@ function checkEachRoomHasInteractable(task: TaskConfig): QaResult[] {
 export function checkTaskLayout(task: TaskConfig): QaResult[] {
   const results: QaResult[] = []
   results.push(checkTaskSpawn(task))
+  results.push(...checkSpawnFurnitureClearance(task))
   for (const obj of task.objects) results.push(checkObjectInsideRoom(task, obj))
   for (const cnt of task.containers) results.push(checkContainerInsideRoom(task, cnt))
   results.push(...checkContainerOverlap(task))
