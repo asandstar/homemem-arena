@@ -15,7 +15,7 @@ interface ToastStore {
   removeToast: (id: string) => void
 }
 
-// Hotfix 2026-08-07 v2: 首帧 getSnapshot=null 全局兜底（safeStore.ts withSafeSnapshot v2，useMemo 缓存 selector 避免 MAX_DEPTH 死循环）
+// Hotfix 2026-08-07 v3: withSafeSnapshot v3 (稳定 selector 引用，无 MAX_DEPTH) 全局 null 兜底
 const _rawToastStore = create<ToastStore>((set) => ({
   toasts: [],
 
