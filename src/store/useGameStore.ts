@@ -142,6 +142,7 @@ interface GameStore extends GameState, ProgressState {
   moveForward: (distance: number) => { success: boolean; reason?: string }
   pickEntity: (entityId: string) => { success: boolean; reason?: string }
   placeEntity: (containerId: string) => { success: boolean; reason?: string }
+  dropEntity: () => { success: boolean; reason?: string }
   useContainer: (containerId: string) => { success: boolean; reason?: string }
   tickElapsed: (deltaMs: number) => void
   incrementStep: () => void

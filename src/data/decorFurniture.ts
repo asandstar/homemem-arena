@@ -438,7 +438,7 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
   ],
   laundry: [
     // 设计文档 docs/DESIGN_ROOM_LAYOUT.md §3.5 洗衣房布局
-    // 东墙机器 + 南墙储物柜 + 西南角盆栽 + 北墙挂钟
+    // 东墙机器 + 南墙储物柜 + 西南角盆栽 + 北墙挂钟 + 中央分拣区
     {
       id: 'decor-washer',
       position: { x: 1.5, y: 0, z: -0.5 },
@@ -453,12 +453,30 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       rotationY: ROT.FACE_NEG_X,
       modelAssetId: 'furniture/dryer',
     },
+    // 烘干机上方台面：放洗衣液（用 mug 模型）
+    {
+      id: 'decor-laundry-detergent',
+      position: { x: 1.5, y: 1.02, z: 0.5 },
+      size: { x: 0.08, y: 0.08, z: 0.08 },
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+      modelAssetId: 'food/mug',
+    },
     {
       id: 'decor-utility-shelf',
       position: { x: 1.5, y: 0, z: 1.5 },
       size: { x: 0.64, y: 0.64, z: 0.4 },
       rotationY: ROT.FACE_NEG_X,
       modelAssetId: 'furniture/bookcaseOpenLow',
+    },
+    // 置物架上面放几本书（说明书）
+    {
+      id: 'decor-laundry-books',
+      position: { x: 1.5, y: 0.64, z: 1.5 },
+      size: { x: 0.18, y: 0.13, z: 0.18 },
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+      modelAssetId: 'furniture/books',
     },
     // 储物柜：贴南墙 (0, 1.9)
     {
@@ -467,6 +485,31 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       size: { x: 0.8, y: 1.7, z: 0.5 },
       rotationY: ROT.FACE_PLUS_Z,
       modelAssetId: 'furniture/bookcaseClosed',
+    },
+    // 储物柜里放一个洗衣篮装饰
+    {
+      id: 'decor-laundry-bin',
+      position: { x: 0, y: 0.85, z: 1.9 },
+      size: { x: 0.2, y: 0.2, z: 0.2 },
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+    },
+    // 西墙折叠桌：分拣辅助台
+    {
+      id: 'decor-folding-table',
+      position: { x: -1.2, y: 0, z: -0.3 },
+      size: { x: 0.84, y: 0.33, z: 0.45 },
+      rotationY: ROT.FACE_PLUS_Z,
+      modelAssetId: 'furniture/sideTable',
+    },
+    // 折叠桌上放一个分类盘
+    {
+      id: 'decor-sorting-plate',
+      position: { x: -1.2, y: 0.33, z: -0.3 },
+      size: { x: 0.2, y: 0.03, z: 0.2 },
+      rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+      modelAssetId: 'food/plate',
     },
     // 西南角盆栽
     {
@@ -483,6 +526,14 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       position: { x: 0, y: 1.8, z: -2.1 },
       size: { x: 0.35, y: 0.35, z: 0.05 },
       rotationY: ROT.FACE_PLUS_Z,
+      collisionMode: 'none',
+    },
+    // 门旁墙面装饰：钩子挂一条毛巾（视觉提示区域）
+    {
+      id: 'decor-wall-hook-towel',
+      position: { x: -1.9, y: 1.2, z: 0.525 },
+      size: { x: 0.15, y: 0.4, z: 0.05 },
+      rotationY: ROT.FACE_PLUS_X,
       collisionMode: 'none',
     },
   ],

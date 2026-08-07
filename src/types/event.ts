@@ -41,7 +41,7 @@ export interface MovementEvent extends BaseEvent {
 /** 操作事件 */
 export interface ActionEvent extends BaseEvent {
   type: 'action'
-  action: 'pick' | 'place' | 'open' | 'close' | 'use'
+  action: 'pick' | 'place' | 'open' | 'close' | 'use' | 'drop'
   targetId: string
   result: 'success' | 'fail'
   reason?: string

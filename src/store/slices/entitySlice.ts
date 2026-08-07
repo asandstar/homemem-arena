@@ -16,6 +16,7 @@ export interface EntitySliceState {
 export interface EntitySliceActions {
   pickEntity: (entityId: string) => { success: boolean; reason?: string }
   placeEntity: (containerId: string) => { success: boolean; reason?: string }
+  dropEntity: () => { success: boolean; reason?: string }
   useContainer: (containerId: string) => { success: boolean; reason?: string }
   applyScriptedMove: (entityId: string, newRoom: RoomId, newPos: Vec3) => void
 }
@@ -351,6 +352,45 @@ export const createEntitySlice = (set: any, get: any): EntitySlice => ({
       )
     }
 
+    return { success: true }
+  },
+
+  dropEntity: () => {
+    const { heldEntityId, entities, currentRoom, robotPosition } = get()
+    if (!heldEntityId) return { success: false, reason: '手里没有东西' }
+
+    const heldEntity = entities.find((e: any) => e.id === heldEntityId)
+    if (!heldEntity) return { success: false, reason: '物体丢失' }
+
+    // 放在玩家当前位置前方的地面上
+    const dropPos: Vec3 = {
+      x: robotPosition.x,
+      y: 0,
+      z: robotPosition.z,
+    }
+
+    const updatedEntities = entities.map((e: any) =>
+      e.id === heldEntityId
+        ? {
+            ...e,
+            status: 'free' as const,
+            placedIn: undefined,
+            currentRoom,
+            position: dropPos,
+          }
+        : e,
+    )
+
+    set({
+      heldEntityId: null,
+      entities: updatedEntities,
+    })
+
+    get().showFeedback({
+      type: 'info',
+      message: `${heldEntity.name ?? '物品'}已放回地面`,
+    })
+    playSfx('pick')
     return { success: true }
   },
 

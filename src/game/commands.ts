@@ -11,7 +11,7 @@ type ActionName = ActionEvent['action']
 export interface GameCommandResult {
   success: boolean
   reason?: string
-  action?: ActionName | 'save-memory' | 'movement'
+  action?: ActionName | 'save-memory' | 'movement' | 'drop'
   slotIndex?: number
   isUpdate?: boolean
 }
@@ -307,4 +307,22 @@ export const executeRoomTransition = withCommandLock(function executeRoomTransit
   memories.forEach((memory) => useSessionStore.getState().addMemory(memory))
   processPostCommand()
   return { success: true, action: 'movement' }
+})
+
+export const executeDrop = withCommandLock(function executeDrop(): GameCommandResult {
+  const blocked = ensurePlaying()
+  if (blocked) return blocked
+
+  const gameStore = useGameStore.getState()
+  if (!gameStore.heldEntityId) {
+    return { success: false, reason: '手里没有东西', action: 'drop' }
+  }
+
+  const entity = gameStore.entities.find((e) => e.id === gameStore.heldEntityId)
+  const result = gameStore.dropEntity()
+  const step = advanceStep()
+  recordAction('drop', entity?.configId ?? '', result, gameStore.currentRoom, step)
+  processPostCommand()
+
+  return { ...result, action: 'drop' }
 })

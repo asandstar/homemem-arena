@@ -28,6 +28,13 @@ export const createMemorySlice = (set: any, get: any): MemorySliceState => ({
   saveMemory: (entity: EntityState) => {
     const { memorySlots, currentRoom, task } = get()
 
+    // 只允许保存任务物体的记忆，阻止保存装饰家具（沙发、桌子等）污染记忆槽
+    const taskObjectConfigIds = task?.objects?.map((o: any) => o.id) ?? []
+    const isTaskObject = taskObjectConfigIds.some((id: string) => id === entity.configId)
+    if (!isTaskObject) {
+      return { success: false, reason: '此物体无需记忆' }
+    }
+
     let placedInContainerName: string | null = null
     if (entity.placedIn) {
       const container = task?.containers.find((c: any) => c.id === entity.placedIn)

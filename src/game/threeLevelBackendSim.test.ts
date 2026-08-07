@@ -296,14 +296,14 @@ describe('三关后端模拟实玩 & 证据链', () => {
       expect.arrayContaining(['cnt-white-basket', 'cnt-dark-basket', 'cnt-towel-basket']),
     )
 
-    // 物体初始位置（laundry 房间局部坐标）
+    // 物体初始位置（laundry 房间局部坐标）—— 已改为散布布局增加空间记忆负荷
     const cfgLocal: Record<string, { x: number; z: number }> = {
-      'obj-white-1': { x: -1.2, z: 1.0 },
-      'obj-white-2': { x: -1.2, z: 1.4 },
-      'obj-dark-1': { x: 0, z: 1.0 },
-      'obj-dark-2': { x: 0, z: 1.4 },
-      'obj-towel-1': { x: 1.2, z: 1.0 },
-      'obj-towel-2': { x: 1.2, z: 1.4 },
+      'obj-white-1': { x: -0.8, z: 0.8 },
+      'obj-white-2': { x: 0.5, z: 1.6 },
+      'obj-dark-1': { x: 1.0, z: 0.6 },
+      'obj-dark-2': { x: -0.5, z: 1.4 },
+      'obj-towel-1': { x: 0.8, z: 1.2 },
+      'obj-towel-2': { x: -1.0, z: 1.0 },
     }
     const cfgBucket: Record<string, string> = {
       'obj-white-1': 'cnt-white-basket',
@@ -365,6 +365,18 @@ describe('三关后端模拟实玩 & 证据链', () => {
       expect(useGameStore.getState().heldEntityId).toBeNull()
     }
 
+    // ========== 阶段 4：验证阶段 ==========
+    // 所有衣物放置完毕后，应自动进入 stage-memory-verification
+    evalAndCheck('L3-VERIFY-STAGE-CHECK')
+    const preVerifyState = useGameStore.getState()
+    di('L3-VERIFY-STAGE-ID', preVerifyState.currentStageId)
+    // 确认已进入验证阶段
+    expect(preVerifyState.currentStageId).toBe('stage-memory-verification')
+
+    // 移动到折叠桌验证区（西墙 x≈-1.2, z≈-0.3，本地坐标）
+    di('L3-VERIFY-move-to-zone', setRobotAt(task, { x: -1.2, z: -0.3 }))
+    evalAndCheck('L3-VERIFY-AFTER-MOVE-TO-ZONE')
+
     // ========== 最终判定 ==========
     for (let i = 0; i < 8; i++) evalAndCheck(`L3-FINAL-pass-${i}`)
     const finalState = useGameStore.getState()
@@ -375,12 +387,13 @@ describe('三关后端模拟实玩 & 证据链', () => {
       stageId: finalState.currentStageId,
       phase: finalState.phase,
     })
-    // 六个目标全部达成
+    // 七个目标全部达成（六件分拣 + 记忆验证）
     expect(finalState.achievedGoalIds).toEqual(
       new Set([
         'g-white-1-basket', 'g-white-2-basket',
         'g-dark-1-basket', 'g-dark-2-basket',
         'g-towel-1-basket', 'g-towel-2-basket',
+        'g-memory-verification',
       ]),
     )
     expect(finalState.levelCompleted).toBe(true)

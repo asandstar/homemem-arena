@@ -235,6 +235,9 @@ export function HUD() {
   if (!shouldHideInteractHint) {
     if (heldEntity && nearbyContainer) {
       itemActionLabel = `放入 ${nearbyContainer.name}`
+    } else if (heldEntity && !nearbyContainer) {
+      // 持物无容器 → 显示放回地面选项
+      itemActionLabel = `放回地面（丢弃 ${heldEntity.name}）`
     } else if (!heldEntity && nearbyEntity) {
       if (l1TeachStage && taskObjectIds.includes(nearbyEntity.configId)) {
         itemActionLabel = `拾取 ${nearbyEntity.name}`
@@ -906,7 +909,7 @@ export function HUD() {
         </div>
       )}
 
-      {phase === 'playing' && (itemActionLabel || memoryActionLabel || nearbyEntity) && (
+      {phase === 'playing' && (itemActionLabel || memoryActionLabel || nearbyEntity || heldEntity) && (
         <div className="absolute bottom-4 right-4 pointer-events-none flex flex-col items-end gap-1 z-10">
           {/* Sprint B.1: F 交互动作（拾取/打开/放置）按阶段定制，含禁用原因 */}
           {itemActionLabel && (

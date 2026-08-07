@@ -28,6 +28,7 @@ import {
 } from '../../game/collision'
 import {
   executeContainerInteraction,
+  executeDrop,
   executePick,
   executeRoomTransition,
   executeSaveMemory,
@@ -210,7 +211,13 @@ export function FirstPersonControls() {
                 addToast('error', result.reason)
               }
             } else {
-              addToast('info', '附近没有可放置的容器')
+              // 附近没有容器 → 丢弃物品到地面（解决持物死锁）
+              const result = executeDrop()
+              if (result.success) {
+                const gs = useGameStore.getState()
+                const entity = gs.entities.find((e) => e.id === heldEntityId)
+                addToast('info', `已放回地面${entity ? `：${entity.name}` : ''}`)
+              }
             }
           } else {
             const entity = findNearbyEntity()
@@ -537,16 +544,14 @@ export function FirstPersonControls() {
     camera.updateProjectionMatrix()
 
     if (isPlaying) {
-      const yawDiff = Math.abs(targetYawRef.current - lastSyncedYawRef.current)
-      const pitchDiff = Math.abs(targetPitchRef.current - lastSyncedPitchRef.current)
-      if (yawDiff > ROTATION_SYNC_THRESHOLD || pitchDiff > ROTATION_SYNC_THRESHOLD) {
-        useGameStore.setState({
-          robotRotation: targetYawRef.current,
-          cameraPitch: targetPitchRef.current,
-        })
-        lastSyncedYawRef.current = targetYawRef.current
-        lastSyncedPitchRef.current = targetPitchRef.current
-      }
+      // 无条件同步 robotRotation/cameraPitch 到 store，
+      // 确保小地图箭头与实际相机朝向严格一致，避免 90° 偏差
+      useGameStore.setState({
+        robotRotation: targetYawRef.current,
+        cameraPitch: targetPitchRef.current,
+      })
+      lastSyncedYawRef.current = targetYawRef.current
+      lastSyncedPitchRef.current = targetPitchRef.current
     }
 
     if (!isPlaying) return

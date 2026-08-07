@@ -199,7 +199,8 @@ export function ArenaPage() {
       triggerDialog('roomEnter', currentRoom)
       if (audioEnabled) {
         void resumeAudioContexts()
-        playRoomAmbient(currentRoom, { forceRestart: false })
+        // 任务进行中不播放房间环境音，避免与 BGM 冲突
+        // BGM 由下方 effect（chaosValue/task）统一调度
       }
     }
   }, [currentRoom, phase, briefingOpen, audioEnabled, triggerDialog])
