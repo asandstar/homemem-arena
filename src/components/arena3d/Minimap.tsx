@@ -496,7 +496,7 @@ export function Minimap({
       const worldX = roomCenterX + Number(c.position?.x ?? 0)
       const worldZ = roomCenterZ + Number(c.position?.z ?? 0)
       const cx = worldX * scale + offsetX
-      const cy = -worldZ * scale + offsetY
+      const cy = worldZ * scale + offsetY
       const sx = Number(c.size?.x ?? 0)
       const sz = Number(c.size?.z ?? 0)
       const w = Math.max(8, sx * scale)
@@ -681,12 +681,12 @@ export function Minimap({
     const arrowLen = 13
     const aw = 5.2
     const fx = robotX + Math.sin(robotRotation) * arrowLen
-    const fy = robotY - Math.cos(robotRotation) * arrowLen
+    const fy = robotY + Math.cos(robotRotation) * arrowLen
     // 左/右舷
     const leftX = robotX + Math.sin(robotRotation - Math.PI / 2) * aw
-    const leftY = robotY - Math.cos(robotRotation - Math.PI / 2) * aw
+    const leftY = robotY + Math.cos(robotRotation - Math.PI / 2) * aw
     const rightX = robotX + Math.sin(robotRotation + Math.PI / 2) * aw
-    const rightY = robotY - Math.cos(robotRotation + Math.PI / 2) * aw
+    const rightY = robotY + Math.cos(robotRotation + Math.PI / 2) * aw
     ctx.beginPath()
     ctx.moveTo(fx, fy)
     ctx.lineTo(leftX, leftY)
