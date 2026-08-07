@@ -281,37 +281,47 @@ export function ArenaPage() {
     }
 
     if (closeDialog) closeDialog()
-    if (typeof initializeTask === 'function') {
-      initializeTask(taskId)
-    } else {
-      // 兜底：懒加载首帧 selector snapshot 可能短暂拿 undefined，
-      // 直接通过 zustand 静态方法 .getState() 拿到真实 action，彻底绕开首帧 null 问题。
-      try {
-        const s = useGameStore.getState() as any
-        if (typeof s?.initializeTask === 'function') {
-          console.log('[ARENA EFFECT #1 FALLBACK] 使用 getState().initializeTask 绕过首帧 null')
-          s.initializeTask(taskId)
-        } else {
-          // 再兜底：用 setTimeout 延迟一帧重试（首帧 store 可能尚未 hydrate）
-          console.warn('[ARENA EFFECT #1 RETRY] getState() 无 initializeTask，延迟 0ms 重试. keys=', Object.keys(s ?? {}))
-          requestAnimationFrame(() => {
-            try {
-              const s2 = useGameStore.getState() as any
-              if (typeof s2?.initializeTask === 'function') {
-                console.log('[ARENA EFFECT #1 RETRY] 下一帧成功拿到 initializeTask')
-                s2.initializeTask(taskId)
-              } else {
-                console.error('[ARENA EFFECT #1 FATAL] 重试后仍无 initializeTask. keys=', Object.keys(s2 ?? {}))
-              }
-            } catch (e2) {
-              console.error('[ARENA EFFECT #1 FATAL] 重试抛异常:', e2)
+    
+    // 修复：更健壮的 initializeTask 重试逻辑
+    const maxRetries = 10
+    let retries = 0
+    
+    const tryInitialize = () => {
+      const s = useGameStore.getState() as any
+      if (typeof s?.initializeTask === 'function') {
+        console.log('[ARENA EFFECT #1] initializeTask 成功获取并调用')
+        s.initializeTask(taskId)
+        return
+      }
+      
+      retries++
+      if (retries < maxRetries) {
+        console.warn(`[ARENA EFFECT #1] 第 ${retries} 次重试获取 initializeTask...`)
+        requestAnimationFrame(tryInitialize)
+      } else {
+        console.error('[ARENA EFFECT #1 FATAL] 多次重试后仍无法 initializeTask，尝试强制初始化')
+        // 强制降级：即使初始化失败，也尝试直接设置 phase
+        try {
+          const s2 = useGameStore.getState() as any
+          // 尝试手动设置 phase 为 idle，让 UI 不再卡在"准备中"
+          if (typeof s2?.setGamePhase === 'function') {
+            s2.setGamePhase('idle')
+          }
+          // 手动设置一个基本的 task 状态
+          if (typeof s2?.setTask === 'function') {
+            const taskData = (window as any).__currentTask
+            if (taskData) {
+              s2.setTask(taskData)
             }
-          })
+          }
+        } catch (e) {
+          console.error('[ARENA EFFECT #1 FATAL] 强制初始化也失败:', e)
         }
-      } catch (e) {
-        console.error('[ARENA EFFECT #1 FATAL] fallback initializeTask 抛异常:', e)
       }
     }
+    
+    // 开始第一次尝试
+    tryInitialize()
 
     // "继续"进入：restoreSave 覆盖 initializeTask 的默认状态，然后跳过 briefing 直接进入 playing
     // 若存档校验失败（version/hash 不一致），hasSavedGame 会返回 false，照常显示 briefing 重新开始

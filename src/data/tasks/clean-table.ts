@@ -35,8 +35,8 @@ export const cleanTableTask: TaskConfig = {
   iconKey: 'dish',
   tags: ['新手入门', '符号记忆'],
   timeLimit: 240,
-  spawnPosition: { x: 0, z: -2.0 },
-  spawnRotation: Math.PI,
+  spawnPosition: { x: 0, z: -1.5 },
+  spawnRotation: 0,
   initialStageId: STAGE_ID_OBSERVE,
 
   stages: [

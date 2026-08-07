@@ -64,7 +64,7 @@ export const leaveHomeTask: TaskConfig = {
   systemPrompt:
     '【MEM-07 日志】任务：协助主人完成睡前仪式。三件物品均在客厅茶几上：书、杯子、小熊。主人睡前仪式顺序：📖书→书架 → ☕杯子→床头柜 → 🧸小熊→床（Procedural Memory 动作序列，REPRODUCE 阶段按序放置到目标区）。策略：先观看示范，再按序拾取并放置。放错顺序会被拒绝并保持手持，可放回茶几换手重试。',
   timeLimit: 180,
-  spawnPosition: { x: 0, z: -1.5 },
+  spawnPosition: { x: -0.5, z: 1.5 },
   spawnRotation: Math.PI,
 
   stages: [

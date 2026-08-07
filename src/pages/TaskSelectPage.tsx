@@ -40,8 +40,10 @@ export function TaskSelectPage() {
   // 所有 useGameStore selector 统一加可选链 + 下方 useEffect/callback 做 typeof 检查。
   const initializeProgress = useGameStore((s) => s?.initializeProgress)
   const getLevelProgress = useGameStore((s) => s?.getLevelProgress)
-  const isLevelUnlocked = useGameStore((s) => s?.isLevelUnlocked)
   const levelProgress = useGameStore((s) => s?.levelProgress ?? (SAFE_EMPTY_OBJECT as Record<string, any>))
+
+  // 新增：用 state 存储解锁状态，避免 React 首帧 null 导致的解锁判断错误
+  const [unlockedMap, setUnlockedMap] = useState<Record<string, boolean>>({})
 
   // hasSavedGame 做的是 localStorage 同步读，挂 component 内的 useMemo 即可；
   // 额外依赖 remountTrigger 让"继续失败后 fallback 清空存档"能立刻移除按钮。
@@ -68,6 +70,21 @@ export function TaskSelectPage() {
     if (typeof initializeProgress !== 'function') return
     initializeProgress(publicTaskTemplates.map((t) => t.id))
   }, [initializeProgress, publicTaskTemplates])
+
+  // 新增：用 getState() 获取真实的解锁状态，绕过 React 首帧 null 的问题
+  useEffect(() => {
+    // 用 getState() 绕过 React 首帧 null 的问题
+    const state = useGameStore.getState()
+    const map: Record<string, boolean> = {}
+    publicTaskTemplates.forEach((t) => {
+      if (typeof state.isLevelUnlocked === 'function') {
+        map[t.id] = state.isLevelUnlocked(t.id, unlockOrder)
+      } else {
+        map[t.id] = true // 默认解锁
+      }
+    })
+    setUnlockedMap(map)
+  }, [publicTaskTemplates, unlockOrder])
 
   const handleStart = (taskId: string) => {
     // 点"开始任务" → 清掉可能残留的 sessionStorage 标记，避免 ArenaPage 当成继续入口
@@ -188,11 +205,10 @@ export function TaskSelectPage() {
             {publicTaskTemplates.map((task, index) => {
               const progress = typeof getLevelProgress === 'function'
                 ? getLevelProgress(task.id)
-                : { taskId: task.id, unlocked: index === 0, completed: false, rank: null, bestScore: 0, completionTime: null, attempts: 0 }
-              // 隐藏关卡：始终用 PUBLIC_ORDER + HIDDEN 的完整顺序作为解锁序列
-              const unlocked = typeof isLevelUnlocked === 'function'
-                ? isLevelUnlocked(task.id, unlockOrder)
-                : index === 0
+                : { taskId: task.id, unlocked: true, completed: false, rank: null, bestScore: 0, completionTime: null, attempts: 0 }
+              // 修复：使用 unlockedMap state 而非 isLevelUnlocked selector
+              // 避免 React 首帧 null 导致的解锁判断错误
+              const unlocked = unlockedMap[task.id] ?? true
               const isHidden = isHiddenTaskId(task.id)
               const isNext = index === nextIndex && unlocked && !progress.completed
               const isCompleted = progress.completed
