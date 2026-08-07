@@ -39,3 +39,7 @@ node_modules/.tmp/
 
 _patches/
 .vercel
+
+# 资产审计目录（运行时模型已在 public/assets/models/kenney/，审计产物保留在本地）
+homemem-arena-asset-audit-2026-08-03/
+*.zip
