@@ -48,21 +48,22 @@ export const nightPatrolTask: TaskConfig = {
   iconKey: 'door',
   tags: ['深夜巡逻', '视野受限', '空间记忆', '时间记忆', '随机事件'],
   timeLimit: 300,
-  spawnPosition: { x: 0, z: -1.5 },
-  spawnRotation: Math.PI,
+  // 出生在 dining 东南角（距两墙各 0.5m），朝西北对角线方向
+  spawnPosition: { x: 2.2, z: 2.1 },
+  spawnRotation: -Math.PI / 4,
   initialStageId: STAGE_ID_PATROL_FIRST_TWO,
 
   stages: [
     {
       id: STAGE_ID_PATROL_FIRST_TWO,
-      playerObjective: '巡查客厅与卧室，找到遥控器和手机归位。',
+      playerObjective: '巡查客厅与卧室，找到收音机和马克杯归位。',
       entryCondition: () => true,
       completionCondition: (ctx: StageContext) => remotePhonePlaced(ctx),
       nextStage: STAGE_ID_UPDATE_UMBRELLA_AFTER_WIND,
     },
     {
       id: STAGE_ID_UPDATE_UMBRELLA_AFTER_WIND,
-      playerObjective: '窗户晃动震飞了雨伞！在客厅找到它的新位置。',
+      playerObjective: '窗户晃动震飞了玩具熊！在客厅找到它的新位置。',
       entryCondition: (ctx: StageContext) =>
         ctx.triggeredEvents.has('se-window-rattle') ||
         (remotePhonePlaced(ctx) &&
@@ -72,7 +73,7 @@ export const nightPatrolTask: TaskConfig = {
     },
     {
       id: STAGE_ID_FINALIZE_PATROL,
-      playerObjective: '找到碗和雨伞，确认 4/4 物品全部归位。',
+      playerObjective: '找到盘子和玩具熊，确认 4/4 物品全部归位。',
       entryCondition: (ctx: StageContext) => remotePhonePlaced(ctx),
       completionCondition: (ctx: StageContext) =>
         allFourPlaced(ctx) &&
@@ -89,10 +90,10 @@ export const nightPatrolTask: TaskConfig = {
 MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被气流或电器震动移位。」
 
 📋 巡查清单（找到每件物品并放回归属位以确认）：
-  🎮 遥控器 → 归属：客厅茶几
-  📱 手机   → 归属：卧室床头柜
-  🥣 碗     → 归属：厨房台面
-  ☂️ 雨伞   → 归属：玄关伞架
+  📻 收音机 → 归属：客厅茶几
+  ☕ 马克杯 → 归属：卧室床头柜
+  🍽️ 盘子   → 归属：厨房台面
+  🧸 玩具熊 → 归属：玄关柜
 
 ⚠️ 黑暗中视野受限，只能看清眼前的物体。
 💡 屏幕边缘的方向指示会标记待确认物品的位置——跟着它巡查每个房间。
@@ -104,43 +105,47 @@ MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被
   objects: [
     {
       id: 'obj-remote',
-      name: '遥控器',
+      name: '收音机',
       category: 'remote',
       initialRoom: 'bedroom',
       initialPosition: { x: -1.5, y: 0, z: -1.0 },
-      size: { x: 0.18, y: 0.05, z: 0.05 },
+      size: { x: 0.567, y: 0.411, z: 0.176 },
       color: '#1f2937',
       stateProperties: { displaced: true, homeRoom: 'living' },
+      modelAssetId: 'furniture/radio',
     },
     {
       id: 'obj-phone',
-      name: '手机',
+      name: '马克杯',
       category: 'phone',
       initialRoom: 'dining',
       initialPosition: { x: -2.0, y: 0, z: 1.5 },
-      size: { x: 0.08, y: 0.16, z: 0.015 },
+      size: { x: 0.1, y: 0.1, z: 0.1 },
       color: '#1f2937',
       stateProperties: { displaced: true, homeRoom: 'bedroom' },
+      modelAssetId: 'food/mug',
     },
     {
       id: 'obj-bowl',
-      name: '碗',
+      name: '盘子',
       category: 'bowl',
       initialRoom: 'dining',
       initialPosition: { x: -2.0, y: 0, z: -1.5 },
-      size: { x: 0.15, y: 0.08, z: 0.15 },
+      size: { x: 0.18, y: 0.018, z: 0.18 },
       color: '#fbbf24',
       stateProperties: { displaced: true, homeRoom: 'dining' },
+      modelAssetId: 'food/plate',
     },
     {
       id: 'obj-umbrella',
-      name: '雨伞',
+      name: '玩具熊',
       category: 'umbrella',
       initialRoom: 'living',
       initialPosition: { x: -2.5, y: 0, z: -2.0 },
-      size: { x: 0.1, y: 1.0, z: 0.1 },
+      size: { x: 0.312, y: 0.36, z: 0.198 },
       color: '#ef4444',
       stateProperties: { displaced: true, homeRoom: 'entrance' },
+      modelAssetId: 'furniture/bear',
     },
   ],
 
@@ -149,27 +154,30 @@ MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被
       id: 'cnt-patrol-coffee-table',
       name: '客厅茶几',
       room: 'living',
-      position: { x: -2.0, y: 0.2, z: -1.7 }, // 西南角，远离3个门target（0.95,-0.375 / 0,2.05 / 1.85,0）
+      position: { x: -2.0, y: 0.2, z: -1.7 },
       size: { x: 1.4, y: 0.45, z: 0.7 },
       surfaceHeight: 0.45,
       color: '#8b5a2b',
       initialOpen: true,
       acceptedCategories: ['remote'],
       isTargetZone: true,
-      targetLabel: '客厅茶几（遥控器确认位）',
+      targetLabel: '客厅茶几（收音机确认位）',
+      modelAssetId: 'furniture/tableCoffee',
     },
     {
       id: 'cnt-patrol-nightstand',
       name: '卧室床头柜',
       room: 'bedroom',
-      position: { x: -1.5, y: 0.3, z: -1.5 },
+      // 匹配 decor-nightstand-left 新位置 (x=-1.25, z=-1.9)
+      position: { x: -1.25, y: 0, z: -1.9 },
       size: { x: 0.55, y: 0.55, z: 0.45 },
-      surfaceHeight: 0.55,
+      surfaceHeight: 0.605,
       color: '#a16207',
       initialOpen: true,
       acceptedCategories: ['phone'],
       isTargetZone: true,
-      targetLabel: '卧室床头柜（手机确认位）',
+      targetLabel: '卧室床头柜（马克杯确认位）',
+      modelAssetId: 'furniture/cabinetBedDrawer',
     },
     {
       id: 'cnt-patrol-kitchen-counter',
@@ -177,68 +185,70 @@ MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被
       room: 'dining',
       position: { x: -1.2, y: 0.45, z: -1.9 },
       size: { x: 1.5, y: 0.7, z: 0.6 },
-      surfaceHeight: 0.7,
+      surfaceHeight: 0.563,
       color: '#94a3b8',
       initialOpen: true,
       acceptedCategories: ['bowl'],
       isTargetZone: true,
-      targetLabel: '厨房台面（碗确认位）',
+      targetLabel: '厨房台面（盘子确认位）',
+      modelAssetId: 'furniture/kitchenCabinetDrawer',
     },
     {
       id: 'cnt-patrol-umbrella-stand',
-      name: '玄关伞架',
+      name: '玄关柜',
       room: 'entrance',
-      position: { x: 0.8, y: 0.3, z: 1.3 },
-      size: { x: 0.3, y: 0.6, z: 0.3 },
+      position: { x: -0.8, y: 0, z: -1.2 },
+      size: { x: 0.6, y: 0.6, z: 0.4 },
       surfaceHeight: 0.6,
       color: '#475569',
       initialOpen: true,
       acceptedCategories: ['umbrella'],
       isTargetZone: true,
-      targetLabel: '玄关伞架（雨伞确认位）',
+      targetLabel: '玄关柜（玩具熊确认位）',
+      modelAssetId: 'furniture/sideTableDrawers',
     },
   ],
 
   goals: [
     {
       id: 'g-confirm-remote',
-      description: '找到遥控器并放回客厅茶几确认归位',
+      description: '找到收音机并放回客厅茶几确认归位',
       memoryType: 'spatial',
       predicate: (entities: EntityStateSnapshot[]) => {
         const remote = entities.find((e) => e.configId === 'obj-remote')
         return remote?.placedIn === 'cnt-patrol-coffee-table'
       },
-      achievedMessage: '遥控器已确认归位！',
+      achievedMessage: '收音机已确认归位！',
     },
     {
       id: 'g-confirm-phone',
-      description: '找到手机并放回卧室床头柜确认归位',
+      description: '找到马克杯并放回卧室床头柜确认归位',
       memoryType: 'spatial',
       predicate: (entities: EntityStateSnapshot[]) => {
         const phone = entities.find((e) => e.configId === 'obj-phone')
         return phone?.placedIn === 'cnt-patrol-nightstand'
       },
-      achievedMessage: '手机已确认归位！',
+      achievedMessage: '马克杯已确认归位！',
     },
     {
       id: 'g-confirm-bowl',
-      description: '找到碗并放回厨房台面确认归位',
+      description: '找到盘子并放回厨房台面确认归位',
       memoryType: 'spatial',
       predicate: (entities: EntityStateSnapshot[]) => {
         const bowl = entities.find((e) => e.configId === 'obj-bowl')
         return bowl?.placedIn === 'cnt-patrol-kitchen-counter'
       },
-      achievedMessage: '碗已确认归位！',
+      achievedMessage: '盘子已确认归位！',
     },
     {
       id: 'g-confirm-umbrella',
-      description: '找到雨伞并放回玄关伞架确认归位',
+      description: '找到玩具熊并放回玄关柜确认归位',
       memoryType: 'temporal',
       predicate: (entities: EntityStateSnapshot[]) => {
         const umbrella = entities.find((e) => e.configId === 'obj-umbrella')
         return umbrella?.placedIn === 'cnt-patrol-umbrella-stand'
       },
-      achievedMessage: '雨伞已确认归位！',
+      achievedMessage: '玩具熊已确认归位！',
     },
   ],
 
@@ -276,7 +286,7 @@ MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被
       type: 'move-entity',
       targetId: 'obj-umbrella',
       targetPosition: { room: 'living', x: -2.5, y: 0, z: 2.0 },
-      message: '🪟 砰——窗户被夜风吹得猛晃一下！客厅那把雨伞被震得滚到了房间另一侧。\n💡 提示：雨伞被吹到客厅另一侧了！',
+      message: '🪟 砰——窗户被夜风吹得猛晃一下！客厅的玩具熊被震得滚到了房间另一侧。\n💡 提示：玩具熊被吹到客厅另一侧了！',
       description: '窗户晃动把客厅的雨伞震到了房间另一侧',
       memoryType: 'spatial',
       markMemoryOutdated: 'obj-umbrella',
@@ -331,8 +341,8 @@ MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被
     {
       id: 'p-spatial-remote-home',
       type: 'location',
-      question: '🎮 遥控器的归属位（确认位）在哪里？',
-      options: ['客厅茶几', '卧室床头柜', '厨房台面', '玄关伞架'],
+      question: '📻 收音机的归属位（确认位）在哪里？',
+      options: ['客厅茶几', '卧室床头柜', '厨房台面', '玄关柜'],
       correctAnswer: '客厅茶几',
       dependsOnMemoryType: 'spatial',
       difficulty: 'medium',
@@ -341,7 +351,7 @@ MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被
     {
       id: 'p-spatial-phone-found',
       type: 'location',
-      question: '📱 手机被打乱到了哪个房间？',
+      question: '☕ 马克杯被打乱到了哪个房间？',
       options: ['客厅', '卧室', '厨房', '餐厅'],
       correctAnswer: '厨房',
       dependsOnMemoryType: 'spatial',
@@ -351,9 +361,9 @@ MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被
     {
       id: 'p-spatial-umbrella-home',
       type: 'location',
-      question: '☂️ 雨伞应该确认归位到哪里？',
-      options: ['客厅茶几', '玄关伞架', '餐厅餐桌', '厨房台面'],
-      correctAnswer: '玄关伞架',
+      question: '🧸 玩具熊应该确认归位到哪里？',
+      options: ['客厅茶几', '玄关柜', '餐厅餐桌', '厨房台面'],
+      correctAnswer: '玄关柜',
       dependsOnMemoryType: 'spatial',
       difficulty: 'medium',
       relatedObjectIds: ['obj-umbrella'],
@@ -362,8 +372,8 @@ MEM-07：「检测到夜间异常：4 件物品偏离了归属位置，疑似被
       id: 'p-temporal-window-event',
       type: 'state',
       question: '🪟 窗户晃动事件影响了哪件物品？',
-      options: ['遥控器', '手机', '雨伞', '杯子'],
-      correctAnswer: '雨伞',
+      options: ['收音机', '马克杯', '玩具熊', '盘子'],
+      correctAnswer: '玩具熊',
       dependsOnMemoryType: 'temporal',
       difficulty: 'medium',
       relatedObjectIds: ['obj-umbrella'],

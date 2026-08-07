@@ -78,19 +78,19 @@ export interface TaskPresentation {
 export const taskPresentationById: Record<string, TaskPresentation> = {
   'task-clean-table': {
     role: 'tutorial',
-    shortDescription: '学习基本操作——移动、拾取、放置、保存记忆',
+    shortDescription: '把 9 件餐具按类别归位：杯勺→水槽，盘叉→橱柜',
     estimatedMinutes: 2,
     emoji: '🍽️',
   },
   'task-leave-home': {
     role: 'semifinal-core',
-    shortDescription: '找钥匙、手机、雨伞，小心猫咪把钥匙推到地上',
+    shortDescription: '钥匙猫把书、杯子、小熊、收音机藏到全屋，90秒内找回放回茶几',
     estimatedMinutes: 4,
     emoji: '🚪',
   },
   'task-laundry-sort': {
     role: 'challenge',
-    shortDescription: '衣物分类大作战，幽灵会交换篮子位置、藏起袜子',
+    shortDescription: '六件衣物三类分拣，篮子会被交换位置——靠颜色而非位置记忆',
     estimatedMinutes: 5,
     emoji: '👕',
   },
