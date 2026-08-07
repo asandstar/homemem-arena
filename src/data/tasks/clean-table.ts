@@ -44,7 +44,7 @@ export const cleanTableTask: TaskConfig = {
   iconKey: 'dish',
   tags: ['新手入门', '程序记忆', '基础交互'],
   // L1 无时限：鼓励玩家慢慢探索，不设 timeLimit
-  // 出生在 dining 西北角（距两墙各 0.5m），朝东南对角线方向 → 翻转 180° 后朝东北，直面餐桌+厨房任务区
+  // 出生在 dining 西北角（距两墙各 0.5m），翻转 180° 后朝东南，能看到餐桌+厨房任务区
   spawnPosition: { x: -2.2, z: -2.1 },
   spawnRotation: (3 * Math.PI) / 4,
 
@@ -200,8 +200,9 @@ MEM-07：「校准进度 87%……动作序列模块已就绪。移动、拾取�
       name: '厨房水槽',
       room: 'dining',
       // 对齐 decor-kit-sink (0, 0, -2.1)；不设 modelAssetId，由 decor 承担 GLB 视觉
+      // size.z 缩到 0.3 以避免碰撞盒越界出 dining 房间（z∈[-2.25,2.25]）
       position: { x: SINK_POS.x, y: 0, z: SINK_POS.z },
-      size: { x: 0.4, y: 0.05, z: 0.3 },
+      size: { x: 0.538, y: 0.613, z: 0.30 },
       surfaceHeight: 0.613,
       color: '#a3a3a3',
       initialOpen: true,
@@ -214,8 +215,9 @@ MEM-07：「校准进度 87%……动作序列模块已就绪。移动、拾取�
       name: '橱柜',
       room: 'dining',
       // 对齐 decor-kit-cabinet-1 (-0.6, 0, -2.1)；不设 modelAssetId，由 decor 承担 GLB 视觉
+      // size.z 缩到 0.3 以避免碰撞盒越界出 dining 房间（z∈[-2.25,2.25]）
       position: { x: CABINET_POS.x, y: 0, z: CABINET_POS.z },
-      size: { x: 0.4, y: 0.05, z: 0.3 },
+      size: { x: 0.538, y: 0.563, z: 0.30 },
       surfaceHeight: 0.563,
       color: '#92400e',
       initialOpen: true,

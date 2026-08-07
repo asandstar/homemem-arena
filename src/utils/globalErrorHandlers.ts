@@ -78,11 +78,12 @@ export function installGlobalErrorHandlers() {
       console.error('[GlobalError] unhandledrejection:', reason)
       pushLog('rejection', reason)
 
-      // AudioContext 恢复失败 / Three.js 上下文丢失：静默忽略，后续 UI 层有独立兜底
+      // AudioContext 恢复失败 / Three.js 上下文丢失 / Pointer Lock 退出：静默忽略，后续 UI 层有独立兜底
       if (
         reason.includes('AudioContext') ||
         reason.includes('WebGL context') ||
-        reason.includes('pointer lock')
+        reason.includes('pointer lock') ||
+        reason.includes('exited the lock')
       ) {
         return
       }

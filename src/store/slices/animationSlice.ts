@@ -8,13 +8,15 @@ export interface MoveAnimation {
   startTime: number
   duration: number
   isActive: boolean
+  /** 可选：动画完成后将实体设为 hidden 在此容器内（用于 move-entity + targetContainerId） */
+  targetContainerId?: string
 }
 
 export interface AnimationSlice {
   moveAnimations: MoveAnimation[]
   lastMoveAnimation: MoveAnimation | null
 
-  startMoveAnimation: (entityId: string, toRoom: RoomId, toPos: Vec3) => void
+  startMoveAnimation: (entityId: string, toRoom: RoomId, toPos: Vec3, targetContainerId?: string) => void
   updateMoveAnimations: () => void
 }
 
@@ -22,7 +24,7 @@ export const createAnimationSlice = (set: any, get: any): AnimationSlice => ({
   moveAnimations: [],
   lastMoveAnimation: null,
 
-  startMoveAnimation: (entityId: string, toRoom: RoomId, toPos: Vec3) => {
+  startMoveAnimation: (entityId: string, toRoom: RoomId, toPos: Vec3, targetContainerId?: string) => {
     const entity = get().entities.find((e: any) => e.configId === entityId)
     if (!entity) return
 
@@ -35,6 +37,7 @@ export const createAnimationSlice = (set: any, get: any): AnimationSlice => ({
       startTime: Date.now(),
       duration,
       isActive: true,
+      targetContainerId,
     }
 
     set((state: any) => ({
@@ -82,13 +85,40 @@ export const createAnimationSlice = (set: any, get: any): AnimationSlice => ({
         }))
         stillActive.push(anim)
       } else {
-        set((state: any) => ({
-          entities: state.entities.map((e: any) =>
-            e.configId === anim.entityId
-              ? { ...e, position: anim.toPosition, currentRoom: anim.toRoom, properties: { ...e.properties, _moving: false } }
-              : e
-          ),
-        }))
+        // 动画完成：如果指定了 targetContainerId，将实体设为 hidden 在该容器内
+        if (anim.targetContainerId) {
+          set((state: any) => ({
+            entities: state.entities.map((e: any) =>
+              e.configId === anim.entityId
+                ? {
+                    ...e,
+                    position: anim.toPosition,
+                    currentRoom: anim.toRoom,
+                    status: 'hidden' as const,
+                    placedIn: anim.targetContainerId,
+                    hiddenInContainer: anim.targetContainerId,
+                    properties: { ...e.properties, _moving: false },
+                  }
+                : e
+            ),
+            containerStates: Object.fromEntries(
+              Object.entries(state.containerStates).map(([id, cs]: [string, any]) => [
+                id,
+                id === anim.targetContainerId
+                  ? { ...cs, containedIds: [...(cs.containedIds ?? []), anim.entityId] }
+                  : cs,
+              ]),
+            ),
+          }))
+        } else {
+          set((state: any) => ({
+            entities: state.entities.map((e: any) =>
+              e.configId === anim.entityId
+                ? { ...e, position: anim.toPosition, currentRoom: anim.toRoom, properties: { ...e.properties, _moving: false } }
+                : e
+            ),
+          }))
+        }
       }
     }
 

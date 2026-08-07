@@ -12,9 +12,9 @@ import { useToastStore } from '../store/useToastStore'
 import { useUiStore } from '../store/useUiStore'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
-import { initAudio, resetRoomAmbientFlag, updateChaosAmbient as updateChaosAmbientSfx } from '../audio/sfx'
+import { initAudio, resetRoomAmbientFlag, updateChaosAmbient as updateChaosAmbientSfx, stopChaosAmbient } from '../audio/sfx'
 import { resetArenaCleanupFlag, updateBgmState, playBgm, stopBgm } from '../audio/bgm'
-import { stopAmbient } from '../audio/ambient'
+import { stopAmbient, stopAmbientImmediate } from '../audio/ambient'
 import { stopAllAudioImmediate, resumeAudioContexts } from '../audio/audioManager'
 import { executeContainerInteraction, executePick } from '../game/commands'
 import { getTaskById, isHiddenTaskId, PUBLIC_LEVEL_ORDER } from '../data/tasks'
@@ -198,9 +198,11 @@ export function ArenaPage() {
     if (phase === 'playing' && !briefingOpen) {
       triggerDialog('roomEnter', currentRoom)
       if (audioEnabled) {
-        void resumeAudioContexts()
-        // 任务进行中不播放房间环境音，避免与 BGM 冲突
-        // BGM 由下方 effect（chaosValue/task）统一调度
+        // 关键修复：在 playing 阶段开始时，强制停止所有非 BGM 音频源
+        // 确保只有 BGM 在 playing 阶段播放，避免多套音频系统同时发声
+        try { stopChaosAmbient() } catch { /* ignore */ }
+        try { stopAmbientImmediate() } catch { /* ignore */ }
+        void resumeAudioContexts({ restoreBgm: true, restoreAmbient: false })
       }
     }
   }, [currentRoom, phase, briefingOpen, audioEnabled, triggerDialog])

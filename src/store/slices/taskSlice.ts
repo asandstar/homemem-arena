@@ -476,7 +476,7 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
                   x: event.targetPosition.x,
                   y: event.targetPosition.y,
                   z: event.targetPosition.z,
-                })
+                }, (event as any).targetContainerId)
               }
               break
             case 'hide-entity':

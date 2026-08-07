@@ -8,11 +8,13 @@
 export const PLAYER_SPEED = 3.0
 export const TOP_DOWN_SPEED = 4.5
 export const PLAYER_RADIUS = 0.3
-// 玩家眼睛高度：1.5m 更贴近机器人设定，避免 1.6m 时俯视低矮家具的违和感
-export const PLAYER_HEIGHT = 1.5
-export const PITCH_MIN = -Math.PI / 3
-export const PITCH_MAX = Math.PI / 3
-export const MOUSE_SENSITIVITY = 0.0015
+// 玩家眼睛高度：从 1.5m 降至 1.35m，更贴近"机器人管家"设定，俯视感过强的问题缓解
+export const PLAYER_HEIGHT = 1.35
+// 俯仰角限制：收窄到 ±50°，避免极端抬头/低头导致天花板/地板填满屏幕的不适感
+export const PITCH_MIN = -Math.PI * 5 / 18 // -50°
+export const PITCH_MAX = Math.PI * 5 / 18  // +50°
+// 鼠标灵敏度：降低约 27%（0.0015 → 0.0011），让缓慢转动更精确、不"粘手"
+export const MOUSE_SENSITIVITY = 0.0011
 
 export const ACCELERATION = 40.0
 export const DECELERATION = 50.0

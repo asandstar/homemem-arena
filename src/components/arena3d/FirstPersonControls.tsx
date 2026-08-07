@@ -62,6 +62,7 @@ export function FirstPersonControls() {
   // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
   const phase = useGameStore((s) => s.phase)
   const robotPosition = useGameStore((s) => s.robotPosition)
+  const robotRotation = useGameStore((s) => s.robotRotation)
   const task = useGameStore((s) => s.task)
   const entities = useGameStore((s) => s.entities)
   const setFlashingSlotIndex = useGameStore((s) => s.setFlashingSlotIndex)
@@ -120,14 +121,19 @@ export function FirstPersonControls() {
     return nearest
   }, [])
 
+  // 同步初始旋转：当 robotRotation 被设置（任务初始化完成）时，确保相机 targetYawRef 正确
+  // 关键：依赖 phase 和 robotRotation，确保 initializeTask 设置旋转后能立即同步
   useEffect(() => {
     const state = useGameStore.getState()
-    targetYawRef.current = state.robotRotation
-    targetPitchRef.current = state.cameraPitch
-    lastSyncedYawRef.current = state.robotRotation
-    lastSyncedPitchRef.current = state.cameraPitch
-    smoothedCamRot.current.set(state.cameraPitch, state.robotRotation, 0, 'YXZ')
-  }, [])
+    // 只有当 phase 不是 idle（即任务已初始化）时才同步，避免初始 0 值覆盖
+    if (state.phase !== 'idle') {
+      targetYawRef.current = state.robotRotation
+      targetPitchRef.current = state.cameraPitch
+      lastSyncedYawRef.current = state.robotRotation
+      lastSyncedPitchRef.current = state.cameraPitch
+      smoothedCamRot.current.set(state.cameraPitch, state.robotRotation, 0, 'YXZ')
+    }
+  }, [phase, robotRotation])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -256,24 +262,51 @@ export function FirstPersonControls() {
           const gs = useGameStore.getState()
           const phase = gs.phase
           const inGame = phase === 'playing' || phase === 'briefing'
+          
+          // 检查 Dialog 是否打开：如果 Dialog 打开，ESC 应该由 Dialog 处理（关闭对话框）
+          // 而不是 FirstPersonControls
+          const dialogRoot = document.querySelector('[data-dialog-root]')
+          if (dialogRoot) {
+            // Dialog 打开时让 Dialog 自己处理 ESC
+            break
+          }
+          
+          // 直接检查浏览器当前 Pointer Lock 状态，避免 isMouseLockedRef 同步延迟问题
+          const canvasEl = gl.domElement
+          const pointerLocked = !!(canvasEl && document.pointerLockElement === canvasEl)
+          
           if (inGame) {
             // 两次 ESC 交互：
             //   第一次 ESC：鼠标锁定中 → 仅释放鼠标锁定（不暂停），玩家可自由操作 UI
             //   第二次 ESC：鼠标已释放 → 暂停游戏
-            if (isMouseLockedRef.current) {
+            if (pointerLocked) {
+              e.preventDefault()
+              e.stopPropagation()
+              try {
+                document.exitPointerLock?.()
+              } catch {
+                // exitPointerLock 可能在某些情况下抛出异常（如锁定已超时）
+              }
               isMouseLockedRef.current = false
-              document.exitPointerLock?.()
               addToast('info', '鼠标已释放，再按 ESC 暂停游戏')
             } else if (!gs.isPaused) {
+              e.preventDefault()
+              e.stopPropagation()
               gs.setPaused(true)
               addToast('info', '游戏已暂停')
             }
             break
           }
           // 非游戏阶段（probe/result/idle）ESC 只释放鼠标锁定
-          if (isMouseLockedRef.current) {
+          if (pointerLocked) {
+            e.preventDefault()
+            e.stopPropagation()
+            try {
+              document.exitPointerLock?.()
+            } catch {
+              // 忽略异常
+            }
             isMouseLockedRef.current = false
-            document.exitPointerLock?.()
             addToast('info', '鼠标已释放，点击游戏画面重新锁定')
           }
           break
@@ -400,7 +433,13 @@ export function FirstPersonControls() {
     document.addEventListener('pointerlockchange', handlePointerLockChange)
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isMouseLockedRef.current) return
+      if (isMouseLockedRef.current) {
+        // Pointer Lock 激活：独占鼠标输入 → 直接转视角，不检查 isDragging/isPointerOver
+        targetYawRef.current -= e.movementX * MOUSE_SENSITIVITY
+        targetPitchRef.current = clampPitch(targetPitchRef.current - e.movementY * MOUSE_SENSITIVITY)
+        return
+      }
+      // 非 Pointer Lock 模式：点击拖拽或悬停在 canvas 上且在 playing 阶段才转
       if (!isDraggingRef.current && !isPointerOverCanvasRef.current) return
       if (isDraggingRef.current || (isPointerOverCanvasRef.current && phase === 'playing')) {
         targetYawRef.current -= e.movementX * MOUSE_SENSITIVITY
@@ -425,9 +464,9 @@ export function FirstPersonControls() {
     }
 
     const handleWheel = (e: WheelEvent) => {
+      if (!isPointerOverCanvasRef.current) return
       e.preventDefault()
       e.stopPropagation()
-      if (!isPointerOverCanvasRef.current) return
       const delta = e.deltaY * 0.05
       cameraFovRef.current = Math.max(FOV_MIN, Math.min(FOV_MAX, cameraFovRef.current + delta))
     }

@@ -394,7 +394,7 @@ export const createEntitySlice = (set: any, get: any): EntitySlice => ({
     return { success: true }
   },
 
-  applyScriptedMove: (entityId: string, newRoom: RoomId, newPos: Vec3) => {
+  applyScriptedMove: (entityId: string, newRoom: RoomId, newPos: Vec3, targetContainerId?: string) => {
     const room = (sharedRooms as Record<string, RoomSpec>)[newRoom]
     if (!room) return
     const toWorldPos: Vec3 = {
@@ -402,6 +402,6 @@ export const createEntitySlice = (set: any, get: any): EntitySlice => ({
       y: newPos.y,
       z: room.center.z + newPos.z,
     }
-    get().startMoveAnimation(entityId, newRoom, toWorldPos)
+    get().startMoveAnimation(entityId, newRoom, toWorldPos, targetContainerId)
   },
 })

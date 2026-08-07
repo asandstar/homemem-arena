@@ -19,6 +19,8 @@ import {
   closeSfxContextBestEffort,
   getSfxContextState,
   getActiveSfxCount,
+  hasActiveChaosAmbient,
+  isLegacyRoomAmbientActive,
 } from './sfx'
 import {
   stopBgmImmediate,
@@ -123,11 +125,18 @@ export function closeAllAudioContextsBestEffort(): void {
  *  - suspended 时才调用 resume() 并忽略 reject 错误（用户未授权）
  *  - closed 由各模块下一次 play 调用会自动重建
  *  - 不在每帧调用，仅由显式入口
- *  - 【关键】resume AC 之后，必须重新 schedule BGM/Ambient scheduler（之前 stopAllAudioImmediate/stopAllTimers 已清 trackStates/timer），
- *    否则会出现 "resume 了但 BGM/Ambient 永久死" 的回归。
+ *  - 【关键】resume AC 之后，必须重新 schedule BGM scheduler（之前 stopAllAudioImmediate/stopAllTimers 已清 trackStates/timer），
+ *    否则会出现 "resume 了但 BGM 永久死" 的回归。
+ *  - 【单源策略】公开任务 playing 时只恢复 BGM，不恢复 Ambient，避免双重持续音源。
+ *
+ * @param options.restoreBgm  是否恢复 BGM scheduler（默认 true）
+ * @param options.restoreAmbient 是否恢复 Ambient scheduler（默认 false：公开任务不启动 Ambient）
  */
-export function resumeAudioContexts(): Promise<void[]> {
+export function resumeAudioContexts(
+  options: { restoreBgm?: boolean; restoreAmbient?: boolean } = {}
+): Promise<void[]> {
   if (!isAudioEnabled()) return Promise.resolve([])
+  const { restoreBgm = true, restoreAmbient = false } = options
   // 确保 sfx 模块 AC 已初始化（否则 resume 无意义）
   try { initSfxAudio() } catch { /* ignore */ }
   return Promise.all([
@@ -137,7 +146,7 @@ export function resumeAudioContexts(): Promise<void[]> {
   ]).then((results) => {
     // 关键：在 Promise.then 微任务里重新启动 scheduler（保证 AC resume 完成后再 schedule，
     // 避免 running state 尚未切换导致 schedule 异常）
-    try { restoreContinuersIfNeeded() } catch { /* ignore */ }
+    try { restoreContinuersIfNeeded({ restoreBgm, restoreAmbient }) } catch { /* ignore */ }
     return results
   })
 }
@@ -147,11 +156,21 @@ export function resumeAudioContexts(): Promise<void[]> {
  * 调用点：
  *  - resumeAudioContexts() 之后（用户 OFF→ON 点按钮 或 visibilitychange.visible）
  *  保证不会出现 "resume AC 了，BGM/Ambient 还是静默不响" 的回归。
+ *
+ * @param options.restoreBgm  是否恢复 BGM（默认 true）
+ * @param options.restoreAmbient 是否恢复 Ambient（默认 false：公开任务 playing 时禁止复活 Ambient）
  */
-export function restoreContinuersIfNeeded(): void {
+export function restoreContinuersIfNeeded(
+  options: { restoreBgm?: boolean; restoreAmbient?: boolean } = {}
+): void {
   if (!isAudioEnabled()) return
-  try { restartBgmWithLastTaskIdIfNeeded() } catch { /* ignore */ }
-  try { restartAmbientWithLastRoomIdIfNeeded() } catch { /* ignore */ }
+  const { restoreBgm = true, restoreAmbient = false } = options
+  if (restoreBgm) {
+    try { restartBgmWithLastTaskIdIfNeeded() } catch { /* ignore */ }
+  }
+  if (restoreAmbient) {
+    try { restartAmbientWithLastRoomIdIfNeeded() } catch { /* ignore */ }
+  }
 }
 
 /**
@@ -179,8 +198,15 @@ export function getAudioContextStates(): {
 }
 
 /**
- * E2E 只读诊断快照：一次性暴露 audioEnabled / 3 个 context 状态 / 3 个 timer / 节点数 / BGM taskId / Ambient roomId。
+ * E2E 只读诊断快照：一次性暴露 audioEnabled / 3 个 context 状态 / 3 个 timer / 节点数 / BGM taskId / Ambient roomId / Chaos / Legacy。
  * 【生产安全】：上层调用者必须用 import.meta.env.MODE==='e2e' 守卫后再挂到 window。
+ *
+ * playing 时应满足不变量（单源策略）：
+ *   bgmTimerCount > 0
+ *   ambientTimerCount === 0
+ *   currentAmbientRoomId === null
+ *   hasActiveChaosAmbient === false
+ *   isLegacyRoomAmbientActive === false
  */
 export function getAudioLifecycleDiagnostics(): {
   audioEnabled: boolean
@@ -192,6 +218,8 @@ export function getAudioLifecycleDiagnostics(): {
   ambientTimerCount: number
   currentBgmTaskId: string | null
   currentAmbientRoomId: string | null
+  hasActiveChaosAmbient: boolean
+  isLegacyRoomAmbientActive: boolean
 } {
   return {
     audioEnabled: isAudioEnabled(),
@@ -203,6 +231,8 @@ export function getAudioLifecycleDiagnostics(): {
     ambientTimerCount: getActiveAmbientTimerCount(),
     currentBgmTaskId: getCurrentBgmTaskId(),
     currentAmbientRoomId: getCurrentAmbientRoomId(),
+    hasActiveChaosAmbient: hasActiveChaosAmbient(),
+    isLegacyRoomAmbientActive: isLegacyRoomAmbientActive(),
   }
 }
 
@@ -371,10 +401,11 @@ export function ensureGlobalPageLifecycleAudioHookOnce(): () => void {
   }
 
   // ---- 通用：切回前台时，如果用户关了音效就不 resume（否则才恢复）
+  // 【单源策略】只恢复 BGM，不恢复 Ambient（公开任务 playing 时禁止 Ambient 复活）
   const resumeIfUserEnabled = (): void => {
     try {
       if (isAudioEnabled()) {
-        // resumeAudioContexts() 内部会在 Promise.then 微任务内 restoreContinuersIfNeeded() → BGM/Ambient scheduler 自动重建
+        // resumeAudioContexts() 默认 restoreBgm=true, restoreAmbient=false
         void resumeAudioContexts()
       }
     } catch {

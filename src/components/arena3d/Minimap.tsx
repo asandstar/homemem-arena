@@ -678,20 +678,20 @@ export function Minimap({
     ctx.strokeStyle = '#ffffff'
     ctx.fillStyle = '#ef4444'
     ctx.lineWidth = 2.2
-    // ⚠️ 3D yaw → 2D Minimap 坐标变换：
-    // 3D 世界（从上往下看，x 东 / -z 北）：getForwardVector(yaw) = (+sin yaw, -cos yaw)
-    // Minimap canvas （+x→东右, +z→南下）：北 = canvas 上，南 = canvas 下
-    // 因此 3D 面朝 (sin yaw, -cos yaw) → 对应 canvas 的朝向为：
-    //   x 分量 = +sin(yaw)
-    //   y 分量 = -cos(yaw)  （因为 canvas 南=+y，而 3D 北=-z）
-    // 所以：fx = x + sin(yaw)*L, fy = y - cos(yaw)*L
-    // 等价于：mapArrowAngle = yaw - π/2，即原公式 cos → -cos
+    // ⚠️ 3D yaw → 2D Minimap 坐标变换（修正版）：
+    // 3D 世界（从上往下看，+x 东 / +z 南）：getForwardVector(yaw) = (sin yaw, 0, -cos yaw)
+    // Minimap canvas（+x→右, +y→下）：北 = canvas 上(-y)，南 = canvas 下(+y)
+    // 因此 3D 面朝方向 (sin yaw, -cos yaw) → 映射到 canvas 为：
+    //   x 分量 = +sin(yaw)     （东=+x，西=-x）
+    //   y 分量 = -(-cos yaw) = cos(yaw)  → 需要取反：canvas 上(北)=-y，3D北=-z
+    //   最终：fx = x + sin(yaw)*L, fy = y - cos(yaw)*L
+    //   验证：yaw=0 → 3D朝北(-z) → canvas朝上(-y) ✓
     const arrowLen = 13
     const aw = 5.2
     const mapYaw = robotRotation
     const fx = robotX + Math.sin(mapYaw) * arrowLen
     const fy = robotY - Math.cos(mapYaw) * arrowLen
-    // 左/右舷
+    // 左/右舷：相对于 forward 方向旋转 ±90°
     const leftX = robotX + Math.sin(mapYaw - Math.PI / 2) * aw
     const leftY = robotY - Math.cos(mapYaw - Math.PI / 2) * aw
     const rightX = robotX + Math.sin(mapYaw + Math.PI / 2) * aw

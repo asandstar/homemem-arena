@@ -146,7 +146,7 @@ interface GameStore extends GameState, ProgressState {
   useContainer: (containerId: string) => { success: boolean; reason?: string }
   tickElapsed: (deltaMs: number) => void
   incrementStep: () => void
-  applyScriptedMove: (entityId: string, newRoom: RoomId, newPos: Vec3) => void
+  applyScriptedMove: (entityId: string, newRoom: RoomId, newPos: Vec3, targetContainerId?: string) => void
   getEntitySnapshot: () => { id: string; configId: string; status: string; currentRoom: RoomId; placedIn?: string; category: string; properties: Record<string, string | number | boolean> }[]
   toggleViewMode: () => void
   saveMemory: (entity: EntityState) => { success: boolean; slotIndex?: number; isUpdate?: boolean }
@@ -187,7 +187,7 @@ interface GameStore extends GameState, ProgressState {
   markMemoryOutdated: (entityConfigId: string) => void
   decayMemories: (deltaMs: number) => void
   triggerEventEffect: (effectName: string) => void
-  startMoveAnimation: (entityId: string, toRoom: RoomId, toPos: Vec3) => void
+  startMoveAnimation: (entityId: string, toRoom: RoomId, toPos: Vec3, targetContainerId?: string) => void
   updateMoveAnimations: () => void
   updateFlowState: (elapsedMs: number) => void
   checkProceduralAction: (action: 'pick' | 'place' | 'use', targetId: string) => { wrongOrder: boolean; currentStepLabel?: string }

@@ -43,9 +43,9 @@ export const leaveHomeTask: TaskConfig = {
   iconKey: 'door',
   tags: ['空间记忆', '跨房间寻物', '限时', '钥匙猫', '物品位移'],
   timeLimit: 90,
-  // 出生在 living 东北角（距两墙各 0.5m），翻转 180° → 朝西北，直面沙发+玄关+书架，视野覆盖 L2 全部关键藏物区
+  // 出生在 living 东北角（距两墙各 0.5m），翻转 180° → 朝西南，直面沙发+玄关+书架，视野覆盖 L2 全部关键藏物区
   spawnPosition: { x: 2.7, z: -2.2 },
-  spawnRotation: -Math.PI / 4,
+  spawnRotation: (3 * Math.PI) / 4,
 
   briefing: `🐱 钥匙猫的清晨恶作剧 · 第二关（空间记忆）
 
@@ -65,15 +65,14 @@ MEM-07：「扫描完成。四件物品被分散藏匿于客厅、卧室、餐�
 
 🎯 归位：找到后全部放回客厅茶几
 
-⚠️ 警告：钥匙猫可能会在你找到 2 件后再次捣乱，叼走已找到的物品！
-💡 提示：按 E 记住每件物品藏在哪个房间——猫会把物品叼走，记忆过期后需要重新寻找。养成记忆习惯才能在限时内完成。`,
+💡 提示：记住每件物品藏在哪个房间——按 E 可以保存位置记忆。环境不会变化，但钥匙猫可能会发出声音干扰你。`,
 
   completionText:
     '主人：「太及时了！东西都找到了！小橡你真靠谱。」\n钥匙猫：「喵~」（跳上书架，尾巴甩了甩，似乎在策划下一次）\nMEM-07：「空间记忆模块校准完成。但钥匙猫……它的活动模式我还没完全掌握。」',
   failureText:
     '主人：「来不及了，我先走了……东西回来再收拾。」\n钥匙猫：「喵呜~」（得意地蜷在窗台，尾巴盖住鼻子）\nMEM-07：「时间不足。建议策略：先去最近的房间找一件，按 E 记住位置后再移动，避免反复跑空。」',
   systemPrompt:
-    '【MEM-07 日志】任务：钥匙猫清晨恶作剧，90秒内找回 4 件物品。物品：书(客厅沙发)、马克杯(卧室床头柜)、玩具熊(厨房台面)、收音机(玄关)。目标区：客厅茶几。扰动：step>=8 且找到≥2件时钥匙猫叼走玩具熊到卧室(move-entity+markMemoryOutdated)。记忆类型：空间记忆。策略：跨房间搜寻→拾取→带回茶几放置。',
+    '【MEM-07 日志】任务：钥匙猫清晨恶作剧，90秒内找回 4 件物品。物品：书(客厅沙发)、马克杯(卧室床头柜)、玩具熊(厨房台面)、收音机(玄关)。目标区：客厅茶几。环境稳定，物品位置不变。钥匙猫可能发出声音干扰，但不会移动物品。记忆类型：空间记忆。策略：回忆 briefing 位置→跨房间搜寻→拾取→带回茶几放置。',
 
   objects: [
     {
@@ -187,23 +186,8 @@ MEM-07：「扫描完成。四件物品被分散藏匿于客厅、卧室、餐�
       id: 'se-welcome',
       trigger: (step: number) => step === 1,
       type: 'message',
-      message: '🐱 MEM-07：「钥匙猫清晨恶作剧！4 件物品被藏到了不同房间。90 秒内找回并放到客厅茶几。注意——钥匙猫可能会再次捣乱！」',
-      description: '开场提示，介绍任务目标与警告',
-      memoryType: 'spatial',
-      toastType: 'info' as const,
-    },
-    {
-      id: 'se-search-hint',
-      trigger: (
-        step: number,
-        _entities: EntityStateSnapshot[],
-        _currentRoom: RoomId,
-        _rooms: RoomMap | undefined,
-        ctx: StageContext | undefined,
-      ) => step >= 3 && !ctx?.heldEntityConfigId && !ctx?.triggeredEvents.has('se-search-hint'),
-      type: 'message',
-      message: '💡 MEM-07：「去其他房间找找——书在客厅沙发，杯子在卧室床头柜，小熊在厨房台面，收音机在玄关。」',
-      description: '寻物提示（未手持物品时出现一次）',
+      message: '🐱 MEM-07：「钥匙猫清晨恶作剧！4 件物品被藏到了不同房间。90 秒内找回并放到客厅茶几。」',
+      description: '开场提示，介绍任务目标',
       memoryType: 'spatial',
       toastType: 'info' as const,
     },
@@ -236,18 +220,12 @@ MEM-07：「扫描完成。四件物品被分散藏匿于客厅、卧室、餐�
       ) => {
         if (step < 8) return false
         if (ctx?.triggeredEvents.has('se-cat-second-prank')) return false
-        // 找到 ≥2 件且玩具熊尚未放回茶几时，钥匙猫叼走玩具熊
-        if (entityPlacedIn(entities, 'obj-bear', 'cnt-coffee-table')) return false
         return foundCount(entities) >= 2
       },
-      type: 'move-entity',
-      targetId: 'obj-bear',
-      // 叼到卧室床头枕头区（对齐 decor-toy-bear 位置 0.5, 0.32, -2.0）
-      targetPosition: { room: 'bedroom', x: 0.5, y: 0.32, z: -2.0 },
-      message: '🐱 钥匙猫趁你不注意，叼走了玩具熊跑到卧室！位置记忆已失效，请重新寻找。',
-      description: '钥匙猫二次恶作剧：把玩具熊从厨房移到卧室床上',
+      type: 'message',
+      message: '🐱 钥匙猫从你身后溜过，爪子拍了一下地板…什么也没发生。',
+      description: '钥匙猫纯视听干扰（不移动物品，不改世界状态）',
       memoryType: 'spatial',
-      markMemoryOutdated: 'obj-bear',
       eventEffect: 'cat-prints',
       toastType: 'cat' as const,
     },
@@ -333,16 +311,15 @@ MEM-07：「扫描完成。四件物品被分散藏匿于客厅、卧室、餐�
       relatedObjectIds: ['obj-radio'],
     },
     {
-      id: 'p-bear-moved',
+      id: 'p-cat-distractor',
       type: 'state',
-      question: '🦁 钥匙猫二次恶作剧把玩具熊叼到了哪个房间？',
-      options: ['客厅', '卧室', '厨房', '玄关'],
-      correctAnswer: '卧室',
+      question: '🦁 钥匙猫在找东西过程中有没有移动物品？',
+      options: ['没有，只是发出声音干扰', '叼走了玩具熊', '藏了收音机', '搬动了书'],
+      correctAnswer: '没有，只是发出声音干扰',
       dependsOnMemoryType: 'spatial',
-      difficulty: 'medium',
-      relatedObjectIds: ['obj-bear'],
+      difficulty: 'easy',
       relatedEventIds: ['se-cat-second-prank'],
-      hint: '回忆钥匙猫叼走玩具熊后的去向',
+      hint: '回忆钥匙猫做了什么',
     },
     {
       id: 'p-target-zone',

@@ -636,6 +636,15 @@ export const MODEL_ASSET_REGISTRY = {
     sourceSha256: 'f471defb5b2b1cf3b949a1a8aaef0a8b727afe662b0815068cf4e963325a3c1f',
     rawAabb: { x: 0.1719, y: 0.16, z: 0.1323 },
   },
+  'furniture/kitchenCabinetUpper': {
+    id: 'furniture/kitchenCabinetUpper',
+    url: '/assets/models/kenney/furniture/kitchenCabinetUpper.glb',
+    sourceStem: 'kitchenCabinetUpper',
+    pack: 'kenney-furniture-kit' as const,
+    license: 'CC0-1.0' as const,
+    sourceSha256: '8f2496feed85a745ffb6e554075b8450d647f8f68b01d6a010fcac1510fc173a',
+    rawAabb: { x: 0.538, y: 0.563, z: 0.600 },
+  },
   // ========================== Food (Kenney Food Kit) ==========================
   'food/mug': {
     id: 'food/mug',
@@ -672,6 +681,33 @@ export const MODEL_ASSET_REGISTRY = {
     license: 'CC0-1.0' as const,
     sourceSha256: 'dbb39cce42ce1729a44b94c6f0d9806d6c638b9365398c01049a2a26e2de5025',
     rawAabb: { x: 0.727183, y: 2.0, z: 0.610162 },
+  },
+  'food/carton': {
+    id: 'food/carton',
+    url: '/assets/models/kenney/food/carton.glb',
+    sourceStem: 'carton',
+    pack: 'kenney-food-kit' as const,
+    license: 'CC0-1.0' as const,
+    sourceSha256: 'b63a5081c6edbda7ba8172e6a776f222e781f886a011a887789b2fde42095d04',
+    rawAabb: { x: 2.0, y: 2.0, z: 2.0 },
+  },
+  'food/bowl': {
+    id: 'food/bowl',
+    url: '/assets/models/kenney/food/bowl.glb',
+    sourceStem: 'bowl',
+    pack: 'kenney-food-kit' as const,
+    license: 'CC0-1.0' as const,
+    sourceSha256: '92463570dced6e0898cdc11c218c477efa9b1693d6d3c0e661b67119f294ca7b',
+    rawAabb: { x: 2.0, y: 2.0, z: 2.0 },
+  },
+  'food/cup': {
+    id: 'food/cup',
+    url: '/assets/models/kenney/food/cup.glb',
+    sourceStem: 'cup',
+    pack: 'kenney-food-kit' as const,
+    license: 'CC0-1.0' as const,
+    sourceSha256: 'f9d6786fe9836f16ebb10cc1cb5a8ea8d512c7ae6cfa22394af653e5a5b05f09',
+    rawAabb: { x: 2.0, y: 2.0, z: 2.0 },
   },
 } as const
 

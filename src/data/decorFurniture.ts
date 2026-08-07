@@ -280,64 +280,65 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       modelAssetId: 'furniture/chair',
     },
 
-    // 厨房工作区 — 北墙（z=-2.1）：冰箱+橱柜+水槽+橱柜+灶台
+    // 厨房工作区 — 北墙（z=-2.3）：冰箱+橱柜+水槽+橱柜+灶台，家具深度0.6m → 后沿贴北墙z=-2.6
     {
       id: 'decor-kit-fridge',
-      position: { x: -2.3, y: 0, z: -2.1 },
+      // x = -2.75（西墙） + 0.774/2 = -2.363，贴西墙
+      position: { x: -2.36, y: 0, z: -2.31 },
       size: { x: 0.774, y: 1.656, z: 0.57 },
       rotationY: ROT.FACE_PLUS_X,
       modelAssetId: 'furniture/kitchenFridge',
     },
     {
       id: 'decor-kit-cabinet-1',
-      position: { x: -0.6, y: 0, z: -2.1 },
+      position: { x: -0.6, y: 0, z: -2.3 },
       size: { x: 0.538, y: 0.563, z: 0.600 },
       rotationY: ROT.FACE_PLUS_Z,
       modelAssetId: 'furniture/kitchenCabinetDrawer',
     },
     {
       id: 'decor-kit-sink',
-      position: { x: 0, y: 0, z: -2.1 },
+      position: { x: 0, y: 0, z: -2.3 },
       size: { x: 0.538, y: 0.613, z: 0.600 },
       rotationY: ROT.FACE_PLUS_Z,
       modelAssetId: 'furniture/kitchenSink',
     },
     {
       id: 'decor-kit-cabinet-2',
-      position: { x: 0.6, y: 0, z: -2.1 },
+      position: { x: 0.6, y: 0, z: -2.3 },
       size: { x: 0.538, y: 0.563, z: 0.600 },
       rotationY: ROT.FACE_PLUS_Z,
       modelAssetId: 'furniture/kitchenCabinetDrawer',
     },
     {
       id: 'decor-kit-stove',
-      position: { x: 1.2, y: 0, z: -2.1 },
+      position: { x: 1.2, y: 0, z: -2.3 },
       size: { x: 0.538, y: 0.563, z: 0.6 },
       rotationY: ROT.FACE_PLUS_Z,
       modelAssetId: 'furniture/kitchenStove',
     },
-    // 收音机：放 cabinet-1 台面 (-0.6, 0.563, -1.9)
+    // 收音机：放 cabinet-1 台面 (-0.6, 0.563, -2.1) 后沿贴墙
     {
       id: 'decor-kit-radio',
-      position: { x: -0.6, y: 0.563, z: -1.9 },
+      position: { x: -0.6, y: 0.563, z: -2.1 },
       size: { x: 0.567, y: 0.411, z: 0.176 },
       rotationY: ROT.FACE_PLUS_Z,
       collisionMode: 'none',
       modelAssetId: 'furniture/radio',
     },
-    // 微波炉：放 cabinet-2 台面 (0.6, 0.563, -1.9)
+    // 微波炉：放 cabinet-2 台面 (0.6, 0.563, -2.1) 后沿贴墙
     {
       id: 'decor-kit-microwave',
-      position: { x: 0.6, y: 0.563, z: -1.9 },
+      position: { x: 0.6, y: 0.563, z: -2.1 },
       size: { x: 0.522, y: 0.324, z: 0.414 },
       rotationY: ROT.FACE_PLUS_Z,
       collisionMode: 'none',
       modelAssetId: 'furniture/kitchenMicrowave',
     },
-    // 堆叠的书：放水槽台面前沿 (0, 0.613, -1.9)
+    // 堆叠的书：放水槽台面前沿 (0, 0.613, -2.1)
     {
       id: 'decor-kit-books',
-      position: { x: 0.0, y: 0.613, z: -1.9 },
+      position: { x: 0.0, y: 0.613, z: -2.1 },
       size: { x: 0.181, y: 0.125, z: 0.181 },
       rotationY: ROT.FACE_PLUS_Z,
       collisionMode: 'none',

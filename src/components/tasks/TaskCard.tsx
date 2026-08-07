@@ -178,12 +178,13 @@ export function TaskCard({
               <Star size={14} className="text-yellow-400" />
               <span>{task.memoryTypes.length} 种记忆类型</span>
             </div>
-            {progress?.attempts && progress.attempts > 0 && (
+            {/* 显式转为 boolean 判断：attempts === 0 时不渲染任何内容，避免短路返回 0 被 React 渲染成黑色文本 */}
+            {typeof progress?.attempts === 'number' && progress.attempts > 0 ? (
               <div className="flex items-center gap-1.5 text-slate-400">
                 <RotateCcw size={14} />
                 <span>尝试 {progress.attempts} 次</span>
               </div>
-            )}
+            ) : null}
           </div>
 
           {hasSave && (

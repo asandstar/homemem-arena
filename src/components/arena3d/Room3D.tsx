@@ -20,6 +20,7 @@ import {
 } from './models/FallbackModels'
 import { RegisteredModel } from './RegisteredModel'
 import { roomDecorFurniture } from '../../data/decorFurniture'
+import { useGameStore } from '../../store/useGameStore'
 
 /** §十一 feature flag: 默认启用 Kenney Living GLB 模型（DEV + PROD 均启用）。
  *  可通过 VITE_USE_KENNEY_LIVING_ASSETS=false 显式关闭（用于回归对比、A/B 验证）。
@@ -127,19 +128,19 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </FallbackColorizer>
       ) : null}
 
-      {/* 枕头：跟随主沙发 A6 位置（南墙 z=+2.24，沙发 X 跨度 [-2.7, -0.3]） */}
+      {/* 枕头：跟随主沙发 A6 位置 (x=-1.5, z=0.8) 座面上方 y≈0.45，X 分布对齐沙发 2m 跨度 [-2.5,-0.5] */}
       <RoomDecorPiece modelId="pillow" color="#ff6b6b">
-        <group position={[center.x - 2.4, 0.45, center.z + 2.0]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
+        <group position={[center.x - 2.3, 0.45, center.z + 0.85]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.3 }} />
         </group>
       </RoomDecorPiece>
       <RoomDecorPiece modelId="pillow" color="#4ecdc4">
-        <group position={[center.x - 1.5, 0.45, center.z + 2.0]} rotation={[0, -Math.PI / 8, 0]} receiveShadow>
+        <group position={[center.x - 1.5, 0.45, center.z + 0.9]} rotation={[0, -Math.PI / 8, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.3 }} />
         </group>
       </RoomDecorPiece>
       <RoomDecorPiece modelId="pillow" color="#ffe66d">
-        <group position={[center.x - 0.6, 0.45, center.z + 2.0]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
+        <group position={[center.x - 0.7, 0.45, center.z + 0.85]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.3 }} />
         </group>
       </RoomDecorPiece>
@@ -308,18 +309,20 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </RoomDecorPiece>
       ) : null}
 
+      {/* 3 个枕头：跟随床头 A6 位置 (x: [-1.35, 0, 1.35] 对应床头柜间距, z=-2.0 床头区)，
+           卧室局部坐标，X 必须加 center.x，高度 y=0.58 对齐 bed effectiveAabb 床面 */}
       <RoomDecorPiece modelId="pillow" color="#fec8d8">
-        <group position={[-0.6, 0.65, center.z - 1.5]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
+        <group position={[center.x - 0.6, 0.58, center.z - 2.0]} rotation={[0, Math.PI / 6, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.4, y: 0.18, z: 0.3 }} />
         </group>
       </RoomDecorPiece>
       <RoomDecorPiece modelId="pillow" color="#e0bbe4">
-        <group position={[0.6, 0.65, center.z - 1.5]} rotation={[0, -Math.PI / 6, 0]} receiveShadow>
+        <group position={[center.x + 0.6, 0.58, center.z - 2.0]} rotation={[0, -Math.PI / 6, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.4, y: 0.18, z: 0.3 }} />
         </group>
       </RoomDecorPiece>
       <RoomDecorPiece modelId="pillow" color="#fef3c7">
-        <group position={[0, 0.62, center.z - 1.4]} rotation={[0, Math.PI / 8, 0]} receiveShadow>
+        <group position={[center.x + 0, 0.55, center.z - 1.9]} rotation={[0, Math.PI / 8, 0]} receiveShadow>
           <PillowFallback size={{ x: 0.35, y: 0.15, z: 0.28 }} />
         </group>
       </RoomDecorPiece>
@@ -395,7 +398,12 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
     // ROUND R2A：Dining 视觉由 decorFurniture（chairs/kitchenCabinetDrawer/kitchenSink）
     // + task containers（cnt-dining-table/cnt-dishwasher/cnt-trash-bin/cnt-utensil-rack）唯一承担。
     // Room3D 仅保留非冲突的氛围装饰（地毯、吊灯、墙饰）。
+    // —— 关键修复：只有任务配置了 cnt-dining-table（餐桌容器）时才渲染 4 把餐椅，
+    //    否则（如 L2 钥匙猫任务）会出现"有椅子围着一张不存在的桌子"造成悬浮感。
     const diningDecor = roomDecorFurniture.dining
+    const hasDiningTableContainer = useGameStore((s) =>
+      !!s.task?.containers?.find?.((c) => c.id === 'cnt-dining-table'),
+    )
     const decorWorld = (pos: { x: number; y: number; z: number }): [number, number, number] => [
       center.x + pos.x,
       pos.y,
@@ -415,8 +423,13 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
         </group>
       </RoomDecorPiece>
 
-      {/* 餐椅、厨房工作区、墙饰：decorFurniture 单一数据源（R2A） */}
-      {diningDecor.filter((d) => d.modelAssetId).map((d) => (
+      {/* 餐椅（仅当任务有 cnt-dining-table 餐桌容器时渲染，避免 L2 等任务出现"4 椅围空"的悬浮感）、厨房工作区、墙饰：decorFurniture 单一数据源（R2A） */}
+      {diningDecor.filter((d) => {
+        if (!d.modelAssetId) return false
+        // 4 把餐椅仅在餐桌容器存在时渲染
+        if (d.id.startsWith('decor-chair-')) return hasDiningTableContainer
+        return true
+      }).map((d) => (
         <RegisteredModel
           key={d.id}
           assetId={d.modelAssetId!}

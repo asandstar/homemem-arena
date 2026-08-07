@@ -262,9 +262,20 @@ function loadGLTF(path: string): Promise<any> {
   })
 
   // 收敛 set/delete：失败才删，成功保留；避免 3 处重复逻辑
+  // 关键修复：对于 "exited the lock"（Pointer Lock 退出时浏览器中断了 GLB 加载）
+  // 这类 SecurityError，用一个空 GLTF 占位而不是让 Promise 走到 unhandledrejection
   promise.then(
     () => { /* success: 保留缓存 */ },
-    () => { MODEL_TEXTURE_CACHE.delete(cacheKey); const idx = MODEL_CACHE_FIFO_KEYS.indexOf(cacheKey); if (idx >= 0) MODEL_CACHE_FIFO_KEYS.splice(idx, 1) },
+    (e: any) => {
+      MODEL_TEXTURE_CACHE.delete(cacheKey)
+      const idx = MODEL_CACHE_FIFO_KEYS.indexOf(cacheKey)
+      if (idx >= 0) MODEL_CACHE_FIFO_KEYS.splice(idx, 1)
+      const msg = String(e?.message ?? e ?? '')
+      if (msg.includes('exited the lock')) {
+        // 指针锁退出导致的加载中断：不抛给全局，避免控制台噪音
+        console.warn('[ModelAsset] GLB加载因指针锁退出被取消，已静默忽略:', path.slice(0, 80))
+      }
+    },
   )
 
   MODEL_TEXTURE_CACHE.set(cacheKey, promise)
