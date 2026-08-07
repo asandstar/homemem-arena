@@ -43,6 +43,10 @@ interface Room3DProps {
 
 function RoomDecorations({ spec }: { spec: RoomSpec }) {
   const { id, center, size } = spec
+  // 餐椅仅在任务配置了 cnt-dining-table 时渲染（避免 L2 出现"4 椅围空"）
+  const hasDiningTableContainer = useGameStore((s) =>
+    !!s.task?.containers?.find?.((c) => c.id === 'cnt-dining-table'),
+  )
 
   const renderEntrance = () => {
     const entranceDecor = roomDecorFurniture.entrance
@@ -401,9 +405,6 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
     // —— 关键修复：只有任务配置了 cnt-dining-table（餐桌容器）时才渲染 4 把餐椅，
     //    否则（如 L2 钥匙猫任务）会出现"有椅子围着一张不存在的桌子"造成悬浮感。
     const diningDecor = roomDecorFurniture.dining
-    const hasDiningTableContainer = useGameStore((s) =>
-      !!s.task?.containers?.find?.((c) => c.id === 'cnt-dining-table'),
-    )
     const decorWorld = (pos: { x: number; y: number; z: number }): [number, number, number] => [
       center.x + pos.x,
       pos.y,
