@@ -94,12 +94,18 @@ export function useDialog() {
       }
     }
 
-    setDialogState((prev) => ({
-      ...prev,
-      history: [...prev.history, choice.id],
-      currentNodeIndex: prev.currentNodeIndex + 1,
-    }))
-  }, [addScore, incrementChaos, addUiToast, openDialog])
+    setDialogState((prev) => {
+      const history = [...prev.history, choice.id]
+      if (currentSequence && prev.currentNodeIndex >= currentSequence.nodes.length - 1) {
+        return { ...prev, history, isOpen: false }
+      }
+      return {
+        ...prev,
+        history,
+        currentNodeIndex: prev.currentNodeIndex + 1,
+      }
+    })
+  }, [addScore, incrementChaos, addUiToast, openDialog, currentSequence])
 
   const handleNext = useCallback(() => {
     if (autoContinueTimer.current) {

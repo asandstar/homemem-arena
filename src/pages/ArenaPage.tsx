@@ -149,8 +149,8 @@ export function ArenaPage() {
   // 供 taskSlice.tickElapsed / ArenaPage 100ms tick 在弹窗打开时冻结游戏循环。
   const setOverlayBlocking = useUiStore((s) => s.setOverlayBlocking)
   useEffect(() => {
-    setOverlayBlocking(briefingOpen || showTutorial || dialogState.isOpen)
-  }, [briefingOpen, showTutorial, dialogState.isOpen, setOverlayBlocking])
+    setOverlayBlocking(briefingOpen || showTutorial || (dialogState.isOpen && !!currentNode))
+  }, [briefingOpen, showTutorial, dialogState.isOpen, currentNode, setOverlayBlocking])
 
   useEffect(() => {
     if (taskId && _SAFE_ENV.PROD && isHiddenTaskId(taskId)) {
