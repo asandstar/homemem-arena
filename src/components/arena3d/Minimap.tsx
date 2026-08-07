@@ -6,6 +6,7 @@ import type { RoomId } from '../../types/room'
 import type { EntityState } from '../../types/object'
 import type { MemorySlot } from '../../store/gameTypes'
 import type { ContainerSpec } from '../../types/object'
+import { getMinimapForwardVector } from '../../game/playerControls'
 
 interface MinimapProps {
   currentRoom: RoomId
@@ -689,8 +690,9 @@ export function Minimap({
     const arrowLen = 13
     const aw = 5.2
     const mapYaw = robotRotation
-    const fx = robotX + Math.sin(mapYaw) * arrowLen
-    const fy = robotY - Math.cos(mapYaw) * arrowLen
+    const mapForward = getMinimapForwardVector(mapYaw)
+    const fx = robotX + mapForward.x * arrowLen
+    const fy = robotY + mapForward.y * arrowLen
     // 左/右舷：相对于 forward 方向旋转 ±90°
     const leftX = robotX + Math.sin(mapYaw - Math.PI / 2) * aw
     const leftY = robotY - Math.cos(mapYaw - Math.PI / 2) * aw

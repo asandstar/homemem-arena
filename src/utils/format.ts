@@ -1,6 +1,7 @@
 // 工具函数 - 格式化、ID 生成、可见性计算
 
 import type { Vec3 } from '../types/room'
+import { getForwardVector as getGameForwardVector } from '../game/playerControls'
 
 export function generateId(prefix = 'id'): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
@@ -34,10 +35,11 @@ export function distanceFlat(a: Vec3, b: Vec3): number {
 
 /** Y 轴旋转的朝向向量 */
 export function getForwardVector(rotationY: number): Vec3 {
+  const forward = getGameForwardVector(rotationY)
   return {
-    x: Math.sin(rotationY),
+    x: forward.x,
     y: 0,
-    z: Math.cos(rotationY),
+    z: forward.z,
   }
 }
 
@@ -56,7 +58,7 @@ export function isInFieldOfView(
   const dz = targetPos.z - observerPos.z
 
   // 目标相对机器人的角度
-  const targetAngle = Math.atan2(dx, dz)
+  const targetAngle = Math.atan2(dx, -dz)
   // 机器人朝向
   let diff = targetAngle - observerRotY
   // 归一化到 -PI..PI

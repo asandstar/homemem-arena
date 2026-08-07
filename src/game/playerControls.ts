@@ -34,6 +34,25 @@ export function getForwardVector(yaw: number): { x: number; z: number } {
   }
 }
 
+/**
+ * 游戏 yaw 使用“0 朝北(-Z)、正值顺时针朝东(+X)”；Three.js 相机的
+ * rotation.y 正值方向相反，因此渲染相机时必须取负号。
+ */
+export function gameYawToCameraYaw(yaw: number): number {
+  return -yaw
+}
+
+/** 水平鼠标/触摸向右移动时，游戏 yaw 顺时针增加。 */
+export function applyHorizontalLookDelta(yaw: number, movementX: number, sensitivity: number): number {
+  return yaw + movementX * sensitivity
+}
+
+/** 将游戏世界前向投影到小地图画布（+x 向右，+y 向下）。 */
+export function getMinimapForwardVector(yaw: number): { x: number; y: number } {
+  const forward = getForwardVector(yaw)
+  return { x: forward.x, y: forward.z }
+}
+
 export function getRightVector(yaw: number): { x: number; z: number } {
   return {
     x: Math.cos(yaw),

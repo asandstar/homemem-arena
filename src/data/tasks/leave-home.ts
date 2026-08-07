@@ -45,7 +45,7 @@ export const leaveHomeTask: TaskConfig = {
   timeLimit: 90,
   // 出生在 living 东北角（距两墙各 0.5m），翻转 180° → 朝西南，直面沙发+玄关+书架，视野覆盖 L2 全部关键藏物区
   spawnPosition: { x: 2.7, z: -2.2 },
-  spawnRotation: (3 * Math.PI) / 4,
+  spawnRotation: (-3 * Math.PI) / 4,
 
   briefing: `🐱 钥匙猫的清晨恶作剧 · 第二关（空间记忆）
 

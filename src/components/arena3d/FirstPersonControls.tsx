@@ -15,6 +15,8 @@ import {
   ACCELERATION,
   DECELERATION,
   TURN_SMOOTHING,
+  applyHorizontalLookDelta,
+  gameYawToCameraYaw,
 } from '../../game/playerControls'
 import {
   resolveRoomCollision,
@@ -131,7 +133,7 @@ export function FirstPersonControls() {
       targetPitchRef.current = state.cameraPitch
       lastSyncedYawRef.current = state.robotRotation
       lastSyncedPitchRef.current = state.cameraPitch
-      smoothedCamRot.current.set(state.cameraPitch, state.robotRotation, 0, 'YXZ')
+      smoothedCamRot.current.set(state.cameraPitch, gameYawToCameraYaw(state.robotRotation), 0, 'YXZ')
     }
   }, [phase, robotRotation])
 
@@ -435,14 +437,14 @@ export function FirstPersonControls() {
     const handleMouseMove = (e: MouseEvent) => {
       if (isMouseLockedRef.current) {
         // Pointer Lock 激活：独占鼠标输入 → 直接转视角，不检查 isDragging/isPointerOver
-        targetYawRef.current -= e.movementX * MOUSE_SENSITIVITY
+        targetYawRef.current = applyHorizontalLookDelta(targetYawRef.current, e.movementX, MOUSE_SENSITIVITY)
         targetPitchRef.current = clampPitch(targetPitchRef.current - e.movementY * MOUSE_SENSITIVITY)
         return
       }
       // 非 Pointer Lock 模式：点击拖拽或悬停在 canvas 上且在 playing 阶段才转
       if (!isDraggingRef.current && !isPointerOverCanvasRef.current) return
       if (isDraggingRef.current || (isPointerOverCanvasRef.current && phase === 'playing')) {
-        targetYawRef.current -= e.movementX * MOUSE_SENSITIVITY
+        targetYawRef.current = applyHorizontalLookDelta(targetYawRef.current, e.movementX, MOUSE_SENSITIVITY)
         targetPitchRef.current = clampPitch(targetPitchRef.current - e.movementY * MOUSE_SENSITIVITY)
       }
     }
@@ -490,7 +492,7 @@ export function FirstPersonControls() {
       if (distance > 10) {
         isTouchInteractionRef.current = true
         const sensitivity = MOUSE_SENSITIVITY * 1.5
-        targetYawRef.current = touchRotRef.current.yaw - dx * sensitivity
+        targetYawRef.current = applyHorizontalLookDelta(touchRotRef.current.yaw, dx, sensitivity)
         targetPitchRef.current = clampPitch(touchRotRef.current.pitch - dy * sensitivity)
       }
     }
@@ -558,7 +560,8 @@ export function FirstPersonControls() {
       smoothedCamPos.current.y += (targetY - smoothedCamPos.current.y) * posLerp
       smoothedCamPos.current.z += (robotPosition.z - smoothedCamPos.current.z) * posLerp
 
-      smoothedCamRot.current.y += (targetYawRef.current - smoothedCamRot.current.y) * rotLerp
+      const targetCameraYaw = gameYawToCameraYaw(targetYawRef.current)
+      smoothedCamRot.current.y += (targetCameraYaw - smoothedCamRot.current.y) * rotLerp
       smoothedCamRot.current.x += (targetPitchRef.current - smoothedCamRot.current.x) * rotLerp
       smoothedCamRot.current.z = 0
 
@@ -572,7 +575,8 @@ export function FirstPersonControls() {
       smoothedCamPos.current.y += (targetY - smoothedCamPos.current.y) * topDownPosLerp
       smoothedCamPos.current.z += (robotPosition.z - smoothedCamPos.current.z) * topDownPosLerp
 
-      smoothedCamRot.current.y += (targetYawRef.current - smoothedCamRot.current.y) * rotLerp
+      const targetCameraYaw = gameYawToCameraYaw(targetYawRef.current)
+      smoothedCamRot.current.y += (targetCameraYaw - smoothedCamRot.current.y) * rotLerp
       smoothedCamRot.current.x = -Math.PI / 2.5
       smoothedCamRot.current.z = 0
 
