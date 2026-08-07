@@ -25,14 +25,8 @@ const LEVELS: ReadonlyArray<{
     taskId: 'task-clean-table',
     items: [
       { id: 'obj-mug-1', room: 'dining', containerId: 'cnt-sink' },
-      { id: 'obj-mug-2', room: 'dining', containerId: 'cnt-sink' },
-      { id: 'obj-spoon-1', room: 'dining', containerId: 'cnt-sink' },
-      { id: 'obj-spoon-2', room: 'dining', containerId: 'cnt-sink' },
-      { id: 'obj-spoon-3', room: 'dining', containerId: 'cnt-sink' },
       { id: 'obj-plate-1', room: 'dining', containerId: 'cnt-cabinet' },
-      { id: 'obj-plate-2', room: 'dining', containerId: 'cnt-cabinet' },
       { id: 'obj-fork-1', room: 'dining', containerId: 'cnt-cabinet' },
-      { id: 'obj-fork-2', room: 'dining', containerId: 'cnt-cabinet' },
     ],
   },
   {
@@ -40,7 +34,6 @@ const LEVELS: ReadonlyArray<{
     items: [
       { id: 'obj-books', room: 'living', containerId: 'cnt-coffee-table' },
       { id: 'obj-mug', room: 'bedroom', containerId: 'cnt-coffee-table' },
-      { id: 'obj-bear', room: 'dining', containerId: 'cnt-coffee-table' },
       { id: 'obj-radio', room: 'entrance', containerId: 'cnt-coffee-table' },
     ],
   },
@@ -174,13 +167,27 @@ test('当前公开版可以从第一关连续完成到第三关最终结算', as
       await advanceStageTransitions(page, 1)
     }
 
+    if (level.taskId === 'task-leave-home') {
+      for (const item of level.items) {
+        const currentRoom = await readState<string>(page, 'getCurrentRoom')
+        if (currentRoom !== item.room) {
+          const moved = await callCommand(page, 'transitionToRoom', item.room)
+          expect(moved.success, `无法进入 ${item.room} 保存记忆`).toBe(true)
+        }
+        const memory = await callNearbyEntityCommand(page, 'saveMemoryByConfigId', item.id, item.room)
+        expect(memory.success, `第二关无法保存 ${item.id} 的位置记忆：${memory.reason ?? '未知原因'}`).toBe(true)
+      }
+      await advanceStageTransitions(page, 2)
+      await expect.poll(() => readState<string>(page, 'getCurrentStageId')).toBe('stage-recall-stable-map')
+    }
+
     if (level.taskId === 'task-laundry-sort') {
       await completeThirdLevel(page)
     } else {
       for (const [itemIndex, item] of level.items.entries()) {
         await pickAndPlace(page, item)
         if (level.taskId === 'task-clean-table' && itemIndex === 0) {
-          await expect(page.getByTestId('goal-completion-banner')).toContainText('马克杯 #1 放入水槽')
+          await expect(page.getByTestId('goal-completion-banner')).toContainText('马克杯放入水槽')
         }
       }
     }

@@ -656,7 +656,11 @@ export function ArenaPage() {
                         <span>交互/拾放</span>
                       </li>
                       <li className="text-yellow-700 text-[11px] mt-1">
-                        💡 有些物品藏在抽屉里，靠近后按 F 打开抽屉，再按 F 拿取物品
+                        {task.id === 'task-clean-table'
+                          ? '💡 第一关先靠近任意餐具按 E；记忆槽亮起后，再按 F 拾取和放置。'
+                          : task.id === 'task-leave-home'
+                            ? '💡 先巡查三个房间并分别按 E；三条位置记忆都建立后，才能开始取回。'
+                            : '💡 记忆变红说明现实已变化：回旧位置核对，再找到物品按 E 更新。'}
                       </li>
                     </ul>
                   </div>

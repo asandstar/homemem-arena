@@ -156,9 +156,9 @@ export const executePick = withCommandLock(function executePick(entityId: string
   const entity = before.entities.find((item) => item.id === entityId)
   if (!entity) return { success: false, reason: '物体不存在', action: 'pick' }
 
-  // L1 教学阶段：task-clean-table 的第一阶段（通常 stage-observe），
-  // 未保存任何任务物体记忆前，禁止拾取 task.objects 中定义的任务物体，强制玩家先学 E。
-  // 长期锁避免：只要当前阶段不是 stages[0] 就放行。
+  // L1：保存任意 1 条餐具记忆后解锁基础拾取。
+  // L2：必须为 3 件跨房间物品全部建立稳定记忆，阶段推进后才解锁拾取。
+  // 两者都只在各自第一阶段拦截，避免玩家完成教学后被永久锁住。
   const task = before.task
   const observeStageId = task?.stages?.[0]?.id
   const taskObjectIds = task?.objects?.map((o) => o.id) ?? []
@@ -179,6 +179,19 @@ export const executePick = withCommandLock(function executePick(entityId: string
           action: 'pick',
         }
       }
+    }
+  }
+
+  if (
+    task?.id === 'task-leave-home' &&
+    observeStageId &&
+    before.currentStageId === observeStageId &&
+    taskObjectIds.includes(entity.configId)
+  ) {
+    return {
+      success: false,
+      reason: '先分别靠近三件物品按 E，建立完整空间记忆后再拾取。',
+      action: 'pick',
     }
   }
 

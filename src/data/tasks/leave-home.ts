@@ -1,78 +1,91 @@
-// 关卡 2：钥匙猫的清晨恶作剧（Spatial Memory 空间记忆 · 旗舰关）
-// 目标：90 秒内跨 4 房间找回被钥匙猫藏匿的 4 件物品，放回客厅茶几
-// 记忆类型：空间记忆（Spatial Memory · 物体位置 + 房间布局）
-// 核心循环：跨房间寻物 → 钥匙猫二次恶作剧（物品位移）→ 重新寻找 → 归位茶几
-//
-// 设计文档：docs/DESIGN_LEVEL_TASKS.md §3.2
-// 资产：全部物品/容器有 GLB 模型（furniture/books, food/mug, furniture/bear, furniture/radio,
-//       furniture/tableCoffee）
-//
-// TECH_DEBT：内部 task id 仍为 'task-leave-home'（历史出门大作战），显示名已改为
-//            "钥匙猫的清晨恶作剧"。避免破坏 PUBLIC_LEVEL_ORDER / 存档 / 路由 / e2e 等下游引用。
+// 关卡 2：稳定空间记忆（RECALL）
+// 能力阶梯：L1 保存 1 条简单记忆 → L2 为 3 件跨房间物品分别编码并回忆 → L3 更新过期记忆。
 
 import type { EntityStateSnapshot, StageContext, TaskConfig } from '../../types/task'
 import type { RoomId } from '../../types/room'
 
-/** 房间元信息快照类型（与 ScriptedEventSpec.trigger 的 rooms 参数一致） */
 type RoomMap = Record<string, { id: RoomId; name?: string; center?: { x: number; z?: number; y?: number } }>
 
-const ALL_OBJECT_IDS = ['obj-books', 'obj-mug', 'obj-bear', 'obj-radio'] as const
+const COFFEE_TABLE = 'cnt-coffee-table'
+const RECALL_OBJECT_IDS = ['obj-books', 'obj-mug', 'obj-radio'] as const
+const STAGE_ENCODE_MAP = 'stage-encode-stable-map'
+const STAGE_RECALL_ITEMS = 'stage-recall-stable-map'
 
 function entityPlacedIn(entities: EntityStateSnapshot[], configId: string, containerId: string): boolean {
-  const e = entities.find((x) => x.configId === configId)
-  return !!e && e.placedIn === containerId && e.status === 'placed'
+  const entity = entities.find((candidate) => candidate.configId === configId)
+  return entity?.status === 'placed' && entity.placedIn === containerId
 }
 
-/** 已"找到"的物品数（被拾取过或已放置） */
+function encodedObjectIds(ctx: StageContext): Set<string> {
+  return new Set(ctx.memorySlots
+    .filter((slot) => !!slot && !slot.outdated)
+    .map((slot) => slot!.entityConfigId))
+}
+
+function hasStableSpatialMap(ctx: StageContext): boolean {
+  const encoded = encodedObjectIds(ctx)
+  return RECALL_OBJECT_IDS.every((id) => encoded.has(id))
+}
+
+function allRecallItemsReturned(ctx: StageContext): boolean {
+  return RECALL_OBJECT_IDS.every((id) => entityPlacedIn(ctx.entities, id, COFFEE_TABLE))
+}
+
 function foundCount(entities: EntityStateSnapshot[]): number {
-  return entities.filter(
-    (e) =>
-      (ALL_OBJECT_IDS as readonly string[]).includes(e.configId) &&
-      (e.status === 'held' || e.status === 'placed'),
-  ).length
+  return entities.filter((entity) => (RECALL_OBJECT_IDS as readonly string[]).includes(entity.configId)
+    && (entity.status === 'held' || entity.status === 'placed')).length
 }
 
 export const leaveHomeTask: TaskConfig = {
   id: 'task-leave-home',
-  name: '钥匙猫的清晨恶作剧',
-  description:
-    '🐱 上午 8:30，主人准备出门，发现客厅茶几上的书、马克杯、玩具熊、收音机全不见了！钥匙猫清晨恶作剧，把 4 件物品藏到了不同房间。90 秒内找回全部物品并放回客厅茶几——小心钥匙猫会二次捣乱！',
-  memoryTypes: ['spatial'],
-  difficulty: 'easy',
-  rooms: ['living', 'bedroom', 'dining', 'entrance'],
+  name: '钥匙猫的稳定记忆考验',
+  description: '🐱 先巡查客厅、卧室和玄关，分别按 E 记住书、马克杯和收音机的位置；三条记忆建立后，再依靠稳定记忆把它们带回客厅茶几。猫会制造假动静，但不会移动物品。',
+  memoryTypes: ['object', 'spatial'],
+  difficulty: 'medium',
+  rooms: ['living', 'bedroom', 'entrance'],
   iconKey: 'door',
-  tags: ['空间记忆', '跨房间寻物', '限时', '钥匙猫', '物品位移'],
-  timeLimit: 90,
-  // 出生在 living 东北角（距两墙各 0.5m），翻转 180° → 朝西南，直面沙发+玄关+书架，视野覆盖 L2 全部关键藏物区
+  tags: ['稳定记忆', '空间回忆', '跨房间', '钥匙猫'],
+  timeLimit: 150,
   spawnPosition: { x: 2.7, z: -2.2 },
   spawnRotation: (-3 * Math.PI) / 4,
+  initialStageId: STAGE_ENCODE_MAP,
 
-  briefing: `🐱 钥匙猫的清晨恶作剧 · 第二关（空间记忆）
+  stages: [
+    {
+      id: STAGE_ENCODE_MAP,
+      playerObjective: '【建立空间地图】巡查三个房间，靠近书、马克杯和收音机分别按 E；三个记忆槽都记录后才能拾取。',
+      entryCondition: () => true,
+      completionCondition: hasStableSpatialMap,
+      nextStage: STAGE_RECALL_ITEMS,
+    },
+    {
+      id: STAGE_RECALL_ITEMS,
+      playerObjective: '【稳定记忆回忆】根据三条位置记忆找回物品，全部放到客厅茶几。猫的声音只是干扰，物品不会移动。',
+      entryCondition: hasStableSpatialMap,
+      completionCondition: allRecallItemsReturned,
+      nextStage: null,
+    },
+  ],
 
-早晨八点，主人拎着公文包冲进客厅，翻遍沙发垫、摸遍玄关抽屉——那本要还的图书馆书、上班用的马克杯、送孩子的玩具熊、厨房里听新闻的收音机，全都不翼而飞。
+  briefing: `🐱 记忆宅邸 · 第二关（RECALL：稳定空间记忆）
 
-主人：「小橡！是不是那只猫又捣乱了？我赶时间！」
+钥匙猫把三件日常物品分散到了不同房间，但这次环境是稳定的：
 
-钥匙猫从沙发背后探出脑袋，脖子上挂着那把永远丢不掉的旧钥匙，舔了舔爪子，眼神无辜得像什么都没发生过。
+  📖 书在客厅
+  ☕ 马克杯在卧室
+  📻 收音机在玄关
 
-MEM-07：「扫描完成。四件物品被分散藏匿于客厅、卧室、餐厨、玄关四个房间。钥匙猫的活动轨迹显示它至少搬运了两次。」
+第一阶段不是搬运，而是建立空间记忆：
+  ① 依次找到三件物品
+  ② 靠近每件物品按 E，填满三个记忆槽
+  ③ 三条记忆建立后，再按 F 拾取
+  ④ 把三件物品全部带回客厅茶几
 
-📋 任务目标（90 秒内完成）：
-  📖 书     → 藏在客厅沙发
-  ☕ 马克杯 → 藏在卧室床头柜
-  🧸 玩具熊 → 藏在厨房台面
-  📻 收音机 → 藏在玄关
+⚠️ 钥匙猫会制造声音和脚印干扰，但不会改变现实。看到假动静时，学会相信仍然有效的记忆。`,
 
-🎯 归位：找到后全部放回客厅茶几
-
-💡 提示：记住每件物品藏在哪个房间——按 E 可以保存位置记忆。环境不会变化，但钥匙猫可能会发出声音干扰你。`,
-
-  completionText:
-    '主人：「太及时了！东西都找到了！小橡你真靠谱。」\n钥匙猫：「喵~」（跳上书架，尾巴甩了甩，似乎在策划下一次）\nMEM-07：「空间记忆模块校准完成。但钥匙猫……它的活动模式我还没完全掌握。」',
-  failureText:
-    '主人：「来不及了，我先走了……东西回来再收拾。」\n钥匙猫：「喵呜~」（得意地蜷在窗台，尾巴盖住鼻子）\nMEM-07：「时间不足。建议策略：先去最近的房间找一件，按 E 记住位置后再移动，避免反复跑空。」',
-  systemPrompt:
-    '【MEM-07 日志】任务：钥匙猫清晨恶作剧，90秒内找回 4 件物品。物品：书(客厅沙发)、马克杯(卧室床头柜)、玩具熊(厨房台面)、收音机(玄关)。目标区：客厅茶几。环境稳定，物品位置不变。钥匙猫可能发出声音干扰，但不会移动物品。记忆类型：空间记忆。策略：回忆 briefing 位置→跨房间搜寻→拾取→带回茶几放置。',
+  completionText: '✅ 三件物品全部回到客厅茶几！\nMEM-07：「稳定环境中的空间回忆完成。下一关更难：现实会真的发生变化，正确的旧记忆也可能过期。」',
+  failureText: '⏰ 时间到了。先走一遍三个房间并按 E 建立三条位置记忆，再按记忆规划取回路线，会比反复乱找更快。',
+  systemPrompt: '【MEM-07 日志】L2 RECALL：3 件物品、3 个房间、3 个记忆槽。必须先分别按 E 编码全部位置，才能进入取回阶段。环境稳定，猫只制造假干扰，不移动物品。',
 
   objects: [
     {
@@ -80,7 +93,6 @@ MEM-07：「扫描完成。四件物品被分散藏匿于客厅、卧室、餐�
       name: '书',
       category: 'book',
       initialRoom: 'living',
-      // 放在客厅沙发座面上（decor-sofa-main 在 (-1.5, 0, 0.8)，座面高约 0.45）
       initialPosition: { x: -1.5, y: 0.45, z: 0.8 },
       size: { x: 0.22, y: 0.08, z: 0.16 },
       color: '#3b82f6',
@@ -91,29 +103,16 @@ MEM-07：「扫描完成。四件物品被分散藏匿于客厅、卧室、餐�
       name: '马克杯',
       category: 'cup',
       initialRoom: 'bedroom',
-      // 放在卧室床头柜右侧台面（decor-nightstand-right 在 (1.35, 0, -2.0)，台面 0.605）
       initialPosition: { x: 1.35, y: 0.605, z: -2.0 },
       size: { x: 0.14, y: 0.12, z: 0.14 },
       color: '#dc2626',
       modelAssetId: 'food/mug',
     },
     {
-      id: 'obj-bear',
-      name: '玩具熊',
-      category: 'toy',
-      initialRoom: 'dining',
-      // 放在厨房台面（decor-kit-cabinet-2 在 (0.6, 0, -2.1)，台面 0.563）
-      initialPosition: { x: 0.6, y: 0.563, z: -1.9 },
-      size: { x: 0.22, y: 0.28, z: 0.20 },
-      color: '#a16207',
-      modelAssetId: 'furniture/bear',
-    },
-    {
       id: 'obj-radio',
       name: '收音机',
       category: 'remote',
       initialRoom: 'entrance',
-      // 放在玄关鞋柜台面（decor-entrance-shoe-cabinet 在 (0.5, 0, -1.9)，台面 0.615）
       initialPosition: { x: 0.5, y: 0.615, z: -1.8 },
       size: { x: 0.567, y: 0.411, z: 0.176 },
       color: '#1f2937',
@@ -123,73 +122,81 @@ MEM-07：「扫描完成。四件物品被分散藏匿于客厅、卧室、餐�
 
   containers: [
     {
-      id: 'cnt-coffee-table',
+      id: COFFEE_TABLE,
       name: '客厅茶几',
       room: 'living',
-      // 居于客厅圆形地毯中央（decor-living-rug-round 在 (-1.5, 0, -0.2)）
-      // 沙发 (z=0.8) 与电视柜 (z=-2.4) 之间，合理交互距离
       position: { x: -1.5, y: 0.2, z: -0.5 },
       size: { x: 1.4, y: 0.45, z: 0.7 },
       surfaceHeight: 0.45,
       color: '#8b5a2b',
       initialOpen: true,
-      // 茶几是唯一目标区，接受 4 件物品的所有类别
       acceptedCategories: [],
       acceptAny: true,
       isTargetZone: true,
-      targetLabel: '客厅茶几（4 件物品都放这里）',
+      targetLabel: '客厅茶几（三件物品都放这里）',
       modelAssetId: 'furniture/tableCoffee',
     },
   ],
 
   goals: [
     {
+      id: 'g-encode-stable-map',
+      description: '按 E 记住书、马克杯和收音机的位置',
+      kind: 'milestone',
+      memoryType: 'spatial',
+      relatedObjectIds: [...RECALL_OBJECT_IDS],
+      predicate: (_entities, _snapshot, ctx) => !!ctx && hasStableSpatialMap(ctx),
+      achievedMessage: '✓ 三个房间的位置记忆已经建立',
+    },
+    {
       id: 'g-books-table',
-      description: '书放回客厅茶几',
+      description: '根据记忆把书带回客厅茶几',
+      dependsOnGoalIds: ['g-encode-stable-map'],
       memoryType: 'spatial',
       relatedObjectIds: ['obj-books'],
-      predicate: (entities: EntityStateSnapshot[]) =>
-        entityPlacedIn(entities, 'obj-books', 'cnt-coffee-table'),
-      achievedMessage: '📖 书已放回茶几！',
+      predicate: (entities) => entityPlacedIn(entities, 'obj-books', COFFEE_TABLE),
+      achievedMessage: '✓ 书已带回茶几',
     },
     {
       id: 'g-mug-table',
-      description: '马克杯放回客厅茶几',
+      description: '根据记忆把马克杯带回客厅茶几',
+      dependsOnGoalIds: ['g-encode-stable-map'],
       memoryType: 'spatial',
       relatedObjectIds: ['obj-mug'],
-      predicate: (entities: EntityStateSnapshot[]) =>
-        entityPlacedIn(entities, 'obj-mug', 'cnt-coffee-table'),
-      achievedMessage: '☕ 马克杯已放回茶几！',
-    },
-    {
-      id: 'g-bear-table',
-      description: '玩具熊放回客厅茶几',
-      memoryType: 'spatial',
-      relatedObjectIds: ['obj-bear'],
-      predicate: (entities: EntityStateSnapshot[]) =>
-        entityPlacedIn(entities, 'obj-bear', 'cnt-coffee-table'),
-      achievedMessage: '🧸 玩具熊已放回茶几！',
+      predicate: (entities) => entityPlacedIn(entities, 'obj-mug', COFFEE_TABLE),
+      achievedMessage: '✓ 马克杯已带回茶几',
     },
     {
       id: 'g-radio-table',
-      description: '收音机放回客厅茶几',
+      description: '根据记忆把收音机带回客厅茶几',
+      dependsOnGoalIds: ['g-encode-stable-map'],
       memoryType: 'spatial',
       relatedObjectIds: ['obj-radio'],
-      predicate: (entities: EntityStateSnapshot[]) =>
-        entityPlacedIn(entities, 'obj-radio', 'cnt-coffee-table'),
-      achievedMessage: '📻 收音机已放回茶几！',
+      predicate: (entities) => entityPlacedIn(entities, 'obj-radio', COFFEE_TABLE),
+      achievedMessage: '✓ 收音机已带回茶几',
     },
   ],
 
   scriptedEvents: [
     {
       id: 'se-welcome',
-      trigger: (step: number) => step === 1,
+      trigger: 1,
       type: 'message',
-      message: '🐱 MEM-07：「钥匙猫清晨恶作剧！4 件物品被藏到了不同房间。90 秒内找回并放到客厅茶几。」',
-      description: '开场提示，介绍任务目标',
+      message: '🧠 这一关要建立三条稳定记忆：每找到一件物品，都先按 E，再去下一个房间。',
+      description: '提示三物品编码阶段',
       memoryType: 'spatial',
-      toastType: 'info' as const,
+      toastType: 'info',
+    },
+    {
+      id: 'se-map-ready',
+      trigger: (_step, _entities, _room, _rooms, ctx) => !!ctx
+        && ctx.currentStageId === STAGE_RECALL_ITEMS
+        && !ctx.triggeredEvents.has('se-map-ready'),
+      type: 'message',
+      message: '✓ 三条记忆已建立。现在按记忆取回物品，全部送到客厅茶几。',
+      description: '空间地图编码完成',
+      memoryType: 'spatial',
+      toastType: 'success',
     },
     {
       id: 'se-found-first',
@@ -199,15 +206,12 @@ MEM-07：「扫描完成。四件物品被分散藏匿于客厅、卧室、餐�
         _currentRoom: RoomId,
         _rooms: RoomMap | undefined,
         ctx: StageContext | undefined,
-      ) => {
-        if (ctx?.triggeredEvents.has('se-found-first')) return false
-        return foundCount(entities) >= 1
-      },
+      ) => !ctx?.triggeredEvents.has('se-found-first') && foundCount(entities) >= 1,
       type: 'message',
-      message: '✨ MEM-07：「找到一件了！记得它的位置——钥匙猫可能会再动它。」',
-      description: '找到第 1 件物品鼓励',
+      message: '✨ 第一件取回成功。剩下两件的位置仍然没有变化，继续相信你的记忆。',
+      description: '第一件取回后的强化反馈',
       memoryType: 'spatial',
-      toastType: 'success' as const,
+      toastType: 'success',
     },
     {
       id: 'se-cat-second-prank',
@@ -217,17 +221,15 @@ MEM-07：「扫描完成。四件物品被分散藏匿于客厅、卧室、餐�
         _currentRoom: RoomId,
         _rooms: RoomMap | undefined,
         ctx: StageContext | undefined,
-      ) => {
-        if (step < 8) return false
-        if (ctx?.triggeredEvents.has('se-cat-second-prank')) return false
-        return foundCount(entities) >= 2
-      },
+      ) => step >= 8
+        && !ctx?.triggeredEvents.has('se-cat-second-prank')
+        && foundCount(entities) >= 1,
       type: 'message',
-      message: '🐱 钥匙猫从你身后溜过，爪子拍了一下地板…什么也没发生。',
-      description: '钥匙猫纯视听干扰（不移动物品，不改世界状态）',
+      message: '🐱 走廊传来奔跑声，地上多了几枚猫脚印……但记忆没有变红，物品位置仍然可信。',
+      description: '不改变世界状态的假干扰，训练玩家判断记忆仍有效',
       memoryType: 'spatial',
       eventEffect: 'cat-prints',
-      toastType: 'cat' as const,
+      toastType: 'cat',
     },
     {
       id: 'se-time-warning',
@@ -237,35 +239,12 @@ MEM-07：「扫描完成。四件物品被分散藏匿于客厅、卧室、餐�
         _currentRoom: RoomId,
         _rooms: RoomMap | undefined,
         ctx: StageContext | undefined,
-      ) => {
-        if (!ctx) return false
-        if (ctx.triggeredEvents.has('se-time-warning')) return false
-        // 剩余约 30 秒（elapsedMs > 60s）时提示
-        return ctx.elapsedMs >= 60000
-      },
+      ) => !!ctx && ctx.elapsedMs >= 100000 && !ctx.triggeredEvents.has('se-time-warning'),
       type: 'message',
-      message: '⏰ MEM-07：「还剩 30 秒！主人已经在门口跺脚了。」',
-      description: '剩余 30 秒时间警告',
+      message: '⏰ 还剩不到一分钟。查看记忆槽，确认剩余物品所在房间。',
+      description: '剩余时间提示',
       memoryType: 'spatial',
-      toastType: 'warning' as const,
-    },
-    {
-      id: 'se-found-three',
-      trigger: (
-        _step: number,
-        entities: EntityStateSnapshot[],
-        _currentRoom: RoomId,
-        _rooms: RoomMap | undefined,
-        ctx: StageContext | undefined,
-      ) => {
-        if (ctx?.triggeredEvents.has('se-found-three')) return false
-        return foundCount(entities) >= 3
-      },
-      type: 'message',
-      message: '🌟 MEM-07：「已经找到 3 件了！就差最后一件！」',
-      description: '找到 3 件物品鼓励',
-      memoryType: 'spatial',
-      toastType: 'success' as const,
+      toastType: 'warning',
     },
   ],
 
@@ -273,8 +252,8 @@ MEM-07：「扫描完成。四件物品被分散藏匿于客厅、卧室、餐�
     {
       id: 'p-books-room',
       type: 'location',
-      question: '📖 书被钥匙猫藏在了哪个房间？',
-      options: ['客厅', '卧室', '厨房', '玄关'],
+      question: '书最初位于哪个房间？',
+      options: ['客厅', '卧室', '玄关', '餐厨'],
       correctAnswer: '客厅',
       dependsOnMemoryType: 'spatial',
       difficulty: 'easy',
@@ -283,52 +262,32 @@ MEM-07：「扫描完成。四件物品被分散藏匿于客厅、卧室、餐�
     {
       id: 'p-mug-room',
       type: 'location',
-      question: '☕ 马克杯被藏在了哪个房间？',
-      options: ['客厅', '卧室', '厨房', '玄关'],
+      question: '马克杯最初位于哪个房间？',
+      options: ['卧室', '客厅', '玄关', '餐厨'],
       correctAnswer: '卧室',
       dependsOnMemoryType: 'spatial',
       difficulty: 'easy',
       relatedObjectIds: ['obj-mug'],
     },
     {
-      id: 'p-bear-room',
-      type: 'location',
-      question: '🧸 玩具熊被藏在了哪个房间？',
-      options: ['客厅', '卧室', '厨房', '玄关'],
-      correctAnswer: '厨房',
-      dependsOnMemoryType: 'spatial',
-      difficulty: 'medium',
-      relatedObjectIds: ['obj-bear'],
-    },
-    {
       id: 'p-radio-room',
       type: 'location',
-      question: '📻 收音机被藏在了哪个房间？',
-      options: ['客厅', '卧室', '厨房', '玄关'],
+      question: '收音机最初位于哪个房间？',
+      options: ['玄关', '卧室', '客厅', '餐厨'],
       correctAnswer: '玄关',
       dependsOnMemoryType: 'spatial',
-      difficulty: 'medium',
+      difficulty: 'easy',
       relatedObjectIds: ['obj-radio'],
     },
     {
       id: 'p-cat-distractor',
       type: 'state',
-      question: '🦁 钥匙猫在找东西过程中有没有移动物品？',
-      options: ['没有，只是发出声音干扰', '叼走了玩具熊', '藏了收音机', '搬动了书'],
-      correctAnswer: '没有，只是发出声音干扰',
+      question: '钥匙猫制造假动静后，物品位置发生变化了吗？',
+      options: ['没有，记忆仍然有效', '三件都移动了', '只有书移动了', '只有收音机移动了'],
+      correctAnswer: '没有，记忆仍然有效',
       dependsOnMemoryType: 'spatial',
-      difficulty: 'easy',
+      difficulty: 'medium',
       relatedEventIds: ['se-cat-second-prank'],
-      hint: '回忆钥匙猫做了什么',
-    },
-    {
-      id: 'p-target-zone',
-      type: 'location',
-      question: '🎯 找到的物品应该放回到哪里？',
-      options: ['客厅茶几', '卧室床头柜', '厨房台面', '玄关柜'],
-      correctAnswer: '客厅茶几',
-      dependsOnMemoryType: 'spatial',
-      difficulty: 'easy',
     },
   ],
 }

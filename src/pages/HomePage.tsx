@@ -62,8 +62,8 @@ export function HomePage() {
             <p className="text-slate-300 leading-relaxed text-sm mb-4">
               你是一台记忆模块出了故障的家务机器人 <span className="text-cyan-400 font-bold">MEM-07</span>，
               只能同时记住 <span className="text-purple-400 font-bold">3 件物品</span> 的位置。
-              在一栋"会捣乱"的房子里，你需要完成各种记忆任务：收拾餐桌、追踪被猫移动的物品、识别并更新过期记忆...
-              而房子里的钥匙猫会藏东西、制造过期记忆，逼你判断哪些记忆仍然可信。
+              三关会逐步训练记忆能力：先保存第一条位置记忆，再跨房间回忆三条稳定记忆，最后识别并更新一条过期记忆。
+              房子里的钥匙猫会先制造假干扰，再真正改变现实，逼你判断哪些记忆仍然可信。
             </p>
           </div>
 

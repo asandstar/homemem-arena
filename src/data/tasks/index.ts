@@ -14,9 +14,7 @@ export type PublicTaskId = typeof PUBLIC_LEVEL_ORDER[number]
 export const HIDDEN_TASK_IDS = [] as const
 export type HiddenTaskId = typeof HIDDEN_TASK_IDS[number]
 
-/**
- * 全部 5 关均公开显示，无需通关解锁。
- */
+/** 当前比赛版公开三关。 */
 export function getPublicTaskTemplates(): TaskConfig[] {
   return taskTemplates.slice()
 }
@@ -59,20 +57,20 @@ export interface TaskPresentation {
 export const taskPresentationById: Record<string, TaskPresentation> = {
   'task-clean-table': {
     role: 'tutorial',
-    shortDescription: '把 9 件餐具按类别归位：杯勺→水槽，盘叉→橱柜',
+    shortDescription: '保存第一条位置记忆，再把 3 件餐具正确归位',
     estimatedMinutes: 2,
     emoji: '🍽️',
   },
   'task-leave-home': {
     role: 'semifinal-core',
-    shortDescription: '钥匙猫把书、杯子、小熊、收音机藏到全屋，90秒内找回放回茶几',
-    estimatedMinutes: 4,
-    emoji: '🚪',
+    shortDescription: '为三个房间的物品建立稳定记忆，再依靠记忆取回',
+    estimatedMinutes: 3,
+    emoji: '🧠',
   },
   'task-laundry-sort': {
     role: 'challenge',
     shortDescription: '记住麦片旧位置，发现冲突后重新观察并更新记忆',
-    estimatedMinutes: 3,
+    estimatedMinutes: 4,
     emoji: '🥣',
   },
 }

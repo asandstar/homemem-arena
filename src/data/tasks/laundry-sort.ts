@@ -80,9 +80,9 @@ function cerealMovedToUpper(ctx: StageContext): boolean {
 export const laundrySortTask: TaskConfig = {
   id: 'task-laundry-sort',
   name: '过期的早餐记忆',
-  description: '🥣 记住麦片在下层橱柜，摆餐具后再回来取。环境会悄悄变化：旧记忆失效时，你必须发现冲突、重新观察并按 E 更新记忆。',
+  description: '🥣 在 L2 的稳定回忆基础上继续升级：先按 E 编码麦片位置，完成分心任务后核对旧记忆；现实发生变化时，必须发现冲突、重新观察并再次按 E 更新。',
   memoryTypes: ['object', 'spatial', 'temporal'],
-  difficulty: 'medium-hard',
+  difficulty: 'hard',
   rooms: ['dining'],
   iconKey: 'dish',
   tags: ['记忆更新', '过期记忆', '单房间', '早餐任务'],
@@ -115,7 +115,7 @@ export const laundrySortTask: TaskConfig = {
     },
     {
       id: STAGE_UPDATE,
-      playerObjective: '【重新观察并更新】环顾北墙，找到被移动的麦片。打开旁边较高的柜子，靠近麦片按 E 更新记忆，再按 F 拾取。',
+      playerObjective: '【重新观察并更新】旧位置已经失效。重新观察北墙附近，找到麦片的真实位置；靠近后按 E 更新记忆，再按 F 拾取。',
       entryCondition: (ctx) => ctx.triggeredEvents.has('se-conflict-detected'),
       completionCondition: (ctx) => hasFreshCerealMemory(ctx) && ctx.memoryUpdateCount >= 1,
       nextStage: STAGE_SERVE,
@@ -138,7 +138,8 @@ export const laundrySortTask: TaskConfig = {
 
   briefing: `🥣 记忆宅邸 · 第三关（UPDATE：过期记忆更新）
 
-主人准备早餐时临时接到电话，请 MEM-07 帮忙摆桌。麦片、碗和杯子都在北墙的下层橱柜里，勺子已经在餐桌上。
+上一关训练的是 RECALL：环境稳定时，相信仍然有效的空间记忆。
+这一关升级为 UPDATE：主人准备早餐时临时接到电话，请 MEM-07 帮忙摆桌。麦片、碗和杯子都在北墙的下层橱柜里，勺子已经在餐桌上。
 
 这次真正考验的不是“找东西”，而是判断记忆是否仍然可信：
   ① 打开下层橱柜，找到麦片并按 E 保存位置记忆

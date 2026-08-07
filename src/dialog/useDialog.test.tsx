@@ -8,7 +8,6 @@ describe('useDialog', () => {
 
     act(() => result.current.triggerDialog('start', 'task-clean-table'))
     act(() => result.current.handleNext())
-    act(() => result.current.handleNext())
 
     const finalChoice = result.current.currentNode?.choices?.[0]
     expect(finalChoice).toBeDefined()

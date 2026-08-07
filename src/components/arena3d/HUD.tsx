@@ -245,7 +245,7 @@ export function HUD() {
   const anyTaskMemorySaved = memorySlots.some(
     (s) => s !== null && taskObjectIds.includes(s.entityConfigId),
   )
-  // L1 教学：第一阶段（观察）且玩家尚未保存任何任务物体记忆 → 只显示 E 不显示 F 拾取教学
+  // L1 教学：第一阶段且玩家尚未保存任何任务物体记忆 → 只显示 E 不显示 F 拾取教学
   const l1TeachStage = task?.id === 'task-clean-table' && currentStageId === firstStageId && !anyTaskMemorySaved
   // L1 教学：已至少保存 1 条任务记忆，或已离开观察阶段 → 不显示 E 教学，只显示 F 拾取/放置
   const l1PastTeachStage = task?.id === 'task-clean-table' && (currentStageId !== firstStageId || anyTaskMemorySaved)
@@ -265,7 +265,7 @@ export function HUD() {
   // [F] 交互动作文案 + 原因
   let itemActionLabel: string | null = null
   let itemActionDisabledReason: string | null = null
-  // L1 教学：教学阶段（尚未保存任何任务记忆）→ 隐藏 F 拾取教学提示，避免 E 和 F 同时出现
+  // L1 教学：尚未保存第一条任务记忆 → 隐藏 F 拾取教学提示，避免 E 和 F 同时出现
   const shouldHideInteractHint = l1TeachStage
   if (!shouldHideInteractHint) {
     if (heldEntity && nearbyContainer) {
@@ -822,7 +822,13 @@ export function HUD() {
               <div className="flex items-center gap-2">
                 <Brain size={14} className="text-purple-400" />
                 <span className="text-xs text-slate-400">记忆槽</span>
-                <span className="text-[9px] text-slate-500">记住物品位置 · 猫会偷走物品导致记忆过期</span>
+                <span className="text-[9px] text-slate-500">
+                  {task?.id === 'task-clean-table'
+                    ? '先保存第一条位置记忆，再开始整理'
+                    : task?.id === 'task-leave-home'
+                      ? '三条稳定记忆都建立后再取回'
+                      : '记忆变红时先核对，再按 E 更新'}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <button

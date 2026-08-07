@@ -172,29 +172,28 @@ describe('三关后端模拟实玩 & 证据链', () => {
     useGameStore.getState().resetTask()
   })
 
-  it('L1: task-clean-table —— 9件餐具归位（杯勺→水槽，盘叉→橱柜）→Probe→Result', () => {
+  it('L1: task-clean-table —— 保存第一条记忆→3件餐具归位→Result', () => {
     useGameStore.getState().initializeTask('task-clean-table')
     const task = useGameStore.getState().task!
     useGameStore.getState().startPlaying()
     di('L1-0-INIT', snap(task, 'L1-0-INIT'))
     expect(useGameStore.getState().phase).toBe('playing')
 
-    // 验证 9 件物品 + 4 个容器存在
+    // 入门关只保留 3 件任务物品，避免操作教学被物量淹没。
     const allConfigs = useGameStore.getState().entities.map((e) => e.configId)
     di('L1-0-ENTITY-CONFIGS', allConfigs)
-    expect(allConfigs).toEqual(
-      expect.arrayContaining([
-        'obj-mug-1', 'obj-mug-2',
-        'obj-spoon-1', 'obj-spoon-2', 'obj-spoon-3',
-        'obj-plate-1', 'obj-plate-2',
-        'obj-fork-1', 'obj-fork-2',
-      ]),
-    )
-    expect(allConfigs).toHaveLength(9)
+    expect(allConfigs).toEqual(expect.arrayContaining(['obj-mug-1', 'obj-plate-1', 'obj-fork-1']))
+    expect(allConfigs).toHaveLength(3)
 
-    // 归位规则：杯勺→cnt-sink，盘叉→cnt-cabinet
-    const sinkItems = ['obj-mug-1', 'obj-mug-2', 'obj-spoon-1', 'obj-spoon-2', 'obj-spoon-3']
-    const cabinetItems = ['obj-plate-1', 'obj-plate-2', 'obj-fork-1', 'obj-fork-2']
+    // 第一关的记忆不是装饰：未按 E 前不能拾取任务物品。
+    expect(pickByCfg('obj-mug-1').success).toBe(false)
+    expect(setRobotAtEntity(task, 'obj-mug-1').success).toBe(true)
+    expect(saveByCfg('obj-mug-1').success).toBe(true)
+    evalAndCheck('L1-FIRST-MEMORY')
+    expect(useGameStore.getState().achievedGoalIds.has('g-save-first-memory')).toBe(true)
+
+    const sinkItems = ['obj-mug-1']
+    const cabinetItems = ['obj-plate-1', 'obj-fork-1']
 
     // ========== 归位杯勺 → 水槽 ==========
     for (const cfg of sinkItems) {
@@ -226,16 +225,16 @@ describe('三关后端模拟实玩 & 证据链', () => {
     })
     expect(finalState.achievedGoalIds).toEqual(
       new Set([
-        'g-mug-1-sink', 'g-mug-2-sink',
-        'g-spoon-1-sink', 'g-spoon-2-sink', 'g-spoon-3-sink',
-        'g-plate-1-cabinet', 'g-plate-2-cabinet',
-        'g-fork-1-cabinet', 'g-fork-2-cabinet',
+        'g-save-first-memory',
+        'g-mug-1-sink',
+        'g-plate-1-cabinet',
+        'g-fork-1-cabinet',
       ]),
     )
     expect(finalState.levelCompleted).toBe(true)
   })
 
-  it('L2: task-leave-home —— 4件物品跨房间寻回→放回客厅茶几（严格断言通关）', () => {
+  it('L2: task-leave-home —— 先编码3个房间的位置→稳定回忆→放回客厅茶几', () => {
     useGameStore.getState().initializeTask('task-leave-home')
     const task = useGameStore.getState().task!
     useGameStore.getState().startPlaying()
@@ -246,15 +245,26 @@ describe('三关后端模拟实玩 & 证据链', () => {
     di('L2-0-ENTITY-CONFIGS', allConfigs)
     expect(allConfigs).toContain('obj-books')
     expect(allConfigs).toContain('obj-mug')
-    expect(allConfigs).toContain('obj-bear')
     expect(allConfigs).toContain('obj-radio')
     // 旧出门大作战物体已移除
     expect(allConfigs).not.toContain('obj-key')
     expect(allConfigs).not.toContain('obj-phone')
     expect(allConfigs).not.toContain('obj-umbrella')
 
-    // ========== 4 件物品拾取并放回客厅茶几 ==========
-    const allObjects = ['obj-books', 'obj-mug', 'obj-bear', 'obj-radio']
+    const allObjects = ['obj-books', 'obj-mug', 'obj-radio']
+
+    // ========== ENCODE：三条位置记忆全部建立前禁止开始搬运 ==========
+    expect(setRobotAtEntity(task, 'obj-books').success).toBe(true)
+    expect(pickByCfg('obj-books').success).toBe(false)
+    for (const cfg of allObjects) {
+      expect(setRobotAtEntity(task, cfg).success).toBe(true)
+      expect(saveByCfg(cfg).success).toBe(true)
+      evalAndCheck(`L2-SAVED-${cfg}`)
+    }
+    expect(useGameStore.getState().achievedGoalIds.has('g-encode-stable-map')).toBe(true)
+    expect(useGameStore.getState().currentStageId).toBe('stage-recall-stable-map')
+
+    // ========== RECALL：根据稳定记忆跨房间取回三件物品 ==========
     for (const cfg of allObjects) {
       di(`L2-move-to-${cfg}`, setRobotAtEntity(task, cfg))
       di(`L2-pick-${cfg}`, pickByCfg(cfg))
@@ -275,7 +285,7 @@ describe('三关后端模拟实玩 & 证据链', () => {
       phase: finalState.phase,
     })
     expect(finalState.achievedGoalIds).toEqual(
-      new Set(['g-books-table', 'g-mug-table', 'g-bear-table', 'g-radio-table']),
+      new Set(['g-encode-stable-map', 'g-books-table', 'g-mug-table', 'g-radio-table']),
     )
     expect(finalState.levelCompleted).toBe(true)
   })

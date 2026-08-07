@@ -8,6 +8,7 @@ import {
   FLOW_HINT_LEVEL_ONE_MS,
   FLOW_HINT_LEVEL_TWO_MS,
 } from './flow'
+import { executeSaveMemory } from './commands'
 
 describe('心流辅助', () => {
   beforeEach(() => {
@@ -19,10 +20,9 @@ describe('心流辅助', () => {
     const state = useGameStore.getState()
     const goal = findActiveGoal(state.task, state.getEntitySnapshot(), state.achievedGoalIds)
 
-    expect(goal?.id).toBe('g-mug-1-sink')
+    expect(goal?.id).toBe('g-save-first-memory')
     expect(buildFlowHint(goal!, 1)).toContain(goal!.description)
-    // 单件目标的 memoryType 仍是 procedural，level 2 提示包含 procedural 策略
-    expect(buildFlowHint(goal!, 2)).toContain('把流程拆成一步')
+    expect(buildFlowHint(goal!, 2)).toContain('先核对物体状态和容器')
   })
 
   it('20 秒和 45 秒停滞时逐级提示，并写入 Session', () => {
@@ -54,20 +54,15 @@ describe('心流辅助', () => {
       elapsedMs: 30_000,
       lastGoalProgressMs: 0,
       flowHintLevel: 1,
-      activeFlowHint: { goalId: 'g-mug-1-sink', level: 1, message: 'test' },
+      activeFlowHint: { goalId: 'g-save-first-memory', level: 1, message: 'test' },
     })
 
     const cup1 = useGameStore.getState().entities.find((entity) => entity.configId === 'obj-mug-1')!
-    useGameStore.setState((state) => ({
+    useGameStore.setState({
       phase: 'playing',
-      entities: state.entities.map((entity) => {
-        if (entity.id === cup1.id) {
-          return { ...entity, status: 'placed' as const, placedIn: 'cnt-sink' }
-        }
-        return entity
-      }),
-    }))
-    useGameStore.getState().checkLevelCompletion()
+      robotPosition: { ...cup1.position },
+    })
+    expect(executeSaveMemory(cup1.id).success).toBe(true)
 
     expect(useGameStore.getState().lastGoalProgressMs).toBe(30_000)
     expect(useGameStore.getState().flowHintLevel).toBe(0)
