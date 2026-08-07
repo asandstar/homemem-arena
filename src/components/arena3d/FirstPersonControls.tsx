@@ -36,6 +36,9 @@ import {
   findNearestInteractableContainer,
   findNearestInteractableEntity,
 } from '../../game/interactionTargets'
+import { doorKey } from '../../store/slices/playerSlice'
+
+const DOOR_INTERACT_DISTANCE = 2.5
 
 const ROTATION_SYNC_THRESHOLD = 0.001
 const FOV_MIN = 30
@@ -89,6 +92,31 @@ export function FirstPersonControls() {
   const findNearbyContainer = useCallback(() => {
     const state = useGameStore.getState()
     return findNearestInteractableContainer(state.task, state.robotPosition, state.currentRoom)
+  }, [])
+
+  // 查找附近可交互的门（任务相关 + 距离 < 阈值）
+  const findNearbyDoor = useCallback(() => {
+    const state = useGameStore.getState()
+    const { robotPosition, currentRoom, task } = state
+    const roomSpec = sharedRooms[currentRoom]
+    if (!roomSpec || !task) return null
+
+    const taskRooms = task.rooms
+    let nearest: { connectsTo: RoomId; distance: number } | null = null
+
+    for (const d of roomSpec.doorways) {
+      if (!taskRooms.includes(d.connectsTo as RoomId)) continue
+      const doorWorldX = roomSpec.center.x + d.offset.x
+      const doorWorldZ = roomSpec.center.z + d.offset.z
+      const dx = robotPosition.x - doorWorldX
+      const dz = robotPosition.z - doorWorldZ
+      const dist = Math.sqrt(dx * dx + dz * dz)
+      if (dist < DOOR_INTERACT_DISTANCE && (!nearest || dist < nearest.distance)) {
+        nearest = { connectsTo: d.connectsTo as RoomId, distance: dist }
+      }
+    }
+
+    return nearest
   }, [])
 
   useEffect(() => {
@@ -202,7 +230,16 @@ export function FirstPersonControls() {
                   addToast('info', isOpen ? `已关闭 ${container.name}` : `已打开 ${container.name}`)
                 }
               } else {
-                addToast('info', '附近没有可交互的物体或容器')
+                // 无实体无容器：检查附近是否有门可交互
+                const nearbyDoor = findNearbyDoor()
+                if (nearbyDoor) {
+                  const gs = useGameStore.getState()
+                  const nowOpen = gs.toggleDoor(gs.currentRoom, nearbyDoor.connectsTo)
+                  const targetRoomName = sharedRooms[nearbyDoor.connectsTo]?.name ?? nearbyDoor.connectsTo
+                  addToast('info', nowOpen ? `已开门 → ${targetRoomName}` : `已关门`)
+                } else {
+                  addToast('info', '附近没有可交互的物体、容器或门')
+                }
               }
             }
           }
@@ -271,7 +308,7 @@ export function FirstPersonControls() {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [phase, findNearbyEntity, findNearbyContainer, setFlashingSlotIndex, addToast, heldEntityId, containerStates])
+  }, [phase, findNearbyEntity, findNearbyContainer, findNearbyDoor, setFlashingSlotIndex, addToast, heldEntityId, containerStates])
 
   const isDraggingRef = useRef(false)
   const isPointerOverCanvasRef = useRef(false)
@@ -591,9 +628,12 @@ export function FirstPersonControls() {
       const currentPos2D: Position2D = { x: robotPosition.x, z: robotPosition.z }
 
       const taskRooms = task?.rooms
+      const doorOpenStates = useGameStore.getState().doorOpenStates ?? {}
+      // 门关闭时阻挡通行：只把"任务相关 + 门已开"的门洞加入碰撞可通过列表
       const effectiveDoorways: CollisionDoorwaySpec[] = roomSpec
         ? roomSpec.doorways
             .filter((d) => !taskRooms || taskRooms.includes(d.connectsTo))
+            .filter((d) => doorOpenStates[doorKey(currentRoom, d.connectsTo as RoomId)] === true)
             .map((d) => ({
               offsetX: d.offset.x,
               offsetZ: d.offset.z,
@@ -651,11 +691,16 @@ export function FirstPersonControls() {
     }
 
     if (task && roomSpec) {
+      // 门关闭时不允许房间切换：只允许门已开的目标房间
+      const doorStates = useGameStore.getState().doorOpenStates ?? {}
+      const allowedRooms = task.rooms.filter((r: RoomId) =>
+        r === currentRoom || doorStates[doorKey(currentRoom, r)] === true
+      )
       const transition = checkRoomTransition(
         { x: robotPosition.x, z: robotPosition.z },
         currentRoom,
         sharedRooms,
-        task.rooms,
+        allowedRooms,
         doorCooldownRef.current,
         PLAYER_RADIUS
       )

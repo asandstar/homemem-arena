@@ -1,16 +1,16 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text, Billboard } from '@react-three/drei'
 import * as THREE from 'three'
 import { useGameStore } from '../../store/useGameStore'
 import { sharedRooms } from '../../data/rooms'
 import type { RoomId } from '../../types/room'
+import { doorKey } from '../../store/slices/playerSlice'
 
-const DOOR_OPEN_DISTANCE = 2.5
+const DOOR_INTERACT_DISTANCE = 2.5
 const DOOR_OPEN_ANGLE = Math.PI * 0.48
 const DOOR_OPEN_SPEED = 4.0
 const DOOR_CLOSE_SPEED = 2.5
-const DOOR_CLOSE_DELAY = 1.5
 
 interface Door3DProps {
   roomId: RoomId
@@ -24,16 +24,18 @@ interface Door3DProps {
   }
 }
 
-export function Door3D({ roomCenter, roomSize, door }: Door3DProps) {
+export function Door3D({ roomId, roomCenter, roomSize, door }: Door3DProps) {
   const doorGroupRef = useRef<THREE.Group>(null)
   const currentAngleRef = useRef(0)
   const targetAngleRef = useRef(0)
-  const closeTimerRef = useRef(0)
   const emissiveRef = useRef(0.3)
+  const [showHint, setShowHint] = useState(false)
 
   // 复用 Vector3 避免每帧 GC
   const tmpPlayerPos = useRef(new THREE.Vector3())
   const tmpDoorPos = useRef(new THREE.Vector3())
+
+  const key = useMemo(() => doorKey(roomId, door.connectsTo as RoomId), [roomId, door.connectsTo])
 
   const { position, rotation, hingeX, doorWidth, doorHeight, swingSign } = useMemo(() => {
     const dx = door.offset.x
@@ -50,23 +52,16 @@ export function Door3D({ roomCenter, roomSize, door }: Door3DProps) {
     let posX: number, posZ: number, rotY: number, hingeLocalX: number, swing: number
 
     if (isOnXWall) {
-      // X 墙的门：墙面平行于 Z 轴，门板宽沿 Z，厚沿 X
       posX = roomCenter.x + (isPositiveSide ? roomSize.x / 2 : -roomSize.x / 2)
       posZ = roomCenter.z + dz
-      // rotY=π/2 使门板宽度从 local X 转到 local Z（世界 Z）
       rotY = Math.PI / 2
-      // 铰链在门洞一侧（local X 方向 = 世界 Z 方向）
       hingeLocalX = halfD
-      // 向 connectsTo 方向打开：isPositiveSide=true 时 connectsTo 在 +X 方向，门应向 +X 摆
       swing = isPositiveSide ? 1 : -1
     } else {
-      // Z 墙的门：墙面平行于 X 轴，门板宽沿 X，厚沿 Z
       posX = roomCenter.x + dx
       posZ = roomCenter.z + (isPositiveSide ? roomSize.z / 2 : -roomSize.z / 2)
-      // rotY=0 保持门板宽度沿 local X（世界 X）
       rotY = 0
       hingeLocalX = halfD
-      // 向 connectsTo 方向打开：isPositiveSide=true 时 connectsTo 在 +Z 方向
       swing = isPositiveSide ? 1 : -1
     }
 
@@ -91,18 +86,16 @@ export function Door3D({ roomCenter, roomSize, door }: Door3DProps) {
     tmpDoorPos.current.set(position.x, 0, position.z)
     const distance = tmpPlayerPos.current.distanceTo(tmpDoorPos.current)
 
-    const shouldOpen = distance < DOOR_OPEN_DISTANCE
+    // 门开关状态由 store 管理（玩家按 F 切换），非任务房间的门不可交互
+    const taskRooms = state.task?.rooms
+    const isTaskRelevant = !taskRooms || taskRooms.includes(door.connectsTo as RoomId)
+    const isOpen = isTaskRelevant && !!(state.doorOpenStates?.[key])
+    const isNearby = isTaskRelevant && distance < DOOR_INTERACT_DISTANCE
 
-    if (shouldOpen) {
-      targetAngleRef.current = DOOR_OPEN_ANGLE * swingSign
-      closeTimerRef.current = DOOR_CLOSE_DELAY
-    } else {
-      closeTimerRef.current -= delta
-      if (closeTimerRef.current <= 0) {
-        targetAngleRef.current = 0
-      }
-    }
+    // 目标角度由门状态决定
+    targetAngleRef.current = isOpen ? DOOR_OPEN_ANGLE * swingSign : 0
 
+    // 动画插值
     const speed = targetAngleRef.current !== 0 ? DOOR_OPEN_SPEED : DOOR_CLOSE_SPEED
     const diff = targetAngleRef.current - currentAngleRef.current
     if (Math.abs(diff) > 0.001) {
@@ -111,8 +104,15 @@ export function Door3D({ roomCenter, roomSize, door }: Door3DProps) {
 
     doorGroupRef.current.rotation.y = currentAngleRef.current
 
-    const glowTarget = shouldOpen ? 0.8 : 0.3
+    // 发光：开门中或可交互（附近）时高亮
+    const glowTarget = isOpen ? 0.8 : isNearby ? 0.6 : 0.3
     emissiveRef.current += (glowTarget - emissiveRef.current) * Math.min(1, delta * 5)
+
+    // 显示"按 F 开门"提示：附近 + 门关着 + 任务相关
+    const shouldShowHint = isNearby && !isOpen
+    if (shouldShowHint !== showHint) {
+      setShowHint(shouldShowHint)
+    }
   })
 
   const frameThickness = 0.08
@@ -162,16 +162,7 @@ export function Door3D({ roomCenter, roomSize, door }: Door3DProps) {
         />
       </mesh>
 
-      {/* 地面箭头 */}
-      <mesh position={[0, -doorHeight / 2 + 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <coneGeometry args={[0.2, 0.4, 4]} />
-        <meshStandardMaterial
-          color={doorFrameColor}
-          emissive={doorFrameColor}
-          emissiveIntensity={emissiveRef.current * 0.6}
-        />
-      </mesh>
-
+      {/* 地面箭头（门关着时显示，提示此处有门） */}
       {/* 房间名标签 */}
       <Billboard position={[0, doorHeight / 2 + 0.35, 0]}>
         <Text
@@ -185,6 +176,22 @@ export function Door3D({ roomCenter, roomSize, door }: Door3DProps) {
           → {targetRoomName}
         </Text>
       </Billboard>
+
+      {/* "按 F 开门"提示（靠近且门关着时显示） */}
+      {showHint && (
+        <Billboard position={[0, doorHeight / 2 + 0.65, 0]}>
+          <Text
+            fontSize={0.1}
+            color="#fbbf24"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.02}
+            outlineColor="#1f2937"
+          >
+            按 F 开门
+          </Text>
+        </Billboard>
+      )}
     </group>
   )
 }
