@@ -35,12 +35,9 @@ function toResult(r: GameCommandResult): { success: boolean; reason?: string } {
 
 // E2E 模式判定提前，方便 buildTestApi 内部使用
 function _computeIsE2eMode(): boolean {
-  try {
-    const env = (import.meta as any)?.env
-    return Boolean(env?.DEV) && (env?.MODE === 'e2e' || String(env?.VITE_E2E ?? '') === 'true')
-  } catch {
-    return false
-  }
+  return Boolean(import.meta.env.DEV) && (
+    import.meta.env.MODE === 'e2e' || String(import.meta.env.VITE_E2E ?? '') === 'true'
+  )
 }
 export const IS_E2E_MODE = _computeIsE2eMode()
 
