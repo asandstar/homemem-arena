@@ -1,10 +1,9 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Brain, AlertTriangle, Trophy, Volume2, VolumeX, MapPin, Box, History, Play, ExternalLink } from 'lucide-react'
+import { ArrowRight, Brain, AlertTriangle, Trophy, Volume2, VolumeX, MapPin, Box, History, Play } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { useUiStore } from '../store/useUiStore'
 import { taskPresentationById, PUBLIC_LEVEL_ORDER, getTaskById } from '../data/tasks'
 
-const PLAY_URL = 'https://asandstar.github.io/homemem-arena/'
 
 function getPublicTaskTemplates() {
   return PUBLIC_LEVEL_ORDER
@@ -158,15 +157,6 @@ export function HomePage() {
             开始闯关
             <ArrowRight size={24} className="ml-2" />
           </Button>
-          <a
-            href={PLAY_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full mt-3 flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-800/60 border border-slate-600/50 text-slate-300 hover:text-white hover:bg-slate-700/60 transition-all text-sm font-medium"
-          >
-            <ExternalLink size={16} />
-            在线试玩（新窗口）
-          </a>
           <button
             onClick={toggleAudioEnabled}
             className="w-full mt-4 flex items-center justify-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
