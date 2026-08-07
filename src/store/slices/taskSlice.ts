@@ -305,6 +305,7 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
           activeDemoHighlights: [],
           containerOverrides: {},
           memoryClearPulseMs: 0,
+          doorOpenStates: {},
         })
 
         // 验证 state.task 真的设置成功（Zustand 在某些 strict mode 下可能出现问题）

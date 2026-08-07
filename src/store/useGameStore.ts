@@ -102,6 +102,8 @@ export interface GameState {
   containerOverrides: Record<string, { position?: Vec3 }>
   /** saveMemory 后触发的"清晰回冲"效果（Memory Modulator 用）：时间戳 ms，0 表示未触发 */
   memoryClearPulseMs: number
+  /** 门开关状态：key=doorKey(roomA, roomB)，true=开。默认全关，需 F 键交互打开。 */
+  doorOpenStates: Record<string, boolean>
 }
 
 export interface GameStats {
@@ -204,6 +206,8 @@ interface GameStore extends GameState, ProgressState {
   swapContainers: (a: string, b: string) => { success: boolean; reason?: string }
   /** Memory Modulator：触发一次"清晰回冲"脉冲（saveMemory 调用） */
   triggerMemoryClearPulse: () => void
+  /** 切换两房间之间的门开关状态，返回切换后的开/关状态 */
+  toggleDoor: (roomA: RoomId, roomB: RoomId) => boolean
 }
 
 // Hotfix 2026-08-07: 首帧 getSnapshot=null → 全局 withSafeSnapshot v3 包装

@@ -3,6 +3,14 @@ import { sharedRooms } from '../../data/rooms'
 import type { ViewMode } from '../gameTypes'
 import { playSfx, isAudioEnabled } from '../../audio/sfx'
 
+/**
+ * 规范化门 key：两个房间 ID 字典序排列后拼接，确保 A→B 和 B→A 得到同一 key。
+ * 用于 doorOpenStates 中唯一标识一扇双向门。
+ */
+export function doorKey(a: RoomId, b: RoomId): string {
+  return [a, b].sort().join('::')
+}
+
 export interface PlayerSliceState {
   robotPosition: Vec3
   robotRotation: number
@@ -10,6 +18,8 @@ export interface PlayerSliceState {
   currentRoom: RoomId
   viewMode: ViewMode
   visitedRooms: Set<RoomId>
+  /** 门开关状态：key=doorKey(roomA, roomB)，true=开，false/undefined=关。默认全关，需 F 键交互打开。 */
+  doorOpenStates: Record<string, boolean>
 }
 
 export interface PlayerSliceActions {
@@ -19,6 +29,8 @@ export interface PlayerSliceActions {
   moveForward: (distance: number) => { success: boolean; reason?: string }
   toggleViewMode: () => void
   forgetCloseContainer: (roomId: RoomId) => void
+  /** 切换两房间之间的门开关状态，返回切换后的开/关状态 */
+  toggleDoor: (roomA: RoomId, roomB: RoomId) => boolean
 }
 
 export interface PlayerSlice extends PlayerSliceState, PlayerSliceActions {}
@@ -30,6 +42,21 @@ export const createPlayerSlice = (set: any, get: any): PlayerSlice => ({
   currentRoom: 'living',
   viewMode: 'first-person',
   visitedRooms: new Set<RoomId>(),
+  doorOpenStates: {},
+
+  toggleDoor: (roomA: RoomId, roomB: RoomId) => {
+    const key = doorKey(roomA, roomB)
+    const current = get().doorOpenStates[key] ?? false
+    const next = !current
+    set({
+      doorOpenStates: { ...get().doorOpenStates, [key]: next },
+    })
+    // 开门音效
+    if (isAudioEnabled()) {
+      playSfx(next ? 'door_open' : 'door_close')
+    }
+    return next
+  },
 
   moveToRoom: (toRoom, position) => {
     const { visitedRooms, currentRoom, entities, heldEntityId } = get()

@@ -8,7 +8,8 @@
 export const PLAYER_SPEED = 3.0
 export const TOP_DOWN_SPEED = 4.5
 export const PLAYER_RADIUS = 0.3
-export const PLAYER_HEIGHT = 1.6
+// 玩家眼睛高度：1.5m 更贴近机器人设定，避免 1.6m 时俯视低矮家具的违和感
+export const PLAYER_HEIGHT = 1.5
 export const PITCH_MIN = -Math.PI / 3
 export const PITCH_MAX = Math.PI / 3
 export const MOUSE_SENSITIVITY = 0.0015

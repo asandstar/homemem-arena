@@ -29,7 +29,7 @@ export interface ContainerLike {
 }
 
 /** 第一人称眼睛高度（与 playerControls.ts PLAYER_HEIGHT 一致） */
-const EYE_HEIGHT = 1.6
+const EYE_HEIGHT = 1.5
 
 /**
  * Ray-AABB 相交测试（Slab method）。

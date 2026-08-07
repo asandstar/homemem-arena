@@ -94,11 +94,13 @@ export function markRelatedMemoryOutdated(
 }
 
 function findRelatedEntityIds(entityConfigId: string): string[] {
+  // L2 钥匙猫清晨恶作剧：4 件物品都归位到 cnt-coffee-table
   const relatedMap: Record<string, string[]> = {
-    'obj-key': ['cnt-entrance-tray', 'obj-phone'],
-    'obj-phone': ['cnt-nightstand', 'obj-key'],
-    'obj-umbrella': ['cnt-entrance-tray'],
-    'cnt-entrance-tray': ['obj-key', 'obj-phone', 'obj-umbrella'],
+    'obj-books': ['cnt-coffee-table', 'obj-mug', 'obj-bear', 'obj-radio'],
+    'obj-mug': ['cnt-coffee-table', 'obj-books', 'obj-bear', 'obj-radio'],
+    'obj-bear': ['cnt-coffee-table', 'obj-books', 'obj-mug', 'obj-radio'],
+    'obj-radio': ['cnt-coffee-table', 'obj-books', 'obj-mug', 'obj-bear'],
+    'cnt-coffee-table': ['obj-books', 'obj-mug', 'obj-bear', 'obj-radio'],
   }
   return relatedMap[entityConfigId] || []
 }
