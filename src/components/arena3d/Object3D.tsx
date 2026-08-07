@@ -15,6 +15,8 @@ interface Object3DProps {
   entity: EntityState
   onClick?: (entity: EntityState) => void
   isHeld?: boolean
+  /** F4 · 视线遮挡：被家具挡住时为 false，gate 三类穿透高亮 */
+  losVisible?: boolean
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -49,7 +51,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   cloth: '衣物',
 }
 
-export function Object3D({ entity, onClick, isHeld }: Object3DProps) {
+export function Object3D({ entity, onClick, isHeld, losVisible = true }: Object3DProps) {
   const groupRef = useRef<THREE.Group>(null)
   const idleTime = useRef(Math.random() * Math.PI * 2)
   const demoTRef = useRef(0)
@@ -147,10 +149,11 @@ export function Object3D({ entity, onClick, isHeld }: Object3DProps) {
     demoTRef.current += delta
 
     // 示范高亮：脉动（比普通 proximity 更明显）
+    // F4: 被遮挡时不显示
     if (demoRingRef.current) {
       const scale = 1 + Math.sin(demoTRef.current * 9) * 0.22
       demoRingRef.current.scale.setScalar(scale)
-      demoRingRef.current.visible = !!demoHighlight
+      demoRingRef.current.visible = !!demoHighlight && losVisible
       const m = demoRingRef.current.material as THREE.MeshBasicMaterial
       if (m && !Array.isArray(m) && demoHighlight) {
         m.color.set(demoHighlight.color)
@@ -158,8 +161,8 @@ export function Object3D({ entity, onClick, isHeld }: Object3DProps) {
       }
     }
     if (demoLightRef.current) {
-      demoLightRef.current.visible = !!demoHighlight
-      if (demoHighlight) {
+      demoLightRef.current.visible = !!demoHighlight && losVisible
+      if (demoHighlight && losVisible) {
         demoLightRef.current.color.set(demoHighlight.color)
         demoLightRef.current.intensity = 2.2 + Math.sin(demoTRef.current * 8) * 0.8
       }
@@ -245,7 +248,7 @@ export function Object3D({ entity, onClick, isHeld }: Object3DProps) {
         )}
       </group>
 
-      {proximityGlow > 0.01 && (
+      {proximityGlow > 0.01 && losVisible && (
         <mesh position={[0, -halfHeight - 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.18, 0.28, 24]} />
           <meshBasicMaterial color={glowColor} transparent opacity={0.15 + proximityGlow * 0.2} />
@@ -367,7 +370,7 @@ export function Object3D({ entity, onClick, isHeld }: Object3DProps) {
         </Billboard>
       )}
 
-      {isTaskTarget && !isHeld && (
+      {isTaskTarget && !isHeld && losVisible && (
         <TaskTargetGlow halfHeight={halfHeight} entityName={entity.name} />
       )}
 

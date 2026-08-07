@@ -6,6 +6,7 @@ import { TaskCard } from '../components/tasks/TaskCard'
 import { useUiStore } from '../store/useUiStore'
 import { hasSavedGame } from '../save/saveSystem'
 import { useGameStore } from '../store/useGameStore'
+import { SAFE_EMPTY_OBJECT } from '../store/safeStore'
 
 const timeSlots = [
   { icon: Sun, label: '清晨 07:30', color: 'text-yellow-400', emoji: '🌅' },
@@ -40,7 +41,7 @@ export function TaskSelectPage() {
   const initializeProgress = useGameStore((s) => s?.initializeProgress)
   const getLevelProgress = useGameStore((s) => s?.getLevelProgress)
   const isLevelUnlocked = useGameStore((s) => s?.isLevelUnlocked)
-  const levelProgress = useGameStore((s) => s?.levelProgress ?? {})
+  const levelProgress = useGameStore((s) => s?.levelProgress ?? (SAFE_EMPTY_OBJECT as Record<string, any>))
 
   // hasSavedGame 做的是 localStorage 同步读，挂 component 内的 useMemo 即可；
   // 额外依赖 remountTrigger 让"继续失败后 fallback 清空存档"能立刻移除按钮。

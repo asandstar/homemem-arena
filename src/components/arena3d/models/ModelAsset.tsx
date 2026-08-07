@@ -1,5 +1,5 @@
-import { useRef, useMemo, Component, useState, useEffect } from 'react'
-import type { ReactNode } from 'react'
+import { useRef, useMemo, Component, useState, useEffect, cloneElement, isValidElement } from 'react'
+import type { ReactNode, ReactElement } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
@@ -8,6 +8,7 @@ import { MATERIAL_CONFIG, PALETTE } from '../colors'
 import { resolveAssetUrl } from './resolveAssetUrl'
 import { IS_DEV, BASE_URL } from '../../../utils/env'
 import { defineModelStatsGetter, setModelStatsSnap } from '../../../utils/renderDebug'
+import { resolveFallbackSize } from '../../../utils/resolveFallbackSize'
 
 // === 缓存（B2：缓存治理，key 包含 BASE_URL，避免 basename 污染；FIFO 限制 <=50 条目） ===
 const CACHE_KEY_PREFIX: string = `cache::${BASE_URL}::`
@@ -369,17 +370,34 @@ function getFallbackColors(modelId: string) {
   return FALLBACK_COLORS[modelId] || { primary: '#a8a29e', secondary: '#78716c', accent: '#d6d3d1' }
 }
 
-export function FallbackColorizer({ modelId, color, hovered, selected, children }: {
+/**
+ * F1 · GLB fallback AABB 对齐：把「Registry 已有的 effectiveAabb / furniture 声明的 size」
+ * 作为 size prop 注入给 FallbackComp，让 fallback 视觉几何体 = GLB 真实尺寸 = 碰撞 AABB
+ * 三者统一，避免「视觉 1.6m 但碰撞 1.96m → 穿墙/卡空气墙」。
+ *
+ * 优先级：
+ *  1) 若传入 explicitSize（调用点已知，如 Container3D 从 decorFurniture 读）→ 直接用
+ *  2) 若 modelId (MODEL_REGISTRY) 能通过 mapping 映射到 MODEL_ASSET_REGISTRY → 取 effectiveAabb
+ *  3) 否则保持 FallbackModels defaultSize(0.5, 0.5, 0.5) 不改（小道具保持原有，尺寸影响小）
+ *
+ * 注意：resolveFallbackSize 与 MODEL_ID_TO_ASSET_ID 已抽离到 src/utils/resolveFallbackSize.ts
+ * （纯函数，零 React/Three 依赖），便于 vitest 做回归断言。此文件只负责渲染侧消费。
+ */
+
+export function FallbackColorizer({ modelId, color, hovered, selected, children, explicitSize }: {
   modelId: string
   color?: string
   hovered?: boolean
   selected?: boolean
   children: ReactNode
+  /** 调用点已知 size（例如从 decorFurniture 读），优先级最高 */
+  explicitSize?: { x: number; y: number; z: number }
 }) {
   const groupRef = useRef<THREE.Group>(null)
   const timeRef = useRef(0)
   const config = getModelConfig(modelId)
   const colors = getFallbackColors(modelId)
+  const fallbackSize = resolveFallbackSize(modelId, explicitSize)
 
   useFrame((_, delta) => {
     timeRef.current += delta
@@ -497,7 +515,13 @@ export function FallbackColorizer({ modelId, color, hovered, selected, children 
     }
   })
 
-  return <group ref={groupRef}>{children}</group>
+  return (
+    <group ref={groupRef}>
+      {fallbackSize && isValidElement(children)
+        ? cloneElement(children as ReactElement<any>, { size: fallbackSize })
+        : children}
+    </group>
+  )
 }
 
 function ModelContent({

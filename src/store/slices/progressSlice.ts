@@ -96,10 +96,15 @@ export function createProgressSlice(set: any, get: any): ProgressState {
     const current = get().levelProgress
     const updated: Record<string, LevelProgress> = { ...current }
 
-    taskIds.forEach((taskId, _index) => {
-      if (!updated[taskId]) {
-        // 首次启动默认解锁所有公开关卡（不再"index===0 才解锁"），
-        // 避免用户误以为只有 1~2 关；解锁顺序仍然保留在 UI 上的"下一关"提示。
+    taskIds.forEach((taskId) => {
+      // 修复：强制覆盖 unlocked 为 true，避免旧存档锁定状态污染 DEV 模式的全解锁逻辑。
+      // 如果该关卡已有记录，保留其 completed/rank 等进度信息，但强制解锁。
+      if (updated[taskId]) {
+        updated[taskId] = {
+          ...updated[taskId],
+          unlocked: true,
+        }
+      } else {
         updated[taskId] = {
           taskId,
           unlocked: true,
@@ -163,7 +168,7 @@ export function createProgressSlice(set: any, get: any): ProgressState {
   getLevelProgress: (taskId: string) => {
     return get().levelProgress[taskId] || {
       taskId,
-      unlocked: false,
+      unlocked: true,
       completed: false,
       rank: null,
       bestScore: 0,
@@ -172,21 +177,9 @@ export function createProgressSlice(set: any, get: any): ProgressState {
     }
   },
 
-  isLevelUnlocked: (taskId: string, allTasks: string[]) => {
-    const progress = get().levelProgress
-    // ✅ 优先尊重显式 unlocked=true（初始化/loadProgress 设置的），避免「3 关都解锁了但用户只看得到 1 关」的 bug。
-    if (progress[taskId]?.unlocked) {
-      return true
-    }
-    const index = allTasks.indexOf(taskId)
-    // 第一关默认始终可用（即使 progress 里还没初始化也可以玩）
-    if (index <= 0) return true
-    // fallback：前一关完成则解锁
-    for (let i = 0; i < index; i++) {
-      if (!progress[allTasks[i]]?.completed) {
-        return false
-      }
-    }
+  isLevelUnlocked: (_taskId: string, _allTasks: string[]) => {
+    // 2026-08-07 修复：所有公开关卡默认解锁，不再要求前置关卡完成。
+    // 仅隐藏关卡（如 breakfast/night-patrol）可能需要特殊解锁。
     return true
   },
 

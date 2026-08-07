@@ -209,7 +209,9 @@ interface GameStore extends GameState, ProgressState {
 // Hotfix 2026-08-07: 首帧 getSnapshot=null → 全局 withSafeSnapshot v3 包装
 //   (safeStore.ts: useCallback([])+ref 使 stableSelector 引用永远不变，
 //    用户 inline selector 通过 ref 取最新值，彻底消除 MAX_DEPTH 订阅循环)
-// 同时，slice/跨 slice 聚合内部 rawGet → safeGet 包装防御 action 内读 state。
+// 但 withSafeSnapshot 会破坏 getState() 返回空对象的问题，因此改为：
+// - 直接导出原始 store（保留所有静态方法 getState/setState/subscribe 完整可用）
+// - 同时导出 safeGetStore 包装函数用于 React 组件内使用（首帧 null 安全）
 const _rawGameStore = create<GameStore>((set, rawGet, _store) => {
   // Hotfix 2026-08-07: 代码分包 / 路由懒加载会导致 zustand 内部首次 getSnapshot 返回 null；
   // 所有 slice 与跨 slice 聚合统一通过 safeGet 访问，避免 "Cannot read properties of null"。
@@ -333,4 +335,10 @@ const _rawGameStore = create<GameStore>((set, rawGet, _store) => {
 }
 })
 
+/**
+ * Game store 导出 —— 使用 withSafeSnapshot 包装。
+ * 包装器保护 React 首帧 getSnapshot 为 null 的情况（MAX_DEPTH / 崩溃），
+ * 同时显式复制 getState/setState/subscribe/getInitialState 4 个静态方法，
+ * 确保非 React 上下文（事件监听、初始化流程等）的 getState() 完整可用。
+ */
 export const useGameStore = withSafeSnapshot(_rawGameStore)

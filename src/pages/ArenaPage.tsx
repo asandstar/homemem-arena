@@ -6,6 +6,7 @@
 import { useEffect, useCallback, useState, lazy, Suspense } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useGameStore, type GameStats } from '../store/useGameStore'
+import { SAFE_EMPTY_SET, SAFE_EMPTY_ARRAY } from '../store/safeStore'
 import { useSessionStore } from '../store/useSessionStore'
 import { useToastStore } from '../store/useToastStore'
 import { useUiStore } from '../store/useUiStore'
@@ -64,11 +65,11 @@ export function ArenaPage() {
   const phase = useGameStore((s) => s?.phase ?? 'idle')
   const currentRoom = useGameStore((s) => s?.currentRoom ?? 'living')
   const chaosValue = useGameStore((s) => s?.chaosValue ?? 0)
-  const achievedGoalIds = useGameStore((s) => s?.achievedGoalIds ?? new Set<string>())
+  const achievedGoalIds = useGameStore((s) => s?.achievedGoalIds ?? (SAFE_EMPTY_SET as Set<string>))
   const combo = useGameStore((s) => s?.combo ?? 0)
   const wrongPlaceCount = useGameStore((s) => s?.wrongPlaceCount ?? 0)
   const activeFlowHint = useGameStore((s) => s?.activeFlowHint ?? null)
-  const memorySlots = useGameStore((s) => s?.memorySlots ?? [])
+  const memorySlots = useGameStore((s) => s?.memorySlots ?? (SAFE_EMPTY_ARRAY as (null | any)[]))
   const levelCompleted = useGameStore((s) => !!s?.levelCompleted)
   const levelFailed = useGameStore((s) => !!s?.levelFailed)
   // 函数引用：Zustand 中 action 函数引用是稳定的（set/get 绑定在 slice 创建时），直接安全解构
@@ -280,7 +281,37 @@ export function ArenaPage() {
     }
 
     if (closeDialog) closeDialog()
-    if (typeof initializeTask === 'function') initializeTask(taskId)
+    if (typeof initializeTask === 'function') {
+      initializeTask(taskId)
+    } else {
+      // 兜底：懒加载首帧 selector snapshot 可能短暂拿 undefined，
+      // 直接通过 zustand 静态方法 .getState() 拿到真实 action，彻底绕开首帧 null 问题。
+      try {
+        const s = useGameStore.getState() as any
+        if (typeof s?.initializeTask === 'function') {
+          console.log('[ARENA EFFECT #1 FALLBACK] 使用 getState().initializeTask 绕过首帧 null')
+          s.initializeTask(taskId)
+        } else {
+          // 再兜底：用 setTimeout 延迟一帧重试（首帧 store 可能尚未 hydrate）
+          console.warn('[ARENA EFFECT #1 RETRY] getState() 无 initializeTask，延迟 0ms 重试. keys=', Object.keys(s ?? {}))
+          requestAnimationFrame(() => {
+            try {
+              const s2 = useGameStore.getState() as any
+              if (typeof s2?.initializeTask === 'function') {
+                console.log('[ARENA EFFECT #1 RETRY] 下一帧成功拿到 initializeTask')
+                s2.initializeTask(taskId)
+              } else {
+                console.error('[ARENA EFFECT #1 FATAL] 重试后仍无 initializeTask. keys=', Object.keys(s2 ?? {}))
+              }
+            } catch (e2) {
+              console.error('[ARENA EFFECT #1 FATAL] 重试抛异常:', e2)
+            }
+          })
+        }
+      } catch (e) {
+        console.error('[ARENA EFFECT #1 FATAL] fallback initializeTask 抛异常:', e)
+      }
+    }
 
     // "继续"进入：restoreSave 覆盖 initializeTask 的默认状态，然后跳过 briefing 直接进入 playing
     // 若存档校验失败（version/hash 不一致），hasSavedGame 会返回 false，照常显示 briefing 重新开始
@@ -528,8 +559,8 @@ export function ArenaPage() {
       {briefingOpen && (
         <div className="absolute inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-40" data-testid="briefing-modal">
           <div className="max-w-lg mx-4 w-full">
-            {/* MEM-07 系统提示（task 未 ready 时灰掉占位，不消失） */}
-            {task?.systemPrompt ? (
+            {/* MEM-07 系统提示：不再显示给玩家，这是 AI 内部指令。仅 DEV 模式下可通过控制台查看 */}
+            {/* {task?.systemPrompt ? (
               <div className="bg-slate-950/90 border border-cyan-500/30 rounded-lg p-3 mb-3 font-mono text-xs text-cyan-400">
                 <span className="text-cyan-600">{'>'}</span> {task.systemPrompt}
               </div>
@@ -537,7 +568,7 @@ export function ArenaPage() {
               <div className="bg-slate-950/70 border border-slate-700/50 rounded-lg p-3 mb-3 font-mono text-xs text-slate-500 animate-pulse">
                 <span className="text-slate-600">{'>'}</span> MEM-07 系统初始化中...
               </div>
-            )}
+            )} */}
 
             {/* 主人便签（task 未 ready 时显示骨架卡片 + 转圈按钮，但仍保持便签样式） */}
             <div className="bg-yellow-100/95 rounded-lg p-6 shadow-2xl transform -rotate-1 border border-yellow-300/50">
@@ -559,20 +590,20 @@ export function ArenaPage() {
                     <h4 className="text-xs font-semibold text-yellow-800 mb-2 flex items-center gap-1">
                       <span>🎮</span> 操作提示
                     </h4>
-                    <ul className="text-xs text-yellow-800 space-y-1">
-                      <li className="flex items-center gap-2">
+                    <ul className="text-xs text-yellow-800 space-y-2">
+                      <li className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">WASD</kbd>
                         <span>移动</span>
                         <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">拖动鼠标</kbd>
                         <span>转视角</span>
                       </li>
-                      <li className="flex items-center gap-2">
+                      <li className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">V</kbd>
                         <span>切换视角</span>
                         <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">E</kbd>
-                        <span>保存记忆</span>
+                        <span className="text-yellow-700">保存位置记忆</span>
                         <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">F</kbd>
-                        <span>交互</span>
+                        <span>交互/拾放</span>
                       </li>
                       <li className="text-yellow-700 text-[11px] mt-1">
                         💡 有些物品藏在抽屉里，靠近后按 F 打开抽屉，再按 F 拿取物品

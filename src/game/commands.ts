@@ -16,6 +16,84 @@ export interface GameCommandResult {
   isUpdate?: boolean
 }
 
+/**
+ * F3 · 命令竞态互斥锁。
+ *
+ * 背景：FirstPersonControls 每帧读 KeyboardState，如果玩家 1s 内疯狂按
+ * F→E→F→E，浏览器 keydown 会以 ~50Hz 速率回调触发 executeXxx，而单个
+ * executeContainerInteraction 内部会串行调用 placeEntity + evaluateStageTransitions
+ * + checkLevelCompletion（至少 3~5 次 zustand setState，每一次 setState 都会
+ * 触发订阅的组件 rerender，render 过程中 KeyboardState 又可能被读到，下一个
+ * keydown 事件已经在事件队列里）。
+ *
+ * 症状：heldEntityId 和 containerStates 的 set→check→set 互相覆盖，最终"物体
+ * 从手里消失、也不在容器里"，玩家认为是坏档。
+ *
+ * 解决：模块级布尔 inFlight，任何 execute* 进入时先拿锁，释放前所有并发命令
+ * 全部快速返回 `{ success: false, reason: '上一条指令处理中' }`。
+ *
+ * - 单线程 JS 不需要原子 CAS，普通布尔即可；
+ * - 所有 6 个 execute* 函数都用 withInFlight 包；
+ * - try/finally 保证即便内部抛异常锁也会释放（否则整个命令系统永久锁死）。
+ */
+let _commandInFlight = false
+
+/**
+ * 用于 DEV 诊断：如果连续 500ms 锁都不释放，说明有异常路径泄漏了锁，
+ * DEV 模式下强制释放 + 报警（PROD 也释放但不报警，避免锁死用户）。
+ */
+const IN_FLIGHT_WATCHDOG_MS = 500
+let _watchdogTimer: any = null
+
+function _acquireInFlight(): boolean {
+  if (_commandInFlight) return false
+  _commandInFlight = true
+  if (typeof window !== 'undefined') {
+    clearTimeout(_watchdogTimer)
+    _watchdogTimer = setTimeout(() => {
+      if (!_commandInFlight) return
+      // 锁在 500ms 内没释放 = 肯定泄漏了，强制释放以免整个命令系统死锁
+      _commandInFlight = false
+      try {
+        const env = (import.meta as any)?.env
+        if (env?.DEV) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            '[commands] inFlight 锁 500ms 未释放，疑似 executeXxx 抛异常绕过 finally。\n' +
+            '已强制释放，请检查 commands.ts 内是否有未被 try/catch 包住的 throw。',
+          )
+        }
+      } catch { /* import.meta 异常时静默 */ }
+    }, IN_FLIGHT_WATCHDOG_MS)
+  }
+  return true
+}
+
+function _releaseInFlight(): void {
+  _commandInFlight = false
+  clearTimeout(_watchdogTimer)
+}
+
+function withCommandLock<T extends (...args: any[]) => GameCommandResult>(fn: T): T {
+  const wrapped = function (this: any, ...args: any[]): GameCommandResult {
+    if (!_acquireInFlight()) {
+      return { success: false, reason: '上一条指令处理中' }
+    }
+    try {
+      return fn.apply(this, args)
+    } finally {
+      _releaseInFlight()
+    }
+  } as any
+  return wrapped
+}
+
+/** 测试辅助：重置锁状态（仅 vitest 场景用，生产访问不到） */
+export function _debugResetCommandLock(): void {
+  _commandInFlight = false
+  clearTimeout(_watchdogTimer)
+}
+
 function ensurePlaying(): GameCommandResult | null {
   if (useGameStore.getState().phase !== 'playing') {
     return { success: false, reason: '请先开始任务' }
@@ -70,7 +148,7 @@ function recordAction(
   return actionEvent
 }
 
-export function executePick(entityId: string): GameCommandResult {
+export const executePick = withCommandLock(function executePick(entityId: string): GameCommandResult {
   const blocked = ensurePlaying()
   if (blocked) return blocked
 
@@ -109,9 +187,9 @@ export function executePick(entityId: string): GameCommandResult {
   recordAction('pick', entity.configId, result, before.currentRoom, step)
   processPostCommand()
   return { ...result, action: 'pick' }
-}
+})
 
-export function executePlace(containerId: string): GameCommandResult {
+export const executePlace = withCommandLock(function executePlace(containerId: string): GameCommandResult {
   const blocked = ensurePlaying()
   if (blocked) return blocked
 
@@ -122,9 +200,9 @@ export function executePlace(containerId: string): GameCommandResult {
   recordAction('place', containerId, result, before.currentRoom, step)
   processPostCommand()
   return { ...result, action: 'place' }
-}
+})
 
-export function executeToggleContainer(containerId: string): GameCommandResult {
+export const executeToggleContainer = withCommandLock(function executeToggleContainer(containerId: string): GameCommandResult {
   const blocked = ensurePlaying()
   if (blocked) return blocked
 
@@ -136,15 +214,18 @@ export function executeToggleContainer(containerId: string): GameCommandResult {
   recordAction(action, containerId, result, before.currentRoom, step)
   processPostCommand()
   return { ...result, action }
-}
+})
 
+// 注意：executeContainerInteraction 内部调用 executePlace / executeToggleContainer，
+// 所以它本身不套 withCommandLock（否则会自己和自己抢锁 → 永远拿不到）。
+// 它的子调用已经有锁，外层并发会被子调用拦住。
 export function executeContainerInteraction(containerId: string): GameCommandResult {
   return useGameStore.getState().heldEntityId
     ? executePlace(containerId)
     : executeToggleContainer(containerId)
 }
 
-export function executeSaveMemory(entityId: string): GameCommandResult {
+export const executeSaveMemory = withCommandLock(function executeSaveMemory(entityId: string): GameCommandResult {
   const blocked = ensurePlaying()
   if (blocked) return blocked
 
@@ -191,9 +272,9 @@ export function executeSaveMemory(entityId: string): GameCommandResult {
   processPostCommand({ afterMemoryForEntityId: entity.configId })
 
   return { ...result, action: 'save-memory' }
-}
+})
 
-export function executeRoomTransition(
+export const executeRoomTransition = withCommandLock(function executeRoomTransition(
   fromRoom: RoomId,
   toRoom: RoomId,
   position: Vec3,
@@ -226,4 +307,4 @@ export function executeRoomTransition(
   memories.forEach((memory) => useSessionStore.getState().addMemory(memory))
   processPostCommand()
   return { success: true, action: 'movement' }
-}
+})

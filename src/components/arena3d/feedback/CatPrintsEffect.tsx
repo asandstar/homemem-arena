@@ -1,17 +1,21 @@
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { nudgeFootprintAway, type FootprintOccSpec } from '../../../utils/nudgeFootprintAway'
 
 interface CatPrintsEffectProps {
   startPosition: [number, number, number]
   endPosition: [number, number, number]
   printCount?: number
+  /** F5 · 猫脚印避让家具：脚印候选位置若落入这些矩形内部，会被推到最近边外 */
+  occluders?: FootprintOccSpec[]
 }
 
 export function CatPrintsEffect({
   startPosition,
   endPosition,
   printCount = 5,
+  occluders = [],
 }: CatPrintsEffectProps) {
   const groupRef = useRef<THREE.Group>(null)
   const startTime = useRef(Date.now())
@@ -20,18 +24,22 @@ export function CatPrintsEffect({
     const result: { pos: [number, number, number]; rot: number; delay: number }[] = []
     for (let i = 0; i < printCount; i++) {
       const t = (i + 1) / (printCount + 1)
-      const x = startPosition[0] + (endPosition[0] - startPosition[0]) * t
-      const z = startPosition[2] + (endPosition[2] - startPosition[2]) * t
+      let x = startPosition[0] + (endPosition[0] - startPosition[0]) * t
+      let z = startPosition[2] + (endPosition[2] - startPosition[2]) * t
       const offsetX = (Math.random() - 0.5) * 0.3
       const offsetZ = (Math.random() - 0.5) * 0.3
+      x += offsetX
+      z += offsetZ
+      // F5 · 若候选脚印落在家具矩形内 → 推到最近边 + 0.1m 缓冲外
+      const nudged = nudgeFootprintAway(x, z, occluders)
       result.push({
-        pos: [x + offsetX, 0.01, z + offsetZ],
+        pos: [nudged.x, 0.01, nudged.z],
         rot: Math.random() * Math.PI * 0.5 - Math.PI * 0.25,
         delay: i * 0.15,
       })
     }
     return result
-  }, [startPosition, endPosition, printCount])
+  }, [startPosition, endPosition, printCount, occluders])
 
   useFrame(() => {
     const elapsed = (Date.now() - startTime.current) / 1000

@@ -21,6 +21,8 @@ interface Container3DProps {
   isOpen: boolean
   onClick?: (spec: ContainerSpec) => void
   containedObjects?: EntityState[]
+  /** F4 · 视线遮挡：被家具挡住时为 false，gate 三类穿透高亮 */
+  losVisible?: boolean
 }
 
 const CONTAINER_TO_MODEL_ID: Record<string, string> = {
@@ -88,6 +90,7 @@ export function Container3D({
   isOpen,
   onClick,
   containedObjects = [],
+  losVisible = true,
 }: Container3DProps) {
   const groupRef = useRef<THREE.Group>(null)
   const pulseRingRef = useRef<THREE.Mesh>(null)
@@ -148,10 +151,11 @@ export function Container3D({
       pulseLightRef.current.intensity = 0.6 + sin3 * 0.2
     }
     // 示范高亮的脉冲环（更粗、更亮、快速脉动）
+    // F4: 被遮挡时不显示
     if (demoRingRef.current) {
       const scale = 1 + Math.sin(demoTRef.current * 7) * 0.18
       demoRingRef.current.scale.setScalar(scale)
-      demoRingRef.current.visible = !!demoHighlight
+      demoRingRef.current.visible = !!demoHighlight && losVisible
       const m = demoRingRef.current.material as THREE.MeshBasicMaterial
       if (m && !Array.isArray(m) && demoHighlight) {
         m.color.set(demoHighlight.color)
@@ -159,8 +163,8 @@ export function Container3D({
       }
     }
     if (demoLightRef.current) {
-      demoLightRef.current.visible = !!demoHighlight
-      if (demoHighlight) {
+      demoLightRef.current.visible = !!demoHighlight && losVisible
+      if (demoHighlight && losVisible) {
         demoLightRef.current.color.set(demoHighlight.color)
         demoLightRef.current.intensity = 2.6 + Math.sin(demoTRef.current * 6) * 0.8
       }
@@ -203,7 +207,7 @@ export function Container3D({
 
   return (
     <group ref={groupRef} position={worldPos}>
-      {inRange && !spec.isTargetZone && (
+      {inRange && !spec.isTargetZone && losVisible && (
         <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[spec.size.x * 0.55, spec.size.x * 0.7, 32]} />
           <meshBasicMaterial color={PALETTE.target.primary} transparent opacity={0.2 + proximityGlow * 0.2} />
@@ -249,7 +253,7 @@ export function Container3D({
         )}
       </group>
 
-      {spec.isTargetZone && (
+      {spec.isTargetZone && losVisible && (
         <>
           <mesh
             ref={pulseRingRef as any}
