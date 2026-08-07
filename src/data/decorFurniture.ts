@@ -334,10 +334,10 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       collisionMode: 'none',
       modelAssetId: 'furniture/kitchenMicrowave',
     },
-    // 堆叠的书：放水槽台面前沿 (0, 0.613, -1.7)
+    // 堆叠的书：放水槽台面前沿 (0, 0.613, -1.9)
     {
       id: 'decor-kit-books',
-      position: { x: 0.0, y: 0.613, z: -1.7 },
+      position: { x: 0.0, y: 0.613, z: -1.9 },
       size: { x: 0.181, y: 0.125, z: 0.181 },
       rotationY: ROT.FACE_PLUS_Z,
       collisionMode: 'none',
@@ -535,6 +535,7 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       size: { x: 0.15, y: 0.4, z: 0.05 },
       rotationY: ROT.FACE_PLUS_X,
       collisionMode: 'none',
+      modelAssetId: 'furniture/pillowLong',
     },
   ],
 }

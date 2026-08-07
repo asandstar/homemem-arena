@@ -260,7 +260,7 @@ export function Container3D({
             position={[0, surfaceLocalY + 0.1, 0]}
             rotation={[-Math.PI / 2, 0, 0]}
           >
-            <ringGeometry args={[0.4, 0.5, 24]} />
+            <ringGeometry args={[0.3, 0.375, 24]} />
             <meshBasicMaterial
               color={PALETTE.target.primary}
               transparent
@@ -272,7 +272,7 @@ export function Container3D({
             position={[0, surfaceLocalY + 0.1, 0]}
             rotation={[-Math.PI / 2, 0, 0]}
           >
-            <ringGeometry args={[0.35, 0.55, 24]} />
+            <ringGeometry args={[0.26, 0.41, 24]} />
             <meshBasicMaterial
               color={PALETTE.target.highlight}
               transparent
@@ -313,7 +313,7 @@ export function Container3D({
         visible={false}
       />
 
-      {(hovered || spec.isTargetZone) && (
+      {(hovered || (spec.isTargetZone && distance < 4)) && (spec.targetLabel ?? spec.name ?? '') !== '' && (
         <Billboard position={[0, surfaceLocalY + 0.25, 0]}>
           <mesh>
             <boxGeometry args={[0.65, 0.22, 0.01]} />

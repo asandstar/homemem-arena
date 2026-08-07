@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { Layout } from './components/layout/Layout'
+import { RouteErrorPage } from './components/RouteErrorPage'
 import { BASE_URL } from './utils/env'
 
 // 走统一 env.ts，避免 (import.meta as any)?.env?.BASE_URL 的可选链使 Vite 静态替换失败
@@ -10,6 +11,7 @@ export const router = createBrowserRouter(
     {
       path: '/',
       element: <Layout />,
+      errorElement: <RouteErrorPage />,
       children: [
         {
           index: true,

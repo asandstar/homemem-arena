@@ -211,6 +211,29 @@ export function restoreSave(taskId: string): boolean {
     useGameStore.getState().loadFromSave(save)
     if (save.sessionData) {
       const s = save.sessionData
+      const defaultMetrics = {
+        durationMs: 0,
+        stepCount: 0,
+        roomTransitions: 0,
+        repeatedSearchCount: 0,
+        probeAccuracy: 0,
+        goalsAchieved: 0,
+        goalsTotal: 0,
+        avgProbeReactionTime: 0,
+        totalMemories: 0,
+        spatialAccuracy: 0,
+        objectStateAccuracy: 0,
+        temporalAccuracy: 0,
+        proceduralAccuracy: 0,
+        totalActions: 0,
+        unnecessaryRevisits: 0,
+        wrongPlacements: 0,
+        containerMistakes: 0,
+        missedCleanupSteps: 0,
+        flowInterventionCount: 0,
+        longestGoalGapMs: 0,
+        actionSuccessRate: 0,
+      }
       const sess: any = {
         id: s.id,
         episode_id: s.episode_id,
@@ -223,34 +246,37 @@ export function restoreSave(taskId: string): boolean {
         events: s.events ?? [],
         memories: s.memories ?? [],
         observations: s.observations ?? [],
-        metrics: s.finalize?.metrics ?? {
-          durationMs: 0,
-          stepCount: 0,
-          roomTransitions: 0,
-          repeatedSearchCount: 0,
-          probeAccuracy: 0,
-          goalsAchieved: 0,
-          goalsTotal: 0,
-          avgProbeReactionTime: 0,
-          totalMemories: 0,
-          spatialAccuracy: 0,
-          objectStateAccuracy: 0,
-          temporalAccuracy: 0,
-          proceduralAccuracy: 0,
-          totalActions: 0,
-          unnecessaryRevisits: 0,
-          wrongPlacements: 0,
-          containerMistakes: 0,
-          missedCleanupSteps: 0,
-          flowInterventionCount: 0,
+        metrics: s.finalize?.metrics ?? defaultMetrics,
+        failureReasons: [],
+        policySuggestions: [],
+        agent_pose_trace: [],
+        camera_pose_trace: [],
+        visible_objects_per_step: {},
+        actions: [],
+        object_state_changes: [],
+        container_state_changes: [],
+        memory_updates: [],
+        scripted_events: [],
+        probe_questions: [],
+        probe_answers: [],
+        outcome_metrics: defaultMetrics,
+        failure_modes: [],
+        ai_research_annotation: {
+          timestamp: save.timestamp,
+          task_type: save.taskId,
+          difficulty_level: 'medium',
+          memory_types_tested: [],
+          scenario_summary: save.taskName,
+          key_challenges: [],
+          suggested_robot_policy: '',
         },
       }
       if (s.probeAnswers) sess.probeAnswers = s.probeAnswers
       if (s.aiSummary) sess.aiSummary = s.aiSummary
       if (s.finalize) {
         sess.status = s.finalize.status
-        sess.failureReasons = s.finalize.failureReasons
-        sess.policySuggestions = s.finalize.policySuggestions
+        sess.failureReasons = s.finalize.failureReasons ?? []
+        sess.policySuggestions = s.finalize.policySuggestions ?? []
       }
       useSessionStore.setState({ currentSession: sess })
     }

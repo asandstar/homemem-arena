@@ -111,8 +111,10 @@ export const laundrySortTask: TaskConfig = {
   iconKey: 'shirt',
   tags: ['整合记忆', '工作记忆', '空间记忆', '程序记忆', '分类', '位置交换干扰'],
   timeLimit: 300,
-  spawnPosition: { x: -1.5, z: -1.7 },
-  spawnRotation: Math.PI,
+  // 出生在 laundry 中央偏南（距南墙储物柜 0.85m），朝 -z（面向北墙三个篮子）
+  //   collision-free：离所有家具 AABB >= 0.3m，离门洞 2m+，视野直击任务区
+  spawnPosition: { x: 0, z: 0.8 },
+  spawnRotation: 0,
   initialStageId: STAGE_RULES,
 
   stages: [
@@ -256,6 +258,7 @@ MEM-07：「整合记忆模块激活。检测到四类记忆需求：
       acceptedCategories: ['white-clothes'],
       isTargetZone: true,
       targetLabel: '白色衣物篮',
+      modelAssetId: 'furniture/trashcan',
     },
     {
       id: DARK_BASKET,
@@ -269,6 +272,7 @@ MEM-07：「整合记忆模块激活。检测到四类记忆需求：
       acceptedCategories: ['dark-clothes'],
       isTargetZone: true,
       targetLabel: '深色衣物篮',
+      modelAssetId: 'furniture/trashcan',
     },
     {
       id: TOWEL_BASKET,
@@ -282,6 +286,7 @@ MEM-07：「整合记忆模块激活。检测到四类记忆需求：
       acceptedCategories: ['towel'],
       isTargetZone: true,
       targetLabel: '毛巾篮',
+      modelAssetId: 'furniture/trashcan',
     },
   ],
 

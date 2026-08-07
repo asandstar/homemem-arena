@@ -47,7 +47,7 @@ export const cleanTableTask: TaskConfig = {
   // 出生在 dining 西北角（距两墙各 0.5m），朝东南对角线方向
   //   开局即可看到餐桌、北墙厨房区、餐具分布，视野覆盖最大化
   spawnPosition: { x: -2.2, z: -2.1 },
-  spawnRotation: (3 * Math.PI) / 4,
+  spawnRotation: (3 * Math.PI) / 4 + Math.PI,
 
   briefing: `🍽️ 记忆宅邸 · 第一关（程序记忆 · 教程）
 

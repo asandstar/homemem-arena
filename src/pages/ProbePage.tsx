@@ -47,7 +47,8 @@ export function ProbePage() {
       return
     }
 
-    if (currentSession.probe_questions.length === 0) {
+    const probeQuestions = currentSession.probe_questions ?? []
+    if (probeQuestions.length === 0) {
       useSessionStore.setState({
         currentSession: {
           ...currentSession,
@@ -69,7 +70,8 @@ export function ProbePage() {
     // 公开版本：跳过做题环节。一进入此页面即自动填入正确答案，
     // 完成分析后直接跳到结果分析页。
     if (config && useSessionStore.getState().currentSession) {
-      const answers: ProbeAnswer[] = config.probes.map((probe) => ({
+      const probes = config.probes ?? []
+      const answers: ProbeAnswer[] = probes.map((probe) => ({
         question: probe.question,
         correctAnswer: probe.correctAnswer,
         userAnswer: probe.correctAnswer,
@@ -82,7 +84,7 @@ export function ProbePage() {
 
       recordProbeAnswers(answers)
       answers.forEach((answer, index) => {
-        const probe = config.probes[index]
+        const probe = probes[index]
         if (!probe) return
         addEvent({
           type: 'probe_answer',
@@ -103,9 +105,9 @@ export function ProbePage() {
       const session = useSessionStore.getState().currentSession
       if (session) {
         const goalStatus = new Map<string, boolean>()
-        config.goals.forEach((goal) => goalStatus.set(goal.id, gameStore.isGoalAchieved(goal)))
+        ;(config.goals ?? []).forEach((goal) => goalStatus.set(goal.id, gameStore.isGoalAchieved(goal)))
         const goalsAchieved = [...goalStatus.values()].filter(Boolean).length
-        const metrics = calculateMetrics(session, config.goals.length, goalsAchieved, gameStore.elapsedMs)
+        const metrics = calculateMetrics(session, (config.goals ?? []).length, goalsAchieved, gameStore.elapsedMs)
         const failures = analyzeFailures(session, goalStatus)
         const analyzedSession = { ...session, metrics, failureReasons: failures }
         const suggestions = generateSuggestions(analyzedSession, goalStatus, failures)

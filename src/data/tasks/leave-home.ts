@@ -46,7 +46,7 @@ export const leaveHomeTask: TaskConfig = {
   // 出生在 living 东北角（距两墙各 0.5m），朝西南对角线方向
   //   开局即可看到沙发区、茶几、电视柜、书架，视野覆盖最大化
   spawnPosition: { x: 2.7, z: -2.2 },
-  spawnRotation: (5 * Math.PI) / 4,
+  spawnRotation: (5 * Math.PI) / 4 - Math.PI / 2,
 
   briefing: `🐱 钥匙猫的清晨恶作剧 · 第二关（空间记忆）
 
