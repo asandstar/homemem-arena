@@ -3,7 +3,7 @@
 // Zustand 通过 useSyncExternalStore 订阅，getSnapshot 引用每帧变化 → React 报 "Maximum update depth exceeded"。
 // 解决方式：1) 单字段调用；2) 或把 selector 定义在组件外 + 用 useMemo 固定引用。
 
-import { useEffect, useCallback, useState, lazy, Suspense } from 'react'
+import { useEffect, useCallback, useState, useRef, lazy, Suspense } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useGameStore, getGameState, type GameStats } from '../store/useGameStore'
 import { SAFE_EMPTY_SET, SAFE_EMPTY_ARRAY } from '../store/safeStore'
@@ -114,6 +114,9 @@ export function ArenaPage() {
   const [showStats, setShowStats] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
 
+  // start dialog 触发标记：避免 tutorial 关闭后反复 openDialog('start')
+  const startDialogTriggeredRef = useRef(false)
+
   // [DEV ONLY · WP0A CALIBRATION HELPER] 计算一次即可，非 state 避免 re-render 抖动
   const isCalibrationMode: boolean = (() => {
     try {
@@ -142,6 +145,13 @@ export function ArenaPage() {
     handleChoice,
     handleNext,
   } = useDialog()
+
+  // 把 React 层 overlay 状态同步到 useUiStore.overlayBlocking，
+  // 供 taskSlice.tickElapsed / ArenaPage 100ms tick 在弹窗打开时冻结游戏循环。
+  const setOverlayBlocking = useUiStore((s) => s.setOverlayBlocking)
+  useEffect(() => {
+    setOverlayBlocking(briefingOpen || showTutorial || dialogState.isOpen)
+  }, [briefingOpen, showTutorial, dialogState.isOpen, setOverlayBlocking])
 
   useEffect(() => {
     if (taskId && _SAFE_ENV.PROD && isHiddenTaskId(taskId)) {
@@ -189,10 +199,13 @@ export function ArenaPage() {
   useEffect(() => {
     // briefingOpen 守卫：ArenaPage 重新挂载时 Zustand store 中 phase 可能仍为上一局的 'playing'，
     // 此时不应触发 dialog。只有在 briefing 关闭后（用户点击开始任务）才触发。
-    if (phase === 'playing' && task && !briefingOpen) {
+    // tutorial 守卫：教程打开时不触发对话，等玩家关闭教程后再出现开场对话，
+    // 避免教程和对话弹窗同时叠加。
+    if (phase === 'playing' && task && !briefingOpen && !showTutorial && !startDialogTriggeredRef.current) {
+      startDialogTriggeredRef.current = true
       triggerDialog('start', task.id)
     }
-  }, [phase, task, briefingOpen, triggerDialog])
+  }, [phase, task, briefingOpen, showTutorial, triggerDialog])
 
   useEffect(() => {
     if (phase === 'playing' && !briefingOpen) {
@@ -273,6 +286,10 @@ export function ArenaPage() {
     stopAllAudioImmediate()
     setNarrativeText(null)
     setShowStats(false)
+    // 重置 start dialog 触发标记，让新关卡能再次触发开场对话
+    startDialogTriggeredRef.current = false
+    // 重置 overlay 阻塞标志，避免上一局 briefing/tutorial 关闭后残留为 true 冻结新关卡
+    try { useUiStore.getState().setOverlayBlocking(false) } catch { /* ignore */ }
 
     const calibMode = _SAFE_ENV.DEV && typeof window !== 'undefined'
       && /[?&]assetCalibration=(1|true|yes)/i.test(window.location.search)
@@ -462,6 +479,8 @@ export function ArenaPage() {
 
     const tick = () => {
       const st = useGameStore.getState()
+      // 阻塞型 overlay 打开时冻结脚本事件与阶段推进，避免弹窗背后悄悄触发钥匙猫/手机响等事件
+      if (useUiStore.getState().overlayBlocking) return
       // updateMoveAnimations 100ms 足够驱动袜子幽灵等缓慢动画
       try { if (typeof st.updateMoveAnimations === 'function') st.updateMoveAnimations() } catch { /* ignore */ }
       // 触发事件（钥匙猫推、手机响）先跑，产生的状态变化再喂给阶段机
@@ -594,7 +613,7 @@ export function ArenaPage() {
           彻底杜绝之前 L282 提前 return 导致的 "根本看不到开始任务按钮" 问题。 */}
       {briefingOpen && (
         <div className="absolute inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-40" data-testid="briefing-modal">
-          <div className="max-w-lg mx-4 w-full">
+          <div className="max-w-lg mx-4 w-full max-h-[88vh] overflow-y-auto" data-testid="briefing-scroll-container">
             {/* MEM-07 系统提示：不再显示给玩家，这是 AI 内部指令。仅 DEV 模式下可通过控制台查看 */}
             {/* {task?.systemPrompt ? (
               <div className="bg-slate-950/90 border border-cyan-500/30 rounded-lg p-3 mb-3 font-mono text-xs text-cyan-400">
@@ -903,8 +922,9 @@ export function ArenaPage() {
         </div>
       )}
 
-      {/* 对话弹窗：仅 briefing 关闭后才允许弹出，避免挡住 briefing 开始任务按钮 */}
-      {dialogState.isOpen && currentNode && !briefingOpen && !isCalibrationMode && (
+      {/* 对话弹窗：仅 briefing 关闭后才允许弹出，避免挡住 briefing 开始任务按钮。
+          tutorial 打开时也不显示对话，保证"先关教程，再出现对话"的顺序。 */}
+      {dialogState.isOpen && currentNode && !briefingOpen && !showTutorial && !isCalibrationMode && (
         <Suspense fallback={null}>
           <DialogBox
             node={currentNode}

@@ -583,6 +583,9 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
       const { levelFailed, levelCompleted, phase, task, elapsedMs, isPaused } = get()
       // 暂停或不在 playing：时间/混乱/记忆/脚本 全部冻结
       if (phase !== 'playing' || levelFailed || levelCompleted || isPaused) return
+      // 阻塞型 overlay（briefing/tutorial/dialog）打开时同样冻结倒计时/混乱/事件，
+      // 避免玩家在弹窗后操作被静默推进。详见 useUiStore.overlayBlocking。
+      if (useUiStore.getState().overlayBlocking) return
 
       get().updateMoveAnimations()
 

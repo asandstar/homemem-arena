@@ -18,6 +18,13 @@ interface UiState {
   minimapPan: { x: number; y: number }
   minimapFollowPlayer: boolean
 
+  /**
+   * 阻塞型 overlay 标志：当 briefing / tutorial / dialog 等全屏弹窗打开时为 true。
+   * taskSlice.tickElapsed 通过该标志冻结倒计时、混乱值递增与环境事件，
+   * 避免玩家在弹窗后操作被静默推进。
+   */
+  overlayBlocking: boolean
+
   toggleTaskPanel: () => void
   toggleEventLog: () => void
   toggleMinimap: () => void
@@ -30,6 +37,7 @@ interface UiState {
   setMinimapPan: (pan: { x: number; y: number }) => void
   setMinimapFollowPlayer: (follow: boolean | ((prev: boolean) => boolean)) => void
   resetMinimapView: () => void
+  setOverlayBlocking: (blocking: boolean) => void
   resetUi: () => void
 }
 
@@ -52,6 +60,7 @@ const _rawUiStore = create<UiState>()(
       minimapZoom: 1,
       minimapPan: { x: 0, y: 0 },
       minimapFollowPlayer: false,
+      overlayBlocking: false,
 
       toggleTaskPanel: () => set((state) => ({ taskPanelOpen: !state.taskPanelOpen })),
       toggleEventLog: () => set((state) => ({ eventLogOpen: !state.eventLogOpen })),
@@ -110,6 +119,7 @@ const _rawUiStore = create<UiState>()(
       setMinimapPan: (pan) => set({ minimapPan: pan }),
       setMinimapFollowPlayer: (follow) => set((state) => ({ minimapFollowPlayer: typeof follow === 'function' ? follow(state.minimapFollowPlayer) : follow })),
       resetMinimapView: () => set({ minimapZoom: 1, minimapPan: { x: 0, y: 0 }, minimapFollowPlayer: false }),
+      setOverlayBlocking: (blocking: boolean) => set({ overlayBlocking: !!blocking }),
       resetUi: () => {
         setAudioEnabled(true)
         initSfxAudio()
@@ -125,6 +135,7 @@ const _rawUiStore = create<UiState>()(
           minimapZoom: 1,
           minimapPan: { x: 0, y: 0 },
           minimapFollowPlayer: false,
+          overlayBlocking: false,
         })
       },
     }
