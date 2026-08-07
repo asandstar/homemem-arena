@@ -62,9 +62,9 @@ export const breakfastTask: TaskConfig = {
   iconKey: 'breakfast',
   tags: ['限时挑战', '早餐闹钟', '流程陷阱', '扣分机制', '记忆大师'],
   timeLimit: 120,
-  // 出生在 dining 东南角（距两墙各 0.5m），朝西北对角线方向
+  // 出生在 dining 东南角（距两墙各 0.5m），翻转 180° → 朝东南对角线外，面朝房间中心 + 厨房任务区
   spawnPosition: { x: 2.2, z: 2.1 },
-  spawnRotation: -Math.PI / 4,
+  spawnRotation: (3 * Math.PI) / 4,
   initialStageId: STAGE_ID_PREPARE_FRIDGE_CABINET,
 
   stages: [

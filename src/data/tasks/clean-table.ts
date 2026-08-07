@@ -44,10 +44,9 @@ export const cleanTableTask: TaskConfig = {
   iconKey: 'dish',
   tags: ['新手入门', '程序记忆', '基础交互'],
   // L1 无时限：鼓励玩家慢慢探索，不设 timeLimit
-  // 出生在 dining 西北角（距两墙各 0.5m），朝东南对角线方向
-  //   开局即可看到餐桌、北墙厨房区、餐具分布，视野覆盖最大化
+  // 出生在 dining 西北角（距两墙各 0.5m），朝东南对角线方向 → 翻转 180° 后朝东北，直面餐桌+厨房任务区
   spawnPosition: { x: -2.2, z: -2.1 },
-  spawnRotation: (3 * Math.PI) / 4 + Math.PI,
+  spawnRotation: (3 * Math.PI) / 4,
 
   briefing: `🍽️ 记忆宅邸 · 第一关（程序记忆 · 教程）
 

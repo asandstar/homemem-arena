@@ -678,15 +678,24 @@ export function Minimap({
     ctx.strokeStyle = '#ffffff'
     ctx.fillStyle = '#ef4444'
     ctx.lineWidth = 2.2
+    // ⚠️ 3D yaw → 2D Minimap 坐标变换：
+    // 3D 世界（从上往下看，x 东 / -z 北）：getForwardVector(yaw) = (+sin yaw, -cos yaw)
+    // Minimap canvas （+x→东右, +z→南下）：北 = canvas 上，南 = canvas 下
+    // 因此 3D 面朝 (sin yaw, -cos yaw) → 对应 canvas 的朝向为：
+    //   x 分量 = +sin(yaw)
+    //   y 分量 = -cos(yaw)  （因为 canvas 南=+y，而 3D 北=-z）
+    // 所以：fx = x + sin(yaw)*L, fy = y - cos(yaw)*L
+    // 等价于：mapArrowAngle = yaw - π/2，即原公式 cos → -cos
     const arrowLen = 13
     const aw = 5.2
-    const fx = robotX + Math.sin(robotRotation) * arrowLen
-    const fy = robotY + Math.cos(robotRotation) * arrowLen
+    const mapYaw = robotRotation
+    const fx = robotX + Math.sin(mapYaw) * arrowLen
+    const fy = robotY - Math.cos(mapYaw) * arrowLen
     // 左/右舷
-    const leftX = robotX + Math.sin(robotRotation - Math.PI / 2) * aw
-    const leftY = robotY + Math.cos(robotRotation - Math.PI / 2) * aw
-    const rightX = robotX + Math.sin(robotRotation + Math.PI / 2) * aw
-    const rightY = robotY + Math.cos(robotRotation + Math.PI / 2) * aw
+    const leftX = robotX + Math.sin(mapYaw - Math.PI / 2) * aw
+    const leftY = robotY - Math.cos(mapYaw - Math.PI / 2) * aw
+    const rightX = robotX + Math.sin(mapYaw + Math.PI / 2) * aw
+    const rightY = robotY - Math.cos(mapYaw + Math.PI / 2) * aw
     ctx.beginPath()
     ctx.moveTo(fx, fy)
     ctx.lineTo(leftX, leftY)

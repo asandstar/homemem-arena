@@ -111,10 +111,10 @@ export const laundrySortTask: TaskConfig = {
   iconKey: 'shirt',
   tags: ['整合记忆', '工作记忆', '空间记忆', '程序记忆', '分类', '位置交换干扰'],
   timeLimit: 300,
-  // 出生在 laundry 中央偏南（距南墙储物柜 0.85m），朝 -z（面向北墙三个篮子）
-  //   collision-free：离所有家具 AABB >= 0.3m，离门洞 2m+，视野直击任务区
+  // 出生在 laundry 中央偏南（距南墙储物柜 0.85m），翻转 180° → 面向南墙橱柜+洗衣机/烘干机，身后才是北墙三篮任务区
+  //   collision-free：离所有家具 AABB >= 0.3m，离门洞 2m+
   spawnPosition: { x: 0, z: 0.8 },
-  spawnRotation: 0,
+  spawnRotation: Math.PI,
   initialStageId: STAGE_RULES,
 
   stages: [

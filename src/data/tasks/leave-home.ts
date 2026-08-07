@@ -43,10 +43,9 @@ export const leaveHomeTask: TaskConfig = {
   iconKey: 'door',
   tags: ['空间记忆', '跨房间寻物', '限时', '钥匙猫', '物品位移'],
   timeLimit: 90,
-  // 出生在 living 东北角（距两墙各 0.5m），朝西南对角线方向
-  //   开局即可看到沙发区、茶几、电视柜、书架，视野覆盖最大化
+  // 出生在 living 东北角（距两墙各 0.5m），翻转 180° → 朝西北，直面沙发+玄关+书架，视野覆盖 L2 全部关键藏物区
   spawnPosition: { x: 2.7, z: -2.2 },
-  spawnRotation: (5 * Math.PI) / 4 - Math.PI / 2,
+  spawnRotation: -Math.PI / 4,
 
   briefing: `🐱 钥匙猫的清晨恶作剧 · 第二关（空间记忆）
 
