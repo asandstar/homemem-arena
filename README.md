@@ -6,7 +6,7 @@
 [![Three.js](https://img.shields.io/badge/Three.js-R3F-000000?style=flat&logo=three.js)](https://threejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?style=flat&logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=flat)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-345-green?style=flat)]()
+[![Tests](https://img.shields.io/badge/tests-414-green?style=flat)]()
 
 > 一款让你顺便练记忆的 3D 网页小游戏。你是记忆有限的家政机器人「小橡」，在会捣乱的房子里完成家务，应对调皮的记忆小妖。
 >
@@ -22,6 +22,11 @@
 - **多维度评分** — 速度、连击、记忆测试正确率，多种策略路径拿高分
 - **递进关卡时间线** — 清晨整理 → 上午出门 → 中午洗衣，三个递进关卡串联核心教学与挑战叙事
 - **复古像素风格** — 像素化材质渲染、16-bit 复古配色、像素化后处理效果
+- **视线遮挡（LOS）** — 高亮效果会被墙壁和家具遮挡，真实的 3D 视野体验
+- **猫脚印避让** — 猫脚印会自动避开家具，不会穿墙而过
+- **抽屉交互** — 部分物品藏在抽屉里，靠近后按 F 打开抽屉取物
+- **GLB 模型 Fallback** — 即使 3D 模型加载失败，程序化几何体会作为后备方案，保证视觉和碰撞盒一致
+- **全关卡解锁** — 所有关卡默认解锁，无需通关前置关卡
 
 ## 三个递进关卡（公开范围）
 
@@ -35,6 +40,35 @@
 
 
 游戏包含 6 个共享房间、3 个可管理记忆槽、脚本化环境事件、混乱值、Combo、评分、四类记忆 Probe 和结构化 Session 导出。HUD 会突出当前专注目标；连续 20 秒无目标进展时给出轻提示，45 秒时升级为记忆策略提示，取得进展后立即清除。
+
+## 最近更新（2026-08-07）
+
+### 🐛 关键 Bug 修复
+
+| 问题 | 修复 |
+|------|------|
+| Store 初始化失败：`Cannot read properties of null (reading 'addScore')` | 修复 `withSafeSnapshot` 包装器，现在正确复制 `getState`/`setState`/`subscribe`/`getInitialState` 4 个静态方法 |
+| 关卡锁定：DEV 模式下旧存档导致关卡被锁定 | `isLevelUnlocked` 直接返回 `true`，所有关卡默认解锁 |
+| UI 文案乱码：`font-mono` 导致中文渲染错误（"靠近"→"爱国"） | 移除 AI 系统指令的玩家端渲染，修复 Flex 布局防止文字挤压 |
+| 游戏卡住：点击"开始任务"后一直卡在"准备中" | Store 初始化修复解决了所有下游的 null 引用问题 |
+
+### ✨ 新增功能
+
+| 功能 | 说明 |
+|------|------|
+| **视线遮挡（LOS）** | 从相机发射射线（Ray-AABB Slab method）检测遮挡物，高亮/脉动环效果会被墙壁和家具遮挡 |
+| **猫脚印避让** | 点-OBB 2D 包含检测 + 推出算法，确保猫脚印不落在家具内部（推到最近边 + 0.1m 缓冲外） |
+| **GLB fallback 尺寸对齐** | 程序化几何体通过 `effectiveAabb` 动态注入尺寸，确保视觉与碰撞盒、GLB 模型一致 |
+| **抽屉交互** | 部分物品（如床头柜抽屉、厨房抽屉）支持打开/关闭交互，带专用音效 |
+
+### 🏗️ 架构改进
+
+| 改进 | 说明 |
+|------|------|
+| `src/store/safeStore.ts` | 新增安全 store 包装器，保护 React 首帧 `getSnapshot=null` 的情况，同时保证静态方法完整 |
+| `src/game/lineOfSight.ts` | 新增视线遮挡工具模块，纯数学实现，零外部依赖 |
+| `src/utils/nudgeFootprintAway.ts` | 新增脚印避让工具模块 |
+| `src/utils/resolveFallbackSize.ts` | 新增 fallback 尺寸解析器，统一视觉/碰撞/模型尺寸 |
 
 ## 游戏操作
 
@@ -84,12 +118,21 @@ src/
 ├── ai/                    # 规则式记忆生成、指标与诊断
 ├── audio/                 # Web Audio 游戏音效
 ├── components/arena3d/    # 3D 场景、控制、HUD、小地图、模型
+│   ├── feedback/          # 视觉反馈效果（猫脚印等）
+│   ├── models/            # GLB 模型加载与 fallback
+│   └── ...
 ├── data/                  # 房间、平衡参数、三个公开任务 + 研发中任务配置
 ├── game/                  # 碰撞、移动、摆放、计分、混乱、记忆槽
+│   ├── lineOfSight.ts     # 视线遮挡（LOS）Ray-AABB 检测
+│   └── ...
 ├── pages/                 # 首页、任务、游戏、Probe、结果、数据
 ├── store/                 # Game / Session / UI / Toast 状态
+│   ├── safeStore.ts       # 安全 store 包装器（首帧 null 保护）
+│   └── slices/            # Zustand slices
 ├── types/                 # 任务、物体、事件、记忆、Session 类型
 └── utils/
+    ├── nudgeFootprintAway.ts  # 猫脚印避让家具算法
+    └── resolveFallbackSize.ts # GLB fallback 尺寸对齐
 ```
 
 核心状态职责：
