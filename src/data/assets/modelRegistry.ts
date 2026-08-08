@@ -426,6 +426,16 @@ export const MODEL_ASSET_REGISTRY = {
     sourceSha256: '5851cc59c7e12f6f34a01a2ea93d5b9540be4078c1b703f517239fcede98fb32',
     rawAabb: { x: 0.7932, y: 1.3232, z: 0.3855 },
   },
+  // L3：上层橱柜（挂墙式，非落地）
+  'furniture/kitchenCabinetUpper': {
+    id: 'furniture/kitchenCabinetUpper',
+    url: '/assets/models/kenney/furniture/kitchenCabinetUpper.glb',
+    sourceStem: 'kitchenCabinetUpper',
+    pack: 'kenney-furniture-kit' as const,
+    license: 'CC0-1.0' as const,
+    sourceSha256: '0000000000000000000000000000000000000000000000000000000000000000',
+    rawAabb: { x: 0.43, y: 0.56, z: 0.32 },
+  },
   'furniture/kitchenStove': {
     id: 'furniture/kitchenStove',
     url: '/assets/models/kenney/furniture/kitchenStove.glb',
@@ -672,6 +682,36 @@ export const MODEL_ASSET_REGISTRY = {
     license: 'CC0-1.0' as const,
     sourceSha256: 'dbb39cce42ce1729a44b94c6f0d9806d6c638b9365398c01049a2a26e2de5025',
     rawAabb: { x: 0.727183, y: 2.0, z: 0.610162 },
+  },
+  // L3：麦片盒（carton），food kit 模型：[-1,1]³ 包络
+  'food/carton': {
+    id: 'food/carton',
+    url: '/assets/models/kenney/food/carton.glb',
+    sourceStem: 'carton',
+    pack: 'kenney-food-kit' as const,
+    license: 'CC0-1.0' as const,
+    sourceSha256: '0000000000000000000000000000000000000000000000000000000000000000',
+    rawAabb: { x: 2.0, y: 2.0, z: 2.0 },
+  },
+  // L3：早餐碗（bowl），food kit 模型：[-1,1]³ 包络
+  'food/bowl': {
+    id: 'food/bowl',
+    url: '/assets/models/kenney/food/bowl.glb',
+    sourceStem: 'bowl',
+    pack: 'kenney-food-kit' as const,
+    license: 'CC0-1.0' as const,
+    sourceSha256: '0000000000000000000000000000000000000000000000000000000000000000',
+    rawAabb: { x: 2.0, y: 2.0, z: 2.0 },
+  },
+  // L3：早餐杯（cup），food kit 模型：[-1,1]³ 包络
+  'food/cup': {
+    id: 'food/cup',
+    url: '/assets/models/kenney/food/cup.glb',
+    sourceStem: 'cup',
+    pack: 'kenney-food-kit' as const,
+    license: 'CC0-1.0' as const,
+    sourceSha256: '0000000000000000000000000000000000000000000000000000000000000000',
+    rawAabb: { x: 2.0, y: 2.0, z: 2.0 },
   },
 } as const
 

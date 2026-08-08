@@ -25,11 +25,12 @@ const SPOON = 'obj-breakfast-spoon'
 
 const DINING_CENTER = sharedRooms.dining.center
 const UPPER_LOCAL = { x: 1.0, y: 0.9, z: -1.9 }
+// applyScriptedMove 内部会自动叠加 room.center，所以这里传**房间局部坐标**
 const UPPER_WORLD = {
   room: 'dining' as const,
-  x: DINING_CENTER.x + UPPER_LOCAL.x,
+  x: UPPER_LOCAL.x,
   y: UPPER_LOCAL.y + 0.55,
-  z: DINING_CENTER.z + UPPER_LOCAL.z,
+  z: UPPER_LOCAL.z,
 }
 
 function entityPlacedIn(entities: EntityStateSnapshot[], configId: string, containerId: string): boolean {
@@ -164,6 +165,7 @@ export const laundrySortTask: TaskConfig = {
       hiddenInContainer: LOWER_CABINET,
       size: { x: 0.28, y: 0.42, z: 0.18 },
       color: '#f59e0b',
+      modelAssetId: 'food/carton',
     },
     {
       id: BOWL,
@@ -174,6 +176,7 @@ export const laundrySortTask: TaskConfig = {
       hiddenInContainer: LOWER_CABINET,
       size: { x: 0.24, y: 0.1, z: 0.24 },
       color: '#f8fafc',
+      modelAssetId: 'food/bowl',
     },
     {
       id: CUP,
@@ -184,6 +187,7 @@ export const laundrySortTask: TaskConfig = {
       hiddenInContainer: LOWER_CABINET,
       size: { x: 0.14, y: 0.16, z: 0.14 },
       color: '#60a5fa',
+      modelAssetId: 'food/cup',
     },
     {
       id: SPOON,
@@ -225,7 +229,7 @@ export const laundrySortTask: TaskConfig = {
       containsObjectIds: [],
       acceptedCategories: [],
       acceptAny: false,
-      modelAssetId: 'furniture/kitchenCabinet',
+      modelAssetId: 'furniture/kitchenCabinetUpper',
     },
     {
       id: DINING_TABLE,

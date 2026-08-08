@@ -726,4 +726,50 @@ export const MODEL_OVERRIDES: ModelOverrideMap = {
     floorAligned: true,
     status: 'provisional',
   },
+
+  // ===================== L3 关键任务模型（Commit 2 接入） =====================
+  // kitchenCabinetUpper rawAabb=(0.43,0.56,0.32) — 挂墙式上层橱柜
+  // 目标：贴北墙，底部 y=0.9m，柜身高 0.56m → 顶部 y=1.46m；深度 0.45m，宽 0.8m
+  // rawMin≈(0,0,-0.32) rawMax≈(0.43,0.56,0) → center x=-0.215, z=0.16
+  'furniture/kitchenCabinetUpper': {
+    uniformScale: 1.86,
+    pivotOffset: { x: -0.215, y: 0, z: 0.16 },
+    effectiveAabb: { x: 0.8, y: 1.04, z: 0.6 },
+    collisionSize: { x: 0.76, y: 1.0, z: 0.55 },
+    floorAligned: false, // 挂墙式，位置 y=0.9 表示柜底离地高度
+    status: 'provisional',
+  },
+  // carton rawAabb=[-1,1]³ — 麦片盒
+  // 目标：约 0.28m 宽 × 0.42m 高 × 0.18m 深（任务对象 size）
+  // 等比 scale≈0.21（按 y 方向 0.42/2）
+  'food/carton': {
+    uniformScale: 0.21,
+    pivotOffset: { x: 0, y: 0.21, z: 0 }, // rawMin.y=-1 → +1*0.21 把底带到 y=0
+    effectiveAabb: { x: 0.42, y: 0.42, z: 0.42 },
+    collisionSize: { x: 0.28, y: 0.42, z: 0.18 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // bowl rawAabb=[-1,1]³ — 早餐碗
+  // 目标：口径 ~0.24m，高 ~0.12m（比 plate 厚，比 mug 矮宽）
+  // 等比 scale≈0.12（按口径 0.24/2）
+  'food/bowl': {
+    uniformScale: 0.12,
+    pivotOffset: { x: 0, y: 0.12, z: 0 }, // rawMin.y=-1 → +1*0.12 把底带到 y=0
+    effectiveAabb: { x: 0.24, y: 0.24, z: 0.24 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
+    floorAligned: true,
+    status: 'provisional',
+  },
+  // cup rawAabb=[-1,1]³ — 早餐杯
+  // 目标：约 0.14m 宽 × 0.16m 高（略大于 mug 的 0.1m）
+  // 等比 scale≈0.08
+  'food/cup': {
+    uniformScale: 0.08,
+    pivotOffset: { x: 0, y: 0.08, z: 0 }, // 底部 -1*0.08 回 0 需 +0.08
+    effectiveAabb: { x: 0.16, y: 0.16, z: 0.16 },
+    collisionSize: { x: 0.14, y: 0.16, z: 0.14 },
+    floorAligned: true,
+    status: 'provisional',
+  },
 }

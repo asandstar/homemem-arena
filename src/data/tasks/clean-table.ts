@@ -137,6 +137,7 @@ MEM-07 的记忆模块刚刚启动。先用三件餐具完成一次最简单的�
       acceptedCategories: ['cup'],
       isTargetZone: true,
       targetLabel: '水槽（马克杯放这里）',
+      modelAssetId: 'furniture/kitchenSink',
     },
     {
       id: CABINET,
@@ -150,6 +151,7 @@ MEM-07 的记忆模块刚刚启动。先用三件餐具完成一次最简单的�
       acceptedCategories: ['plate', 'fork'],
       isTargetZone: true,
       targetLabel: '橱柜（盘子、叉子放这里）',
+      modelAssetId: 'furniture/kitchenCabinetDrawer',
     },
   ],
 
