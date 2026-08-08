@@ -207,10 +207,10 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       collisionMode: 'none',
       modelAssetId: 'furniture/lampRoundTable',
     },
-    // 东侧床头柜台灯（新增，对称）
+    // 东侧床头柜台灯后移，给 L2 马克杯留出清晰、无穿模的前侧台面。
     {
       id: 'decor-nightstand-lamp-r',
-      position: { x: 1.35, y: 0.605, z: -2.0 },
+      position: { x: 1.35, y: 0.605, z: -2.14 },
       size: { x: 0.274, y: 0.566, z: 0.316 },
       rotationY: ROT.FACE_PLUS_Z,
       collisionMode: 'none',

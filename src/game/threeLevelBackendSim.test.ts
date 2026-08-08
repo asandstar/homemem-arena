@@ -255,12 +255,17 @@ describe('三关后端模拟实玩 & 证据链', () => {
     // ========== ENCODE：三条位置记忆全部建立前禁止开始搬运 ==========
     expect(setRobotAtEntity(task, 'obj-books').success).toBe(true)
     expect(pickByCfg('obj-books').success).toBe(false)
+    const encodeGoalByObject: Record<string, string> = {
+      'obj-books': 'g-encode-books',
+      'obj-mug': 'g-encode-mug',
+      'obj-radio': 'g-encode-radio',
+    }
     for (const cfg of allObjects) {
       expect(setRobotAtEntity(task, cfg).success).toBe(true)
       expect(saveByCfg(cfg).success).toBe(true)
       evalAndCheck(`L2-SAVED-${cfg}`)
+      expect(useGameStore.getState().achievedGoalIds.has(encodeGoalByObject[cfg])).toBe(true)
     }
-    expect(useGameStore.getState().achievedGoalIds.has('g-encode-stable-map')).toBe(true)
     expect(useGameStore.getState().currentStageId).toBe('stage-recall-stable-map')
 
     // ========== RECALL：根据稳定记忆跨房间取回三件物品 ==========
@@ -284,7 +289,14 @@ describe('三关后端模拟实玩 & 证据链', () => {
       phase: finalState.phase,
     })
     expect(finalState.achievedGoalIds).toEqual(
-      new Set(['g-encode-stable-map', 'g-books-table', 'g-mug-table', 'g-radio-table']),
+      new Set([
+        'g-encode-books',
+        'g-encode-mug',
+        'g-encode-radio',
+        'g-books-table',
+        'g-mug-table',
+        'g-radio-table',
+      ]),
     )
     expect(finalState.levelCompleted).toBe(true)
   })

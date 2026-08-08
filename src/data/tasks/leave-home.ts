@@ -27,6 +27,10 @@ function hasStableSpatialMap(ctx: StageContext): boolean {
   return RECALL_OBJECT_IDS.every((id) => encoded.has(id))
 }
 
+function hasEncodedObject(ctx: StageContext | undefined, configId: string): boolean {
+  return !!ctx && encodedObjectIds(ctx).has(configId)
+}
+
 function allRecallItemsReturned(ctx: StageContext): boolean {
   return RECALL_OBJECT_IDS.every((id) => entityPlacedIn(ctx.entities, id, COFFEE_TABLE))
 }
@@ -55,7 +59,7 @@ export const leaveHomeTask: TaskConfig = {
   stages: [
     {
       id: STAGE_ENCODE_MAP,
-      playerObjective: '【建立空间地图】巡查三个房间，靠近书、马克杯和收音机分别按 E；三个记忆槽都记录后才能拾取。',
+      playerObjective: '【建立空间地图】按 E 依次记录：客厅·书｜卧室·马克杯｜玄关·收音机。三项打勾后才能拾取。',
       entryCondition: () => true,
       completionCondition: hasStableSpatialMap,
       nextStage: STAGE_RECALL_ITEMS,
@@ -95,7 +99,8 @@ export const leaveHomeTask: TaskConfig = {
       name: '书',
       category: 'book',
       initialRoom: 'living',
-      initialPosition: { x: -1.5, y: 0.45, z: 0.8 },
+      // 放在两只抱枕之间的前侧坐垫，避免与中央抱枕重叠穿模。
+      initialPosition: { x: -1.9, y: 0.45, z: 0.58 },
       initialSurfaceHeight: 0.45,
       size: { x: 0.22, y: 0.08, z: 0.16 },
       color: '#3b82f6',
@@ -147,18 +152,36 @@ export const leaveHomeTask: TaskConfig = {
 
   goals: [
     {
-      id: 'g-encode-stable-map',
-      description: '按 E 记住书、马克杯和收音机的位置',
+      id: 'g-encode-books',
+      description: '客厅：按 E 记录书的位置',
       kind: 'milestone',
       memoryType: 'spatial',
-      relatedObjectIds: [...RECALL_OBJECT_IDS],
-      predicate: (_entities, _snapshot, ctx) => !!ctx && hasStableSpatialMap(ctx),
-      achievedMessage: '✓ 三个房间的位置记忆已经建立',
+      relatedObjectIds: ['obj-books'],
+      predicate: (_entities, _snapshot, ctx) => hasEncodedObject(ctx, 'obj-books'),
+      achievedMessage: '✓ 已记录：客厅的书',
+    },
+    {
+      id: 'g-encode-mug',
+      description: '卧室：按 E 记录马克杯的位置',
+      kind: 'milestone',
+      memoryType: 'spatial',
+      relatedObjectIds: ['obj-mug'],
+      predicate: (_entities, _snapshot, ctx) => hasEncodedObject(ctx, 'obj-mug'),
+      achievedMessage: '✓ 已记录：卧室的马克杯',
+    },
+    {
+      id: 'g-encode-radio',
+      description: '玄关：按 E 记录收音机的位置',
+      kind: 'milestone',
+      memoryType: 'spatial',
+      relatedObjectIds: ['obj-radio'],
+      predicate: (_entities, _snapshot, ctx) => hasEncodedObject(ctx, 'obj-radio'),
+      achievedMessage: '✓ 已记录：玄关的收音机',
     },
     {
       id: 'g-books-table',
       description: '根据记忆把书带回客厅茶几',
-      dependsOnGoalIds: ['g-encode-stable-map'],
+      dependsOnGoalIds: ['g-encode-books', 'g-encode-mug', 'g-encode-radio'],
       memoryType: 'spatial',
       relatedObjectIds: ['obj-books'],
       relatedContainerIds: [COFFEE_TABLE],
@@ -168,7 +191,7 @@ export const leaveHomeTask: TaskConfig = {
     {
       id: 'g-mug-table',
       description: '根据记忆把马克杯带回客厅茶几',
-      dependsOnGoalIds: ['g-encode-stable-map'],
+      dependsOnGoalIds: ['g-encode-books', 'g-encode-mug', 'g-encode-radio'],
       memoryType: 'spatial',
       relatedObjectIds: ['obj-mug'],
       relatedContainerIds: [COFFEE_TABLE],
@@ -178,7 +201,7 @@ export const leaveHomeTask: TaskConfig = {
     {
       id: 'g-radio-table',
       description: '根据记忆把收音机带回客厅茶几',
-      dependsOnGoalIds: ['g-encode-stable-map'],
+      dependsOnGoalIds: ['g-encode-books', 'g-encode-mug', 'g-encode-radio'],
       memoryType: 'spatial',
       relatedObjectIds: ['obj-radio'],
       relatedContainerIds: [COFFEE_TABLE],
@@ -194,6 +217,30 @@ export const leaveHomeTask: TaskConfig = {
       type: 'message',
       message: '🧠 这一关要建立三条稳定记忆：每找到一件物品，都先按 E，再去下一个房间。',
       description: '提示三物品编码阶段',
+      memoryType: 'spatial',
+      toastType: 'info',
+    },
+    {
+      id: 'se-bedroom-target',
+      trigger: (_step, _entities, currentRoom, _rooms, ctx) => !!ctx
+        && ctx.currentStageId === STAGE_ENCODE_MAP
+        && currentRoom === 'bedroom'
+        && !ctx.triggeredEvents.has('se-bedroom-target'),
+      type: 'message',
+      message: '卧室目标：在右侧床头柜找到马克杯，靠近后按 E 记录。',
+      description: '首次进入卧室时提示本房间记忆目标',
+      memoryType: 'spatial',
+      toastType: 'info',
+    },
+    {
+      id: 'se-entrance-target',
+      trigger: (_step, _entities, currentRoom, _rooms, ctx) => !!ctx
+        && ctx.currentStageId === STAGE_ENCODE_MAP
+        && currentRoom === 'entrance'
+        && !ctx.triggeredEvents.has('se-entrance-target'),
+      type: 'message',
+      message: '玄关目标：在北侧鞋柜找到收音机，靠近后按 E 记录。',
+      description: '首次进入玄关时提示本房间记忆目标',
       memoryType: 'spatial',
       toastType: 'info',
     },

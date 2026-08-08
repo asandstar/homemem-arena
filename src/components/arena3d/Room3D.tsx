@@ -478,6 +478,7 @@ function RoomDecorations({ spec }: { spec: RoomSpec }) {
 }
 
 export function Room3D({ spec }: Room3DProps) {
+  const viewMode = useGameStore((state) => state.viewMode)
   const walls = useMemo(() => {
     const { center, size, doorways, wallColor } = spec
     const w = size.x
@@ -667,21 +668,23 @@ export function Room3D({ spec }: Room3DProps) {
         </mesh>
       ))}
 
-      <Billboard position={[spec.center.x, spec.size.y + 0.15, spec.center.z]}>
-        <mesh>
-          <boxGeometry args={[1.2, 0.15, 0.02]} />
-          <meshBasicMaterial color="#1f2937" transparent opacity={0.9} />
-        </mesh>
-        <Text
-          position={[0, 0.01, 0.005]}
-          fontSize={0.15}
-          color="#ffffff"
-          anchorX="center"
-          anchorY="middle"
-        >
-          {spec.name}
-        </Text>
-      </Billboard>
+      {viewMode === 'first-person' && (
+        <Billboard position={[spec.center.x, spec.size.y + 0.15, spec.center.z]}>
+          <mesh>
+            <boxGeometry args={[1.2, 0.15, 0.02]} />
+            <meshBasicMaterial color="#1f2937" transparent opacity={0.9} />
+          </mesh>
+          <Text
+            position={[0, 0.01, 0.005]}
+            fontSize={0.15}
+            color="#ffffff"
+            anchorX="center"
+            anchorY="middle"
+          >
+            {spec.name}
+          </Text>
+        </Billboard>
+      )}
 
       {spec.doorways
         .filter((door) => spec.id < door.connectsTo)

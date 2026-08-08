@@ -113,6 +113,7 @@ export function Container3D({
   // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
   const robotPosition = useGameStore((s) => s.robotPosition)
   const heldEntityId = useGameStore((s) => s.heldEntityId)
+  const viewMode = useGameStore((s) => s.viewMode)
   const task = useGameStore((s) => s.task)
   const achievedGoalIds = useGameStore((s) => s.achievedGoalIds)
   // L3 容器位置 swap：containerOverrides[spec.id].position 覆盖 task.containers 原始 position
@@ -330,7 +331,9 @@ export function Container3D({
         visible={false}
       />
 
-      {(hovered || (isActiveTaskContainer && distance < 6)) && (spec.targetLabel ?? spec.name ?? '') !== '' && (
+      {viewMode === 'first-person'
+        && (hovered || (isActiveTaskContainer && distance < 6))
+        && (spec.targetLabel ?? spec.name ?? '') !== '' && (
         <Billboard position={[0, surfaceLocalY + 0.25, 0]}>
           <mesh>
             <boxGeometry args={[0.65, 0.22, 0.01]} />

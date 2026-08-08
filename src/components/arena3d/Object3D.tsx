@@ -10,6 +10,7 @@ import { PropModel } from './models/PropModel'
 import { RegisteredModel } from './RegisteredModel'
 import { snapEntityToWorld, getModelApproxHeight } from '../../game/placement'
 import { CATEGORY_TO_MODEL_ID } from './modelIds'
+import { getModelAsset } from '../../data/assets/modelRegistry'
 
 interface Object3DProps {
   entity: EntityState
@@ -66,6 +67,7 @@ export function Object3D({ entity, onClick, isHeld, losVisible = true }: Object3
   const shakingEntityId = useGameStore((s) => s.shakingEntityId)
   const robotPosition = useGameStore((s) => s.robotPosition)
   const heldEntityId = useGameStore((s) => s.heldEntityId)
+  const viewMode = useGameStore((s) => s.viewMode)
   const task = useGameStore((s) => s.task)
   const achievedGoalIds = useGameStore((s) => s.achievedGoalIds)
   // L2 示范高亮：命中 entity.configId
@@ -97,7 +99,13 @@ export function Object3D({ entity, onClick, isHeld, losVisible = true }: Object3
   const isTutorialObject = task?.id === 'task-clean-table'
     && entity.status !== 'placed'
     && ['obj-mug-1', 'obj-plate-1', 'obj-fork-1'].includes(entity.configId)
-  const tutorialScale = isTutorialObject ? 1.15 : 1
+  const isRecallSmallObject = task?.id === 'task-leave-home'
+    && ['obj-books', 'obj-mug'].includes(entity.configId)
+  const visualScale = isTutorialObject ? 1.15 : isRecallSmallObject ? 1.15 : 1
+  const visualModelHeight = entity.modelAssetId
+    ? getModelAsset(entity.modelAssetId).effectiveAabb.y * visualScale
+    : modelHeight
+  const visualTop = entity.modelAssetId ? -halfHeight + visualModelHeight : halfHeight
 
   const isKey = entity.category === 'key' || entity.configId === 'obj-key'
   const glowColor = isKey ? '#fbbf24' : PALETTE.target.primary
@@ -116,6 +124,7 @@ export function Object3D({ entity, onClick, isHeld, losVisible = true }: Object3
 
   const isMoving = entity.properties?._moving === true
   const inRange = distance < 2.5 && !isMoving
+  const hideNearCamera = viewMode === 'first-person' && distance < 0.38 && !isHeld
   const proximityGlow = useMemo(() => {
     if (isMoving || isHeld) return 0
     if (!inRange) return 0
@@ -207,12 +216,13 @@ export function Object3D({ entity, onClick, isHeld, losVisible = true }: Object3
           document.body.style.cursor = 'auto'
         }}
         scale={pulseScale}
+        visible={!hideNearCamera}
         rotation={[0, idleRotate, 0]}
       >
         {entity.modelAssetId ? (
           <RegisteredModel
             assetId={entity.modelAssetId}
-            scaleMultiplier={tutorialScale}
+            scaleMultiplier={visualScale}
             // R2A.1 锚点契约：snapEntityToWorld 返回 center-origin y（surfaceY + halfHeight）。
             // PropModel (CENTER_ORIGIN) center 位于该 y，bottom 在 surfaceY。
             // RegisteredModel (BOTTOM_CENTER_ORIGIN) 需减去 halfHeight 使 bottom 在 surfaceY。
@@ -252,7 +262,7 @@ export function Object3D({ entity, onClick, isHeld, losVisible = true }: Object3
         </mesh>
       )}
 
-      {hovered && (
+      {hovered && viewMode === 'first-person' && (
         <>
           <mesh position={[0, -halfHeight - 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[0.2, 0.28, 24]} />
@@ -329,8 +339,8 @@ export function Object3D({ entity, onClick, isHeld, losVisible = true }: Object3
         visible={false}
       />
 
-      {hovered && (
-        <Billboard position={[0, halfHeight + 0.2, 0]}>
+      {hovered && viewMode === 'first-person' && (
+        <Billboard position={[0, visualTop + 0.2, 0]}>
           <mesh>
             <boxGeometry args={[0.55, 0.22, 0.02]} />
             <meshBasicMaterial color="#1f2937" transparent opacity={0.9} />
@@ -370,7 +380,10 @@ export function Object3D({ entity, onClick, isHeld, losVisible = true }: Object3
       {/* 教学餐具刚好贴着餐桌表面，桌体的视线检测可能误判遮挡；
           L1 单房间内允许教学标记越过该误判，避免玩家看不到开场物件。 */}
       {((isTaskTarget && losVisible) || isTutorialObject) && !isHeld && (
-        <TaskTargetGlow halfHeight={halfHeight} entityName={entity.name} />
+        <TaskTargetGlow
+          groundY={-halfHeight - 0.02}
+          subdued={distance < 0.8}
+        />
       )}
 
       {isHeld && (
@@ -398,7 +411,13 @@ export function Object3D({ entity, onClick, isHeld, losVisible = true }: Object3
   )
 }
 
-function TaskTargetGlow({ halfHeight, entityName }: { halfHeight: number; entityName: string }) {
+function TaskTargetGlow({
+  groundY,
+  subdued,
+}: {
+  groundY: number
+  subdued: boolean
+}) {
   const glowRef = useRef(0)
   const meshRef = useRef<THREE.Mesh>(null)
   const lightRef = useRef<THREE.PointLight>(null)
@@ -408,35 +427,20 @@ function TaskTargetGlow({ halfHeight, entityName }: { halfHeight: number; entity
     const pulse = 0.5 + Math.sin(glowRef.current * 3) * 0.5
     if (meshRef.current) {
       const mat = meshRef.current.material as THREE.MeshBasicMaterial
-      mat.opacity = 0.3 + pulse * 0.4
+      mat.opacity = subdued ? 0.12 + pulse * 0.12 : 0.22 + pulse * 0.28
     }
     if (lightRef.current) {
-      lightRef.current.intensity = 0.4 + pulse * 0.4
+      lightRef.current.intensity = subdued ? 0.08 : 0.18 + pulse * 0.22
     }
   })
 
   return (
     <>
-      <mesh ref={meshRef} position={[0, -halfHeight - 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.22, 0.35, 24]} />
+      <mesh ref={meshRef} position={[0, groundY, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.18, 0.29, 24]} />
         <meshBasicMaterial color="#fbbf24" transparent opacity={0.5} />
       </mesh>
-      <pointLight ref={lightRef} position={[0, 0.1, 0]} color="#fbbf24" intensity={0.5} distance={2} />
-      <Billboard position={[0, halfHeight + 0.3, 0]}>
-        <mesh>
-          <boxGeometry args={[0.5, 0.16, 0.02]} />
-          <meshBasicMaterial color="#92400e" transparent opacity={0.85} />
-        </mesh>
-        <Text
-          position={[0, 0, 0.01]}
-          fontSize={0.07}
-          color="#fbbf24"
-          anchorX="center"
-          anchorY="middle"
-        >
-          ★ {entityName}
-        </Text>
-      </Billboard>
+      <pointLight ref={lightRef} position={[0, 0.1, 0]} color="#fbbf24" intensity={0.35} distance={1.25} />
     </>
   )
 }

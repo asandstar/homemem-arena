@@ -123,7 +123,7 @@
 | decor-nightstand-left | furniture/cabinetBedDrawerTable | (-1.35, 0, -2.0) | 0 | (0.612, 0.605, 0.877) | 床头柜在床**左侧**（床头两侧，非床头后面） |
 | decor-nightstand-right | furniture/cabinetBedDrawerTable | (1.35, 0, -2.0) | 0 | (0.612, 0.605, 0.877) | 床头柜在床**右侧**，与左侧对称 |
 | decor-nightstand-lamp-l | furniture/lampRoundTable | (-1.35, 0.605, -2.0) | 0 | (0.274, 0.566, 0.316) | 西侧床头柜台灯，y=台面高 0.605 |
-| decor-nightstand-lamp-r | furniture/lampRoundTable | (1.35, 0.605, -2.0) | 0 | (0.274, 0.566, 0.316) | 东侧床头柜台灯（新增，对称） |
+| decor-nightstand-lamp-r | furniture/lampRoundTable | (1.35, 0.605, -2.14) | 0 | (0.274, 0.566, 0.316) | 东侧床头柜台灯（后移，为任务杯留出前侧台面） |
 | decor-toy-bear | furniture/bear | (0.5, 0.32, -2.0) | 0 | (0.312, 0.36, 0.198) | **y=0.32 落在床垫上**（原 y=0.58 悬空已修复） |
 | decor-bedroom-rug | furniture/rugRectangle | (0, 0, 0.7) | 0 | (1.57, 0.01, 0.92) | **移到床尾南方**（原 z=0.3 被床盖住已修复），无碰撞 |
 | decor-bedroom-mirror | furniture/bathroomMirror | (-2.3, 1.4, 0.3) | π/2 | (0.603, 0.869, 0.289) | 西墙挂镜，柜门上方墙面，`collisionMode='none'` |
@@ -463,7 +463,7 @@
 - [ ] 玩具熊 `y` 由 `0.58` → `0.32`，落在床垫表面
 - [ ] 地毯 `z` 由 `0.3` → `0.7`，移出床覆盖范围
 - [ ] 大衣柜迁至西墙南段 `(-1.79, 0, 1.6)`，腾出北墙给床头
-- [ ] 新增右侧床头柜台灯 `decor-nightstand-lamp-r` `(1.35, 0.605, -2.0)` 实现对称
+- [ ] 新增右侧床头柜台灯 `decor-nightstand-lamp-r` `(1.35, 0.605, -2.14)`，后移为任务杯留出前侧台面
 - [ ] 浴室镜移到西墙 `(-2.3, 1.4, 0.3)`，避开衣柜
 
 ### 6.2 客厅
