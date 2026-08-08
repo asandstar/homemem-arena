@@ -26,7 +26,7 @@ export const helpTabs: HelpTab[] = [
         title: '基础操作',
         items: [
           { label: 'WASD', description: '移动角色' },
-          { label: '拖动鼠标', description: '转动视角（第一人称模式）' },
+          { label: '点击画面', description: '锁定视角后移动鼠标环视（第一人称模式）' },
           { label: 'V', description: '切换视角（第一人称 / 俯视）' },
           { label: 'F', description: '与物体/容器交互（拾取/放置/开关）' },
           { label: '点击物体', description: '也可以直接点击物体进行拾取或交互' },
@@ -34,7 +34,7 @@ export const helpTabs: HelpTab[] = [
           { label: 'Tab', description: '显示/隐藏任务面板' },
           { label: 'R', description: '展开/收起事件日志' },
           { label: 'H', description: '隐藏/显示游戏 UI' },
-          { label: 'ESC×2', description: '按两次 ESC 打开暂停菜单（继续 / 重新开始本关 / 返回关卡选择）' },
+          { label: 'ESC / ESC×2', description: '第一次释放鼠标；再次按 ESC 打开暂停菜单' },
         ],
       },
       {

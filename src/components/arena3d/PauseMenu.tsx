@@ -40,7 +40,7 @@ export function PauseMenu() {
       // 忽略：某些 iframe 上下文下 exitPointerLock 可能报错
     }
     suspendAllAudioContextsImmediate()
-    if (taskId && (phase === 'playing' || phase === 'briefing')) {
+    if (taskId && phase === 'playing') {
       try {
         autosaveGame(taskId)
       } catch (e) {

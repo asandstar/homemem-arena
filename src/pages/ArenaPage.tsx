@@ -74,7 +74,6 @@ export function ArenaPage() {
   // 函数引用：Zustand 中 action 函数引用是稳定的（set/get 绑定在 slice 创建时），直接安全解构
   const initializeTask = useGameStore((s) => s?.initializeTask)
   const startPlaying = useGameStore((s) => s?.startPlaying)
-  const saveCurrentGame = useGameStore((s) => s?.saveCurrentGame)
   const getGameStats = useGameStore((s) => s?.getGameStats)
 
   // Hotfix 2026-08-07: 一次性安全包装 stats，避免 JSX 里 12+ 处 typeof 重复检查 / 首帧 null。
@@ -396,11 +395,12 @@ export function ArenaPage() {
       ;(window as any).__cleanupCallCount = ((window as any).__cleanupCallCount || 0) + 1
       stopAllAudioImmediate()
       stopAutoSave()
-      if (typeof saveCurrentGame === 'function') saveCurrentGame()
+      if (taskId) {
+        try { autosaveGame(taskId) } catch { /* ignore */ }
+      }
     }
 
     const handleBeforeUnload = () => {
-      if (typeof saveCurrentGame === 'function') saveCurrentGame()
       handleCleanup()
     }
 
@@ -410,7 +410,7 @@ export function ArenaPage() {
       window.removeEventListener('beforeunload', handleBeforeUnload)
       handleCleanup()
     }
-  }, [saveCurrentGame])
+  }, [taskId])
 
   // probing 阶段（任务完成/失败）fade out BGM/Ambient，立即停 chaos 低频
   useEffect(() => {
@@ -425,7 +425,7 @@ export function ArenaPage() {
   // 避免玩家"刚进入探针就刷新丢了进度"的糟糕体验。
   useEffect(() => {
     if (!task || !taskId) return
-    if (phase !== 'idle' && phase !== 'aborted') {
+    if (phase === 'playing' || phase === 'probing' || phase === 'analyzing' || phase === 'result') {
       try { autosaveGame(taskId) } catch {}
     }
   }, [phase, taskId, task])
@@ -433,14 +433,12 @@ export function ArenaPage() {
   // 自动保存：playing 阶段 60 秒一次。暂停时不重复保存（saveSystem.startAutoSave 内部已检查 isPaused 跳过）
   useEffect(() => {
     if (phase === 'playing') {
-      startAutoSave(() => {
-        if (typeof saveCurrentGame === 'function') saveCurrentGame()
-      })
+      startAutoSave()
     }
     return () => {
       stopAutoSave()
     }
-  }, [phase, saveCurrentGame])
+  }, [phase])
 
   // FIX-3 兜底：简报已关闭（或跳过）但 phase 还在 briefing 时，强制进入 playing
   // 避免 E2E/自动化/特殊入口下，简报按钮没点导致所有指令被 ensurePlaying 拦截
@@ -644,8 +642,8 @@ export function ArenaPage() {
                       <li className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">WASD</kbd>
                         <span>移动</span>
-                        <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">拖动鼠标</kbd>
-                        <span>转视角</span>
+                        <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">点击画面</kbd>
+                        <span>锁定后移动鼠标转视角</span>
                       </li>
                       <li className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <kbd className="px-1.5 py-0.5 bg-yellow-300/70 rounded text-yellow-900 text-[10px] font-mono">V</kbd>

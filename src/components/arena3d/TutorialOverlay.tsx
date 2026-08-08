@@ -109,8 +109,8 @@ export function TutorialOverlay({ taskName, taskGoal, onClose }: TutorialOverlay
               </div>
               <div className="text-xs text-slate-300 space-y-0.5">
                 <div><span className="font-mono text-amber-300">WASD</span> 移动</div>
-                <div><span className="font-mono text-amber-300">鼠标</span> 旋转视角</div>
-                <div><span className="font-mono text-amber-300">ESC×2</span> 暂停 / 重来</div>
+                <div><span className="font-mono text-amber-300">点击画面</span> 锁定后移动鼠标旋转视角</div>
+                <div><span className="font-mono text-amber-300">ESC / ESC×2</span> 释放鼠标 / 暂停菜单</div>
               </div>
             </div>
 

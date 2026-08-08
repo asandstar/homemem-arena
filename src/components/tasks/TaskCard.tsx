@@ -182,7 +182,7 @@ export function TaskCard({
             {typeof progress?.attempts === 'number' && progress.attempts > 0 ? (
               <div className="flex items-center gap-1.5 text-slate-400">
                 <RotateCcw size={14} />
-                <span>尝试 {progress.attempts} 次</span>
+                <span>通关 {progress.attempts} 次</span>
               </div>
             ) : null}
           </div>

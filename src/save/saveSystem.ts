@@ -24,7 +24,8 @@ import { getTaskById, PUBLIC_LEVEL_ORDER } from '../data/tasks'
  *  - 读档后 useGameStore.loadFromSave 会把数组转回 Set。
  */
 
-export const SAVE_VERSION = 1
+// v2: 修复自动存档递归，并让关卡位置/尺寸/脚本移动等改动能够使旧存档失效。
+export const SAVE_VERSION = 2
 export const AUTOSAVE_INTERVAL_MS = 60_000
 const KEY_PREFIX = 'homemem_autosave_'
 
@@ -81,16 +82,65 @@ function autosaveKey(taskId: string): string {
   return `${KEY_PREFIX}${taskId}`
 }
 
-/** 配置 hash：对当前 task 的 objects/containers/rooms 做简易指纹。
- *  变更过的关卡配置不能恢复旧存档。 */
+/** 配置 hash：只序列化会影响续玩正确性的静态配置。
+ *  不包含 predicate/trigger 函数，涉及规则逻辑的发布仍应显式提升 SAVE_VERSION。 */
 export function computeTaskConfigHash(taskId: string): string {
   const t = getTaskById(taskId)
   if (!t) return 'no-task'
   const seed = JSON.stringify({
-    objects: t.objects.map((o: any) => `${o.id}:${o.configId ?? o.category}:${o.initialRoom ?? o.startRoom ?? 'room'}`),
-    containers: t.containers.map((c: any) => `${c.id}:${c.room ?? ''}`),
-    rooms: (t.rooms || []).join(','),
-    goals: (t.goals || []).map((g: any) => g.id),
+    task: {
+      id: t.id,
+      rooms: t.rooms,
+      spawnPosition: t.spawnPosition,
+      spawnRotation: t.spawnRotation,
+      timeLimit: t.timeLimit,
+      initialStageId: t.initialStageId,
+    },
+    objects: t.objects.map((o: any) => ({
+      id: o.id,
+      configId: o.configId,
+      category: o.category,
+      initialRoom: o.initialRoom ?? o.startRoom,
+      initialPosition: o.initialPosition,
+      initialSurfaceHeight: o.initialSurfaceHeight,
+      surfaceContainerId: o.surfaceContainerId,
+      size: o.size,
+      modelAssetId: o.modelAssetId,
+    })),
+    containers: t.containers.map((c: any) => ({
+      id: c.id,
+      room: c.room,
+      position: c.position,
+      visualOffset: c.visualOffset,
+      size: c.size,
+      surfaceHeight: c.surfaceHeight,
+      initialOpen: c.initialOpen,
+      openable: c.openable,
+      acceptedCategories: c.acceptedCategories,
+      acceptAny: c.acceptAny,
+      modelAssetId: c.modelAssetId,
+    })),
+    stages: (t.stages || []).map((stage: any) => ({
+      id: stage.id,
+      nextStage: stage.nextStage,
+      playerObjective: stage.playerObjective,
+    })),
+    goals: (t.goals || []).map((goal: any) => ({
+      id: goal.id,
+      kind: goal.kind,
+      memoryType: goal.memoryType,
+      dependsOnGoalIds: goal.dependsOnGoalIds,
+      relatedObjectIds: goal.relatedObjectIds,
+      relatedContainerIds: goal.relatedContainerIds,
+    })),
+    scriptedEvents: (t.scriptedEvents || []).map((event: any) => ({
+      id: event.id,
+      type: event.type,
+      targetId: event.targetId,
+      targetPosition: event.targetPosition,
+      targetContainerId: event.targetContainerId,
+      markMemoryOutdated: event.markMemoryOutdated,
+    })),
   })
   // 快速 hash（不引入依赖，避免 package.json 变）
   let h = 2166136261 >>> 0
@@ -133,6 +183,8 @@ function removeFromStorage(key: string): void {
 export function collectSaveData(taskId: string): SaveData | null {
   const snap = useGameStore.getState()
   if (!snap.task || snap.task.id !== taskId) return null
+  // 仅打开简报不应生成“继续挑战 00:00”；idle/aborted 同样没有续玩价值。
+  if (snap.phase === 'briefing' || snap.phase === 'idle' || snap.phase === 'aborted') return null
   const base = snap.saveCurrentGame() as SaveData | null
   if (!base) return null
   const session = useSessionStore.getState().currentSession
@@ -185,6 +237,11 @@ export function hasSavedGame(taskId: string): { ok: true; timestamp: number; ela
   }
   const expectedHash = computeTaskConfigHash(taskId)
   if (raw.taskConfigHash !== expectedHash) {
+    removeFromStorage(autosaveKey(taskId))
+    return { ok: false }
+  }
+  // 兼容防线：即使未来某条调用路径误写了简报存档，也不把它展示成可继续进度。
+  if (raw.phase === 'briefing' || raw.phase === 'idle' || raw.phase === 'aborted') {
     removeFromStorage(autosaveKey(taskId))
     return { ok: false }
   }

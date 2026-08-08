@@ -13,7 +13,7 @@ import { createFeedbackSlice } from './slices/feedbackSlice'
 import { createAnimationSlice } from './slices/animationSlice'
 import { createFlowSlice } from './slices/flowSlice'
 import { createProgressSlice } from './slices/progressSlice'
-import { saveGame, autosaveGame, type SaveData } from '../save/saveSystem'
+import { saveGame, type SaveData } from '../save/saveSystem'
 import { withSafeSnapshot } from './safeStore'
 import type {
   ViewMode,
@@ -333,9 +333,8 @@ const _rawGameStore = create<GameStore>((set, rawGet, _store) => {
         levelCompleted: state.levelCompleted,
         levelFailed: state.levelFailed,
       })
-      // 完成/失败后仍写一次存档（但 hasSavedGame 会过滤掉这些状态，不显示继续按钮），
-      // 方便 SessionDataPage 后续从存档恢复研究数据。
-      try { autosaveGame(state.task.id) } catch { /* ignore */ }
+      // 这里只生成快照。持久化统一由 saveSystem.autosaveGame() 负责，
+      // 避免 saveCurrentGame → autosaveGame → collectSaveData → saveCurrentGame 递归。
       return data
     } catch {
       return null
