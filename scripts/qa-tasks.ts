@@ -64,6 +64,24 @@ function checkGoalReferences(task: TaskConfig): QaResult[] {
   const cntIds = new Set(task.containers.map((c) => c.id))
 
   for (const goal of task.goals) {
+    for (const id of goal.relatedObjectIds ?? []) {
+      if (!objIds.has(id)) {
+        results.push(
+          fail('blocker', CATEGORY, 'goal-related-object-ref',
+            `${task.id} 目标 ${goal.id} 的 relatedObjectIds 引用不存在的物体: ${id}`),
+        )
+      }
+    }
+
+    for (const id of goal.relatedContainerIds ?? []) {
+      if (!cntIds.has(id)) {
+        results.push(
+          fail('blocker', CATEGORY, 'goal-related-container-ref',
+            `${task.id} 目标 ${goal.id} 的 relatedContainerIds 引用不存在的容器: ${id}`),
+        )
+      }
+    }
+
     const predicateStr = goal.predicate.toString()
     const configIdMatches = predicateStr.match(/configId\s*===\s*['"]([^'"]+)['"]/g) || []
 

@@ -100,7 +100,7 @@ export const laundrySortTask: TaskConfig = {
   stages: [
     {
       id: STAGE_ENCODE,
-      playerObjective: '【形成记忆】打开北墙左侧的下层橱柜，找到麦片；靠近麦片按 E，记住它现在的位置。',
+      playerObjective: '【形成记忆】走到北墙冰箱右侧发橙光的下层橱柜前，按 F 打开；柜面出现物品后，靠近麦片盒按 E。',
       entryCondition: () => true,
       completionCondition: hasFreshCerealMemory,
       nextStage: STAGE_DISTRACTOR,
@@ -145,14 +145,15 @@ export const laundrySortTask: TaskConfig = {
   briefing: `🥣 记忆宅邸 · 第三关（UPDATE：过期记忆更新）
 
 上一关训练的是 RECALL：环境稳定时，相信仍然有效的空间记忆。
-这一关升级为 UPDATE：主人准备早餐时临时接到电话，请 MEM-07 帮忙摆桌。麦片、碗和杯子都在北墙的下层橱柜里，勺子已经在餐桌上。
+这一关升级为 UPDATE：主人准备早餐时临时接到电话，请 MEM-07 帮忙摆桌。麦片、碗和杯子都收在北墙冰箱右侧的下层橱柜里，所以开场看不到它们；勺子已经在餐桌上（本关用的是勺子，不是叉子）。
 
 这次真正考验的不是“找东西”，而是判断记忆是否仍然可信：
-  ① 打开下层橱柜，找到麦片并按 E 保存位置记忆
-  ② 先把碗、杯子、勺子摆上餐桌
-  ③ 回来取麦片时，旧位置可能已经变空
-  ④ 发现冲突后重新观察，找到麦片并按 E 更新记忆
-  ⑤ 把麦片放到餐桌，最后把碗和杯子收进水槽
+  ① 走到发橙光的下层橱柜前按 F；开柜后麦片、碗和杯子会分开出现在柜面
+  ② 靠近麦片盒按 E 保存位置记忆
+  ③ 先把碗、杯子、勺子摆上餐桌
+  ④ 回来取麦片时，旧位置可能已经变空
+  ⑤ 发现冲突后重新观察，找到麦片并按 E 更新记忆
+  ⑥ 把麦片放到餐桌，最后把碗和杯子收进水槽
 
 ⚠️ 小地图和 HUD 不会告诉你麦片的新位置。旧记忆变红不是失败，而是在提醒你：现实已经变化。`,
 
@@ -213,6 +214,7 @@ export const laundrySortTask: TaskConfig = {
       name: '下层橱柜',
       room: 'dining',
       position: LOWER_LOCAL,
+      visualOffset: { x: 0, y: 0, z: -0.35 },
       size: { x: 0.538, y: 0.563, z: 0.6 },
       surfaceHeight: 0.563,
       color: '#92400e',
@@ -220,6 +222,7 @@ export const laundrySortTask: TaskConfig = {
       containsObjectIds: [CEREAL, BOWL, CUP],
       acceptedCategories: [],
       acceptAny: false,
+      targetLabel: '下层橱柜（按 F 打开：麦片、碗、杯）',
       modelAssetId: 'furniture/kitchenCabinetDrawer',
     },
     {
@@ -227,6 +230,7 @@ export const laundrySortTask: TaskConfig = {
       name: '较高的橱柜',
       room: 'dining',
       position: UPPER_LOCAL,
+      visualOffset: { x: 0, y: 0, z: -0.35 },
       size: { x: 0.538, y: 0.7, z: 0.4 },
       surfaceHeight: UPPER_SURFACE_Y,
       color: '#a16207',
@@ -234,6 +238,7 @@ export const laundrySortTask: TaskConfig = {
       containsObjectIds: [],
       acceptedCategories: [],
       acceptAny: false,
+      targetLabel: '墙上橱柜（按 F 打开找麦片）',
       collisionMode: 'none',
       modelAssetId: 'furniture/kitchenCabinetUpper',
     },
@@ -278,6 +283,7 @@ export const laundrySortTask: TaskConfig = {
       kind: 'milestone',
       memoryType: 'object',
       relatedObjectIds: [CEREAL],
+      relatedContainerIds: [LOWER_CABINET],
       predicate: (_entities, _snapshot, ctx) => !!ctx && hasFreshCerealMemory(ctx),
       achievedMessage: '✓ 已形成记忆：麦片在下层橱柜',
     },
@@ -288,6 +294,7 @@ export const laundrySortTask: TaskConfig = {
       dependsOnGoalIds: ['g-encode-cereal-memory'],
       memoryType: 'procedural',
       relatedObjectIds: [BOWL, CUP, SPOON],
+      relatedContainerIds: [DINING_TABLE],
       predicate: (_entities, _snapshot, ctx) => !!ctx && tableIsSet(ctx),
       achievedMessage: '✓ 餐具已经摆好',
     },
@@ -298,6 +305,7 @@ export const laundrySortTask: TaskConfig = {
       dependsOnGoalIds: ['g-set-breakfast-table'],
       memoryType: 'temporal',
       relatedObjectIds: [CEREAL],
+      relatedContainerIds: [LOWER_CABINET],
       predicate: (_entities, _snapshot, ctx) => !!ctx?.triggeredEvents.has('se-conflict-detected'),
       achievedMessage: '✓ 发现现实与旧记忆冲突',
     },
@@ -308,6 +316,7 @@ export const laundrySortTask: TaskConfig = {
       dependsOnGoalIds: ['g-detect-stale-memory'],
       memoryType: 'spatial',
       relatedObjectIds: [CEREAL],
+      relatedContainerIds: [UPPER_CABINET],
       predicate: (_entities, _snapshot, ctx) => !!ctx && hasFreshCerealMemory(ctx) && ctx.memoryUpdateCount >= 1,
       achievedMessage: '✓ 记忆已更新：麦片的新位置已保存',
     },
@@ -318,6 +327,7 @@ export const laundrySortTask: TaskConfig = {
       dependsOnGoalIds: ['g-update-cereal-memory'],
       memoryType: 'spatial',
       relatedObjectIds: [CEREAL],
+      relatedContainerIds: [DINING_TABLE],
       predicate: (entities) => entityPlacedIn(entities, CEREAL, DINING_TABLE),
       achievedMessage: '✓ 麦片已经上桌',
     },
@@ -328,6 +338,7 @@ export const laundrySortTask: TaskConfig = {
       dependsOnGoalIds: ['g-serve-cereal'],
       memoryType: 'procedural',
       relatedObjectIds: [BOWL, CUP, SPOON],
+      relatedContainerIds: [SINK, DINING_TABLE],
       predicate: (_entities, _snapshot, ctx) => !!ctx && cleanupFinished(ctx),
       achievedMessage: '✓ 早餐收尾完成',
     },
@@ -338,7 +349,7 @@ export const laundrySortTask: TaskConfig = {
       id: 'se-encode-cereal',
       trigger: 1,
       type: 'message',
-      message: '📦 先打开下层橱柜，靠近麦片按 E。只有保存过旧位置，之后才谈得上“更新记忆”。',
+      message: '📦 冰箱右侧发橙光的是任务下柜：靠近后按 F 打开。麦片、碗和杯子会出现在柜面；先靠近麦片按 E。',
       description: '提示玩家形成麦片的初始位置记忆',
       memoryType: 'object',
       toastType: 'info',

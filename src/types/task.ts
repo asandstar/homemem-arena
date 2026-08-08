@@ -31,6 +31,8 @@ export interface GoalSpec {
   ) => boolean
   /** 与此目标关联的物品 configId 列表（用于判定任务关键物品，影响记忆优先级） */
   relatedObjectIds?: string[]
+  /** 与此目标关联的容器 id 列表（用于只高亮当前流程真正需要交互的柜子/目标区） */
+  relatedContainerIds?: string[]
   /** 完成时的简短消息 */
   achievedMessage?: string
   /**

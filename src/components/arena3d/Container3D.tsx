@@ -112,12 +112,22 @@ export function Container3D({
   // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
   const robotPosition = useGameStore((s) => s.robotPosition)
   const heldEntityId = useGameStore((s) => s.heldEntityId)
+  const task = useGameStore((s) => s.task)
+  const achievedGoalIds = useGameStore((s) => s.achievedGoalIds)
   // L3 容器位置 swap：containerOverrides[spec.id].position 覆盖 task.containers 原始 position
   const overridePosition = useGameStore((s) => s.containerOverrides[spec.id]?.position)
   // L2 示范高亮：当前容器是否在 activeDemoHighlights 中
   const demoHighlight = useGameStore((s) =>
     s.activeDemoHighlights.find((h) => h.containerId === spec.id) ?? null,
   )
+  const isActiveTaskContainer = useMemo(() => {
+    if (!task) return false
+    return task.goals.some((goal) => (
+      !achievedGoalIds.has(goal.id)
+      && (goal.dependsOnGoalIds ?? []).every((id) => achievedGoalIds.has(id))
+      && (goal.relatedContainerIds ?? []).includes(spec.id)
+    ))
+  }, [task, achievedGoalIds, spec.id])
 
   // isOpen 变化时同步目标值（ref + 强制下次 useFrame 插值进入新值）
   useEffect(() => {
@@ -226,7 +236,11 @@ export function Container3D({
             document.body.style.cursor = 'auto'
           }}
           scale={[1 + openProgressRef.current * 0.03, 1 + openProgressRef.current * 0.02, 1 + openProgressRef.current * 0.03]}
-          position={[0, openProgressRef.current * 0.02, 0]}
+          position={[
+            spec.visualOffset?.x ?? 0,
+            (spec.visualOffset?.y ?? 0) + openProgressRef.current * 0.02,
+            spec.visualOffset?.z ?? 0,
+          ]}
         >
           {spec.modelAssetId ? (
             <RegisteredModel
@@ -255,7 +269,7 @@ export function Container3D({
         </group>
       )}
 
-      {spec.isTargetZone && losVisible && (
+      {isActiveTaskContainer && losVisible && (
         <>
           <mesh
             ref={pulseRingRef as any}
@@ -315,7 +329,7 @@ export function Container3D({
         visible={false}
       />
 
-      {(hovered || (spec.isTargetZone && distance < 4)) && (spec.targetLabel ?? spec.name ?? '') !== '' && (
+      {(hovered || (isActiveTaskContainer && distance < 6)) && (spec.targetLabel ?? spec.name ?? '') !== '' && (
         <Billboard position={[0, surfaceLocalY + 0.25, 0]}>
           <mesh>
             <boxGeometry args={[0.65, 0.22, 0.01]} />
@@ -324,7 +338,7 @@ export function Container3D({
           <Text
             position={[0, 0.06, 0.005]}
             fontSize={0.09}
-            color={spec.isTargetZone ? '#f59e0b' : '#ffffff'}
+            color={isActiveTaskContainer ? '#f59e0b' : '#ffffff'}
             anchorX="center"
             anchorY="middle"
           >

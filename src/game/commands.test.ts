@@ -110,6 +110,39 @@ describe('统一游戏命令管线', () => {
       expect(target).toBeNull()
     }
   })
+
+  it('第三关开场靠近发光下柜时，F 能命中下柜并显露早餐物品', () => {
+    useGameStore.getState().initializeTask('task-laundry-sort')
+    const task = useGameStore.getState().task!
+    useSessionStore.getState().startSession(task.id, task.name, task.briefing)
+    useGameStore.getState().startPlaying()
+    const cabinet = task.containers.find((candidate) => candidate.id === 'cnt-cabinet-lower')!
+    const roomCenter = sharedRooms.dining.center
+    const playerPosition = {
+      x: roomCenter.x + cabinet.position.x,
+      y: 0,
+      z: roomCenter.z + cabinet.position.z + 0.8,
+    }
+    useGameStore.setState({ robotPosition: playerPosition })
+
+    const target = findNearestInteractableContainer(
+      task,
+      playerPosition,
+      'dining',
+      2.5,
+      null,
+    )
+    expect(target?.id).toBe(cabinet.id)
+    expect(executeToggleContainer(cabinet.id).success).toBe(true)
+    const revealedIds = useGameStore.getState().entities
+      .filter((item) => item.status === 'free')
+      .map((item) => item.configId)
+    expect(revealedIds).toEqual(expect.arrayContaining([
+      'obj-cereal',
+      'obj-breakfast-bowl',
+      'obj-breakfast-cup',
+    ]))
+  })
 })
 
 // ============================================================

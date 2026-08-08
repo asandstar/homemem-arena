@@ -54,6 +54,21 @@ describe('任务一致性测试', () => {
     }
   })
 
+  it('所有目标的显式物体与容器引用都存在', () => {
+    for (const task of taskTemplates) {
+      const objectIds = new Set(task.objects.map((item) => item.id))
+      const containerIds = new Set(task.containers.map((item) => item.id))
+      for (const goal of task.goals) {
+        for (const id of goal.relatedObjectIds ?? []) {
+          expect(objectIds.has(id), `${task.id}/${goal.id} 引用了不存在的物体 ${id}`).toBe(true)
+        }
+        for (const id of goal.relatedContainerIds ?? []) {
+          expect(containerIds.has(id), `${task.id}/${goal.id} 引用了不存在的容器 ${id}`).toBe(true)
+        }
+      }
+    }
+  })
+
   it('只有一个教学关', () => {
     const tutorialCount = Object.values(taskPresentationById).filter(p => p.role === 'tutorial').length
     expect(tutorialCount).toBe(1)

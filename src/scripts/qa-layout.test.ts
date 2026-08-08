@@ -4,6 +4,7 @@ import { roomsOverlap } from '../../scripts/qa-rooms'
 import { sharedRooms } from '../data/rooms'
 import { roomDecorFurniture } from '../data/decorFurniture'
 import { cleanTableTask } from '../data/tasks/clean-table'
+import { leaveHomeTask } from '../data/tasks/leave-home'
 import { laundrySortTask } from '../data/tasks/laundry-sort'
 import { getModelAsset } from '../data/assets/modelRegistry'
 import { PLAYER_RADIUS } from '../game/playerControls'
@@ -246,6 +247,21 @@ describe('dining worktop decor — 台面装饰应合理摆放', () => {
     expect(upper.size.y).toBeLessThanOrEqual(0.72)
   })
 
+  it('L3 柜体视觉模型贴合北墙厨房，交互锚点仍留在玩家可接近的一侧', () => {
+    const lower = laundrySortTask.containers.find((item) => item.id === 'cnt-cabinet-lower')!
+    const upper = laundrySortTask.containers.find((item) => item.id === 'cnt-cabinet-upper')!
+    const lowerVisualZ = lower.position.z + (lower.visualOffset?.z ?? 0)
+    const upperVisualZ = upper.position.z + (upper.visualOffset?.z ?? 0)
+
+    // 下柜与现有北墙地柜同排，不再向房间中央悬出一截。
+    expect(lowerVisualZ).toBeCloseTo(-2.3, 3)
+    // 上柜背面刚好贴到 dining 北墙（局部 z=-2.6）。
+    expect(upperVisualZ - upper.size.z / 2).toBeCloseTo(-2.6, 3)
+    // F 交互锚点保留在模型前方，玩家无需钻进柜体。
+    expect(lower.position.z).toBeGreaterThan(lowerVisualZ)
+    expect(upper.position.z).toBeGreaterThan(upperVisualZ)
+  })
+
   it('Food Kit 任务物件使用真实可见尺寸，餐具保持平放厚度', () => {
     const mug = getModelAsset('food/mug').effectiveAabb
     const plate = getModelAsset('food/plate').effectiveAabb
@@ -257,5 +273,13 @@ describe('dining worktop decor — 台面装饰应合理摆放', () => {
     expect(fork.y).toBeLessThan(0.02)
     expect(spoon.x).toBeGreaterThanOrEqual(0.18)
     expect(spoon.y).toBeLessThan(0.02)
+  })
+})
+
+describe('task furniture grounding — 任务家具不悬空', () => {
+  it('L2 客厅茶几底面落地，桌面高度仍保持 0.45m', () => {
+    const coffeeTable = leaveHomeTask.containers.find((item) => item.id === 'cnt-coffee-table')!
+    expect(coffeeTable.position.y).toBe(0)
+    expect(coffeeTable.surfaceHeight).toBeCloseTo(0.45, 3)
   })
 })

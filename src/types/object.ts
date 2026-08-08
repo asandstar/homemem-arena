@@ -80,6 +80,11 @@ export interface ContainerSpec {
   room: RoomId
   /** 容器位置 */
   position: Vec3
+  /**
+   * 仅调整可见模型的位置，不改变交互、碰撞或物品承载面的锚点。
+   * 用于把靠墙模型贴到墙面，同时把可交互点保留在玩家可接近的位置。
+   */
+  visualOffset?: Vec3
   /** 容器尺寸 */
   size: Vec3
   color: string
