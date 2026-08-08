@@ -74,6 +74,11 @@ describe('任务一致性测试', () => {
     expect(actualOrder).toEqual(expectedOrder)
   })
 
+  it('L2 使用当前权威设计的三个房间，不再要求旧版餐厨房间', () => {
+    const level2 = taskTemplates.find((task) => task.id === 'task-leave-home')
+    expect(level2?.rooms).toEqual(['living', 'bedroom', 'entrance'])
+  })
+
   it('所有任务的 spawn 都在 rooms[0] 房间内（无 blocker）', () => {
     for (const t of taskTemplates) {
       const results = checkTaskLayout(t)
