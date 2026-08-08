@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { executePick, executeSaveMemory, executePlace, executeToggleContainer, _debugResetCommandLock } from './commands'
 import { useGameStore } from '../store/useGameStore'
 import { useSessionStore } from '../store/useSessionStore'
+import { sharedRooms } from '../data/rooms'
+import { findNearestInteractableContainer } from './interactionTargets'
 
 describe('统一游戏命令管线', () => {
   beforeEach(() => {
@@ -58,6 +60,55 @@ describe('统一游戏命令管线', () => {
     expect(useGameStore.getState().memorySlots[0]?.entityConfigId).toBe(entity.configId)
     expect(useSessionStore.getState().currentSession?.memories).toHaveLength(1)
     expect(useSessionStore.getState().currentSession?.events.some((event) => event.type === 'memory_write')).toBe(true)
+  })
+
+  it('第一关物品正确归位并打勾后，普通 F 不会让进度倒退', () => {
+    const task = useGameStore.getState().task!
+    useSessionStore.getState().startSession(task.id, task.name, task.briefing)
+    useGameStore.getState().startPlaying()
+    const mug = useGameStore.getState().entities.find((item) => item.configId === 'obj-mug-1')!
+
+    expect(executeSaveMemory(mug.id).success).toBe(true)
+    expect(executePick(mug.id).success).toBe(true)
+
+    const sink = task.containers.find((container) => container.id === 'cnt-sink')!
+    const room = useGameStore.getState().currentRoom
+    const roomCenter = sharedRooms[room].center
+    useGameStore.setState({
+      robotPosition: {
+        x: roomCenter.x + sink.position.x,
+        y: 0,
+        z: roomCenter.z + sink.position.z,
+      },
+    })
+
+    expect(executePlace(sink.id).success).toBe(true)
+    expect(useGameStore.getState().achievedGoalIds.has('g-mug-1-sink')).toBe(true)
+
+    const secondPick = executePick(mug.id)
+    expect(secondPick.success).toBe(false)
+    expect(secondPick.reason).toMatch(/已经正确归位/)
+    expect(useGameStore.getState().achievedGoalIds.has('g-mug-1-sink')).toBe(true)
+  })
+
+  it('空手时餐桌和水槽不会抢占打开/关闭交互', () => {
+    const task = useGameStore.getState().task!
+    const roomCenter = sharedRooms.dining.center
+    for (const containerId of ['cnt-dining-table', 'cnt-sink']) {
+      const container = task.containers.find((candidate) => candidate.id === containerId)!
+      const target = findNearestInteractableContainer(
+        task,
+        {
+          x: roomCenter.x + container.position.x,
+          y: 0,
+          z: roomCenter.z + container.position.z,
+        },
+        'dining',
+        0.25,
+        null,
+      )
+      expect(target).toBeNull()
+    }
   })
 })
 

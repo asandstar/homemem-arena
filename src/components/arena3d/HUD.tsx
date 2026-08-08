@@ -9,6 +9,7 @@ import { useSessionStore } from '../../store/useSessionStore'
 import {
   findNearestInteractableContainer,
   findNearestInteractableEntity,
+  isEntityProtectedAfterGoal,
 } from '../../game/interactionTargets'
 import { findActiveGoal } from '../../game/flow'
 import type { ContainerSpec } from '../../types/object'
@@ -108,6 +109,7 @@ export function HUD() {
   const heldEntity = heldEntityId ? entities.find(e => e.id === heldEntityId) : null
   // L3 阶段门禁：g-encode-cereal-memory 完成前，不显示 BOWL/CUP/SPOON 的 E/F 提示
   const stageAwareEntityFilter = useCallback((entity: any) => {
+    if (isEntityProtectedAfterGoal(task, entity, achievedGoalIds)) return false
     if (task?.id === 'task-laundry-sort' && !achievedGoalIds.has('g-encode-cereal-memory')) {
       const blockedIds = ['obj-breakfast-bowl', 'obj-breakfast-cup', 'obj-breakfast-spoon']
       if (blockedIds.includes(entity.configId)) return false

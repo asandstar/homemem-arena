@@ -243,6 +243,7 @@ export const createEntitySlice = (set: any, get: any): EntitySlice => ({
     const containerSpec = task.containers.find((c: any) => c.id === containerId)
     if (!containerSpec) return { success: false, reason: '容器不存在' }
     if (containerSpec.room !== currentRoom) return { success: false, reason: '容器不在当前房间' }
+    if (containerSpec.openable === false) return { success: false, reason: `${containerSpec.name}无需打开或关闭` }
 
     const roomCenter = (sharedRooms as Record<string, RoomSpec>)[currentRoom].center
     const cntPos: Vec3 = {

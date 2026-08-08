@@ -412,6 +412,27 @@ describe('三关后端模拟实玩 & 证据链', () => {
     })
   })
 
+  it('L2/L3 completion buffer: 放宽时限，混乱值达到 100% 只影响评分而不判负', () => {
+    const cases = [
+      { taskId: 'task-leave-home', timeLimit: 360 },
+      { taskId: 'task-laundry-sort', timeLimit: 600 },
+    ] as const
+
+    for (const { taskId, timeLimit } of cases) {
+      useGameStore.getState().initializeTask(taskId)
+      expect(useGameStore.getState().task?.timeLimit).toBe(timeLimit)
+      useGameStore.getState().startPlaying()
+      useGameStore.getState().incrementChaos(100)
+      useGameStore.getState().tickElapsed(1000)
+
+      const state = useGameStore.getState()
+      expect(state.chaosValue).toBe(100)
+      expect(state.levelFailed).toBe(false)
+      expect(state.failureReason).toBeNull()
+      expect(state.phase).toBe('playing')
+    }
+  })
+
   it('L3 regression: g-encode-cereal-memory 完成前，不能拾取碗/杯/勺；完成后可拾取', () => {
     useGameStore.getState().initializeTask('task-laundry-sort')
     const task = useGameStore.getState().task!

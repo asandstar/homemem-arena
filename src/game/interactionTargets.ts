@@ -4,14 +4,31 @@ import type { RoomId, Vec3 } from '../types/room'
 import type { TaskConfig } from '../types/task'
 
 function containerAcceptsCategory(container: ContainerSpec, heldCategory: string | null): boolean {
-  // 没持东西：所有容器都可交互（打开/关闭）
-  if (heldCategory === null) return true
+  // 没持东西：只返回真正能打开/关闭的容器，避免桌面、水槽抢占 F 提示。
+  if (heldCategory === null) return container.openable !== false
   const acceptAny = container.acceptAny === true
   const hasEmptyList = !container.acceptedCategories || container.acceptedCategories.length === 0
   const isTargetZone = container.isTargetZone === true
   if (acceptAny) return true
   if (hasEmptyList) return isTargetZone
   return container.acceptedCategories.includes(heldCategory as never)
+}
+
+/**
+ * 第一关已经完成的归位目标不可被普通 F 撤销。
+ * 仅保护非 milestone 的单件归位目标，避免影响 L3 后续还要再次搬动的阶段性餐具。
+ */
+export function isEntityProtectedAfterGoal(
+  task: TaskConfig | null,
+  entity: EntityState,
+  achievedGoalIds: ReadonlySet<string>,
+): boolean {
+  if (task?.id !== 'task-clean-table' || entity.status !== 'placed') return false
+  return task.goals.some((goal) =>
+    goal.kind !== 'milestone'
+    && achievedGoalIds.has(goal.id)
+    && goal.relatedObjectIds?.includes(entity.configId),
+  )
 }
 
 export function findNearestInteractableEntity(

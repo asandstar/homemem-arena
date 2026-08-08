@@ -45,7 +45,9 @@ export const leaveHomeTask: TaskConfig = {
   rooms: ['living', 'bedroom', 'entrance'],
   iconKey: 'door',
   tags: ['稳定记忆', '空间回忆', '跨房间', '钥匙猫'],
-  timeLimit: 240,
+  // 首次玩家需要完成三房间编码与取回，6 分钟为通关兜底；
+  // 提前完成仍通过剩余时间奖励体现熟练度。
+  timeLimit: 360,
   spawnPosition: { x: 2.7, z: -2.2 },
   spawnRotation: (-3 * Math.PI) / 4,
   initialStageId: STAGE_ENCODE_MAP,
@@ -130,6 +132,7 @@ export const leaveHomeTask: TaskConfig = {
       surfaceHeight: 0.45,
       color: '#8b5a2b',
       initialOpen: true,
+      openable: false,
       acceptedCategories: [],
       acceptAny: true,
       isTargetZone: true,

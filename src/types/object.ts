@@ -80,6 +80,12 @@ export interface ContainerSpec {
   color: string
   /** 初始开合状态 */
   initialOpen: boolean
+  /**
+   * 是否允许空手时通过 F 打开/关闭。
+   * 桌面、水槽等放置表面应设为 false；手持物品时仍可正常放置。
+   * 缺省为 true，兼容既有柜门与抽屉。
+   */
+  openable?: boolean
   /** 接受的物体类别（用于目标判定） */
   acceptedCategories: ObjectCategory[]
   /** 容器内是否藏有物体（id 列表） */

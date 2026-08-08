@@ -612,11 +612,8 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
           get().incrementChaos(chaosGrowth)
         }
 
-        const chaos = get().chaosValue
-        if (chaos >= DEFAULT_LEVEL_BALANCE.maxChaos && !get().levelFailed) {
-          get().setLevelFailed('混乱值过载')
-        }
-
+        // 混乱值保留视觉干扰、事件增强、记忆衰减和结算扣分，但不再直接判负。
+        // 公开三关以“至少能完成完整流程”为优先，100% 混乱代表低评级而非软性倒计时。
         get().decayMemories(deltaMs)
       }
 

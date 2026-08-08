@@ -5,6 +5,7 @@ import { emitEvent } from '../engine/eventBus'
 import type { ActionEvent, MemoryWriteEvent, MovementEvent } from '../types/event'
 import type { RoomId, Vec3 } from '../types/room'
 import { generateId } from '../utils/format'
+import { isEntityProtectedAfterGoal } from './interactionTargets'
 
 type ActionName = ActionEvent['action']
 
@@ -160,6 +161,13 @@ export const executePick = withCommandLock(function executePick(entityId: string
   // L2：必须为 3 件跨房间物品全部建立稳定记忆，阶段推进后才解锁拾取。
   // 两者都只在各自第一阶段拦截，避免玩家完成教学后被永久锁住。
   const task = before.task
+  if (isEntityProtectedAfterGoal(task, entity, before.achievedGoalIds)) {
+    return {
+      success: false,
+      reason: `${entity.name}已经正确归位，无需再次拾取。`,
+      action: 'pick',
+    }
+  }
   const observeStageId = task?.stages?.[0]?.id
   const taskObjectIds = task?.objects?.map((o) => o.id) ?? []
   if (

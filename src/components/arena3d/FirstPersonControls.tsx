@@ -42,6 +42,7 @@ import {
 import {
   findNearestInteractableContainer,
   findNearestInteractableEntity,
+  isEntityProtectedAfterGoal,
 } from '../../game/interactionTargets'
 import { doorKey } from '../../store/slices/playerSlice'
 import { decideEscapeAction } from '../../game/pointerLockEscStateMachine'
@@ -95,6 +96,7 @@ export function FirstPersonControls() {
     const state = useGameStore.getState()
     // L3 阶段门禁：g-encode-cereal-memory 完成前，不允许与 BOWL/CUP/SPOON 交互
     const stageAwareFilter = (entity: any) => {
+      if (isEntityProtectedAfterGoal(state.task, entity, state.achievedGoalIds)) return false
       if (state.task?.id === 'task-laundry-sort' && !state.achievedGoalIds.has('g-encode-cereal-memory')) {
         const blockedIds = ['obj-breakfast-bowl', 'obj-breakfast-cup', 'obj-breakfast-spoon']
         if (blockedIds.includes(entity.configId)) return false
@@ -412,6 +414,7 @@ export function FirstPersonControls() {
       if (state.phase !== 'playing') return
       // L3 阶段门禁
       const stageAwareFilter = (entity: any) => {
+        if (isEntityProtectedAfterGoal(state.task, entity, state.achievedGoalIds)) return false
         if (state.task?.id === 'task-laundry-sort' && !state.achievedGoalIds.has('g-encode-cereal-memory')) {
           const blockedIds = ['obj-breakfast-bowl', 'obj-breakfast-cup', 'obj-breakfast-spoon']
           if (blockedIds.includes(entity.configId)) return false

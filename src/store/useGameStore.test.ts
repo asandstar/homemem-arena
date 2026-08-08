@@ -105,13 +105,14 @@ describe('useGameStore - 核心状态流转测试', () => {
 
   describe('容器操作', () => {
     beforeEach(() => {
-      useGameStore.getState().initializeTask('task-leave-home')
+      // L3 有真正可开合的橱柜；L2 仅有不可开合的茶几放置面。
+      useGameStore.getState().initializeTask('task-laundry-sort')
     })
 
     it('可以使用当前房间的容器', () => {
       const state = useGameStore.getState()
       const currentRoom = state.currentRoom
-      const container = state.task?.containers.find(c => c.room === currentRoom)
+      const container = state.task?.containers.find(c => c.room === currentRoom && c.openable !== false)
       expect(container).toBeDefined()
       const containerId = container!.id
 
@@ -131,7 +132,7 @@ describe('useGameStore - 核心状态流转测试', () => {
 
     it('不能使用其他房间的容器', () => {
       const state = useGameStore.getState()
-      // L2 只有一个容器（cnt-coffee-table 在 living），无法找到其他房间的容器。
+      // 当前公开关卡没有其他房间的任务容器，使用虚构 ID 模拟越界访问。
       // 使用一个虚构的容器 ID 模拟"其他房间的容器"场景。
       const result = state.useContainer('cnt-other-room-fake')
       expect(result.success).toBe(false)
