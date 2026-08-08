@@ -156,6 +156,8 @@ export interface EntityState {
   status: 'free' | 'held' | 'placed' | 'hidden' | 'target-met'
   /** 放在哪个容器中（如果 status === 'placed'） */
   placedIn?: string
+  /** 尚未被玩家移动时保持在初始台面上的锚点；首次拾取或事件移动后清除。 */
+  surfaceContainerId?: string
   /** 任务相关状态属性 */
   properties: Record<string, string | number | boolean>
   /** 从 ObjectSpec 传播的 GLB 资产 ID（可选，用于 RegisteredModel 渲染） */

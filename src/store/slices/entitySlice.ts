@@ -72,7 +72,7 @@ export const createEntitySlice = (set: any, get: any): EntitySlice => ({
       containerStates: nextContainerStates,
       entities: entities.map((e: any) => (
         e.id === entity.id
-          ? { ...e, status: 'held' as const, placedIn: undefined }
+          ? { ...e, status: 'held' as const, placedIn: undefined, surfaceContainerId: undefined }
           : e
       )),
     })

@@ -55,7 +55,13 @@ export const createAnimationSlice = (set: any, get: any): AnimationSlice => ({
       ),
       entities: state.entities.map((e: any) =>
         e.configId === entityId
-          ? { ...e, status: 'free' as const, placedIn: undefined, properties: { ...e.properties, _moving: true } }
+          ? {
+              ...e,
+              status: 'free' as const,
+              placedIn: undefined,
+              surfaceContainerId: undefined,
+              properties: { ...e.properties, _moving: true },
+            }
           : e
       ),
     }))

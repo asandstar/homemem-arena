@@ -73,8 +73,8 @@ export const furnitureOwnershipRegistry: FurnitureOwnershipEntry[] = [
   // ===================== 餐厨 dining =====================
   // L1 task-containers
   { key: 'dining::cnt-dining-table', roomId: 'dining', containerId: 'cnt-dining-table', decorId: '__DEPRECATED_BY_CONTAINER__dining-table', ownership: 'task-container', note: 'L1 餐桌，唯一真身为 Container3D' },
-  { key: 'dining::cnt-sink', roomId: 'dining', containerId: 'cnt-sink', ownership: 'task-container', note: 'L1 水槽交互区，视觉由 decor-kit-sink 承担（无 modelAssetId）' },
-  { key: 'dining::cnt-cabinet', roomId: 'dining', containerId: 'cnt-cabinet', ownership: 'task-container', note: 'L1 橱柜交互区，视觉由 decor-kit-cabinet-1 承担（无 modelAssetId）' },
+  { key: 'dining::cnt-sink', roomId: 'dining', containerId: 'cnt-sink', ownership: 'task-container', note: 'L1 水槽仅承担交互区，视觉和碰撞由 decor-kit-sink 承担' },
+  { key: 'dining::cnt-cabinet', roomId: 'dining', containerId: 'cnt-cabinet', ownership: 'task-container', note: 'L1 橱柜仅承担交互区，视觉和碰撞由 decor-kit-cabinet-1 承担' },
   { key: 'dining::cnt-trashcan', roomId: 'dining', containerId: 'cnt-trashcan', ownership: 'task-container', note: 'L1 垃圾桶（教学开关容器），自渲染 GLB' },
   // 4 把餐椅：static-decor
   { key: 'dining::decor-chair-1', roomId: 'dining', decorId: 'decor-chair-1', ownership: 'static-decor' },
@@ -87,10 +87,9 @@ export const furnitureOwnershipRegistry: FurnitureOwnershipEntry[] = [
   { key: 'dining::decor-kit-sink', roomId: 'dining', decorId: 'decor-kit-sink', ownership: 'static-decor' },
   { key: 'dining::decor-kit-cabinet-2', roomId: 'dining', decorId: 'decor-kit-cabinet-2', ownership: 'static-decor' },
   { key: 'dining::decor-kit-stove', roomId: 'dining', decorId: 'decor-kit-stove', ownership: 'static-decor' },
-  // 台上物品：收音机 / 微波炉 / 书堆：static-decor
+  // 台上物品：收音机 / 微波炉。水槽上不堆与任务无关且易混淆的书。
   { key: 'dining::decor-kit-radio', roomId: 'dining', decorId: 'decor-kit-radio', ownership: 'static-decor' },
   { key: 'dining::decor-kit-microwave', roomId: 'dining', decorId: 'decor-kit-microwave', ownership: 'static-decor' },
-  { key: 'dining::decor-kit-books', roomId: 'dining', decorId: 'decor-kit-books', ownership: 'static-decor' },
   // 大盆栽 / 墙饰
   { key: 'dining::decor-kit-plant', roomId: 'dining', decorId: 'decor-kit-plant', ownership: 'static-decor' },
   { key: 'dining::decor-painting', roomId: 'dining', decorId: 'decor-painting', ownership: 'static-decor' },

@@ -533,11 +533,11 @@ export const MODEL_OVERRIDES: ModelOverrideMap = {
     status: 'provisional',
   },
   // kitchenMicrowave rawAabb=(0.29,0.18,0.23) rawMin=(0,0,-0.22) rawMax=(0.29,0.18,0.01)
-  // 微波炉：台上电器，约 0.5 宽
+  // 微波炉：台上电器，给 0.538m 宽的橱柜台面留出明确边距
   'furniture/kitchenMicrowave': {
-    uniformScale: 1.8,
+    uniformScale: 1.5,
     pivotOffset: { x: -0.145, y: 0, z: 0.105 },
-    effectiveAabb: { x: 0.522, y: 0.324, z: 0.414 },
+    effectiveAabb: { x: 0.435, y: 0.27, z: 0.345 },
     collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
     floorAligned: true,
     status: 'provisional',

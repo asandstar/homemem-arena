@@ -183,3 +183,43 @@ describe('spawn-furniture-clearance — 出生点不能与装饰家具 AABB 重�
     expect(overlaps.map((d) => d.id)).toContain('decor-kit-fridge')
   })
 })
+
+describe('dining worktop decor — 台面装饰应合理摆放', () => {
+  it('水槽上没有与任务物件混淆的装饰书', () => {
+    const diningDecor = roomDecorFurniture.dining
+    expect(diningDecor.find((item) => item.id === 'decor-kit-books')).toBeUndefined()
+  })
+
+  it('微波炉完整落在第二个橱柜台面的 XZ 范围内', () => {
+    const diningDecor = roomDecorFurniture.dining
+    const cabinet = diningDecor.find((item) => item.id === 'decor-kit-cabinet-2')!
+    const microwave = diningDecor.find((item) => item.id === 'decor-kit-microwave')!
+    const cabinetBox = localAabbMinMax(cabinet.position, cabinet.size)
+    const microwaveBox = localAabbMinMax(microwave.position, microwave.size)
+
+    expect(microwaveBox.x1).toBeGreaterThanOrEqual(cabinetBox.x1)
+    expect(microwaveBox.x2).toBeLessThanOrEqual(cabinetBox.x2)
+    expect(microwaveBox.z1).toBeGreaterThanOrEqual(cabinetBox.z1)
+    expect(microwaveBox.z2).toBeLessThanOrEqual(cabinetBox.z2)
+    expect(microwave.position.y).toBeCloseTo(cabinet.size.y, 3)
+  })
+
+  it('L1 水槽和橱柜只提供交互，且交互区完整落在静态模型内', () => {
+    for (const [containerId, decorId] of [
+      ['cnt-sink', 'decor-kit-sink'],
+      ['cnt-cabinet', 'decor-kit-cabinet-1'],
+    ] as const) {
+      const container = cleanTableTask.containers.find((item) => item.id === containerId)!
+      const decor = roomDecorFurniture.dining.find((item) => item.id === decorId)!
+      expect(container.visualOwner).toBe('room')
+      expect(container.collisionMode).toBe('static-furniture')
+      const containerBox = localAabbMinMax(container.position, container.size)
+      const decorBox = localAabbMinMax(decor.position, decor.size)
+      expect(containerBox.x1).toBeGreaterThanOrEqual(decorBox.x1)
+      expect(containerBox.x2).toBeLessThanOrEqual(decorBox.x2)
+      expect(containerBox.z1).toBeGreaterThanOrEqual(decorBox.z1)
+      expect(containerBox.z2).toBeLessThanOrEqual(decorBox.z2)
+      expect(container.surfaceHeight).toBeCloseTo(decor.size.y, 3)
+    }
+  })
+})

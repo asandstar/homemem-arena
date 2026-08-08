@@ -279,6 +279,14 @@ describe('placement - 压力/边界测试', () => {
       expect(ctx).toBe('living')
     })
 
+    it('free 状态且仍有初始台面锚点 - 返回对应容器', () => {
+      const e = makeEntity({ status: 'free', surfaceContainerId: 'cnt-table' })
+      const table = makeContainer({ id: 'cnt-table', surfaceHeight: 0.9 })
+      const task = { containers: [table] } as any as TaskConfig
+      const ctx = getEntityPlacementContext(e, task)
+      expect((ctx as ContainerSpec).id).toBe('cnt-table')
+    })
+
     it('task 为 null - 返回当前房间', () => {
       const e = makeEntity({ status: 'placed', placedIn: 'cnt-1' })
       const ctx = getEntityPlacementContext(e, null)
@@ -297,6 +305,23 @@ describe('placement - 压力/边界测试', () => {
       const result = snapEntityToWorld(e)
       const halfHeight = MODEL_HEIGHTS.cup / 2
       expect(result.y).toBeCloseTo(FLOOR_Y + halfHeight + Z_FIGHT_OFFSET, 5)
+    })
+
+    it('free 状态的初始台面物件 - 渲染时继续贴台面而不是掉到地板', () => {
+      const e = makeEntity({
+        configId: 'obj-table-cup',
+        status: 'free',
+        surfaceContainerId: 'cnt-table',
+        currentRoom: 'living',
+        position: { x: 0, y: 0.975, z: 0 },
+        category: 'cup',
+      })
+      const task = {
+        containers: [makeContainer({ id: 'cnt-table', surfaceHeight: 0.9 })],
+      } as any as TaskConfig
+      const result = snapEntityToWorld(e, task)
+      const halfHeight = MODEL_HEIGHTS.cup / 2
+      expect(result.y).toBeCloseTo(0.9 + halfHeight + Z_FIGHT_OFFSET, 5)
     })
 
     it('placed 状态 - 贴容器表面', () => {

@@ -326,23 +326,14 @@ export const roomDecorFurniture: Record<RoomId, DecorFurnitureSpec[]> = {
       collisionMode: 'none',
       modelAssetId: 'furniture/radio',
     },
-    // 微波炉：放 cabinet-2 台面 (0.6, 0.563, -2.1) 后沿贴墙
+    // 微波炉：缩小后居中放稳在 cabinet-2 台面，四周留出余量。
     {
       id: 'decor-kit-microwave',
-      position: { x: 0.6, y: 0.563, z: -2.1 },
-      size: { x: 0.522, y: 0.324, z: 0.414 },
+      position: { x: 0.6, y: 0.563, z: -2.3 },
+      size: { x: 0.435, y: 0.27, z: 0.345 },
       rotationY: ROT.FACE_PLUS_Z,
       collisionMode: 'none',
       modelAssetId: 'furniture/kitchenMicrowave',
-    },
-    // 堆叠的书：放水槽台面前沿 (0, 0.613, -2.1)
-    {
-      id: 'decor-kit-books',
-      position: { x: 0.0, y: 0.613, z: -2.1 },
-      size: { x: 0.181, y: 0.125, z: 0.181 },
-      rotationY: ROT.FACE_PLUS_Z,
-      collisionMode: 'none',
-      modelAssetId: 'furniture/books',
     },
     // 大盆栽：厨房东南角
     {

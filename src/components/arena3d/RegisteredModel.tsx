@@ -33,6 +33,8 @@ export interface RegisteredModelProps {
   assetId: ModelAssetId
   position?: [number, number, number]
   rotationY?: number
+  /** 场景级可读性缩放；以模型底部中心为原点，不改变落地/落台锚点。 */
+  scaleMultiplier?: number
   visible?: boolean
   castShadow?: boolean
   receiveShadow?: boolean
@@ -93,6 +95,7 @@ export function RegisteredModel({
   assetId,
   position = [0, 0, 0],
   rotationY = 0,
+  scaleMultiplier = 1,
   visible = true,
   castShadow = true,
   receiveShadow = true,
@@ -181,7 +184,9 @@ export function RegisteredModel({
   if (showFallback && fallback) {
     return (
       <group position={position} rotation={[0, rotationY, 0]}>
-        {fallback}
+        <group scale={[scaleMultiplier, scaleMultiplier, scaleMultiplier]}>
+          {fallback}
+        </group>
       </group>
     )
   }
@@ -192,7 +197,7 @@ export function RegisteredModel({
     return null
   }
 
-  const s = def.uniformScale
+  const s = def.uniformScale * scaleMultiplier
   const p = def.pivotOffset
 
   return (

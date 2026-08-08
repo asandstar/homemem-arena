@@ -608,7 +608,7 @@ export function ArenaPage() {
           彻底杜绝之前 L282 提前 return 导致的 "根本看不到开始任务按钮" 问题。 */}
       {briefingOpen && (
         <div className="absolute inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-40" data-testid="briefing-modal">
-          <div className="max-w-lg mx-4 w-full max-h-[88vh] overflow-y-auto" data-testid="briefing-scroll-container">
+          <div className="max-w-[34rem] mx-4 w-full max-h-[88vh] overflow-y-auto overflow-x-hidden px-4 py-3 scrollbar-none" data-testid="briefing-scroll-container">
             {/* MEM-07 系统提示：不再显示给玩家，这是 AI 内部指令。仅 DEV 模式下可通过控制台查看 */}
             {/* {task?.systemPrompt ? (
               <div className="bg-slate-950/90 border border-cyan-500/30 rounded-lg p-3 mb-3 font-mono text-xs text-cyan-400">

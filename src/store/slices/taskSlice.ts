@@ -214,6 +214,7 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
             color: obj.color,
             rotation: 0,
             status,
+            surfaceContainerId: obj.surfaceContainerId,
             properties: { ...(obj.stateProperties ?? {}) },
             modelAssetId: obj.modelAssetId,
           })

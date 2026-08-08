@@ -102,6 +102,12 @@ export function Object3D({ entity, onClick, isHeld, losVisible = true }: Object3
   const categoryLabel = CATEGORY_LABELS[cat] || cat
   const modelHeight = getModelApproxHeight(modelId)
   const halfHeight = modelHeight / 2
+  // 第一关是操作教学：真实尺寸的浅色餐具在同色餐桌上几乎不可见。
+  // 仅放大教学物件的视觉，不改变交互距离、放置坐标或后续关卡难度。
+  const isTutorialObject = task?.id === 'task-clean-table'
+    && entity.status !== 'placed'
+    && ['obj-mug-1', 'obj-plate-1', 'obj-fork-1'].includes(entity.configId)
+  const tutorialScale = isTutorialObject ? 1.5 : 1
 
   const isKey = entity.category === 'key' || entity.configId === 'obj-key'
   const glowColor = isKey ? '#fbbf24' : PALETTE.target.primary
@@ -216,6 +222,7 @@ export function Object3D({ entity, onClick, isHeld, losVisible = true }: Object3
         {entity.modelAssetId ? (
           <RegisteredModel
             assetId={entity.modelAssetId}
+            scaleMultiplier={tutorialScale}
             // R2A.1 锚点契约：snapEntityToWorld 返回 center-origin y（surfaceY + halfHeight）。
             // PropModel (CENTER_ORIGIN) center 位于该 y，bottom 在 surfaceY。
             // RegisteredModel (BOTTOM_CENTER_ORIGIN) 需减去 halfHeight 使 bottom 在 surfaceY。
@@ -370,7 +377,9 @@ export function Object3D({ entity, onClick, isHeld, losVisible = true }: Object3
         </Billboard>
       )}
 
-      {isTaskTarget && !isHeld && losVisible && (
+      {/* 教学餐具刚好贴着餐桌表面，桌体的视线检测可能误判遮挡；
+          L1 单房间内允许教学标记越过该误判，避免玩家看不到开场物件。 */}
+      {((isTaskTarget && losVisible) || isTutorialObject) && !isHeld && (
         <TaskTargetGlow halfHeight={halfHeight} entityName={entity.name} />
       )}
 

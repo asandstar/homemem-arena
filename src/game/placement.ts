@@ -179,6 +179,10 @@ export function getEntityPlacementContext(
     const container = task.containers.find((c) => c.id === entity.placedIn)
     if (container) return container
   }
+  if (entity.status === 'free' && entity.surfaceContainerId && task) {
+    const initialSurface = task.containers.find((c) => c.id === entity.surfaceContainerId)
+    if (initialSurface) return initialSurface
+  }
   return entity.currentRoom
 }
 

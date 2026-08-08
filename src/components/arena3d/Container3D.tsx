@@ -213,45 +213,47 @@ export function Container3D({
           <meshBasicMaterial color={PALETTE.target.primary} transparent opacity={0.2 + proximityGlow * 0.2} />
         </mesh>
       )}
-      <group
-        onClick={handleClick}
-        onPointerOver={(e) => {
-          e.stopPropagation()
-          setHovered(true)
-          document.body.style.cursor = 'pointer'
-        }}
-        onPointerOut={() => {
-          setHovered(false)
-          document.body.style.cursor = 'auto'
-        }}
-        scale={[1 + openProgressRef.current * 0.03, 1 + openProgressRef.current * 0.02, 1 + openProgressRef.current * 0.03]}
-        position={[0, openProgressRef.current * 0.02, 0]}
-      >
-        {spec.modelAssetId ? (
-          <RegisteredModel
-            assetId={spec.modelAssetId}
-            fallback={
-              <FurnitureModel
-                modelId={modelId}
-                color={spec.color}
-                hovered={hovered}
-                isOpen={isOpen}
-                isTarget={spec.isTargetZone || false}
-                size={spec.size}
-              />
-            }
-          />
-        ) : (
-          <FurnitureModel
-            modelId={modelId}
-            color={spec.color}
-            hovered={hovered}
-            isOpen={isOpen}
-            isTarget={spec.isTargetZone || false}
-            size={spec.size}
-          />
-        )}
-      </group>
+      {spec.visualOwner !== 'room' && (
+        <group
+          onClick={handleClick}
+          onPointerOver={(e) => {
+            e.stopPropagation()
+            setHovered(true)
+            document.body.style.cursor = 'pointer'
+          }}
+          onPointerOut={() => {
+            setHovered(false)
+            document.body.style.cursor = 'auto'
+          }}
+          scale={[1 + openProgressRef.current * 0.03, 1 + openProgressRef.current * 0.02, 1 + openProgressRef.current * 0.03]}
+          position={[0, openProgressRef.current * 0.02, 0]}
+        >
+          {spec.modelAssetId ? (
+            <RegisteredModel
+              assetId={spec.modelAssetId}
+              fallback={
+                <FurnitureModel
+                  modelId={modelId}
+                  color={spec.color}
+                  hovered={hovered}
+                  isOpen={isOpen}
+                  isTarget={spec.isTargetZone || false}
+                  size={spec.size}
+                />
+              }
+            />
+          ) : (
+            <FurnitureModel
+              modelId={modelId}
+              color={spec.color}
+              hovered={hovered}
+              isOpen={isOpen}
+              isTarget={spec.isTargetZone || false}
+              size={spec.size}
+            />
+          )}
+        </group>
+      )}
 
       {spec.isTargetZone && losVisible && (
         <>

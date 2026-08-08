@@ -167,3 +167,15 @@ button:disabled {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-muted);
 }
+
+/* 简报便签保留滚轮/触控板滚动能力，但不显示破坏纸张造型的原生滚动条。 */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
