@@ -29,11 +29,19 @@ export const createEntitySlice = (set: any, get: any): EntitySlice => ({
   containerStates: {},
 
   pickEntity: (entityId) => {
-    const { entities, heldEntityId, currentRoom, containerStates } = get()
+    const { entities, heldEntityId, currentRoom, containerStates, task, achievedGoalIds } = get()
     if (heldEntityId) return { success: false, reason: '手里已经拿着东西了' }
 
     const entity = entities.find((e: any) => e.id === entityId)
     if (!entity) return { success: false, reason: '物体不存在' }
+
+    // L3 阶段门禁：g-encode-cereal-memory 完成前，禁止拾取 BOWL/CUP/SPOON
+    if (task?.id === 'task-laundry-sort' && !achievedGoalIds.has('g-encode-cereal-memory')) {
+      const blockedIds = ['obj-breakfast-bowl', 'obj-breakfast-cup', 'obj-breakfast-spoon']
+      if (blockedIds.includes(entity.configId)) {
+        return { success: false, reason: '先按 E 记住麦片的位置，再来摆餐具' }
+      }
+    }
 
     if (entity.currentRoom !== currentRoom) return { success: false, reason: '不在当前房间' }
 

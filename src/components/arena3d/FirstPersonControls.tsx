@@ -90,12 +90,22 @@ export function FirstPersonControls() {
 
   const findNearbyEntity = useCallback(() => {
     const state = useGameStore.getState()
-    return findNearestInteractableEntity(entities, state.robotPosition, state.currentRoom)
+    // L3 阶段门禁：g-encode-cereal-memory 完成前，不允许与 BOWL/CUP/SPOON 交互
+    const stageAwareFilter = (entity: any) => {
+      if (state.task?.id === 'task-laundry-sort' && !state.achievedGoalIds.has('g-encode-cereal-memory')) {
+        const blockedIds = ['obj-breakfast-bowl', 'obj-breakfast-cup', 'obj-breakfast-spoon']
+        if (blockedIds.includes(entity.configId)) return false
+      }
+      return true
+    }
+    return findNearestInteractableEntity(entities, state.robotPosition, state.currentRoom, 2, stageAwareFilter)
   }, [entities])
 
   const findNearbyContainer = useCallback(() => {
     const state = useGameStore.getState()
-    return findNearestInteractableContainer(state.task, state.robotPosition, state.currentRoom)
+    const heldEntity = state.heldEntityId ? state.entities.find((e: any) => e.id === state.heldEntityId) : null
+    const heldCategory = heldEntity?.category ?? null
+    return findNearestInteractableContainer(state.task, state.robotPosition, state.currentRoom, 2.5, heldCategory)
   }, [])
 
   // 查找附近可交互的门（任务相关 + 距离 < 阈值）
@@ -368,15 +378,29 @@ export function FirstPersonControls() {
     tapHandlerRef.current = () => {
       const state = useGameStore.getState()
       if (state.phase !== 'playing') return
+      // L3 阶段门禁
+      const stageAwareFilter = (entity: any) => {
+        if (state.task?.id === 'task-laundry-sort' && !state.achievedGoalIds.has('g-encode-cereal-memory')) {
+          const blockedIds = ['obj-breakfast-bowl', 'obj-breakfast-cup', 'obj-breakfast-spoon']
+          if (blockedIds.includes(entity.configId)) return false
+        }
+        return true
+      }
       const nearbyEntity = findNearestInteractableEntity(
         state.entities,
         state.robotPosition,
         state.currentRoom,
+        2,
+        stageAwareFilter,
       )
+      const heldEntityForCategory = state.heldEntityId ? state.entities.find((e: any) => e.id === state.heldEntityId) : null
+      const heldCategory = heldEntityForCategory?.category ?? null
       const nearbyContainer = findNearestInteractableContainer(
         state.task,
         state.robotPosition,
         state.currentRoom,
+        2.5,
+        heldCategory,
       )
       const { addToast: addToastNow } = useToastStore.getState()
 

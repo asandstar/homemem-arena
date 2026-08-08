@@ -86,7 +86,7 @@ export const laundrySortTask: TaskConfig = {
   rooms: ['dining'],
   iconKey: 'dish',
   tags: ['记忆更新', '过期记忆', '单房间', '早餐任务'],
-  timeLimit: 240,
+  timeLimit: 360,
   spawnPosition: { x: 0, z: 1.9 },
   spawnRotation: 0,
   initialStageId: STAGE_ENCODE,

@@ -106,8 +106,17 @@ export function HUD() {
   const toggleAudioEnabled = useUiStore((s) => s.toggleAudioEnabled)
 
   const heldEntity = heldEntityId ? entities.find(e => e.id === heldEntityId) : null
-  const nearbyEntity = findNearestInteractableEntity(entities, robotPosition, currentRoom)
-  const nearbyContainer = findNearestInteractableContainer(task, robotPosition, currentRoom)
+  // L3 阶段门禁：g-encode-cereal-memory 完成前，不显示 BOWL/CUP/SPOON 的 E/F 提示
+  const stageAwareEntityFilter = useCallback((entity: any) => {
+    if (task?.id === 'task-laundry-sort' && !achievedGoalIds.has('g-encode-cereal-memory')) {
+      const blockedIds = ['obj-breakfast-bowl', 'obj-breakfast-cup', 'obj-breakfast-spoon']
+      if (blockedIds.includes(entity.configId)) return false
+    }
+    return true
+  }, [task?.id, achievedGoalIds])
+  const nearbyEntity = findNearestInteractableEntity(entities, robotPosition, currentRoom, 2, stageAwareEntityFilter)
+  const heldCategoryForContainer = heldEntity?.category ?? null
+  const nearbyContainer = findNearestInteractableContainer(task, robotPosition, currentRoom, 2.5, heldCategoryForContainer)
   void nearbyContainer
 
   const [helpOpen, setHelpOpen] = useState(false)

@@ -401,8 +401,9 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
           achievedGoalIds.add(goal.id)
           const message = goal.achievedMessage || `目标完成：${goal.description}`
           const stepCount = get().stepCount
+          // 仅保留一个事件 Toast（短提示），不再额外叠加 floatingText；
+          // HUD 中的 completedGoalBanner 会同步显示大号目标完成横幅。
           get().addEventToast(`✓ ${message.replace(/^✓\s*/, '')}`, 'success', 3000)
-          get().addFloatingText(message, 'info', 0, 0)
           get().addScore(DEFAULT_LEVEL_BALANCE.validMemoryUseScore)
           const { robotPosition } = get()
           playGoalCompleteEffect(robotPosition)
@@ -597,17 +598,22 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
         return
       }
 
-      const chaosGrowth = calcChaosGrowth(deltaMs, DEFAULT_LEVEL_BALANCE)
-      if (chaosGrowth > 0) {
-        get().incrementChaos(chaosGrowth)
-      }
+      // L1 教程（task-clean-table）：正常游玩时间内不被动增长 chaos，不衰减记忆，不因 chaos 失败。
+      // 只允许玩家操作带来的 chaos（错误放置等），避免教学压力。
+      const isL1Tutorial = task?.id === 'task-clean-table'
+      if (!isL1Tutorial) {
+        const chaosGrowth = calcChaosGrowth(deltaMs, DEFAULT_LEVEL_BALANCE)
+        if (chaosGrowth > 0) {
+          get().incrementChaos(chaosGrowth)
+        }
 
-      const chaos = get().chaosValue
-      if (chaos >= DEFAULT_LEVEL_BALANCE.maxChaos && !get().levelFailed) {
-        get().setLevelFailed('混乱值过载')
-      }
+        const chaos = get().chaosValue
+        if (chaos >= DEFAULT_LEVEL_BALANCE.maxChaos && !get().levelFailed) {
+          get().setLevelFailed('混乱值过载')
+        }
 
-      get().decayMemories(deltaMs)
+        get().decayMemories(deltaMs)
+      }
 
       if (task?.timeLimit) {
         const remainingSeconds = Math.floor((task.timeLimit * 1000 - newElapsed) / 1000)
