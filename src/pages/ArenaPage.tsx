@@ -17,6 +17,7 @@ import { resetArenaCleanupFlag, updateBgmState, playBgm, stopBgm } from '../audi
 import { stopAmbient, stopAmbientImmediate } from '../audio/ambient'
 import { stopAllAudioImmediate, resumeAudioContexts } from '../audio/audioManager'
 import { executeContainerInteraction, executePick } from '../game/commands'
+import { getRank } from '../game/scoring'
 import { getTaskById, isHiddenTaskId, PUBLIC_LEVEL_ORDER } from '../data/tasks'
 import { useDialog } from '../dialog/useDialog'
 import { startAutoSave, stopAutoSave, autosaveGame, hasSavedGame, restoreSave } from '../save/saveSystem'
@@ -834,7 +835,7 @@ export function ArenaPage() {
               <div className="text-center">
                 <div className="text-xs text-slate-400">评级</div>
                 <div className="text-3xl font-bold text-yellow-400">
-                  {stats.score >= 900 ? 'S' : stats.score >= 700 ? 'A' : stats.score >= 500 ? 'B' : stats.score >= 300 ? 'C' : 'D'}
+                  {getRank(stats.score).rank}
                 </div>
               </div>
               <div className="text-center">
