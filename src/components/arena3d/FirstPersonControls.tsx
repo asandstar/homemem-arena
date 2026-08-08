@@ -11,10 +11,14 @@ import {
   PLAYER_SPEED,
   PLAYER_HEIGHT,
   TOP_DOWN_SPEED,
-  MOUSE_SENSITIVITY,
+  MOUSE_SENSITIVITY_H,
+  MOUSE_SENSITIVITY_V,
   ACCELERATION,
   DECELERATION,
   TURN_SMOOTHING,
+  FOV_DEFAULT,
+  FOV_MIN,
+  FOV_MAX,
   applyHorizontalLookDelta,
   gameYawToCameraYaw,
 } from '../../game/playerControls'
@@ -40,12 +44,11 @@ import {
   findNearestInteractableEntity,
 } from '../../game/interactionTargets'
 import { doorKey } from '../../store/slices/playerSlice'
+import { decideEscapeAction } from '../../game/pointerLockEscStateMachine'
 
 const DOOR_INTERACT_DISTANCE = 2.5
 
 const ROTATION_SYNC_THRESHOLD = 0.001
-const FOV_MIN = 30
-const FOV_MAX = 110
 
 export function FirstPersonControls() {
   const { camera, gl } = useThree()
@@ -59,7 +62,7 @@ export function FirstPersonControls() {
   const currentSpeedRef = useRef(0)
   const moveDirectionRef = useRef(new THREE.Vector3(0, 0, -1))
   const targetMoveDirRef = useRef(new THREE.Vector3(0, 0, -1))
-  const cameraFovRef = useRef(75)
+  const cameraFovRef = useRef(FOV_DEFAULT)
 
   // ⚠️ 用单字段 selector 避免 getSnapshot 引用变化 → 无限循环
   const phase = useGameStore((s) => s.phase)
@@ -274,52 +277,73 @@ export function FirstPersonControls() {
           const gs = useGameStore.getState()
           const phase = gs.phase
           const inGame = phase === 'playing' || phase === 'briefing'
-          
+          const canvasEl = gl.domElement
+          // 唯一权威：真实 Pointer Lock 元素 == 当前 canvas
+          const pointerLocked = !!(canvasEl && document.pointerLockElement === canvasEl)
+          const nowMs = performance.now()
+
           // 检查 Dialog 是否打开：如果 Dialog 打开，ESC 应该由 Dialog 处理（关闭对话框）
           // 而不是 FirstPersonControls
           const dialogRoot = document.querySelector('[data-dialog-root]')
           if (dialogRoot) {
-            // Dialog 打开时让 Dialog 自己处理 ESC
             break
           }
-          
-          // 直接检查浏览器当前 Pointer Lock 状态，避免 isMouseLockedRef 同步延迟问题
-          const canvasEl = gl.domElement
-          const pointerLocked = !!(canvasEl && document.pointerLockElement === canvasEl)
-          
-          if (inGame) {
-            // 两次 ESC 交互：
-            //   第一次 ESC：鼠标锁定中 → 仅释放鼠标锁定（不暂停），玩家可自由操作 UI
-            //   第二次 ESC：鼠标已释放 → 暂停游戏
-            if (pointerLocked) {
+
+          // 调用纯状态机（决策与 DOM/副作用解耦，便于 Vitest 独立测试）
+          const decision = decideEscapeAction('KEYDOWN_ESCAPE', {
+            pointerLocked,
+            isPaused: gs.isPaused,
+            inGamePhase: inGame,
+            escapeReleasedUnlockAtMs: escapeReleasedUnlockAtRef.current,
+            nowMs,
+            cooldownMs: ESC_UNLOCK_COOLDOWN_MS,
+          })
+
+          // 根据 decision 执行副作用
+          switch (decision.action) {
+            case 'EXIT_LOCK': {
               e.preventDefault()
               e.stopPropagation()
+              if (decision.setUnlockTimestampToMs !== undefined) {
+                escapeReleasedUnlockAtRef.current = decision.setUnlockTimestampToMs
+              } else {
+                escapeReleasedUnlockAtRef.current = nowMs
+              }
               try {
                 document.exitPointerLock?.()
               } catch {
-                // exitPointerLock 可能在某些情况下抛出异常（如锁定已超时）
+                // 忽略异常
               }
-              isMouseLockedRef.current = false
-              addToast('info', '鼠标已释放，再按 ESC 暂停游戏')
-            } else if (!gs.isPaused) {
+              if (inGame) {
+                addToast('info', '鼠标已释放，再按 ESC 暂停游戏')
+              } else {
+                addToast('info', '鼠标已释放，点击游戏画面重新锁定')
+              }
+              break
+            }
+            case 'OPEN_PAUSE': {
               e.preventDefault()
               e.stopPropagation()
+              // 进入暂停前再做一次保险：如果 Pointer Lock 仍在（比如绕过锁定判断的极端分支），
+              // 强制退出锁定，保证暂停菜单点击可用
+              try {
+                if (document.pointerLockElement) document.exitPointerLock?.()
+              } catch {
+                // 忽略
+              }
               gs.setPaused(true)
-              addToast('info', '游戏已暂停')
+              break
             }
-            break
-          }
-          // 非游戏阶段（probe/result/idle）ESC 只释放鼠标锁定
-          if (pointerLocked) {
-            e.preventDefault()
-            e.stopPropagation()
-            try {
-              document.exitPointerLock?.()
-            } catch {
-              // 忽略异常
+            case 'CLOSE_PAUSE': {
+              e.preventDefault()
+              e.stopPropagation()
+              gs.setPaused(false)
+              // ⚠️ 不恢复 Pointer Lock → 符合"点继续后保持未锁定，再次点击画面才锁定"
+              break
             }
-            isMouseLockedRef.current = false
-            addToast('info', '鼠标已释放，点击游戏画面重新锁定')
+            case 'NO_OP':
+            default:
+              break
           }
           break
         }
@@ -364,11 +388,19 @@ export function FirstPersonControls() {
 
   const isDraggingRef = useRef(false)
   const isPointerOverCanvasRef = useRef(false)
-  const isMouseLockedRef = useRef(true)
+  // ⚠️ 初始值必须为 false，真实锁定状态唯一权威 = document.pointerLockElement === canvas
+  // 比赛桌面版：除 Pointer Lock 激活外，其他途径均不允许 mousemove 转视角（删除了"悬停即转"逻辑）
+  const isMouseLockedRef = useRef(false)
   const touchStartRef = useRef({ x: 0, y: 0 })
   const touchRotRef = useRef({ yaw: 0, pitch: 0 })
   const lastTouchTimeRef = useRef(0)
   const isTouchInteractionRef = useRef(false)
+  // ESC ↔ PointerLock 竞态保护：记录"刚因 ESC 释放了 Pointer Lock"的时间戳（ms），
+  // 同一次 ESC 按下导致的 keydown + pointerlockchange 序列里，不允许顺带打开暂停；
+  // 必须等到下一次独立按键（距此时间 > ESC_UNLOCK_COOLDOWN_MS）才允许开暂停。
+  // 用 -Infinity 表示"从未因 ESC 释放过锁"，保证 nowMs - (-Infinity) = Infinity > 任何 cooldown。
+  const escapeReleasedUnlockAtRef = useRef<number>(Number.NEGATIVE_INFINITY)
+  const ESC_UNLOCK_COOLDOWN_MS = 250
 
   // 使用 ref 保存 tap 处理函数，避免在 useEffect 依赖中列出所有状态
   // useEffect 只订阅一次事件，tap 时通过 ref 调用最新闭包
@@ -441,36 +473,48 @@ export function FirstPersonControls() {
       // 对话打开时不请求 Pointer Lock，否则光标会被锁定到 canvas，
       // 玩家无法点击对话选项按钮（必须按 ESC 才能退出）。
       if (document.querySelector('[data-dialog-root]')) return
-      if (!isMouseLockedRef.current) {
-        isMouseLockedRef.current = true
+
+      // 唯一权威：直接检查 document.pointerLockElement 是否就是 canvas
+      const lockedNow = document.pointerLockElement === canvas
+      if (!lockedNow) {
+        // 未锁定：点击画面 → 请求 Pointer Lock；由 pointerlockchange 来同步真实状态
         canvas.requestPointerLock?.()
+        // ⚠️ 不手动 set isMouseLockedRef = true（如果 requestPointerLock 失败，
+        // 比如 iframe 安全策略，ref 会和浏览器真实态发生分歧，造成"UI以为锁了/实际上没锁"）
         return
       }
-      isDraggingRef.current = true
-      canvas.style.cursor = 'grabbing'
+      // 已锁定：比赛版禁止"鼠标按下 + 拖动"再旋转一次（Pointer Lock 独占鼠标已经在转），
+      // 所以不再进入 dragging 分支，也不再改 cursor。
     }
 
-    // 同步 isMouseLockedRef 与浏览器真实 Pointer Lock 状态。
-    // DialogBox 打开时会调用 document.exitPointerLock()，这里监听变化把 ref 置 false，
-    // 这样 handleMouseMove 不会再转动相机，对话期间画面不会乱转。
+    // 同步 isMouseLockedRef 与浏览器真实 Pointer Lock 状态（唯一权威事件源）。
+    // - DialogBox 打开时会调用 document.exitPointerLock()，这里监听变化把 ref 置 false
+    // - 玩家点击画面 requestPointerLock() 成功 → 也由此事件置 true
     const handlePointerLockChange = () => {
-      isMouseLockedRef.current = document.pointerLockElement === canvas
+      const nowLocked = document.pointerLockElement === canvas
+      const wasLocked = isMouseLockedRef.current
+      isMouseLockedRef.current = nowLocked
+
+      if (wasLocked && !nowLocked) {
+        // Locked → Unlocked：提示"点击画面继续控制"
+        const gs = useGameStore.getState()
+        if (gs.phase === 'playing' || gs.phase === 'briefing') {
+          if (!gs.isPaused) {
+            addToast('info', '点击画面继续控制视角')
+          }
+        }
+      }
     }
     document.addEventListener('pointerlockchange', handlePointerLockChange)
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (isMouseLockedRef.current) {
-        // Pointer Lock 激活：独占鼠标输入 → 直接转视角，不检查 isDragging/isPointerOver
-        targetYawRef.current = applyHorizontalLookDelta(targetYawRef.current, e.movementX, MOUSE_SENSITIVITY)
-        targetPitchRef.current = clampPitch(targetPitchRef.current - e.movementY * MOUSE_SENSITIVITY)
-        return
-      }
-      // 非 Pointer Lock 模式：点击拖拽或悬停在 canvas 上且在 playing 阶段才转
-      if (!isDraggingRef.current && !isPointerOverCanvasRef.current) return
-      if (isDraggingRef.current || (isPointerOverCanvasRef.current && phase === 'playing')) {
-        targetYawRef.current = applyHorizontalLookDelta(targetYawRef.current, e.movementX, MOUSE_SENSITIVITY)
-        targetPitchRef.current = clampPitch(targetPitchRef.current - e.movementY * MOUSE_SENSITIVITY)
-      }
+      // ⚠️ 比赛桌面版：只有 Pointer Lock 激活才允许用 mousemove 转视角。
+      // 已经移除"鼠标悬停 canvas 上也旋转"和"未锁定时按左键拖动也旋转"两条路径，
+      // 避免玩家在 UI 点击期间误转动相机。
+      if (!isMouseLockedRef.current) return
+      // Pointer Lock 激活时使用 movementX/Y（真正相对位移），水平/垂直灵敏度分开
+      targetYawRef.current = applyHorizontalLookDelta(targetYawRef.current, e.movementX, MOUSE_SENSITIVITY_H)
+      targetPitchRef.current = clampPitch(targetPitchRef.current - e.movementY * MOUSE_SENSITIVITY_V)
     }
 
     const handleMouseUp = () => {
@@ -490,10 +534,13 @@ export function FirstPersonControls() {
     }
 
     const handleWheel = (e: WheelEvent) => {
+      // 比赛版：FOV 只允许在 65~80 间小幅调整（默认 72），且步进大幅削弱，
+      // 避免一次滚轮 100 deltaY 直接从 72 → 66，看起来像"滚轮把画面 Zoom 爆了"
       if (!isPointerOverCanvasRef.current) return
       e.preventDefault()
       e.stopPropagation()
-      const delta = e.deltaY * 0.05
+      // 原系数 0.05 下调到 0.005：每次滚轮约 ±0.5°，3 次小幅调整 ≈ 1.5°
+      const delta = e.deltaY * 0.005
       cameraFovRef.current = Math.max(FOV_MIN, Math.min(FOV_MAX, cameraFovRef.current + delta))
     }
 
@@ -515,9 +562,11 @@ export function FirstPersonControls() {
 
       if (distance > 10) {
         isTouchInteractionRef.current = true
-        const sensitivity = MOUSE_SENSITIVITY * 1.5
-        targetYawRef.current = applyHorizontalLookDelta(touchRotRef.current.yaw, dx, sensitivity)
-        targetPitchRef.current = clampPitch(touchRotRef.current.pitch - dy * sensitivity)
+        // 移动端：仍沿用水平 1.5x 旧系数基础；但垂直要 * 0.8 与桌面统一比例
+        const senH = MOUSE_SENSITIVITY_H * 1.5
+        const senV = MOUSE_SENSITIVITY_V * 1.5
+        targetYawRef.current = applyHorizontalLookDelta(touchRotRef.current.yaw, dx, senH)
+        targetPitchRef.current = clampPitch(touchRotRef.current.pitch - dy * senV)
       }
     }
 
@@ -552,7 +601,7 @@ export function FirstPersonControls() {
       window.removeEventListener('touchend', handleTouchEnd)
       document.removeEventListener('pointerlockchange', handlePointerLockChange)
     }
-  }, [gl, phase])
+  }, [gl, phase, addToast])
 
   useFrame((_, delta) => {
     const state = useGameStore.getState()

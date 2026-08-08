@@ -30,6 +30,15 @@ export function PauseMenu() {
       resumeAudioContexts().catch(() => {})
       return
     }
+    // 比赛版：暂停菜单打开时强制退出 Pointer Lock，确保玩家能自由点击暂停菜单按钮
+    // （不依赖 ESC 路径——如果未来有点击按钮进入暂停的路径也能正确释放鼠标）
+    try {
+      if (document.pointerLockElement) {
+        document.exitPointerLock?.()
+      }
+    } catch {
+      // 忽略：某些 iframe 上下文下 exitPointerLock 可能报错
+    }
     suspendAllAudioContextsImmediate()
     if (taskId && (phase === 'playing' || phase === 'briefing')) {
       try {

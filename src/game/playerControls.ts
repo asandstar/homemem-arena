@@ -13,8 +13,16 @@ export const PLAYER_HEIGHT = 1.35
 // 俯仰角限制：收窄到 ±50°，避免极端抬头/低头导致天花板/地板填满屏幕的不适感
 export const PITCH_MIN = -Math.PI * 5 / 18 // -50°
 export const PITCH_MAX = Math.PI * 5 / 18  // +50°
-// 鼠标灵敏度：降低约 27%（0.0015 → 0.0011），让缓慢转动更精确、不"粘手"
-export const MOUSE_SENSITIVITY = 0.0011
+// 桌面端 Pointer Lock 灵敏度：比赛版调至 ~0.0018（比 0.0011 提高约 64%，避免"转不动"感）
+// 垂直灵敏度为水平的 0.8，符合人类水平扫视 > 垂直扫视的自然比例与多数 FPS 习惯
+export const MOUSE_SENSITIVITY_H = 0.0018
+export const MOUSE_SENSITIVITY_V = MOUSE_SENSITIVITY_H * 0.8
+// 后向兼容别名（旧代码仍直接 import MOUSE_SENSITIVITY）
+export const MOUSE_SENSITIVITY = MOUSE_SENSITIVITY_H
+// 第一人称 FOV：固定 72°（允许玩家小幅调整 65~80，但禁止滚轮大幅 zoom 到 30/110）
+export const FOV_DEFAULT = 72
+export const FOV_MIN = 65
+export const FOV_MAX = 80
 
 export const ACCELERATION = 40.0
 export const DECELERATION = 50.0
