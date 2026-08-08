@@ -76,21 +76,11 @@ export function Object3D({ entity, onClick, isHeld, losVisible = true }: Object3
 
   const isTaskTarget = useMemo(() => {
     if (!task || entity.status === 'held' || entity.status === 'placed') return false
-    return task.goals.some((goal) => {
-      if (achievedGoalIds.has(goal.id)) return false
-      try {
-        return goal.predicate([{
-          configId: entity.configId,
-          status: 'placed',
-          currentRoom: entity.currentRoom,
-          placedIn: '___check___',
-          category: entity.category,
-          properties: entity.properties,
-        }])
-      } catch {
-        return false
-      }
-    })
+    return task.goals.some((goal) => (
+      !achievedGoalIds.has(goal.id)
+      && (goal.dependsOnGoalIds ?? []).every((id) => achievedGoalIds.has(id))
+      && (goal.relatedObjectIds ?? []).includes(entity.configId)
+    ))
   }, [task, entity, achievedGoalIds])
 
   const cat = String(entity.category)
@@ -107,7 +97,7 @@ export function Object3D({ entity, onClick, isHeld, losVisible = true }: Object3
   const isTutorialObject = task?.id === 'task-clean-table'
     && entity.status !== 'placed'
     && ['obj-mug-1', 'obj-plate-1', 'obj-fork-1'].includes(entity.configId)
-  const tutorialScale = isTutorialObject ? 1.5 : 1
+  const tutorialScale = isTutorialObject ? 1.15 : 1
 
   const isKey = entity.category === 'key' || entity.configId === 'obj-key'
   const glowColor = isKey ? '#fbbf24' : PALETTE.target.primary

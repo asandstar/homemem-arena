@@ -228,39 +228,42 @@ export const MODEL_OVERRIDES: ModelOverrideMap = {
     status: 'provisional',
   },
 
-  // —— Food / L1 props（仅注册，暂不修改任务对象） ——
-  // mug rawAabb 是 [-1,1]³ → 实际几何体需要 scale≈0.05（0.1m 杯身）
+  // —— Food / task props ——
+  // 下列 rawAabb 来自实际 GLB 的 THREE.Box3 测量；Food Kit 模型本身已经是小尺寸，
+  // 不能再按占位的 [-1,1]³ 包围盒缩放，否则会小到几乎不可见。
+  // mug rawAabb=(0.3437,0.2734,0.2851), raw center x=0.04837, bottom y=0
   'food/mug': {
-    uniformScale: 0.05,
-    pivotOffset: { x: 0, y: 0.05, z: 0 }, // 把底部从 -1 带到 0 需要 +1*0.05
-    effectiveAabb: { x: 0.1, y: 0.1, z: 0.1 },
-    collisionSize: { x: 0.08, y: 0.08, z: 0.08 },
+    uniformScale: 0.44,
+    pivotOffset: { x: -0.048374, y: 0, z: 0 },
+    effectiveAabb: { x: 0.151, y: 0.12, z: 0.125 },
+    collisionSize: { x: 0.13, y: 0.12, z: 0.11 },
     floorAligned: true,
     status: 'provisional',
   },
-  // plate rawAabb [-1,1]³  → scale≈0.09（约 0.18m 直径）
+  // plate rawAabb=(0.8918,0.09,0.8918) → 约 0.22m 直径
   'food/plate': {
-    uniformScale: 0.09,
-    pivotOffset: { x: 0, y: 0.005, z: 0 },
-    effectiveAabb: { x: 0.18, y: 0.018, z: 0.18 },
+    uniformScale: 0.247,
+    pivotOffset: { x: 0, y: 0, z: 0 },
+    effectiveAabb: { x: 0.22, y: 0.022, z: 0.22 },
     collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
     floorAligned: true,
     status: 'provisional',
   },
-  // utensil-fork  rawAabb=(0.503,2,0.084)  rawMin.y=-1
+  // utensil 模型原生就是平放状态（长轴为 X，Y 仅是餐具厚度）。
+  // fork rawAabb=(0.5035,0.0178,0.084)
   'food/utensil-fork': {
-    uniformScale: 0.1,
-    pivotOffset: { x: 0, y: 0.1, z: 0 },
-    effectiveAabb: { x: 0.05, y: 0.2, z: 0.0084 },
+    uniformScale: 0.397,
+    pivotOffset: { x: 0, y: 0, z: 0 },
+    effectiveAabb: { x: 0.2, y: 0.007, z: 0.033 },
     collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
     floorAligned: true,
     status: 'provisional',
   },
-  // utensil-spoon rawAabb=(0.727,2,0.610)  rawMin.y=-1
+  // spoon rawAabb=(0.4796,0.0278,0.12)
   'food/utensil-spoon': {
-    uniformScale: 0.1,
-    pivotOffset: { x: 0, y: 0.1, z: 0 },
-    effectiveAabb: { x: 0.073, y: 0.2, z: 0.061 },
+    uniformScale: 0.42,
+    pivotOffset: { x: 0, y: 0, z: 0 },
+    effectiveAabb: { x: 0.201, y: 0.012, z: 0.05 },
     collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
     floorAligned: true,
     status: 'provisional',
@@ -729,46 +732,40 @@ export const MODEL_OVERRIDES: ModelOverrideMap = {
 
   // ===================== L3 关键任务模型（Commit 2 接入） =====================
   // kitchenCabinetUpper rawAabb=(0.43,0.56,0.32) — 挂墙式上层橱柜
-  // 目标：贴北墙，底部 y=0.9m，柜身高 0.56m → 顶部 y=1.46m；深度 0.45m，宽 0.8m
+  // 与下柜同宽，适度加高，避免此前 0.8×1.04×0.6 的巨型柜体压住灶台。
   // rawMin≈(0,0,-0.32) rawMax≈(0.43,0.56,0) → center x=-0.215, z=0.16
   'furniture/kitchenCabinetUpper': {
-    uniformScale: 1.86,
+    uniformScale: 1.25,
     pivotOffset: { x: -0.215, y: 0, z: 0.16 },
-    effectiveAabb: { x: 0.8, y: 1.04, z: 0.6 },
-    collisionSize: { x: 0.76, y: 1.0, z: 0.55 },
+    effectiveAabb: { x: 0.538, y: 0.7, z: 0.4 },
+    collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
     floorAligned: false, // 挂墙式，位置 y=0.9 表示柜底离地高度
     status: 'provisional',
   },
-  // carton rawAabb=[-1,1]³ — 麦片盒
-  // 目标：约 0.28m 宽 × 0.42m 高 × 0.18m 深（任务对象 size）
-  // 等比 scale≈0.21（按 y 方向 0.42/2）
+  // carton rawAabb=(0.23,0.5905,0.23) — 麦片盒，目标高度约 0.42m
   'food/carton': {
-    uniformScale: 0.21,
-    pivotOffset: { x: 0, y: 0.21, z: 0 }, // rawMin.y=-1 → +1*0.21 把底带到 y=0
-    effectiveAabb: { x: 0.42, y: 0.42, z: 0.42 },
-    collisionSize: { x: 0.28, y: 0.42, z: 0.18 },
+    uniformScale: 0.711,
+    pivotOffset: { x: 0, y: 0, z: 0 },
+    effectiveAabb: { x: 0.164, y: 0.42, z: 0.164 },
+    collisionSize: { x: 0.15, y: 0.42, z: 0.15 },
     floorAligned: true,
     status: 'provisional',
   },
-  // bowl rawAabb=[-1,1]³ — 早餐碗
-  // 目标：口径 ~0.24m，高 ~0.12m（比 plate 厚，比 mug 矮宽）
-  // 等比 scale≈0.12（按口径 0.24/2）
+  // bowl rawAabb=(0.5022,0.2138,0.5798) — 口径约 0.24m，高约 0.09m
   'food/bowl': {
-    uniformScale: 0.12,
-    pivotOffset: { x: 0, y: 0.12, z: 0 }, // rawMin.y=-1 → +1*0.12 把底带到 y=0
-    effectiveAabb: { x: 0.24, y: 0.24, z: 0.24 },
+    uniformScale: 0.414,
+    pivotOffset: { x: 0, y: 0, z: 0 },
+    effectiveAabb: { x: 0.208, y: 0.089, z: 0.24 },
     collisionSize: { x: 0.01, y: 0.01, z: 0.01 },
     floorAligned: true,
     status: 'provisional',
   },
-  // cup rawAabb=[-1,1]³ — 早餐杯
-  // 目标：约 0.14m 宽 × 0.16m 高（略大于 mug 的 0.1m）
-  // 等比 scale≈0.08
+  // cup rawAabb=(0.23,0.2,0.2921), raw center z=-0.03106
   'food/cup': {
-    uniformScale: 0.08,
-    pivotOffset: { x: 0, y: 0.08, z: 0 }, // 底部 -1*0.08 回 0 需 +0.08
-    effectiveAabb: { x: 0.16, y: 0.16, z: 0.16 },
-    collisionSize: { x: 0.14, y: 0.16, z: 0.14 },
+    uniformScale: 0.7,
+    pivotOffset: { x: 0, y: 0, z: 0.031058 },
+    effectiveAabb: { x: 0.161, y: 0.14, z: 0.204 },
+    collisionSize: { x: 0.14, y: 0.14, z: 0.18 },
     floorAligned: true,
     status: 'provisional',
   },

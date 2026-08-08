@@ -343,11 +343,15 @@ export function Container3D({
             <Text
               position={[0, -0.06, 0.005]}
               fontSize={0.05}
-              color={heldEntityId ? '#f59e0b' : '#10b981'}
+              color={heldEntityId ? '#f59e0b' : (spec.openable === false ? '#94a3b8' : '#10b981')}
               anchorX="center"
               anchorY="middle"
             >
-              [F] {heldEntityId ? '放置' : (isOpen ? '关闭' : '打开')}
+              {heldEntityId
+                ? '[F] 放置'
+                : spec.openable === false
+                  ? '目标区域'
+                  : `[F] ${isOpen ? '关闭' : '打开'}`}
             </Text>
           )}
         </Billboard>

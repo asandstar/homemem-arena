@@ -354,6 +354,28 @@ describe('useGameStore - 核心状态流转测试', () => {
   })
 
   describe('目标里程碑与脚本状态一致性', () => {
+    it('打开 L3 下层橱柜后，柜内物件分开展示并保持在柜面', () => {
+      useGameStore.getState().initializeTask('task-laundry-sort')
+      const state = useGameStore.getState()
+      const cabinet = state.task!.containers.find((item) => item.id === 'cnt-cabinet-lower')!
+      useGameStore.setState({
+        robotPosition: {
+          x: cabinet.position.x,
+          y: 0,
+          z: -5.35 + cabinet.position.z + 0.8,
+        },
+      })
+
+      expect(useGameStore.getState().useContainer(cabinet.id).success).toBe(true)
+      const revealed = useGameStore.getState().entities.filter((item) => (
+        ['obj-cereal', 'obj-breakfast-bowl', 'obj-breakfast-cup'].includes(item.configId)
+      ))
+      expect(revealed.every((item) => item.status === 'free')).toBe(true)
+      expect(revealed.every((item) => item.surfaceContainerId === cabinet.id)).toBe(true)
+      expect(new Set(revealed.map((item) => item.position.x)).size).toBe(3)
+      expect(revealed.every((item) => item.position.y > cabinet.surfaceHeight!)).toBe(true)
+    })
+
     it('脚本移动已放置物体时清除旧 placedIn 和容器成员关系', () => {
       useGameStore.getState().initializeTask('task-clean-table')
       const entity = useGameStore.getState().entities.find((item) => item.configId === 'obj-mug-1')!

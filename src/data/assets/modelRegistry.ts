@@ -654,7 +654,7 @@ export const MODEL_ASSET_REGISTRY = {
     pack: 'kenney-food-kit' as const,
     license: 'CC0-1.0' as const,
     sourceSha256: '5215ef74dbbc7cf4b31c40ef40bd44b8df91650d9aa10f940005670644d07509',
-    rawAabb: { x: 2.0, y: 2.0, z: 2.0 }, // rawAabb 是 [-1,1]³ 包络，需用 scale=0.05–0.1 校准
+    rawAabb: { x: 0.343669, y: 0.27336, z: 0.28512 },
   },
   'food/plate': {
     id: 'food/plate',
@@ -663,7 +663,7 @@ export const MODEL_ASSET_REGISTRY = {
     pack: 'kenney-food-kit' as const,
     license: 'CC0-1.0' as const,
     sourceSha256: '4c1de567b85497b0d93adf59b3c4b816b4332f7e50b63dbd2f1c00c7538e161e',
-    rawAabb: { x: 2.0, y: 2.0, z: 2.0 }, // 同上，food kit 默认包围盒
+    rawAabb: { x: 0.891774, y: 0.09, z: 0.891774 },
   },
   'food/utensil-fork': {
     id: 'food/utensil-fork',
@@ -672,7 +672,7 @@ export const MODEL_ASSET_REGISTRY = {
     pack: 'kenney-food-kit' as const,
     license: 'CC0-1.0' as const,
     sourceSha256: '9b470b64539c2a7e78c4b0b66a1458a114e69b43d11442a49d73d97dd249f44c',
-    rawAabb: { x: 0.503475, y: 2.0, z: 0.084 },
+    rawAabb: { x: 0.503475, y: 0.0178, z: 0.084 },
   },
   'food/utensil-spoon': {
     id: 'food/utensil-spoon',
@@ -681,9 +681,9 @@ export const MODEL_ASSET_REGISTRY = {
     pack: 'kenney-food-kit' as const,
     license: 'CC0-1.0' as const,
     sourceSha256: 'dbb39cce42ce1729a44b94c6f0d9806d6c638b9365398c01049a2a26e2de5025',
-    rawAabb: { x: 0.727183, y: 2.0, z: 0.610162 },
+    rawAabb: { x: 0.479587, y: 0.0278, z: 0.12 },
   },
-  // L3：麦片盒（carton），food kit 模型：[-1,1]³ 包络
+  // L3：麦片盒（carton）
   'food/carton': {
     id: 'food/carton',
     url: '/assets/models/kenney/food/carton.glb',
@@ -691,9 +691,9 @@ export const MODEL_ASSET_REGISTRY = {
     pack: 'kenney-food-kit' as const,
     license: 'CC0-1.0' as const,
     sourceSha256: '0000000000000000000000000000000000000000000000000000000000000000',
-    rawAabb: { x: 2.0, y: 2.0, z: 2.0 },
+    rawAabb: { x: 0.23, y: 0.590546, z: 0.23 },
   },
-  // L3：早餐碗（bowl），food kit 模型：[-1,1]³ 包络
+  // L3：早餐碗（bowl）
   'food/bowl': {
     id: 'food/bowl',
     url: '/assets/models/kenney/food/bowl.glb',
@@ -701,9 +701,9 @@ export const MODEL_ASSET_REGISTRY = {
     pack: 'kenney-food-kit' as const,
     license: 'CC0-1.0' as const,
     sourceSha256: '0000000000000000000000000000000000000000000000000000000000000000',
-    rawAabb: { x: 2.0, y: 2.0, z: 2.0 },
+    rawAabb: { x: 0.502153, y: 0.213825, z: 0.579836 },
   },
-  // L3：早餐杯（cup），food kit 模型：[-1,1]³ 包络
+  // L3：早餐杯（cup）
   'food/cup': {
     id: 'food/cup',
     url: '/assets/models/kenney/food/cup.glb',
@@ -711,7 +711,7 @@ export const MODEL_ASSET_REGISTRY = {
     pack: 'kenney-food-kit' as const,
     license: 'CC0-1.0' as const,
     sourceSha256: '0000000000000000000000000000000000000000000000000000000000000000',
-    rawAabb: { x: 2.0, y: 2.0, z: 2.0 },
+    rawAabb: { x: 0.23, y: 0.2, z: 0.292117 },
   },
 } as const
 

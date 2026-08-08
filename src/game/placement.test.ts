@@ -324,6 +324,17 @@ describe('placement - 压力/边界测试', () => {
       expect(result.y).toBeCloseTo(0.9 + halfHeight + Z_FIGHT_OFFSET, 5)
     })
 
+    it('free 状态的静态家具物件 - 使用高度锚点而不是掉到地板', () => {
+      const e = makeEntity({
+        status: 'free',
+        surfaceHeight: 0.605,
+        position: { x: 0, y: 0, z: 0 },
+        category: 'cup',
+      })
+      const result = snapEntityToWorld(e)
+      expect(result.y).toBeCloseTo(0.605 + MODEL_HEIGHTS.cup / 2 + Z_FIGHT_OFFSET, 5)
+    })
+
     it('placed 状态 - 贴容器表面', () => {
       const e = makeEntity({
         status: 'placed',
@@ -390,6 +401,21 @@ describe('placement - 压力/边界测试', () => {
       const result = getFreeObjectInitialPosition(obj, task)
       const halfHeight = MODEL_HEIGHTS.cup / 2
       expect(result.y).toBeCloseTo(0.9 + halfHeight + Z_FIGHT_OFFSET, 5)
+    })
+
+    it('有 initialSurfaceHeight - 放在非任务静态家具表面', () => {
+      const obj: ObjectSpec = {
+        id: 'obj-static-surface',
+        name: '床头柜杯子',
+        category: 'cup',
+        initialRoom: 'bedroom',
+        initialPosition: { x: 1.48, y: 0.605, z: -1.72 },
+        initialSurfaceHeight: 0.605,
+        size: { x: 0.14, y: 0.12, z: 0.14 },
+        color: '#fff',
+      }
+      const result = getFreeObjectInitialPosition(obj, { containers: [] } as any as TaskConfig)
+      expect(result.y).toBeCloseTo(0.605 + MODEL_HEIGHTS.cup / 2 + Z_FIGHT_OFFSET, 5)
     })
 
     it('surfaceContainerId 不存在 - 回退到贴地', () => {

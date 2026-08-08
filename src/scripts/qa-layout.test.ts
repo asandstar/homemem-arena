@@ -4,6 +4,8 @@ import { roomsOverlap } from '../../scripts/qa-rooms'
 import { sharedRooms } from '../data/rooms'
 import { roomDecorFurniture } from '../data/decorFurniture'
 import { cleanTableTask } from '../data/tasks/clean-table'
+import { laundrySortTask } from '../data/tasks/laundry-sort'
+import { getModelAsset } from '../data/assets/modelRegistry'
 import { PLAYER_RADIUS } from '../game/playerControls'
 import type { RoomSpec } from '../types/room'
 
@@ -221,5 +223,39 @@ describe('dining worktop decor — 台面装饰应合理摆放', () => {
       expect(containerBox.z2).toBeLessThanOrEqual(decorBox.z2)
       expect(container.surfaceHeight).toBeCloseTo(decor.size.y, 3)
     }
+  })
+
+  it('L3 水槽复用静态模型，不再叠加第二个水槽', () => {
+    const sink = laundrySortTask.containers.find((item) => item.id === 'cnt-breakfast-sink')!
+    const decor = roomDecorFurniture.dining.find((item) => item.id === 'decor-kit-sink')!
+    expect(sink.visualOwner).toBe('room')
+    expect(sink.collisionMode).toBe('static-furniture')
+    expect(sink.position.x).toBe(decor.position.x)
+    expect(sink.surfaceHeight).toBeCloseTo(decor.size.y, 3)
+  })
+
+  it('L3 下柜位于冰箱与工作台之间，上柜尺寸不会压住整排厨房', () => {
+    const lower = laundrySortTask.containers.find((item) => item.id === 'cnt-cabinet-lower')!
+    const upper = laundrySortTask.containers.find((item) => item.id === 'cnt-cabinet-upper')!
+    const fridge = roomDecorFurniture.dining.find((item) => item.id === 'decor-kit-fridge')!
+    const cabinet = roomDecorFurniture.dining.find((item) => item.id === 'decor-kit-cabinet-1')!
+    const lowerBox = localAabbMinMax(lower.position, lower.size)
+    expect(boxesOverlap2D(lowerBox, localAabbMinMax(fridge.position, fridge.size), 0)).toBe(false)
+    expect(boxesOverlap2D(lowerBox, localAabbMinMax(cabinet.position, cabinet.size), 0)).toBe(false)
+    expect(upper.size.x).toBeLessThanOrEqual(0.55)
+    expect(upper.size.y).toBeLessThanOrEqual(0.72)
+  })
+
+  it('Food Kit 任务物件使用真实可见尺寸，餐具保持平放厚度', () => {
+    const mug = getModelAsset('food/mug').effectiveAabb
+    const plate = getModelAsset('food/plate').effectiveAabb
+    const fork = getModelAsset('food/utensil-fork').effectiveAabb
+    const spoon = getModelAsset('food/utensil-spoon').effectiveAabb
+    expect(mug.y).toBeGreaterThanOrEqual(0.1)
+    expect(plate.x).toBeGreaterThanOrEqual(0.18)
+    expect(fork.x).toBeGreaterThanOrEqual(0.18)
+    expect(fork.y).toBeLessThan(0.02)
+    expect(spoon.x).toBeGreaterThanOrEqual(0.18)
+    expect(spoon.y).toBeLessThan(0.02)
   })
 })

@@ -24,12 +24,16 @@ const CUP = 'obj-breakfast-cup'
 const SPOON = 'obj-breakfast-spoon'
 
 const DINING_CENTER = sharedRooms.dining.center
-const UPPER_LOCAL = { x: 1.0, y: 0.9, z: -1.9 }
+// 北墙厨房已有一排静态家具：下柜放进冰箱与工作台之间的空位，
+// 上柜挂在灶台上方，避免与水槽、微波炉和任务标签重叠。
+const LOWER_LOCAL = { x: -1.4, y: 0, z: -1.95 }
+const UPPER_LOCAL = { x: 1.2, y: 0.9, z: -2.05 }
+const UPPER_SURFACE_Y = 1.6
 // applyScriptedMove 内部会自动叠加 room.center，所以这里传**房间局部坐标**
 const UPPER_WORLD = {
   room: 'dining' as const,
   x: UPPER_LOCAL.x,
-  y: UPPER_LOCAL.y + 0.55,
+  y: UPPER_SURFACE_Y,
   z: UPPER_LOCAL.z,
 }
 
@@ -162,7 +166,7 @@ export const laundrySortTask: TaskConfig = {
       name: '麦片盒',
       category: 'cereal',
       initialRoom: 'dining',
-      initialPosition: { x: -1.0, y: 0.6, z: -1.9 },
+      initialPosition: { x: LOWER_LOCAL.x, y: 0.563, z: LOWER_LOCAL.z },
       hiddenInContainer: LOWER_CABINET,
       size: { x: 0.28, y: 0.42, z: 0.18 },
       color: '#f59e0b',
@@ -173,7 +177,7 @@ export const laundrySortTask: TaskConfig = {
       name: '早餐碗',
       category: 'bowl',
       initialRoom: 'dining',
-      initialPosition: { x: -1.0, y: 0.6, z: -1.9 },
+      initialPosition: { x: LOWER_LOCAL.x, y: 0.563, z: LOWER_LOCAL.z },
       hiddenInContainer: LOWER_CABINET,
       size: { x: 0.24, y: 0.1, z: 0.24 },
       color: '#f8fafc',
@@ -184,7 +188,7 @@ export const laundrySortTask: TaskConfig = {
       name: '早餐杯',
       category: 'cup',
       initialRoom: 'dining',
-      initialPosition: { x: -1.0, y: 0.6, z: -1.9 },
+      initialPosition: { x: LOWER_LOCAL.x, y: 0.563, z: LOWER_LOCAL.z },
       hiddenInContainer: LOWER_CABINET,
       size: { x: 0.14, y: 0.16, z: 0.14 },
       color: '#60a5fa',
@@ -197,7 +201,7 @@ export const laundrySortTask: TaskConfig = {
       initialRoom: 'dining',
       initialPosition: { x: 0.45, y: 0, z: 0 },
       surfaceContainerId: DINING_TABLE,
-      size: { x: 0.073, y: 0.2, z: 0.061 },
+      size: { x: 0.2, y: 0.012, z: 0.05 },
       color: '#cbd5e1',
       modelAssetId: 'food/utensil-spoon',
     },
@@ -208,9 +212,9 @@ export const laundrySortTask: TaskConfig = {
       id: LOWER_CABINET,
       name: '下层橱柜',
       room: 'dining',
-      position: { x: -1.0, y: 0, z: -1.9 },
-      size: { x: 0.8, y: 0.56, z: 0.45 },
-      surfaceHeight: 0.56,
+      position: LOWER_LOCAL,
+      size: { x: 0.538, y: 0.563, z: 0.6 },
+      surfaceHeight: 0.563,
       color: '#92400e',
       initialOpen: false,
       containsObjectIds: [CEREAL, BOWL, CUP],
@@ -223,13 +227,14 @@ export const laundrySortTask: TaskConfig = {
       name: '较高的橱柜',
       room: 'dining',
       position: UPPER_LOCAL,
-      size: { x: 0.8, y: 0.56, z: 0.45 },
-      surfaceHeight: 1.46,
+      size: { x: 0.538, y: 0.7, z: 0.4 },
+      surfaceHeight: UPPER_SURFACE_Y,
       color: '#a16207',
       initialOpen: false,
       containsObjectIds: [],
       acceptedCategories: [],
       acceptAny: false,
+      collisionMode: 'none',
       modelAssetId: 'furniture/kitchenCabinetUpper',
     },
     {
@@ -251,16 +256,18 @@ export const laundrySortTask: TaskConfig = {
       id: SINK,
       name: '厨房水槽',
       room: 'dining',
-      position: { x: 0, y: 0, z: -1.95 },
-      size: { x: 0.55, y: 0.72, z: 0.45 },
-      surfaceHeight: 0.72,
+      position: { x: 0, y: 0, z: -2.15 },
+      size: { x: 0.538, y: 0.613, z: 0.2 },
+      surfaceHeight: 0.613,
       color: '#94a3b8',
       initialOpen: true,
       openable: false,
       acceptedCategories: ['bowl', 'cup'],
       isTargetZone: true,
       targetLabel: '水槽（碗、杯收这里）',
-      modelAssetId: 'furniture/kitchenSink',
+      semanticKey: 'dining_kitchen_sink',
+      collisionMode: 'static-furniture',
+      visualOwner: 'room',
     },
   ],
 
@@ -357,7 +364,7 @@ export const laundrySortTask: TaskConfig = {
         && ctx.currentStageId === STAGE_STALE
         && hasStaleCerealMemory(ctx)
         && cerealMovedToUpper(ctx)
-        && nearLocal(ctx, { x: -1.0, z: -1.9 }),
+        && nearLocal(ctx, LOWER_LOCAL),
       type: 'message',
       message: '⚠️ 下层橱柜空了。你没有记错——是这个记忆已经过期。重新观察附近，但系统不会直接告诉你新位置。',
       description: '玩家回到旧位置并发现记忆与现实冲突',

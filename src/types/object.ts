@@ -51,6 +51,11 @@ export interface ObjectSpec {
   hiddenInContainer?: string
   /** 初始时放在哪个容器的表面上（用于表面锚定 y 坐标） */
   surfaceContainerId?: string
+  /**
+   * 初始承载面的绝对高度（房间局部坐标）。
+   * 用于沙发、床头柜、鞋柜等静态家具；这些家具不是任务容器，不能使用 surfaceContainerId。
+   */
+  initialSurfaceHeight?: number
   /** 状态属性（任务相关，会在运行中变化） */
   stateProperties?: Record<string, string | number | boolean>
   /**
@@ -158,6 +163,8 @@ export interface EntityState {
   placedIn?: string
   /** 尚未被玩家移动时保持在初始台面上的锚点；首次拾取或事件移动后清除。 */
   surfaceContainerId?: string
+  /** 尚未被玩家移动时保持在静态家具表面上的高度锚点；首次拾取或事件移动后清除。 */
+  surfaceHeight?: number
   /** 任务相关状态属性 */
   properties: Record<string, string | number | boolean>
   /** 从 ObjectSpec 传播的 GLB 资产 ID（可选，用于 RegisteredModel 渲染） */

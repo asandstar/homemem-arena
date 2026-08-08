@@ -60,6 +60,7 @@ export const createAnimationSlice = (set: any, get: any): AnimationSlice => ({
               status: 'free' as const,
               placedIn: undefined,
               surfaceContainerId: undefined,
+              surfaceHeight: undefined,
               properties: { ...e.properties, _moving: true },
             }
           : e

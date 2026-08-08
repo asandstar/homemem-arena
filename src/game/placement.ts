@@ -198,6 +198,14 @@ export function snapEntityToWorld(
     return { ...entity.position }
   }
 
+  if (entity.status === 'free' && entity.surfaceHeight !== undefined) {
+    return {
+      x: entity.position.x,
+      y: entity.surfaceHeight + getEntityHalfHeight(entity) + Z_FIGHT_OFFSET,
+      z: entity.position.z,
+    }
+  }
+
   const context = getEntityPlacementContext(entity, task)
   const y = getObjectGroundY(entity, context)
   return { x: entity.position.x, y, z: entity.position.z }
@@ -209,8 +217,8 @@ function getModelIdFromCategory(category: string): string {
 
 /**
  * 根据 ObjectSpec 计算初始 free 物体的世界坐标。
- * 若指定了 surfaceContainerId，则保持 initialPosition 的 x/z，
- * 仅将 y 修正为该容器表面以上；否则贴地放置。
+ * 若指定了 surfaceContainerId 或 initialSurfaceHeight，则保持 initialPosition 的 x/z，
+ * 仅将 y 修正为承载面以上；否则贴地放置。
  */
 export function getFreeObjectInitialPosition(
   objSpec: ObjectSpec,
@@ -223,10 +231,18 @@ export function getFreeObjectInitialPosition(
   const modelHeight = getModelApproxHeight(modelId)
   const halfHeight = modelHeight / 2
 
-  if (!objSpec.surfaceContainerId) {
+  if (!objSpec.surfaceContainerId && objSpec.initialSurfaceHeight === undefined) {
     return {
       x: baseX,
       y: FLOOR_Y + halfHeight + Z_FIGHT_OFFSET,
+      z: baseZ,
+    }
+  }
+
+  if (objSpec.initialSurfaceHeight !== undefined) {
+    return {
+      x: baseX,
+      y: objSpec.initialSurfaceHeight + halfHeight + Z_FIGHT_OFFSET,
       z: baseZ,
     }
   }

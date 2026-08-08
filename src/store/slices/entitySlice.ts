@@ -72,7 +72,13 @@ export const createEntitySlice = (set: any, get: any): EntitySlice => ({
       containerStates: nextContainerStates,
       entities: entities.map((e: any) => (
         e.id === entity.id
-          ? { ...e, status: 'held' as const, placedIn: undefined, surfaceContainerId: undefined }
+          ? {
+              ...e,
+              status: 'held' as const,
+              placedIn: undefined,
+              surfaceContainerId: undefined,
+              surfaceHeight: undefined,
+            }
           : e
       )),
     })
@@ -272,6 +278,9 @@ export const createEntitySlice = (set: any, get: any): EntitySlice => ({
         const containedConfigIds = currentState.containedIds
         entityUpdates = get().entities.map((e: any) => {
           if (containedConfigIds.includes(e.configId)) {
+            const containedIndex = containedConfigIds.indexOf(e.configId)
+            const spreadX = (containedIndex - (containedConfigIds.length - 1) / 2) * 0.18
+            const frontOffsetZ = Math.min(0.18, (containerSpec?.size.z ?? 0.45) * 0.3)
             const surfacePos = containerSpec
               ? snapEntityToWorld(
                   {
@@ -280,15 +289,23 @@ export const createEntitySlice = (set: any, get: any): EntitySlice => ({
                     placedIn: containerId,
                     currentRoom,
                     position: {
-                      x: containerRoomCenter.x + containerSpec.position.x,
+                      x: containerRoomCenter.x + containerSpec.position.x + spreadX,
                       y: 0,
-                      z: containerRoomCenter.z + containerSpec.position.z,
+                      z: containerRoomCenter.z + containerSpec.position.z + frontOffsetZ,
                     },
                   } as EntityState,
                   task
                 )
               : { x: e.position.x, y: e.position.y + 0.2, z: e.position.z }
-            return { ...e, status: 'free' as const, placedIn: undefined, currentRoom, position: surfacePos }
+            return {
+              ...e,
+              status: 'free' as const,
+              placedIn: undefined,
+              currentRoom,
+              position: surfacePos,
+              surfaceContainerId: containerId,
+              surfaceHeight: undefined,
+            }
           }
           return e
         })
