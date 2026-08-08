@@ -1,5 +1,7 @@
 # 三关研究游戏矩阵
 
+> ⚠️ **历史研究快照 / 已废弃**：本文记录旧的“脏杯/纸巾、钥匙手机雨伞、衣物分类”实验方案，与当前运行时代码不一致。当前产品与研究梯度统一以 [当前公开三关设计](levels.md) 为准。
+
 版本：Product V2
 冻结基线：docs/LEAVE_HOME_LAYOUT_FACT_CHECK.md（A–D 节）
 范围：task-clean-table / task-leave-home / task-laundry-sort（公开 scope 三关；不含 breakfast / night-patrol）

@@ -1,5 +1,7 @@
 # HomeMem Arena · 五关任务设计方案
 
+> ⚠️ **历史方案 / 已废弃**：本文保留五关早期设计过程，不再代表当前公开版。实现或修改关卡时，请使用 [当前三关权威入口](design/levels.md) 及 L1/L2/L3 FINAL 文档；本文中的“L1 九件餐具、L2 四件物品/玩具熊、L3 衣物分类”均不得作为开发要求。
+
 > 版本：v1.1 · 2026-08-07（资产审计后修订）
 > 范围：面向 HomeMem Arena（Three.js 3D 室内寻物游戏）的 5 关 PVE 任务设计
 > 关联代码：`src/data/tasks/*` · `src/store/slices/taskSlice.ts` · `src/data/levelBalance.ts` · `src/game/chaos.ts`
