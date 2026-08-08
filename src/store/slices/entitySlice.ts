@@ -43,6 +43,16 @@ export const createEntitySlice = (set: any, get: any): EntitySlice => ({
       }
     }
 
+    // L3 的核心是“先编码、发现过期、再更新”。麦片只有完成更新记忆后才能拾取，
+    // 否则玩家可以直接拿走它，绕过整条 UPDATE 学习闭环。
+    if (
+      task?.id === 'task-laundry-sort'
+      && entity.configId === 'obj-cereal'
+      && !achievedGoalIds.has('g-update-cereal-memory')
+    ) {
+      return { success: false, reason: '先按 E 记录或更新麦片的位置，再按 F 拾取' }
+    }
+
     if (entity.currentRoom !== currentRoom) return { success: false, reason: '不在当前房间' }
 
     if (entity.status === 'hidden') {

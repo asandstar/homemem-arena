@@ -36,8 +36,9 @@ export const createMemorySlice = (set: any, get: any): MemorySliceState => ({
     }
 
     let placedInContainerName: string | null = null
-    if (entity.placedIn) {
-      const container = task?.containers.find((c: any) => c.id === entity.placedIn)
+    const locationContainerId = entity.placedIn ?? entity.surfaceContainerId
+    if (locationContainerId) {
+      const container = task?.containers.find((c: any) => c.id === locationContainerId)
       placedInContainerName = container?.name ?? null
     }
 

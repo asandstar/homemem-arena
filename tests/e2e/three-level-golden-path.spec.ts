@@ -98,14 +98,12 @@ async function assertLevelCompleted(page: Page, level: (typeof LEVELS)[number]):
 
 async function completeThirdLevel(page: Page): Promise<void> {
   await teleportToContainer(page, 'cnt-cabinet-lower')
-  expect((await callCommand(page, 'toggleContainer', 'cnt-cabinet-lower')).success).toBe(true)
   expect((await callNearbyEntityCommand(page, 'saveMemoryByConfigId', 'obj-cereal', 'dining')).success).toBe(true)
   await advanceStageTransitions(page, 2)
 
   for (const item of [
     { id: 'obj-breakfast-bowl', room: 'dining', containerId: 'cnt-breakfast-table' },
     { id: 'obj-breakfast-cup', room: 'dining', containerId: 'cnt-breakfast-table' },
-    { id: 'obj-breakfast-spoon', room: 'dining', containerId: 'cnt-breakfast-table' },
   ]) {
     await pickAndPlace(page, item)
   }
@@ -117,17 +115,14 @@ async function completeThirdLevel(page: Page): Promise<void> {
   await expect.poll(() => readState<string>(page, 'getCurrentStageId')).toBe('stage-update-memory')
 
   await teleportToContainer(page, 'cnt-cabinet-upper')
-  expect((await callCommand(page, 'toggleContainer', 'cnt-cabinet-upper')).success).toBe(true)
   expect((await callNearbyEntityCommand(page, 'saveMemoryByConfigId', 'obj-cereal', 'dining')).success).toBe(true)
   await advanceStageTransitions(page, 2)
 
-  for (const item of [
-    { id: 'obj-cereal', room: 'dining', containerId: 'cnt-breakfast-table' },
-    { id: 'obj-breakfast-bowl', room: 'dining', containerId: 'cnt-breakfast-sink' },
-    { id: 'obj-breakfast-cup', room: 'dining', containerId: 'cnt-breakfast-sink' },
-  ]) {
-    await pickAndPlace(page, item)
-  }
+  await pickAndPlace(page, {
+    id: 'obj-cereal',
+    room: 'dining',
+    containerId: 'cnt-breakfast-table',
+  })
 }
 
 async function openStrictResult(page: Page, taskId: string): Promise<void> {

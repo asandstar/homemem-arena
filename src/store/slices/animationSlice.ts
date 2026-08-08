@@ -8,7 +8,11 @@ export interface MoveAnimation {
   startTime: number
   duration: number
   isActive: boolean
-  /** 可选：动画完成后将实体设为 hidden 在此容器内（用于 move-entity + targetContainerId） */
+  /**
+   * 可选目标容器：
+   * - 可开合容器：动画后藏入容器；
+   * - openable=false 的台面/开放架：动画后保持可见并落在其表面。
+   */
   targetContainerId?: string
 }
 
@@ -92,26 +96,29 @@ export const createAnimationSlice = (set: any, get: any): AnimationSlice => ({
         }))
         stillActive.push(anim)
       } else {
-        // 动画完成：如果指定了 targetContainerId，将实体设为 hidden 在该容器内
+        // 动画完成：封闭容器藏入内部；台面/开放架则保持可见。
         if (anim.targetContainerId) {
           set((state: any) => ({
-            entities: state.entities.map((e: any) =>
-              e.configId === anim.entityId
-                ? {
-                    ...e,
-                    position: anim.toPosition,
-                    currentRoom: anim.toRoom,
-                    status: 'hidden' as const,
-                    placedIn: anim.targetContainerId,
-                    hiddenInContainer: anim.targetContainerId,
-                    properties: { ...e.properties, _moving: false },
-                  }
-                : e
-            ),
+            entities: state.entities.map((e: any) => {
+              if (e.configId !== anim.entityId) return e
+              const target = state.task?.containers?.find((container: any) => container.id === anim.targetContainerId)
+              const isVisibleSurface = target?.openable === false
+              return {
+                ...e,
+                position: anim.toPosition,
+                currentRoom: anim.toRoom,
+                status: isVisibleSurface ? 'placed' as const : 'hidden' as const,
+                placedIn: anim.targetContainerId,
+                surfaceContainerId: isVisibleSurface ? anim.targetContainerId : undefined,
+                hiddenInContainer: isVisibleSurface ? undefined : anim.targetContainerId,
+                properties: { ...e.properties, _moving: false },
+              }
+            }),
             containerStates: Object.fromEntries(
               Object.entries(state.containerStates).map(([id, cs]: [string, any]) => [
                 id,
                 id === anim.targetContainerId
+                  && state.task?.containers?.find((container: any) => container.id === id)?.openable !== false
                   ? { ...cs, containedIds: [...(cs.containedIds ?? []), anim.entityId] }
                   : cs,
               ]),

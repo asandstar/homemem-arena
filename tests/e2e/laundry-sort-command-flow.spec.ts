@@ -17,7 +17,6 @@ const EXPECTED_GOALS = [
   'g-detect-stale-memory',
   'g-update-cereal-memory',
   'g-serve-cereal',
-  'g-clean-breakfast-dishes',
 ] as const
 
 async function setupLevel(page: Page): Promise<void> {
@@ -47,30 +46,27 @@ async function pickAndPlace(page: Page, objectId: string, containerId: string): 
 }
 
 test.describe('L3 过期早餐记忆 · Command-backed 流程验证', () => {
-  test('旧位置编码 → 注意分散 → 冲突 → 更新记忆 → 早餐收尾，严格完成第三关', async ({ page }) => {
+  test('旧位置编码 → 注意分散 → 冲突 → 更新记忆 → 麦片上桌，严格完成第三关', async ({ page }) => {
     test.setTimeout(60_000)
     const errors = createErrorCollector(page)
     await setupLevel(page)
 
     await teleportToContainer(page, 'cnt-cabinet-lower')
-    const openLower = await callCommand(page, 'toggleContainer', 'cnt-cabinet-lower')
-    expect(openLower.success).toBe(true)
 
     const encode = await callNearbyEntityCommand(page, 'saveMemoryByConfigId', 'obj-cereal', 'dining')
     expect(encode.success, encode.reason).toBe(true)
     await advanceStageTransitions(page, 1)
-    await expect(page.getByTestId('goal-completion-banner')).toContainText('记住麦片最初在下层橱柜')
+    await expect(page.getByTestId('goal-completion-banner')).toContainText('按 E 记住麦片在备餐台的位置')
 
     await pickAndPlace(page, 'obj-breakfast-bowl', 'cnt-breakfast-table')
     await pickAndPlace(page, 'obj-breakfast-cup', 'cnt-breakfast-table')
-    await pickAndPlace(page, 'obj-breakfast-spoon', 'cnt-breakfast-table')
 
     await expect.poll(() => readState<string>(page, 'getCurrentStageId')).toBe('stage-stale-memory')
     await advanceStageTransitions(page, 10)
     await expect.poll(async () => {
       const entities = await readState<Array<{ configId: string; placedIn?: string; status: string }>>(page, 'getEntities')
       return entities.find((entity) => entity.configId === 'obj-cereal')
-    }).toMatchObject({ placedIn: 'cnt-cabinet-upper', status: 'hidden' })
+    }).toMatchObject({ placedIn: 'cnt-cabinet-upper', status: 'placed' })
 
     await teleportToContainer(page, 'cnt-cabinet-lower')
     await advanceStageTransitions(page, 2)
@@ -78,16 +74,12 @@ test.describe('L3 过期早餐记忆 · Command-backed 流程验证', () => {
     expect(await readState<string[]>(page, 'getTriggeredEvents')).toContain('se-conflict-detected')
 
     await teleportToContainer(page, 'cnt-cabinet-upper')
-    const openUpper = await callCommand(page, 'toggleContainer', 'cnt-cabinet-upper')
-    expect(openUpper.success).toBe(true)
     const update = await callNearbyEntityCommand(page, 'saveMemoryByConfigId', 'obj-cereal', 'dining')
     expect(update.success, update.reason).toBe(true)
     await advanceStageTransitions(page, 2)
     expect((await readState<{ memoryUpdateCount: number }>(page, 'getMemoryStats')).memoryUpdateCount).toBeGreaterThanOrEqual(1)
 
     await pickAndPlace(page, 'obj-cereal', 'cnt-breakfast-table')
-    await pickAndPlace(page, 'obj-breakfast-bowl', 'cnt-breakfast-sink')
-    await pickAndPlace(page, 'obj-breakfast-cup', 'cnt-breakfast-sink')
 
     await expect.poll(() => readState<boolean>(page, 'getLevelCompleted')).toBe(true)
     expect(await readState<string[]>(page, 'getAchievedGoalIds')).toEqual(expect.arrayContaining(EXPECTED_GOALS))

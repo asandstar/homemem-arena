@@ -226,40 +226,35 @@ describe('dining worktop decor — 台面装饰应合理摆放', () => {
     }
   })
 
-  it('L3 水槽复用静态模型，不再叠加第二个水槽', () => {
-    const sink = laundrySortTask.containers.find((item) => item.id === 'cnt-breakfast-sink')!
-    const decor = roomDecorFurniture.dining.find((item) => item.id === 'decor-kit-sink')!
-    expect(sink.visualOwner).toBe('room')
-    expect(sink.collisionMode).toBe('static-furniture')
-    expect(sink.position.x).toBe(decor.position.x)
-    expect(sink.surfaceHeight).toBeCloseTo(decor.size.y, 3)
+  it('L3 不再为无关的餐后清理重复注册水槽交互区', () => {
+    expect(laundrySortTask.containers.find((item) => item.id === 'cnt-breakfast-sink')).toBeUndefined()
   })
 
-  it('L3 下柜位于冰箱与工作台之间，上柜尺寸不会压住整排厨房', () => {
-    const lower = laundrySortTask.containers.find((item) => item.id === 'cnt-cabinet-lower')!
-    const upper = laundrySortTask.containers.find((item) => item.id === 'cnt-cabinet-upper')!
+  it('L3 备餐台和开放架分别占用北墙两处真实空位', () => {
+    const prep = laundrySortTask.containers.find((item) => item.id === 'cnt-cabinet-lower')!
+    const shelf = laundrySortTask.containers.find((item) => item.id === 'cnt-cabinet-upper')!
     const fridge = roomDecorFurniture.dining.find((item) => item.id === 'decor-kit-fridge')!
     const cabinet = roomDecorFurniture.dining.find((item) => item.id === 'decor-kit-cabinet-1')!
-    const lowerBox = localAabbMinMax(lower.position, lower.size)
-    expect(boxesOverlap2D(lowerBox, localAabbMinMax(fridge.position, fridge.size), 0)).toBe(false)
-    expect(boxesOverlap2D(lowerBox, localAabbMinMax(cabinet.position, cabinet.size), 0)).toBe(false)
-    expect(upper.size.x).toBeLessThanOrEqual(0.55)
-    expect(upper.size.y).toBeLessThanOrEqual(0.72)
+    const stove = roomDecorFurniture.dining.find((item) => item.id === 'decor-kit-stove')!
+    const prepBox = localAabbMinMax(prep.position, prep.size)
+    const shelfBox = localAabbMinMax(shelf.position, shelf.size)
+    expect(boxesOverlap2D(prepBox, localAabbMinMax(fridge.position, fridge.size), 0)).toBe(false)
+    expect(boxesOverlap2D(prepBox, localAabbMinMax(cabinet.position, cabinet.size), 0)).toBe(false)
+    expect(boxesOverlap2D(shelfBox, localAabbMinMax(stove.position, stove.size), 0)).toBe(false)
+    expect(prep.openable).toBe(false)
+    expect(shelf.openable).toBe(false)
   })
 
-  it('L3 柜体视觉模型贴合北墙厨房，交互锚点仍留在玩家可接近的一侧', () => {
-    const lower = laundrySortTask.containers.find((item) => item.id === 'cnt-cabinet-lower')!
-    const upper = laundrySortTask.containers.find((item) => item.id === 'cnt-cabinet-upper')!
-    const lowerVisualZ = lower.position.z + (lower.visualOffset?.z ?? 0)
-    const upperVisualZ = upper.position.z + (upper.visualOffset?.z ?? 0)
+  it('L3 静态台面视觉模型贴北墙，交互锚点留在玩家可接近的一侧', () => {
+    const prep = laundrySortTask.containers.find((item) => item.id === 'cnt-cabinet-lower')!
+    const shelf = laundrySortTask.containers.find((item) => item.id === 'cnt-cabinet-upper')!
+    const prepVisualZ = prep.position.z + (prep.visualOffset?.z ?? 0)
+    const shelfVisualZ = shelf.position.z + (shelf.visualOffset?.z ?? 0)
 
-    // 下柜与现有北墙地柜同排，不再向房间中央悬出一截。
-    expect(lowerVisualZ).toBeCloseTo(-2.3, 3)
-    // 上柜背面刚好贴到 dining 北墙（局部 z=-2.6）。
-    expect(upperVisualZ - upper.size.z / 2).toBeCloseTo(-2.6, 3)
-    // F 交互锚点保留在模型前方，玩家无需钻进柜体。
-    expect(lower.position.z).toBeGreaterThan(lowerVisualZ)
-    expect(upper.position.z).toBeGreaterThan(upperVisualZ)
+    expect(prepVisualZ).toBeCloseTo(-2.3, 3)
+    expect(shelfVisualZ - shelf.size.z / 2).toBeCloseTo(-2.6, 3)
+    expect(prep.position.z).toBeGreaterThan(prepVisualZ)
+    expect(shelf.position.z).toBeGreaterThan(shelfVisualZ)
   })
 
   it('Food Kit 任务物件使用真实可见尺寸，餐具保持平放厚度', () => {

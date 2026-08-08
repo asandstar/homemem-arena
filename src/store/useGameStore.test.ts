@@ -105,8 +105,8 @@ describe('useGameStore - 核心状态流转测试', () => {
 
   describe('容器操作', () => {
     beforeEach(() => {
-      // L3 有真正可开合的橱柜；L2 仅有不可开合的茶几放置面。
-      useGameStore.getState().initializeTask('task-laundry-sort')
+      // 隐藏早餐任务保留真正的可开合冰箱；公开 L3 已改为纯可见台面玩法。
+      useGameStore.getState().initializeTask('task-breakfast')
     })
 
     it('可以使用当前房间的容器', () => {
@@ -354,26 +354,23 @@ describe('useGameStore - 核心状态流转测试', () => {
   })
 
   describe('目标里程碑与脚本状态一致性', () => {
-    it('打开 L3 下层橱柜后，柜内物件分开展示并保持在柜面', () => {
+    it('L3 开场任务物件全部可见，并分开放在真实台面上', () => {
       useGameStore.getState().initializeTask('task-laundry-sort')
       const state = useGameStore.getState()
-      const cabinet = state.task!.containers.find((item) => item.id === 'cnt-cabinet-lower')!
-      useGameStore.setState({
-        robotPosition: {
-          x: cabinet.position.x,
-          y: 0,
-          z: -5.35 + cabinet.position.z + 0.8,
-        },
-      })
-
-      expect(useGameStore.getState().useContainer(cabinet.id).success).toBe(true)
-      const revealed = useGameStore.getState().entities.filter((item) => (
-        ['obj-cereal', 'obj-breakfast-bowl', 'obj-breakfast-cup'].includes(item.configId)
+      const prep = state.task!.containers.find((item) => item.id === 'cnt-cabinet-lower')!
+      const visible = state.entities.filter((item) => (
+        ['obj-cereal', 'obj-breakfast-bowl', 'obj-breakfast-cup', 'obj-breakfast-spoon'].includes(item.configId)
       ))
-      expect(revealed.every((item) => item.status === 'free')).toBe(true)
-      expect(revealed.every((item) => item.surfaceContainerId === cabinet.id)).toBe(true)
-      expect(new Set(revealed.map((item) => item.position.x)).size).toBe(3)
-      expect(revealed.every((item) => item.position.y > cabinet.surfaceHeight!)).toBe(true)
+      const prepItems = visible.filter((item) => item.surfaceContainerId === prep.id)
+      expect(visible.every((item) => item.status === 'free')).toBe(true)
+      expect(prepItems.map((item) => item.configId)).toEqual(expect.arrayContaining([
+        'obj-cereal',
+        'obj-breakfast-bowl',
+        'obj-breakfast-cup',
+      ]))
+      expect(new Set(prepItems.map((item) => `${item.position.x}/${item.position.z}`)).size).toBe(3)
+      expect(prepItems.every((item) => item.position.y > prep.surfaceHeight!)).toBe(true)
+      expect(useGameStore.getState().useContainer(prep.id)).toMatchObject({ success: false })
     })
 
     it('脚本移动已放置物体时清除旧 placedIn 和容器成员关系', () => {

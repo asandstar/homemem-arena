@@ -12,7 +12,6 @@ import {
   executePick,
   executePlace,
   executeSaveMemory,
-  executeToggleContainer,
 } from './commands'
 
 function di(key: string, payload: unknown) {
@@ -299,18 +298,16 @@ describe('三关后端模拟实玩 & 证据链', () => {
     expect(task.rooms).toEqual(['dining'])
     expect(useGameStore.getState().currentStageId).toBe('stage-encode-cereal')
 
-    // ENCODE：打开下层柜并保存麦片旧位置。
+    // ENCODE：麦片在备餐台上直接可见，保存其旧位置，无需打开任何家具。
     expect(setRobotAtContainer(task, 'cnt-cabinet-lower').success).toBe(true)
-    expect(executeToggleContainer('cnt-cabinet-lower').success).toBe(true)
+    expect(findByCfg('obj-cereal')?.status).toBe('free')
     expect(saveByCfg('obj-cereal').success).toBe(true)
     evalAndCheck('L3-ENCODED')
     expect(useGameStore.getState().achievedGoalIds.has('g-encode-cereal-memory')).toBe(true)
 
-    // DISTRACTOR：摆好碗、杯、勺，迫使注意力离开麦片位置。
-    for (const cfg of ['obj-breakfast-bowl', 'obj-breakfast-cup', 'obj-breakfast-spoon']) {
+    // DISTRACTOR：把碗、杯摆好；勺子开场已经在餐桌上。
+    for (const cfg of ['obj-breakfast-bowl', 'obj-breakfast-cup']) {
       expect(setRobotAtEntity(task, cfg).success).toBe(true)
-      // bowl/cup 打开下层柜后已在柜面；spoon 初始就在餐桌。
-      if (cfg === 'obj-breakfast-spoon') expect(setRobotAtContainer(task, 'cnt-breakfast-table').success).toBe(true)
       expect(pickByCfg(cfg).success).toBe(true)
       expect(setRobotAtContainer(task, 'cnt-breakfast-table').success).toBe(true)
       expect(placeInto('cnt-breakfast-table').success).toBe(true)
@@ -318,12 +315,15 @@ describe('三关后端模拟实玩 & 证据链', () => {
     }
     expect(useGameStore.getState().currentStageId).toBe('stage-stale-memory')
 
-    // 环境变化：脚本把麦片移到较高橱柜，并把旧记忆标成 outdated。
+    // 环境变化：脚本把麦片移到开放置物架，并把旧记忆标成 outdated。
     useGameStore.getState().triggerScriptedEvents()
     finishMoveAnimations()
     evalAndCheck('L3-CEREAL-MOVED')
     expect(useGameStore.getState().memorySlots.find((slot) => slot?.entityConfigId === 'obj-cereal')?.outdated).toBe(true)
-    expect(findByCfg('obj-cereal')?.placedIn).toBe('cnt-cabinet-upper')
+    expect(findByCfg('obj-cereal')).toMatchObject({
+      placedIn: 'cnt-cabinet-upper',
+      status: 'placed',
+    })
 
     // CONFLICT：回到旧柜前，发现现实与旧记忆冲突。
     expect(setRobotAtContainer(task, 'cnt-cabinet-lower').success).toBe(true)
@@ -331,9 +331,8 @@ describe('三关后端模拟实玩 & 证据链', () => {
     expect(useGameStore.getState().triggeredEvents.has('se-conflict-detected')).toBe(true)
     expect(useGameStore.getState().achievedGoalIds.has('g-detect-stale-memory')).toBe(true)
 
-    // UPDATE：打开较高柜，按 E 刷新同一条麦片记忆。
+    // UPDATE：开放架上的麦片直接可见，按 E 刷新同一条记忆。
     expect(setRobotAtContainer(task, 'cnt-cabinet-upper').success).toBe(true)
-    expect(executeToggleContainer('cnt-cabinet-upper').success).toBe(true)
     expect(saveByCfg('obj-cereal').success).toBe(true)
     evalAndCheck('L3-UPDATED')
     expect(useGameStore.getState().memoryUpdateCount).toBeGreaterThanOrEqual(1)
@@ -345,15 +344,6 @@ describe('三关后端模拟实玩 & 证据链', () => {
     expect(placeInto('cnt-breakfast-table').success).toBe(true)
     evalAndCheck('L3-CEREAL-SERVED')
 
-    // CLEANUP：碗与杯进入水槽，勺子留在桌上。
-    for (const cfg of ['obj-breakfast-bowl', 'obj-breakfast-cup']) {
-      expect(setRobotAtContainer(task, 'cnt-breakfast-table').success).toBe(true)
-      expect(pickByCfg(cfg).success).toBe(true)
-      expect(setRobotAtContainer(task, 'cnt-breakfast-sink').success).toBe(true)
-      expect(placeInto('cnt-breakfast-sink').success).toBe(true)
-      evalAndCheck(`L3-CLEAN-${cfg}`)
-    }
-
     const finalState = useGameStore.getState()
     expect(finalState.achievedGoalIds).toEqual(new Set([
       'g-encode-cereal-memory',
@@ -361,7 +351,6 @@ describe('三关后端模拟实玩 & 证据链', () => {
       'g-detect-stale-memory',
       'g-update-cereal-memory',
       'g-serve-cereal',
-      'g-clean-breakfast-dishes',
     ]))
     expect(finalState.levelCompleted).toBe(true)
   })
@@ -453,11 +442,7 @@ describe('三关后端模拟实玩 & 证据链', () => {
 
     // ========== 完成麦片记忆编码 ==========
     expect(setRobotAtContainer(task, 'cnt-cabinet-lower').success).toBe(true)
-    // 如果下层柜是关闭的，需要先打开才能看到麦片（麦片是 hiddenInContainer 的）
-    const lowerBefore = useGameStore.getState().containerStates['cnt-cabinet-lower']
-    if (lowerBefore && !lowerBefore.open) {
-      expect(executeToggleContainer('cnt-cabinet-lower').success).toBe(true)
-    }
+    expect(findByCfg('obj-cereal')?.status).toBe('free')
     expect(saveByCfg('obj-cereal').success).toBe(true)
     evalAndCheck('L3-ENCODED-POST')
     expect(useGameStore.getState().achievedGoalIds.has('g-encode-cereal-memory')).toBe(true)

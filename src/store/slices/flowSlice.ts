@@ -14,6 +14,7 @@ function toEntitySnapshots(entities: EntityState[]): EntityStateSnapshot[] {
     status: e.status,
     currentRoom: e.currentRoom,
     placedIn: e.placedIn,
+    surfaceContainerId: e.surfaceContainerId,
     category: e.category,
     properties: e.properties,
   }))

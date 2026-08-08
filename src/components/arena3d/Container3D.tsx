@@ -102,7 +102,8 @@ export function Container3D({
   // ⚠️ pulseTime / openProgress 改 ref，之前每帧 setState 触发每个 Container3D 实例每帧 re-render（~60fps）
   // 容器多时是性能瓶颈，间接增加 WebGL Context Lost 风险。
   const pulseTimeRef = useRef(0)
-  const openProgressRef = useRef(isOpen ? 1 : 0)
+  const visualOpen = spec.openable !== false && isOpen
+  const openProgressRef = useRef(visualOpen ? 1 : 0)
   const demoTRef = useRef(0)
   // ⚠️ 仅当开/关动画进度真的变化时，才 setState 触发一次重渲染，
   // 让 <group> 的 scale/position / 内部物品位置 在下一帧能读到最新值。
@@ -131,14 +132,14 @@ export function Container3D({
 
   // isOpen 变化时同步目标值（ref + 强制下次 useFrame 插值进入新值）
   useEffect(() => {
-    openProgressRef.current = isOpen ? 1 : 0
-  }, [isOpen])
+    openProgressRef.current = visualOpen ? 1 : 0
+  }, [visualOpen])
 
   useFrame((_, delta) => {
     pulseTimeRef.current += delta
     demoTRef.current += delta
     const prev = openProgressRef.current
-    const target = isOpen ? 1 : 0
+    const target = visualOpen ? 1 : 0
     const speed = 6
     let next = prev
     if (prev < target) next = Math.min(1, prev + delta * speed)

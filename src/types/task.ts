@@ -64,6 +64,8 @@ export interface EntityStateSnapshot {
   status: string
   currentRoom: RoomId
   placedIn?: string
+  /** 可见物品当前承载台面；与 placedIn 分开，避免把台面误当成封闭容器。 */
+  surfaceContainerId?: string
   category: string
   properties: Record<string, string | number | boolean>
   /** 房间内局部坐标（用于阶段上下文内判定距离/靠近；可选，未提供时 nearby 判空） */
