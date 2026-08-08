@@ -365,4 +365,98 @@ describe('三关后端模拟实玩 & 证据链', () => {
     ]))
     expect(finalState.levelCompleted).toBe(true)
   })
+
+  it('L1 regression: 慢玩 6 分钟 —— 被动 chaos 增量为 0，记忆不衰减，不因 chaos 失败', () => {
+    useGameStore.getState().initializeTask('task-clean-table')
+    const task = useGameStore.getState().task!
+    useGameStore.getState().startPlaying()
+    // 先保存一条马克杯记忆，验证 fresh 状态
+    expect(setRobotAtEntity(task, 'obj-mug-1').success).toBe(true)
+    expect(saveByCfg('obj-mug-1').success).toBe(true)
+    const mugSlotBefore = useGameStore.getState().memorySlots.find((s) => s?.entityConfigId === 'obj-mug-1')
+    expect(mugSlotBefore).toBeTruthy()
+    expect(mugSlotBefore!.outdated).toBe(false)
+    expect(mugSlotBefore!.locked).toBe(false)
+    // 记录保存记忆后的基准 chaos 值（操作带来的一次性 chaos 是允许的，关键是被动时间流逝不增加）
+    const chaosBeforeTick = useGameStore.getState().chaosValue
+    const peakBeforeTick = useGameStore.getState().chaosPeak
+    expect(useGameStore.getState().levelFailed).toBe(false)
+
+    // 模拟 6 分钟（360,000 ms）连续 tick，分成 360 个 1 秒步进
+    for (let i = 0; i < 360; i++) {
+      useGameStore.getState().tickElapsed(1000)
+    }
+
+    const finalState = useGameStore.getState()
+    // 关键断言：被动流逝期间，chaos 不应有任何增长（增量精确为 0）
+    expect(finalState.chaosValue).toBe(chaosBeforeTick)
+    expect(finalState.chaosPeak).toBe(peakBeforeTick)
+    // 记忆仍然 fresh（未因时间衰减变 outdated）
+    const mugSlotAfter = finalState.memorySlots.find((s) => s?.entityConfigId === 'obj-mug-1')
+    expect(mugSlotAfter).toBeTruthy()
+    expect(mugSlotAfter!.outdated).toBe(false)
+    // L1 无 timeLimit，且 chaos 远低于 max，应未失败
+    expect(finalState.levelFailed).toBe(false)
+    expect((finalState as any).failureReason).toBeFalsy()
+    // 记忆槽仍有原始条目，未被清空
+    expect(finalState.memorySlots.some((s) => s?.entityConfigId === 'obj-mug-1')).toBe(true)
+    di('L1-LONG-PLAY', {
+      elapsedMs: finalState.elapsedMs,
+      chaosBeforeTick,
+      chaosAfterTick: finalState.chaosValue,
+      chaosDelta: finalState.chaosValue - chaosBeforeTick,
+      chaosPeak: finalState.chaosPeak,
+      failed: finalState.levelFailed,
+      failReason: (finalState as any).failureReason,
+      mugOutdated: mugSlotAfter?.outdated,
+    })
+  })
+
+  it('L3 regression: g-encode-cereal-memory 完成前，不能拾取碗/杯/勺；完成后可拾取', () => {
+    useGameStore.getState().initializeTask('task-laundry-sort')
+    const task = useGameStore.getState().task!
+    useGameStore.getState().startPlaying()
+    expect(useGameStore.getState().currentStageId).toBe('stage-encode-cereal')
+    expect(useGameStore.getState().achievedGoalIds.has('g-encode-cereal-memory')).toBe(false)
+
+    // ========== 编码前：三件餐具都拿不起来 ==========
+    for (const cfg of ['obj-breakfast-bowl', 'obj-breakfast-cup', 'obj-breakfast-spoon']) {
+      expect(setRobotAtEntity(task, cfg).success).toBe(true)
+      const before = pickByCfg(cfg)
+      di(`L3-PRE-ENCODE-PICK-${cfg}`, before)
+      expect(before.success).toBe(false)
+      expect(before.reason).toMatch(/麦片|先按 E|摆餐具|encode/i)
+    }
+    // 手仍然为空
+    expect(useGameStore.getState().heldEntityId).toBeNull()
+
+    // ========== 完成麦片记忆编码 ==========
+    expect(setRobotAtContainer(task, 'cnt-cabinet-lower').success).toBe(true)
+    // 如果下层柜是关闭的，需要先打开才能看到麦片（麦片是 hiddenInContainer 的）
+    const lowerBefore = useGameStore.getState().containerStates['cnt-cabinet-lower']
+    if (lowerBefore && !lowerBefore.open) {
+      expect(executeToggleContainer('cnt-cabinet-lower').success).toBe(true)
+    }
+    expect(saveByCfg('obj-cereal').success).toBe(true)
+    evalAndCheck('L3-ENCODED-POST')
+    expect(useGameStore.getState().achievedGoalIds.has('g-encode-cereal-memory')).toBe(true)
+
+    // ========== 编码后：三件餐具可以正常拾取 ==========
+    for (const cfg of ['obj-breakfast-bowl', 'obj-breakfast-cup', 'obj-breakfast-spoon']) {
+      expect(setRobotAtEntity(task, cfg).success).toBe(true)
+      const after = pickByCfg(cfg)
+      di(`L3-POST-ENCODE-PICK-${cfg}`, after)
+      if (!after.success) {
+        // spoon/bowl/cup 初始有些在 free，有些在 container 里；如失败，放下手上的重试确保不是因为手满
+        useGameStore.getState().dropEntity()
+        expect(setRobotAtEntity(task, cfg).success).toBe(true)
+        const retry = pickByCfg(cfg)
+        expect(retry.success).toBe(true)
+      } else {
+        expect(after.success).toBe(true)
+      }
+      // 把手上东西放下，避免影响后续循环
+      useGameStore.getState().dropEntity()
+    }
+  })
 })

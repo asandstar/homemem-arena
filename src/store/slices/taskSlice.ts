@@ -555,8 +555,13 @@ export function createTaskSlice(set: any, get: any): TaskSlice {
             get().triggerEventEffect((event as any).eventEffect)
           }
 
-          get().triggerChaosEffect()
-          get().incrementChaos(DEFAULT_LEVEL_BALANCE.eventChaos)
+          // L1 教学关（task-clean-table）的脚本事件不施加 chaos 惩罚、不触发 glitch 视觉效果，
+          // 避免正常的教学引导被误认为「玩家出错」。
+          const isL1TutorialEvent = task?.id === 'task-clean-table'
+          if (!isL1TutorialEvent) {
+            get().triggerChaosEffect()
+            get().incrementChaos(DEFAULT_LEVEL_BALANCE.eventChaos)
+          }
 
           set((state: any) => ({
             triggeredEvents: new Set([...state.triggeredEvents, event.id]),
