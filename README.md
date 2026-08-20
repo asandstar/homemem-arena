@@ -6,93 +6,42 @@
 [![Three.js](https://img.shields.io/badge/Three.js-R3F-000000?style=flat&logo=three.js)](https://threejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?style=flat&logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=flat)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-416-green?style=flat)]()
+[![Tests](https://img.shields.io/badge/tests-403-green?style=flat)]()
 
-> 一款让你顺便练记忆的 3D 网页小游戏。你是记忆有限的家政机器人「小橡」，在会捣乱的房子里完成家务，应对调皮的记忆小妖。
+> 一款让你顺便练记忆的 3D 网页小游戏。你扮演记忆容量有限的家政机器人「小橡」，在会捣乱的房子里完成家务，应对调皮的记忆小妖。
 >
 > 同时也是一个轻量研究平台：游戏记录完整的观察、操作、记忆更新与环境扰动数据，用于研究家务机器人的长期记忆策略。
 
 **[立即在线试玩](https://asandstar.github.io/homemem-arena/)**
 
-## 游戏特色
+## 这个游戏在讲什么
 
-- **有限记忆槽** — 只能同时记住 3 件物品，需要策略性地选择保存什么
-- **稳定与变化** — 先学习相信仍有效的记忆，再识别现实变化并更新过期记忆
-- **混乱值系统** — 混乱越高环境越不稳定，考验临场应变与记忆策略
-- **多维度评分** — 速度、连击、记忆测试正确率，多种策略路径拿高分
-- **递进记忆阶梯** — 第一次 ENCODE → 稳定 RECALL → 过期 UPDATE，三关都必须真正使用记忆机制
-- **复古像素风格** — 像素化材质渲染、16-bit 复古配色、像素化后处理效果
-- **视线遮挡（LOS）** — 高亮效果会被墙壁和家具遮挡，真实的 3D 视野体验
-- **猫脚印避让** — 猫脚印会自动避开家具，不会穿墙而过
-- **抽屉交互** — 部分物品藏在抽屉里，靠近后按 F 打开抽屉取物
-- **GLB 模型 Fallback** — 即使 3D 模型加载失败，程序化几何体会作为后备方案，保证视觉和碰撞盒一致
-- **全关卡解锁** — 所有关卡默认解锁，无需通关前置关卡
+你是否有过这样的瞬间：明明记得钥匙放在桌上，转身却找不到？或者确信麦片在橱柜下层，打开却是空的？
+
+这就是**记忆的欺骗性**。人类大脑会自信地建构并不准确的记忆，也会因为现实变化而持有过期记忆。HomeMem Arena 把这个现象做成了一款小游戏：你只有 3 个记忆槽，必须主动决定记住什么、忘记什么、何时更新什么。
+
+游戏由一位研究机器人记忆的博士生开发，灵感来自 RoboMME 等机器人长期记忆工作。它不只是消遣，也是一个小型可复现的研究实验：你的每一次操作都会被结构化记录，可以用来研究「机器人应该如何在动态环境中维护长期记忆」。
+
+## 核心玩法
+
+- **3 个记忆槽**：你只能同时记住 3 件物品的位置。满了就必须取舍——是保留旧记忆，还是覆盖写新记忆？
+- **主动记忆**：靠近物品按 `E` 才会写入记忆。系统不会替你记，你必须自己决定记什么。
+- **环境会变**：房子里有调皮的"记忆小妖"，物品会被悄悄移动。你保存的旧记忆可能失效。
+- **三种递进挑战**：第一次 ENCODE（编码）→ 稳定 RECALL（回忆）→ 过期 UPDATE（更新），逐关引入新的记忆机制。
+- **多维度评分**：速度、连击、记忆测试正确率共同决定你的评级（D 到 S）。
+- **复古像素风**：低多边形 + 像素化材质 + 16-bit 配色，致敬早期 3D 游戏。
 
 ## 三个关卡
 
-| 关 | 章节 | 时间 | 记忆类型 | 核心玩法 |
-|:---:|:---|:---:|:---|:---|
-| 1 | **餐桌整理入门** | 🍽️ 清晨 07:30 | 物体+程序性 | 单房间、3 件餐具、无时限。先对任意餐具按 E 保存第一条记忆，再拾取归位 |
-| 2 | **钥匙猫的稳定记忆考验** | 🐱 上午 08:00 | 物体+空间 | 在客厅、卧室、玄关分别保存书、马克杯、收音机的位置；三条记忆建立后再取回。猫只制造假干扰，时限 150 秒 |
-| 3 | **过期的早餐记忆** | 🥣 上午 08:30 | 物体+空间+时间 | 保存麦片旧位置，完成摆桌后发现现实变化，核对冲突并按 E 更新记忆，时限 240 秒 |
+三关全部默认解锁，无需通关前置。每关对应一种记忆类型与一个核心机制。
 
-所有关卡默认解锁，无需通关前置。游戏包含共享房间、3 个记忆槽、脚本化环境事件、混乱值、Combo、评分、记忆 Probe 和结构化 Session 导出。HUD 会突出当前专注目标；连续 20 秒无目标进展时给出轻提示，45 秒时升级为记忆策略提示，取得进展后立即清除。
+| 关 | 章节 | 时间 | 核心机制 | 时长 |
+|:---:|:---|:---:|:---|:---:|
+| 1 | **餐桌整理入门** | 🍽️ 07:30 | ENCODE — 对任意餐具按 E 保存第一条记忆，再拾取归位 | 无时限 |
+| 2 | **钥匙猫的稳定记忆考验** | 🐱 08:00 | RECALL — 在 3 个房间分别保存书、马克杯、收音机的位置，全部编码后才能取回。钥匙猫只制造假干扰 | 150 秒 |
+| 3 | **过期的早餐记忆** | 🥣 08:30 | UPDATE — 保存麦片旧位置 → 摆桌时发现麦片不在原处 → 重新观察 → 按 E 更新过期记忆 | 240 秒 |
 
-## 最近更新（2026-08-08）
-
-### 🧠 三关记忆阶梯重构（2026-08-08）
-
-- L1 缩减为 3 件可见餐具，必须先按 E 保存第一条记忆，再学习拾取与归位。
-- L2 改为 3 房间稳定 RECALL：书、马克杯、收音机全部编码后才能搬运；钥匙猫只制造假干扰。
-- L3 改为早餐 UPDATE：保存麦片旧位置 → 发现冲突 → 重新观察 → 按 E 更新过期记忆。
-- 三关目标均提供逐项横幅和清单勾选；真实 Chromium 连续通关测试覆盖最终结算。
-
-### 🐛 关键 Bug 修复（2026-08-07）
-
-| 问题 | 修复 |
-|------|------|
-| L1 初始视角没翻转 180°，玩家背对任务区 | `spawnRotation` 改为 `3π/4`，相机初始化 useEffect 依赖 `[phase, robotRotation]` 任务初始化后同步 |
-| 小地图箭头方向与实际朝向相反，L2 寻物找不到方向 | 修正 Minimap 3D→2D 坐标变换公式 `fy = y - cos(yaw)*L` 取反 |
-| ESC 无法释放鼠标锁定，Dialog 打开时 ESC 被拦截 | 直接检查 `document.pointerLockElement`，加 Dialog 存在性检查与 `try-catch` 保护 |
-| 两套音频系统同时发声（BGM+Chaos/Room Ambient 叠加） | `playing` 阶段开始时强制 `stopChaosAmbient()` + `stopAmbientImmediate()`，避免多音频叠加 |
-| L2 有 6 个悬浮枕头（床上/沙发位置坐标错误）+ 4 把餐椅围着不存在的餐桌 | 修正枕头坐标（卧室加 room center、沙发跟随新位置），餐椅只在配置了餐桌时渲染 |
-| L3 冰箱/微波炉/吊柜不靠墙 | 北墙工作区整体北移 0.2m，冰箱精确贴西墙 |
-| 黑色的"0"出现在任务卡片上（`attempts===0` 被 React 当文本渲染） | 改为显式三元判断，`0 && ...` 短路不再返回数字 0 |
-| 视角手感粘手、俯仰角太极端、机器人太高 | 俯仰角收窄到 ±50°，灵敏度降低 27%，机器人身高 1.5→1.35m |
-| 模型加载报错 `exited the lock`（ESC 退出 Pointer Lock 时中断 GLTF 加载） | `gltfSilentError` 静默该错误，全局 `unhandledrejection` 处理器同步忽略 |
-
-### 🧹 范围精简（2026-08-07）
-
-- 移除独立的 `task-breakfast` 第 4 关和第 5 关（深夜巡逻）；早餐记忆更新核心已整合为当前 L3，并保留历史路由 ID `task-laundry-sort`
-- 删除对应任务配置、BGM、对话、测试、BGM 引用，代码体量减少 ~1.5k 行
-- 测试从 414 精简到 403，全部通过；构建从 ~780ms 降到 ~695ms
-
-### 🐛 更早关键修复
-
-| 问题 | 修复 |
-|------|------|
-| Store 初始化失败：`Cannot read properties of null (reading 'addScore')` | 修复 `withSafeSnapshot` 包装器，现在正确复制 `getState`/`setState`/`subscribe`/`getInitialState` 4 个静态方法 |
-| 关卡锁定：DEV 模式下旧存档导致关卡被锁定 | `isLevelUnlocked` 直接返回 `true`，所有关卡默认解锁 |
-| UI 文案乱码：`font-mono` 导致中文渲染错误（"靠近"→"爱国"） | 移除 AI 系统指令的玩家端渲染，修复 Flex 布局防止文字挤压 |
-| 游戏卡住：点击"开始任务"后一直卡在"准备中" | Store 初始化修复解决了所有下游的 null 引用问题 |
-
-### ✨ 新增功能
-
-| 功能 | 说明 |
-|------|------|
-| **视线遮挡（LOS）** | 从相机发射射线（Ray-AABB Slab method）检测遮挡物，高亮/脉动环效果会被墙壁和家具遮挡 |
-| **猫脚印避让** | 点-OBB 2D 包含检测 + 推出算法，确保猫脚印不落在家具内部（推到最近边 + 0.1m 缓冲外） |
-| **GLB fallback 尺寸对齐** | 程序化几何体通过 `effectiveAabb` 动态注入尺寸，确保视觉与碰撞盒、GLB 模型一致 |
-| **抽屉交互** | 部分物品（如床头柜抽屉、厨房抽屉）支持打开/关闭交互，带专用音效 |
-
-### 🏗️ 架构改进
-
-| 改进 | 说明 |
-|------|------|
-| `src/store/safeStore.ts` | 新增安全 store 包装器，保护 React 首帧 `getSnapshot=null` 的情况，同时保证静态方法完整 |
-| `src/game/lineOfSight.ts` | 新增视线遮挡工具模块，纯数学实现，零外部依赖 |
-| `src/utils/nudgeFootprintAway.ts` | 新增脚印避让工具模块 |
-| `src/utils/resolveFallbackSize.ts` | 新增 fallback 尺寸解析器，统一视觉/碰撞/模型尺寸 |
+**关卡设计说明**：L1 是教学关，教你"怎么记"；L2 是稳定回忆关，考验"信不信记忆"；L3 是旗舰关，直接呈现记忆与现实冲突的 Aha Moment——"我明明记得麦片在这里，但它已经不在了"。
 
 ## 游戏操作
 
@@ -109,7 +58,26 @@
 | 显示/隐藏事件日志 | `R` |
 | 显示/隐藏辅助 HUD | `H` |
 
-## 快速开始
+**ESC 状态机**：游戏时按一次 `Esc` 释放鼠标锁定（不暂停），再按一次 `Esc` 才打开暂停菜单。暂停菜单里点"继续"会回到未锁定状态，点击画面重新锁定。
+
+## 体验流程
+
+```text
+首页 → 任务选择 → 任务简报 → 3D 游戏 → 记忆 Probe → Session 分析 → 结果页 → JSON 导出
+```
+
+只有处于 `playing` 阶段才计时、增长混乱值和触发事件。Probe 完成后才能 finalize Session 并生成最终指标。
+
+| 页面 | 路径 | 说明 |
+|:---|:---|:---|
+| 首页 | `/` | 世界观、玩法价值与入口 |
+| 任务选择 | `/tasks` | 选择三个递进关卡 |
+| 3D 游戏 | `/play/:taskId` | 核心交互与 HUD |
+| 记忆 Probe | `/probe/:taskId` | 任务后的记忆评估 |
+| 结果分析 | `/result/:taskId` | 得分、失败模式与策略建议 |
+| 研究数据 | `/data/:taskId` | Session JSON 与研究摘要 |
+
+## 快速开始（开发者）
 
 ```bash
 npm install
@@ -143,47 +111,22 @@ src/
 ├── audio/                 # Web Audio 游戏音效
 ├── components/arena3d/    # 3D 场景、控制、HUD、小地图、模型
 │   ├── feedback/          # 视觉反馈效果（猫脚印等）
-│   ├── models/            # GLB 模型加载与 fallback
-│   └── ...
+│   └── models/            # GLB 模型加载与 fallback
 ├── data/                  # 房间、平衡参数、三个关卡任务配置
 ├── game/                  # 碰撞、移动、摆放、计分、混乱、记忆槽
-│   ├── lineOfSight.ts     # 视线遮挡（LOS）Ray-AABB 检测
-│   └── ...
 ├── pages/                 # 首页、任务、游戏、Probe、结果、数据
 ├── store/                 # Game / Session / UI / Toast 状态
-│   ├── safeStore.ts       # 安全 store 包装器（首帧 null 保护）
 │   └── slices/            # Zustand slices
 ├── types/                 # 任务、物体、事件、记忆、Session 类型
-└── utils/
-    ├── nudgeFootprintAway.ts  # 猫脚印避让家具算法
-    └── resolveFallbackSize.ts # GLB fallback 尺寸对齐
+└── utils/                 # 工具函数（脚印避让、fallback 尺寸等）
 ```
 
 核心状态职责：
 
-- `useGameStore`：当前世界和即时游戏状态（由 9 个 slice 组合）
+- `useGameStore`：当前世界和即时游戏状态（由多个 slice 组合）
 - `useSessionStore`：可导出的事件历史和研究数据
 - `useUiStore`：HUD 布局与小地图偏好
 - `useToastStore`：即时操作反馈
-
-## 路由
-
-| 页面 | 路径 | 说明 |
-|:---|:---|:---|
-| 首页 | `/` | 世界观、玩法价值与入口 |
-| 任务选择 | `/tasks` | 选择三个递进关卡 |
-| 3D 游戏 | `/play/:taskId` | 核心交互与 HUD |
-| 记忆 Probe | `/probe/:taskId` | 任务后的记忆评估 |
-| 结果分析 | `/result/:taskId` | 得分、失败模式与策略建议 |
-| 研究数据 | `/data/:taskId` | Session JSON 与研究摘要 |
-
-标准体验流程：
-
-```text
-首页 → 任务选择 → 任务简报 → 3D 游戏 → 记忆 Probe → Session 分析 → 结果页 → JSON 导出
-```
-
-只有处于 `playing` 阶段时才进行计时、混乱增长和事件触发。Probe 完成后才能 finalize Session 并生成最终指标。
 
 ## 设计目标
 
@@ -222,7 +165,7 @@ npm run build
 项目已配置 GitHub Actions 工作流（`.github/workflows/deploy.yml`），每次 push 到 `main` 分支后自动构建并部署到 GitHub Pages。
 
 - **在线试玩地址**：https://asandstar.github.io/homemem-arena/
-- **部署方式**：push `main` → [.github/workflows/deploy.yml](.github/workflows/deploy.yml) 运行 `lint/test/qa/build`，通过后用 `actions/upload-pages-artifact@v3` + `actions/deploy-pages@v4` 直接把 `dist/` 部署到 GitHub Pages（不使用 `gh-pages` 分支）。
+- **部署方式**：push `main` → [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) 运行 `lint/test/qa/build`，通过后用 `actions/upload-pages-artifact@v3` + `actions/deploy-pages@v4` 直接把 `dist/` 部署到 GitHub Pages（不使用 `gh-pages` 分支）。
 - **Base Path**：`/homemem-arena/`（已在 `vite.config.ts` 中配置）
 
 ## 文档索引
@@ -234,7 +177,7 @@ npm run build
 | 产品与研究设计基线 | [docs/design/00_product_research_game_design.md](docs/design/00_product_research_game_design.md) | 产品定位与研究目标 |
 | 游戏设计文档 | [docs/design/01_homemem_arena_design.md](docs/design/01_homemem_arena_design.md) | 功能设计与系统架构 |
 | 叙事设计 | [docs/design/02_narrative_design.md](docs/design/02_narrative_design.md) | 故事背景与角色设定 |
-| 视觉与交互规格 | [docs/design/03_design_polish_spec.md](docs/design/03_design_polish_spec.md) | UI/UX设计规范 |
+| 视觉与交互规格 | [docs/design/03_design_polish_spec.md](docs/design/03_design_polish_spec.md) | UI/UX 设计规范 |
 | 游戏设计概览 | [docs/design/overview.md](docs/design/overview.md) | 游戏简介与核心玩法 |
 | 核心机制 | [docs/design/mechanics.md](docs/design/mechanics.md) | 记忆系统、混乱值、交互等 |
 | 当前三关权威入口 | [docs/design/levels.md](docs/design/levels.md) | ENCODE → RECALL → UPDATE 的当前实现规格 |
@@ -262,7 +205,7 @@ npm run build
 |:---|:---|:---|
 | 测试报告 | [docs/archive/playtest-reports/](docs/archive/playtest-reports/) | 测试报告历史 |
 | 审计报告 | [docs/archive/audits/](docs/archive/audits/) | 项目审计历史 |
-| QA报告 | [docs/archive/qa-reports/](docs/archive/qa-reports/) | QA测试报告 |
+| QA 报告 | [docs/archive/qa-reports/](docs/archive/qa-reports/) | QA 测试报告 |
 | 计划文档 | [docs/archive/old-plans/](docs/archive/old-plans/) | 旧开发计划 |
 
 ## License
