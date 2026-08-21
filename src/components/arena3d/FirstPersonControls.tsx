@@ -243,33 +243,52 @@ export function FirstPersonControls() {
               }
             }
           } else {
+            // F 键交互回退链：拾取 → 容器 → 门
+            // 任一步失败时继续尝试下一步，避免拾取被锁（如 L2 stage 0 任务物体拾取锁）
+            // 但门就在附近时玩家无法开门。开门等有效操作优先于拾取失败提示。
+            let handled = false
+            let firstFailureReason: string | null = null
+
             const entity = findNearbyEntity()
             if (entity) {
               const result = executePick(entity.id)
               if (result.success) {
                 addToast('success', `已拾取 ${entity.name}`)
+                handled = true
               } else if (result.reason) {
-                addToast('error', result.reason)
+                firstFailureReason = result.reason
               }
-            } else {
+            }
+
+            if (!handled) {
               const container = findNearbyContainer()
               if (container) {
                 const isOpen = containerStates[container.id]?.open ?? container.initialOpen
                 const result = executeContainerInteraction(container.id)
                 if (result.success) {
                   addToast('info', isOpen ? `已关闭 ${container.name}` : `已打开 ${container.name}`)
+                  handled = true
                 }
+              }
+            }
+
+            if (!handled) {
+              const nearbyDoor = findNearbyDoor()
+              if (nearbyDoor) {
+                const gs = useGameStore.getState()
+                const nowOpen = gs.toggleDoor(gs.currentRoom, nearbyDoor.connectsTo)
+                const targetRoomName = sharedRooms[nearbyDoor.connectsTo]?.name ?? nearbyDoor.connectsTo
+                addToast('info', nowOpen ? `已开门 → ${targetRoomName}` : `已关门`)
+                handled = true
+              }
+            }
+
+            if (!handled) {
+              // 全部失败：显示最早的失败原因（保留原拾取失败提示），否则通用提示
+              if (firstFailureReason) {
+                addToast('error', firstFailureReason)
               } else {
-                // 无实体无容器：检查附近是否有门可交互
-                const nearbyDoor = findNearbyDoor()
-                if (nearbyDoor) {
-                  const gs = useGameStore.getState()
-                  const nowOpen = gs.toggleDoor(gs.currentRoom, nearbyDoor.connectsTo)
-                  const targetRoomName = sharedRooms[nearbyDoor.connectsTo]?.name ?? nearbyDoor.connectsTo
-                  addToast('info', nowOpen ? `已开门 → ${targetRoomName}` : `已关门`)
-                } else {
-                  addToast('info', '附近没有可交互的物体、容器或门')
-                }
+                addToast('info', '附近没有可交互的物体、容器或门')
               }
             }
           }
